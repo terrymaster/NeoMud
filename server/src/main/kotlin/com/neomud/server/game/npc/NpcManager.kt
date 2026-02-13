@@ -23,7 +23,9 @@ data class NpcState(
     val damage: Int = 0,
     val level: Int = 1,
     val zoneId: String = ""
-)
+) {
+    val isAlive: Boolean get() = maxHp == 0 || currentHp > 0
+}
 
 data class NpcEvent(
     val npcName: String,
@@ -37,6 +39,7 @@ data class NpcEvent(
 )
 
 class NpcManager(private val worldGraph: WorldGraph) {
+    private val logger = org.slf4j.LoggerFactory.getLogger(NpcManager::class.java)
     private val npcs = mutableListOf<NpcState>()
 
     fun loadNpcs(npcDataList: List<Pair<NpcData, String>>) {
@@ -69,7 +72,7 @@ class NpcManager(private val worldGraph: WorldGraph) {
         val events = mutableListOf<NpcEvent>()
 
         for (npc in npcs) {
-            if (npc.currentHp <= 0) continue // skip dead NPCs
+            if (!npc.isAlive) continue // skip dead NPCs
 
             when (val action = npc.behavior.tick(npc, worldGraph)) {
                 is NpcAction.MoveTo -> {
@@ -102,8 +105,13 @@ class NpcManager(private val worldGraph: WorldGraph) {
         return events
     }
 
-    fun getNpcsInRoom(roomId: RoomId): List<Npc> =
-        npcs.filter { it.currentRoomId == roomId && it.currentHp > 0 }.map { npcState ->
+    fun getNpcsInRoom(roomId: RoomId): List<Npc> {
+        val all = npcs.filter { it.currentRoomId == roomId }
+        val alive = all.filter { it.isAlive }
+        if (all.isNotEmpty()) {
+            logger.info("getNpcsInRoom($roomId): ${all.size} total, ${alive.size} alive: ${all.map { "${it.name}(hp=${it.currentHp}/${it.maxHp},alive=${it.isAlive})" }}")
+        }
+        return alive.map { npcState ->
             Npc(
                 id = npcState.id,
                 name = npcState.name,
@@ -115,12 +123,13 @@ class NpcManager(private val worldGraph: WorldGraph) {
                 maxHp = npcState.maxHp
             )
         }
+    }
 
     fun getLivingHostileNpcsInRoom(roomId: RoomId): List<NpcState> =
         npcs.filter { it.currentRoomId == roomId && it.hostile && it.currentHp > 0 }
 
     fun getNpcState(npcId: String): NpcState? =
-        npcs.find { it.id == npcId && it.currentHp > 0 }
+        npcs.find { it.id == npcId && it.isAlive }
 
     fun markDead(npcId: String) {
         npcs.find { it.id == npcId }?.let { it.currentHp = 0 }

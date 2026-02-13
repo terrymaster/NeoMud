@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -94,27 +95,34 @@ fun GameScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         // Attack button
-                        val attackButtonColor = when {
+                        val attackBorderColor = when {
                             attackMode -> Color(0xFFFF3333)
                             hasHostiles -> MaterialTheme.colorScheme.primary
                             else -> Color.Gray
                         }
-                        IconButton(
+                        val attackBgColor = when {
+                            attackMode -> Color(0x44FF3333)
+                            else -> Color.Transparent
+                        }
+                        OutlinedButton(
                             onClick = { gameViewModel.toggleAttackMode(!attackMode) },
                             enabled = hasHostiles || attackMode,
-                            modifier = Modifier
-                                .size(48.dp)
-                                .then(
-                                    if (attackMode) Modifier
-                                        .background(Color(0x44FF3333), CircleShape)
-                                        .border(2.dp, Color(0xFFFF3333), CircleShape)
-                                    else Modifier
-                                )
+                            modifier = Modifier.size(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(
+                                width = if (attackMode) 2.dp else 1.dp,
+                                color = attackBorderColor
+                            ),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = attackBgColor,
+                                disabledContainerColor = Color.Transparent
+                            )
                         ) {
                             Text(
                                 text = "\u2694",
                                 fontSize = 22.sp,
-                                color = attackButtonColor,
+                                color = attackBorderColor,
                                 fontWeight = FontWeight.Bold
                             )
                         }

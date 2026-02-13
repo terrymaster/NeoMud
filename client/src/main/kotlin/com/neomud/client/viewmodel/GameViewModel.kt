@@ -3,6 +3,7 @@ package com.neomud.client.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neomud.client.network.WebSocketClient
+import com.neomud.client.ui.theme.MudColors
 import com.neomud.shared.model.*
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
@@ -18,8 +19,8 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
     private val _mapData = MutableStateFlow<ServerMessage.MapData?>(null)
     val mapData: StateFlow<ServerMessage.MapData?> = _mapData
 
-    private val _gameLog = MutableStateFlow<List<String>>(emptyList())
-    val gameLog: StateFlow<List<String>> = _gameLog
+    private val _gameLog = MutableStateFlow<List<LogEntry>>(emptyList())
+    val gameLog: StateFlow<List<LogEntry>> = _gameLog
 
     private val _player = MutableStateFlow<Player?>(null)
     val player: StateFlow<Player?> = _player
@@ -39,8 +40,6 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
                 handleMessage(message)
             }
         }
-        // Request initial room info since LoginOk/RoomInfo/MapData may have
-        // been emitted before this collector started
         look()
     }
 
@@ -49,38 +48,21 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
             is ServerMessage.RoomInfo -> {
                 _roomInfo.value = message
                 _roomEntities.value = message.npcs
-                addLog("--- ${message.room.name} ---")
-                addLog(message.room.description)
-                if (message.players.isNotEmpty()) {
-                    addLog("Players here: ${message.players.joinToString(", ")}")
-                }
-                if (message.npcs.isNotEmpty()) {
-                    addLog("You see: ${message.npcs.joinToString(", ") { it.name }}")
-                }
-                val exits = message.room.exits.keys.joinToString(", ") { it.name.lowercase() }
-                addLog("Exits: $exits")
+                logRoomInfo(message.room, message.players, message.npcs)
             }
             is ServerMessage.MoveOk -> {
                 _roomInfo.value = ServerMessage.RoomInfo(message.room, message.players, message.npcs)
                 _roomEntities.value = message.npcs
-                addLog("You move ${message.direction.name.lowercase()}.")
-                addLog("--- ${message.room.name} ---")
-                addLog(message.room.description)
-                if (message.players.isNotEmpty()) {
-                    addLog("Players here: ${message.players.joinToString(", ")}")
-                }
-                if (message.npcs.isNotEmpty()) {
-                    addLog("You see: ${message.npcs.joinToString(", ") { it.name }}")
-                }
-                val exits = message.room.exits.keys.joinToString(", ") { it.name.lowercase() }
-                addLog("Exits: $exits")
+                addLog("You move ${message.direction.name.lowercase()}.", MudColors.selfAction)
+                logRoomInfo(message.room, message.players, message.npcs)
             }
-            is ServerMessage.MoveError -> addLog("Cannot move: ${message.reason}")
+            is ServerMessage.MoveError -> addLog("Cannot move: ${message.reason}", MudColors.error)
             is ServerMessage.MapData -> _mapData.value = message
-            is ServerMessage.PlayerEntered -> addLog("${message.playerName} has arrived.")
-            is ServerMessage.PlayerLeft -> addLog("${message.playerName} left ${message.direction.name.lowercase()}.")
+            is ServerMessage.PlayerEntered -> addLog("${message.playerName} has arrived.", MudColors.playerEvent)
+            is ServerMessage.PlayerLeft -> addLog("${message.playerName} left ${message.direction.name.lowercase()}.", MudColors.playerEvent)
             is ServerMessage.NpcEntered -> {
-                addLog("${message.npcName} has arrived.")
+                val color = if (message.hostile) MudColors.hostile else MudColors.friendly
+                addLog("${message.npcName} has arrived.", color)
                 if (message.npcId.isNotEmpty()) {
                     val current = _roomEntities.value.toMutableList()
                     current.add(Npc(
@@ -97,20 +79,21 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
                 }
             }
             is ServerMessage.NpcLeft -> {
-                addLog("${message.npcName} left ${message.direction.name.lowercase()}.")
+                val npc = _roomEntities.value.find { it.id == message.npcId }
+                val color = if (npc?.hostile == true) MudColors.hostile else MudColors.friendly
+                addLog("${message.npcName} left ${message.direction.name.lowercase()}.", color)
                 if (message.npcId.isNotEmpty()) {
                     _roomEntities.value = _roomEntities.value.filter { it.id != message.npcId }
                 }
             }
             is ServerMessage.CombatHit -> {
                 if (message.damage > 0) {
-                    addLog("${message.attackerName} hits ${message.defenderName} for ${message.damage} damage! (${message.defenderHp}/${message.defenderMaxHp} HP)")
+                    val color = if (message.isPlayerDefender) MudColors.combatEnemy else MudColors.combatYou
+                    addLog("${message.attackerName} hits ${message.defenderName} for ${message.damage} damage! (${message.defenderHp}/${message.defenderMaxHp} HP)", color)
                 }
                 if (message.isPlayerDefender) {
-                    // Update player HP
                     _player.value = _player.value?.copy(currentHp = message.defenderHp)
                 } else {
-                    // Update NPC HP in entity list
                     _roomEntities.value = _roomEntities.value.map { npc ->
                         if (npc.name == message.defenderName) {
                             npc.copy(currentHp = message.defenderHp)
@@ -119,14 +102,14 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
                 }
             }
             is ServerMessage.NpcDied -> {
-                addLog("${message.npcName} has been slain by ${message.killerName}!")
+                addLog("${message.npcName} has been slain by ${message.killerName}!", MudColors.kill)
                 _roomEntities.value = _roomEntities.value.filter { it.id != message.npcId }
                 if (_selectedTargetId.value == message.npcId) {
                     _selectedTargetId.value = null
                 }
             }
             is ServerMessage.PlayerDied -> {
-                addLog("You have been slain by ${message.killerName}! Respawning...")
+                addLog("You have been slain by ${message.killerName}! Respawning...", MudColors.death)
                 _player.value = _player.value?.copy(
                     currentHp = message.respawnHp,
                     currentRoomId = message.respawnRoomId
@@ -137,15 +120,20 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
             is ServerMessage.AttackModeUpdate -> {
                 _attackMode.value = message.enabled
                 if (!message.enabled) {
-                    addLog("Attack mode disabled.")
+                    addLog("Attack mode disabled.", MudColors.system)
                 } else {
-                    addLog("Attack mode enabled!")
+                    addLog("Attack mode enabled!", MudColors.combatYou)
                 }
             }
-            is ServerMessage.PlayerSays -> addLog("${message.playerName} says: \"${message.message}\"")
-            is ServerMessage.EffectTick -> addLog(message.message)
-            is ServerMessage.SystemMessage -> addLog("[System] ${message.message}")
-            is ServerMessage.Error -> addLog("[Error] ${message.message}")
+            is ServerMessage.PlayerSays -> {
+                addEntry(LogEntry(listOf(
+                    LogSpan("${message.playerName}", MudColors.playerName),
+                    LogSpan(" says: \"${message.message}\"", MudColors.say)
+                )))
+            }
+            is ServerMessage.EffectTick -> addLog(message.message, MudColors.effect)
+            is ServerMessage.SystemMessage -> addLog("[System] ${message.message}", MudColors.system)
+            is ServerMessage.Error -> addLog("[Error] ${message.message}", MudColors.error)
             is ServerMessage.LoginOk -> _player.value = message.player
             is ServerMessage.Pong -> { /* ignore */ }
             is ServerMessage.RegisterOk -> { /* handled by AuthViewModel */ }
@@ -153,8 +141,35 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
         }
     }
 
-    private fun addLog(text: String) {
-        val log = _gameLog.value + text
+    private fun logRoomInfo(room: Room, players: List<String>, npcs: List<Npc>) {
+        addLog("--- ${room.name} ---", MudColors.roomName)
+        addLog(room.description, MudColors.roomDesc)
+        if (players.isNotEmpty()) {
+            val spans = mutableListOf(LogSpan("Players here: ", MudColors.default))
+            players.forEachIndexed { i, name ->
+                if (i > 0) spans.add(LogSpan(", ", MudColors.default))
+                spans.add(LogSpan(name, MudColors.playerName))
+            }
+            addEntry(LogEntry(spans))
+        }
+        if (npcs.isNotEmpty()) {
+            val spans = mutableListOf(LogSpan("You see: ", MudColors.default))
+            npcs.forEachIndexed { i, npc ->
+                if (i > 0) spans.add(LogSpan(", ", MudColors.default))
+                spans.add(LogSpan(npc.name, if (npc.hostile) MudColors.hostile else MudColors.friendly))
+            }
+            addEntry(LogEntry(spans))
+        }
+        val exits = room.exits.keys.joinToString(", ") { it.name.lowercase() }
+        addLog("Exits: $exits", MudColors.exits)
+    }
+
+    private fun addLog(text: String, color: androidx.compose.ui.graphics.Color) {
+        addEntry(LogEntry(text, color))
+    }
+
+    private fun addEntry(entry: LogEntry) {
+        val log = _gameLog.value + entry
         _gameLog.value = if (log.size > 200) log.takeLast(200) else log
     }
 

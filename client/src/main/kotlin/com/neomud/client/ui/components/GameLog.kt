@@ -11,13 +11,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.neomud.client.viewmodel.LogEntry
 
 @Composable
 fun GameLog(
-    entries: List<String>,
+    entries: List<LogEntry>,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
@@ -37,8 +41,13 @@ fun GameLog(
     ) {
         items(entries) { entry ->
             Text(
-                text = entry,
-                color = Color(0xFFCCCCCC),
+                text = buildAnnotatedString {
+                    for (span in entry.spans) {
+                        withStyle(SpanStyle(color = span.color)) {
+                            append(span.text)
+                        }
+                    }
+                },
                 fontFamily = FontFamily.Monospace,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(vertical = 1.dp)
