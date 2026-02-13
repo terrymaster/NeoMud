@@ -9,6 +9,7 @@ data class ZoneData(
     val id: String,
     val name: String,
     val description: String,
+    val safe: Boolean = true,
     val rooms: List<RoomData>,
     val npcs: List<NpcData> = emptyList()
 )
@@ -30,5 +31,9 @@ data class NpcData(
     val description: String,
     val startRoomId: RoomId,
     val behaviorType: String,
-    val patrolRoute: List<RoomId> = emptyList()
+    val patrolRoute: List<RoomId> = emptyList(),
+    val hostile: Boolean = false,
+    val maxHp: Int = 0,
+    val damage: Int = 0,
+    val level: Int = 1
 )

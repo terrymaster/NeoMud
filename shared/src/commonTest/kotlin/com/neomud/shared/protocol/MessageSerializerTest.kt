@@ -73,6 +73,25 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testHostileNpcRoundTrip() {
+        val room = Room(
+            id = "forest:path",
+            name = "Forest Path",
+            description = "A winding path.",
+            exits = mapOf(Direction.NORTH to "forest:deep"),
+            zoneId = "forest",
+            x = 0,
+            y = 3
+        )
+        val hostileNpc = Npc("npc:shadow_wolf", "Shadow Wolf", "A dark wolf.", "forest:path", "wander", hostile = true)
+        val friendlyNpc = Npc("npc:guard", "Town Guard", "A stern guard.", "forest:path", "patrol", hostile = false)
+        val original = ServerMessage.RoomInfo(room, emptyList(), listOf(hostileNpc, friendlyNpc))
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
     fun testMoveOkRoundTrip() {
         val room = Room("forest:edge", "Forest Edge", "Trees everywhere.", mapOf(Direction.SOUTH to "town:gate"), "forest", 0, 2)
         val original = ServerMessage.MoveOk(Direction.NORTH, room, emptyList(), emptyList())

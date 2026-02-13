@@ -2,6 +2,7 @@
   "id": "forest",
   "name": "Whispering Forest",
   "description": "An ancient forest where the trees seem to murmur secrets to one another.",
+  "safe": false,
   "rooms": [
     {
       "id": "forest:edge",
@@ -58,5 +59,28 @@
       }
     }
   ],
-  "npcs": []
+  "npcs": [
+    {
+      "id": "npc:shadow_wolf",
+      "name": "Shadow Wolf",
+      "description": "A large wolf with fur as dark as midnight. Its amber eyes gleam with predatory intelligence, and wisps of shadow seem to cling to its form as it stalks silently through the undergrowth.",
+      "startRoomId": "forest:path",
+      "behaviorType": "wander",
+      "hostile": true,
+      "maxHp": 30,
+      "damage": 5,
+      "level": 2
+    },
+    {
+      "id": "npc:forest_spider",
+      "name": "Giant Forest Spider",
+      "description": "A massive spider the size of a large dog, its chitinous body mottled green and brown for camouflage. Thick webs trail from its spinnerets, and venom glistens on its fangs.",
+      "startRoomId": "forest:deep",
+      "behaviorType": "wander",
+      "hostile": true,
+      "maxHp": 20,
+      "damage": 8,
+      "level": 3
+    }
+  ]
 }

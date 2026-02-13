@@ -59,16 +59,40 @@ class WorldLoaderTest {
     fun testNpcsLoaded() {
         val result = WorldLoader.load()
         assertTrue(result.npcDataList.isNotEmpty(), "Should load NPCs")
-        assertTrue(result.npcDataList.size >= 2, "Should load at least 2 NPCs")
+        assertTrue(result.npcDataList.size >= 4, "Should load at least 4 NPCs (2 town + 2 forest)")
 
-        val guard = result.npcDataList.find { it.id == "npc:town_guard" }
+        val guard = result.npcDataList.find { it.first.id == "npc:town_guard" }
         assertNotNull(guard, "Town guard NPC should be loaded")
-        assertEquals("patrol", guard.behaviorType)
-        assertTrue(guard.patrolRoute.isNotEmpty(), "Guard should have patrol route")
+        assertEquals("patrol", guard.first.behaviorType)
+        assertTrue(guard.first.patrolRoute.isNotEmpty(), "Guard should have patrol route")
+        assertEquals("town", guard.second, "Guard should belong to town zone")
 
-        val barkeep = result.npcDataList.find { it.id == "npc:barkeep" }
+        val barkeep = result.npcDataList.find { it.first.id == "npc:barkeep" }
         assertNotNull(barkeep, "Barkeep NPC should be loaded")
-        assertEquals("idle", barkeep.behaviorType)
+        assertEquals("idle", barkeep.first.behaviorType)
+    }
+
+    @Test
+    fun testMonsterNpcsLoaded() {
+        val result = WorldLoader.load()
+
+        val wolf = result.npcDataList.find { it.first.id == "npc:shadow_wolf" }
+        assertNotNull(wolf, "Shadow Wolf should be loaded")
+        assertEquals("wander", wolf.first.behaviorType)
+        assertTrue(wolf.first.hostile, "Shadow Wolf should be hostile")
+        assertEquals(30, wolf.first.maxHp)
+        assertEquals(5, wolf.first.damage)
+        assertEquals(2, wolf.first.level)
+        assertEquals("forest", wolf.second, "Shadow Wolf should belong to forest zone")
+
+        val spider = result.npcDataList.find { it.first.id == "npc:forest_spider" }
+        assertNotNull(spider, "Giant Forest Spider should be loaded")
+        assertEquals("wander", spider.first.behaviorType)
+        assertTrue(spider.first.hostile, "Spider should be hostile")
+        assertEquals(20, spider.first.maxHp)
+        assertEquals(8, spider.first.damage)
+        assertEquals(3, spider.first.level)
+        assertEquals("forest", spider.second, "Spider should belong to forest zone")
     }
 
     @Test

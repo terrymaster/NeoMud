@@ -78,16 +78,22 @@ private fun DPadButton(
     isLook: Boolean = false
 ) {
     FilledTonalButton(
-        onClick = onClick,
-        enabled = enabled,
+        onClick = if (enabled) onClick else ({}),
+        enabled = true, // Always render as "enabled" so it stays visible
         modifier = Modifier.size(40.dp),
         shape = CircleShape,
         contentPadding = PaddingValues(0.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = if (isLook)
-                MaterialTheme.colorScheme.secondaryContainer
-            else
-                MaterialTheme.colorScheme.primaryContainer
+            containerColor = when {
+                isLook -> MaterialTheme.colorScheme.secondaryContainer
+                enabled -> MaterialTheme.colorScheme.primaryContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            },
+            contentColor = when {
+                isLook -> MaterialTheme.colorScheme.onSecondaryContainer
+                enabled -> MaterialTheme.colorScheme.onPrimaryContainer
+                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+            }
         )
     ) {
         Text(

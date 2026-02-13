@@ -2,6 +2,7 @@
   "id": "town",
   "name": "Millhaven",
   "description": "A bustling frontier town at the edge of the Whispering Forest.",
+  "safe": true,
   "rooms": [
     {
       "id": "town:square",

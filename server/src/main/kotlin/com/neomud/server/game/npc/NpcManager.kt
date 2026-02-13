@@ -4,6 +4,7 @@ import com.neomud.server.game.npc.behavior.BehaviorNode
 import com.neomud.server.game.npc.behavior.IdleBehavior
 import com.neomud.server.game.npc.behavior.NpcAction
 import com.neomud.server.game.npc.behavior.PatrolBehavior
+import com.neomud.server.game.npc.behavior.WanderBehavior
 import com.neomud.server.world.NpcData
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
@@ -15,7 +16,13 @@ data class NpcState(
     val name: String,
     val description: String,
     var currentRoomId: RoomId,
-    val behavior: BehaviorNode
+    val behavior: BehaviorNode,
+    val hostile: Boolean = false,
+    val maxHp: Int = 0,
+    var currentHp: Int = 0,
+    val damage: Int = 0,
+    val level: Int = 1,
+    val zoneId: String = ""
 )
 
 data class NpcEvent(
@@ -28,10 +35,11 @@ data class NpcEvent(
 class NpcManager(private val worldGraph: WorldGraph) {
     private val npcs = mutableListOf<NpcState>()
 
-    fun loadNpcs(npcDataList: List<NpcData>) {
-        for (data in npcDataList) {
+    fun loadNpcs(npcDataList: List<Pair<NpcData, String>>) {
+        for ((data, zoneId) in npcDataList) {
             val behavior: BehaviorNode = when (data.behaviorType) {
                 "patrol" -> PatrolBehavior(data.patrolRoute)
+                "wander" -> WanderBehavior()
                 else -> IdleBehavior()
             }
 
@@ -41,7 +49,13 @@ class NpcManager(private val worldGraph: WorldGraph) {
                     name = data.name,
                     description = data.description,
                     currentRoomId = data.startRoomId,
-                    behavior = behavior
+                    behavior = behavior,
+                    hostile = data.hostile,
+                    maxHp = data.maxHp,
+                    currentHp = data.maxHp,
+                    damage = data.damage,
+                    level = data.level,
+                    zoneId = zoneId
                 )
             )
         }
@@ -85,7 +99,8 @@ class NpcManager(private val worldGraph: WorldGraph) {
                 name = npcState.name,
                 description = npcState.description,
                 currentRoomId = npcState.currentRoomId,
-                behaviorType = "unknown"
+                behaviorType = "unknown",
+                hostile = npcState.hostile
             )
         }
 }

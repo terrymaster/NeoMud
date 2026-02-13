@@ -61,5 +61,8 @@ class WorldGraph {
         }
     }
 
+    fun getRoomIdsInZone(zoneId: String): List<RoomId> =
+        rooms.values.filter { it.zoneId == zoneId }.map { it.id }
+
     val roomCount: Int get() = rooms.size
 }

@@ -12,12 +12,12 @@ object WorldLoader {
 
     data class LoadResult(
         val worldGraph: WorldGraph,
-        val npcDataList: List<NpcData>
+        val npcDataList: List<Pair<NpcData, String>>
     )
 
     fun load(): LoadResult {
         val worldGraph = WorldGraph()
-        val allNpcData = mutableListOf<NpcData>()
+        val allNpcData = mutableListOf<Pair<NpcData, String>>()
         val zoneFiles = listOf("world/town.zone.json", "world/forest.zone.json")
 
         for (file in zoneFiles) {
@@ -45,7 +45,7 @@ object WorldLoader {
                 worldGraph.addRoom(room)
             }
 
-            allNpcData.addAll(zone.npcs)
+            allNpcData.addAll(zone.npcs.map { it to zone.id })
         }
 
         worldGraph.setDefaultSpawn("town:square")

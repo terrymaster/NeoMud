@@ -8,5 +8,6 @@ data class Npc(
     val name: String,
     val description: String,
     val currentRoomId: RoomId,
-    val behaviorType: String
+    val behaviorType: String,
+    val hostile: Boolean = false
 )
