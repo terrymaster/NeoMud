@@ -24,7 +24,7 @@ class MessageSerializerTest {
 
     @Test
     fun testRegisterMessageRoundTrip() {
-        val original = ClientMessage.Register("user1", "pass123", "Gandalf", CharacterClass.MAGE)
+        val original = ClientMessage.Register("user1", "pass123", "Gandalf", CharacterClass.WIZARD)
         val json = MessageSerializer.encodeClientMessage(original)
         val decoded = MessageSerializer.decodeClientMessage(json)
         assertEquals(original, decoded)
@@ -140,12 +140,12 @@ class MessageSerializerTest {
 
     @Test
     fun testCharacterClassBaseStats() {
-        val warrior = CharacterClass.WARRIOR
-        assertEquals(16, warrior.baseStats.strength)
-        assertEquals(14, warrior.baseStats.constitution)
+        val fighter = CharacterClass.FIGHTER
+        assertEquals(16, fighter.baseStats.strength)
+        assertEquals(14, fighter.baseStats.constitution)
 
-        val mage = CharacterClass.MAGE
-        assertEquals(16, mage.baseStats.intelligence)
-        assertEquals(8, mage.baseStats.strength)
+        val wizard = CharacterClass.WIZARD
+        assertEquals(16, wizard.baseStats.intelligence)
+        assertEquals(8, wizard.baseStats.strength)
     }
 }

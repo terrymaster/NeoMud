@@ -9,6 +9,10 @@ application {
     mainClass.set("com.neomud.server.ApplicationKt")
 }
 
+tasks.named<JavaExec>("run") {
+    workingDir = project.projectDir
+}
+
 dependencies {
     implementation(project(":shared"))
 

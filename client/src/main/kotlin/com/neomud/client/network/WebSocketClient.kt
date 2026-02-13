@@ -27,10 +27,14 @@ class WebSocketClient {
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState: StateFlow<ConnectionState> = _connectionState
 
+    private val _connectionError = MutableStateFlow<String?>(null)
+    val connectionError: StateFlow<String?> = _connectionError
+
     fun connect(host: String, port: Int, scope: CoroutineScope) {
         connectionJob?.cancel()
         connectionJob = scope.launch(Dispatchers.IO) {
             _connectionState.value = ConnectionState.CONNECTING
+            _connectionError.value = null
             try {
                 client.webSocket(host = host, port = port, path = "/game") {
                     session = this
@@ -48,8 +52,8 @@ class WebSocketClient {
                         }
                     }
                 }
-            } catch (_: Exception) {
-                // Connection failed or lost
+            } catch (e: Exception) {
+                _connectionError.value = e.message ?: "Connection failed"
             } finally {
                 session = null
                 _connectionState.value = ConnectionState.DISCONNECTED
@@ -57,9 +61,15 @@ class WebSocketClient {
         }
     }
 
-    suspend fun send(message: ClientMessage) {
+    suspend fun send(message: ClientMessage): Boolean {
+        val s = session ?: return false
         val text = MessageSerializer.encodeClientMessage(message)
-        session?.send(Frame.Text(text))
+        return try {
+            s.send(Frame.Text(text))
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun disconnect() {

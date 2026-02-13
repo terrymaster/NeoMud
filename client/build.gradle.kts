@@ -61,3 +61,10 @@ dependencies {
 
     testImplementation(libs.kotlin.test)
 }
+
+tasks.register<Exec>("startEmulator") {
+    group = "emulator"
+    description = "Start the Android emulator"
+    val emulatorPath = "${System.getenv("LOCALAPPDATA")}\\Android\\Sdk\\emulator\\emulator.exe"
+    commandLine(emulatorPath, "-avd", "Medium_Phone_API_35")
+}

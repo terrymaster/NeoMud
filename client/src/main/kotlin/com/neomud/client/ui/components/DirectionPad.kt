@@ -1,14 +1,17 @@
 package com.neomud.client.ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.neomud.shared.model.Direction
 
 @Composable
@@ -18,80 +21,79 @@ fun DirectionPad(
     onLook: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val buttonSize = Modifier.size(64.dp)
-
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // North
-        Button(
-            onClick = { onMove(Direction.NORTH) },
+        DPadButton(
+            text = "\u25B2",
             enabled = Direction.NORTH in availableExits,
-            modifier = buttonSize,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Text("N")
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
+            onClick = { onMove(Direction.NORTH) }
+        )
 
         // West - Look - East
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(
-                onClick = { onMove(Direction.WEST) },
+            DPadButton(
+                text = "\u25C0",
                 enabled = Direction.WEST in availableExits,
-                modifier = buttonSize,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text("W")
-            }
+                onClick = { onMove(Direction.WEST) }
+            )
 
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(2.dp))
 
-            Button(
+            DPadButton(
+                text = "\u25CE",
+                enabled = true,
                 onClick = onLook,
-                modifier = buttonSize,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Text("Look")
-            }
+                isLook = true
+            )
 
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(2.dp))
 
-            Button(
-                onClick = { onMove(Direction.EAST) },
+            DPadButton(
+                text = "\u25B6",
                 enabled = Direction.EAST in availableExits,
-                modifier = buttonSize,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text("E")
-            }
+                onClick = { onMove(Direction.EAST) }
+            )
         }
-
-        Spacer(modifier = Modifier.height(4.dp))
 
         // South
-        Button(
-            onClick = { onMove(Direction.SOUTH) },
+        DPadButton(
+            text = "\u25BC",
             enabled = Direction.SOUTH in availableExits,
-            modifier = buttonSize,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Text("S")
-        }
+            onClick = { onMove(Direction.SOUTH) }
+        )
+    }
+}
+
+@Composable
+private fun DPadButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    isLook: Boolean = false
+) {
+    FilledTonalButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(40.dp),
+        shape = CircleShape,
+        contentPadding = PaddingValues(0.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = if (isLook)
+                MaterialTheme.colorScheme.secondaryContainer
+            else
+                MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Text(
+            text = text,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center
+        )
     }
 }

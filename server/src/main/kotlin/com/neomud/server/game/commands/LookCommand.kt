@@ -26,5 +26,13 @@ class LookCommand(
         val npcsInRoom = npcManager.getNpcsInRoom(currentRoomId)
 
         session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
+
+        val mapRooms = worldGraph.getRoomsNear(currentRoomId).map { mapRoom ->
+            mapRoom.copy(
+                hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
+                hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
+            )
+        }
+        session.send(ServerMessage.MapData(mapRooms, currentRoomId))
     }
 }

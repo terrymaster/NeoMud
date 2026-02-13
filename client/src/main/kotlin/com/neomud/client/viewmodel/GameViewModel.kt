@@ -30,6 +30,9 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
                 handleMessage(message)
             }
         }
+        // Request initial room info since LoginOk/RoomInfo/MapData may have
+        // been emitted before this collector started
+        look()
     }
 
     private fun handleMessage(message: ServerMessage) {
@@ -79,7 +82,8 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
     }
 
     private fun addLog(text: String) {
-        _gameLog.value = _gameLog.value + text
+        val log = _gameLog.value + text
+        _gameLog.value = if (log.size > 200) log.takeLast(200) else log
     }
 
     fun move(direction: Direction) {

@@ -1,10 +1,15 @@
 package com.neomud.client.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.neomud.client.network.ConnectionState
@@ -14,6 +19,7 @@ import com.neomud.client.viewmodel.AuthState
 fun LoginScreen(
     connectionState: ConnectionState,
     authState: AuthState,
+    connectionError: String?,
     onConnect: (String, Int) -> Unit,
     onLogin: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit,
@@ -23,6 +29,7 @@ fun LoginScreen(
     var port by remember { mutableStateOf("8080") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
     Column(
         modifier = Modifier
@@ -44,7 +51,10 @@ fun LoginScreen(
                 value = host,
                 onValueChange = { host = it },
                 label = { Text("Server Host") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -53,7 +63,13 @@ fun LoginScreen(
                 value = port,
                 onValueChange = { port = it },
                 label = { Text("Port") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus()
+                    onConnect(host, port.toIntOrNull() ?: 8080)
+                })
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -73,7 +89,10 @@ fun LoginScreen(
                 value = username,
                 onValueChange = { username = it },
                 label = { Text("Username") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -83,7 +102,15 @@ fun LoginScreen(
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus()
+                    if (username.isNotBlank() && password.isNotBlank()) {
+                        onLogin(username, password)
+                    }
+                })
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -105,6 +132,14 @@ fun LoginScreen(
             TextButton(onClick = onNavigateToRegister) {
                 Text("Create Account")
             }
+        }
+
+        if (connectionError != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Connection failed: $connectionError",
+                color = MaterialTheme.colorScheme.error
+            )
         }
 
         if (authState is AuthState.Error) {

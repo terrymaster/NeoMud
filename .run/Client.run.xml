@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Client" type="AndroidRunConfigurationType" factoryName="Android App">
+    <module name="NeoMud.client.main" />
+    <option name="DEPLOY" value="DEFAULT_APK" />
+    <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
+    <option name="ACTIVITY_EXTRA_FLAGS" value="" />
+    <option name="MODE" value="default_activity" />
+    <method v="2">
+      <option name="Android.Gradle.SmartSelect" enabled="false" />
+    </method>
+  </configuration>
+</component>

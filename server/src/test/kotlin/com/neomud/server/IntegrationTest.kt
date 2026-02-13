@@ -38,7 +38,7 @@ class IntegrationTest {
         wsClient.webSocket("/game") {
             // Register
             send(Frame.Text(MessageSerializer.encodeClientMessage(
-                ClientMessage.Register("testuser", "testpass", "TestHero", CharacterClass.WARRIOR)
+                ClientMessage.Register("testuser", "testpass", "TestHero", CharacterClass.FIGHTER)
             )))
 
             val registerResponse = receiveServerMessage()
@@ -54,7 +54,7 @@ class IntegrationTest {
             val loginResponse = receiveServerMessage()
             assertIs<ServerMessage.LoginOk>(loginResponse)
             assertEquals("TestHero", loginResponse.player.name)
-            assertEquals(CharacterClass.WARRIOR, loginResponse.player.characterClass)
+            assertEquals(CharacterClass.FIGHTER, loginResponse.player.characterClass)
             assertEquals("town:square", loginResponse.player.currentRoomId)
 
             // Should receive RoomInfo

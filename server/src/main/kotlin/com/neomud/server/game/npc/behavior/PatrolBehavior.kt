@@ -5,7 +5,7 @@ import com.neomud.server.world.WorldGraph
 
 class PatrolBehavior(
     private val route: List<String>,
-    private val moveEveryNTicks: Int = 4
+    private val moveEveryNTicks: Int = 20
 ) : BehaviorNode {
     private var routeIndex = 0
     private var tickCounter = 0

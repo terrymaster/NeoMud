@@ -19,18 +19,33 @@ class AuthViewModel : ViewModel() {
     val authState: StateFlow<AuthState> = _authState
 
     val connectionState: StateFlow<ConnectionState> = wsClient.connectionState
+    val connectionError: StateFlow<String?> = wsClient.connectionError
+
+    private var pendingLoginUsername: String? = null
+    private var pendingLoginPassword: String? = null
 
     init {
         viewModelScope.launch {
             wsClient.messages.collect { message ->
                 when (message) {
                     is ServerMessage.LoginOk -> {
+                        pendingLoginUsername = null
+                        pendingLoginPassword = null
                         _authState.value = AuthState.LoggedIn(message.player)
                     }
                     is ServerMessage.RegisterOk -> {
-                        _authState.value = AuthState.Registered
+                        // Auto-login after successful registration
+                        val username = pendingLoginUsername
+                        val password = pendingLoginPassword
+                        if (username != null && password != null) {
+                            wsClient.send(ClientMessage.Login(username, password))
+                        } else {
+                            _authState.value = AuthState.Registered
+                        }
                     }
                     is ServerMessage.AuthError -> {
+                        pendingLoginUsername = null
+                        pendingLoginPassword = null
                         _authState.value = AuthState.Error(message.reason)
                     }
                     else -> { /* handled by GameViewModel */ }
@@ -46,16 +61,26 @@ class AuthViewModel : ViewModel() {
     fun login(username: String, password: String) {
         _authState.value = AuthState.Loading
         viewModelScope.launch {
-            wsClient.send(ClientMessage.Login(username, password))
+            val sent = wsClient.send(ClientMessage.Login(username, password))
+            if (!sent) {
+                _authState.value = AuthState.Error("Not connected to server")
+            }
         }
     }
 
     fun register(username: String, password: String, characterName: String, characterClass: CharacterClass) {
         _authState.value = AuthState.Loading
+        pendingLoginUsername = username
+        pendingLoginPassword = password
         viewModelScope.launch {
-            wsClient.send(
+            val sent = wsClient.send(
                 ClientMessage.Register(username, password, characterName, characterClass)
             )
+            if (!sent) {
+                pendingLoginUsername = null
+                pendingLoginPassword = null
+                _authState.value = AuthState.Error("Not connected to server")
+            }
         }
     }
 
