@@ -24,7 +24,7 @@ class MessageSerializerTest {
 
     @Test
     fun testRegisterMessageRoundTrip() {
-        val original = ClientMessage.Register("user1", "pass123", "Gandalf", CharacterClass.WIZARD)
+        val original = ClientMessage.Register("user1", "pass123", "Gandalf", "WIZARD")
         val json = MessageSerializer.encodeClientMessage(original)
         val decoded = MessageSerializer.decodeClientMessage(json)
         assertEquals(original, decoded)
@@ -248,13 +248,107 @@ class MessageSerializerTest {
     }
 
     @Test
-    fun testCharacterClassBaseStats() {
-        val fighter = CharacterClass.FIGHTER
-        assertEquals(16, fighter.baseStats.strength)
-        assertEquals(14, fighter.baseStats.constitution)
+    fun testClassCatalogSyncRoundTrip() {
+        val classes = listOf(
+            CharacterClassDef("FIGHTER", "Fighter", "A master of martial combat", Stats(16, 12, 14, 10, 10)),
+            CharacterClassDef("WIZARD", "Wizard", "A scholarly mage", Stats(8, 10, 12, 16, 14), mapOf("spellbook" to "true"))
+        )
+        val original = ServerMessage.ClassCatalogSync(classes)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
 
-        val wizard = CharacterClass.WIZARD
-        assertEquals(16, wizard.baseStats.intelligence)
-        assertEquals(8, wizard.baseStats.strength)
+    @Test
+    fun testItemCatalogSyncRoundTrip() {
+        val items = listOf(
+            Item("item:sword", "Sword", "A blade.", "weapon", "weapon", damageBonus = 3, damageRange = 6),
+            Item("item:potion", "Potion", "Heals.", "consumable", useEffect = "heal:25", stackable = true, maxStack = 10)
+        )
+        val original = ServerMessage.ItemCatalogSync(items)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testViewInventoryRoundTrip() {
+        val original = ClientMessage.ViewInventory
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testEquipItemRoundTrip() {
+        val original = ClientMessage.EquipItem("item:iron_sword", "weapon")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testUnequipItemRoundTrip() {
+        val original = ClientMessage.UnequipItem("weapon")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testUseItemRoundTrip() {
+        val original = ClientMessage.UseItem("item:health_potion")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testInventoryUpdateRoundTrip() {
+        val inventory = listOf(
+            InventoryItem("item:iron_sword", 1, true, "weapon"),
+            InventoryItem("item:health_potion", 3)
+        )
+        val equipment = mapOf("weapon" to "item:iron_sword")
+        val original = ServerMessage.InventoryUpdate(inventory, equipment)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testLootReceivedRoundTrip() {
+        val items = listOf(
+            LootedItem("item:wolf_pelt", "Wolf Pelt", 1),
+            LootedItem("item:health_potion", "Health Potion", 1)
+        )
+        val original = ServerMessage.LootReceived("Shadow Wolf", items)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testItemUsedRoundTrip() {
+        val original = ServerMessage.ItemUsed("Health Potion", "You drink the potion.", 95)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testEquipUpdateRoundTrip() {
+        val original = ServerMessage.EquipUpdate("weapon", "item:iron_sword", "Iron Sword")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testEquipUpdateUnequipRoundTrip() {
+        val original = ServerMessage.EquipUpdate("weapon", null, null)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
     }
 }

@@ -1,6 +1,5 @@
 package com.neomud.shared.protocol
 
-import com.neomud.shared.model.CharacterClass
 import com.neomud.shared.model.Direction
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -13,7 +12,7 @@ sealed class ClientMessage {
         val username: String,
         val password: String,
         val characterName: String,
-        val characterClass: CharacterClass
+        val characterClass: String
     ) : ClientMessage()
 
     @Serializable
@@ -50,4 +49,21 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("select_target")
     data class SelectTarget(val npcId: String?) : ClientMessage()
+
+    // Inventory
+    @Serializable
+    @SerialName("view_inventory")
+    data object ViewInventory : ClientMessage()
+
+    @Serializable
+    @SerialName("equip_item")
+    data class EquipItem(val itemId: String, val slot: String) : ClientMessage()
+
+    @Serializable
+    @SerialName("unequip_item")
+    data class UnequipItem(val slot: String) : ClientMessage()
+
+    @Serializable
+    @SerialName("use_item")
+    data class UseItem(val itemId: String) : ClientMessage()
 }

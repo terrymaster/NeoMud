@@ -30,6 +30,9 @@ fun Application.configureRouting(
             logger.info("New WebSocket connection")
 
             try {
+                // Send catalog data before auth so registration screen can populate
+                commandProcessor.sendCatalogSync(session)
+
                 for (frame in incoming) {
                     if (frame is Frame.Text) {
                         val text = frame.readText()

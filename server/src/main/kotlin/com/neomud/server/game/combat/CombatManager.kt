@@ -1,12 +1,12 @@
 package com.neomud.server.game.combat
 
+import com.neomud.server.game.inventory.EquipmentService
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.npc.NpcState
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.RoomId
-import com.neomud.shared.protocol.ServerMessage
 import org.slf4j.LoggerFactory
 
 sealed class CombatEvent {
@@ -38,7 +38,8 @@ sealed class CombatEvent {
 class CombatManager(
     private val npcManager: NpcManager,
     private val sessionManager: SessionManager,
-    private val worldGraph: WorldGraph
+    private val worldGraph: WorldGraph,
+    private val equipmentService: EquipmentService
 ) {
     private val logger = LoggerFactory.getLogger(CombatManager::class.java)
 
@@ -60,7 +61,15 @@ class CombatManager(
                 continue
             }
 
-            val damage = player.stats.strength + (1..3).random()
+            // Calculate damage with equipment bonuses
+            val bonuses = equipmentService.getCombatBonuses(player.name)
+            val damage = if (bonuses.weaponDamageRange > 0) {
+                // Has weapon: strength + damageBonus + random(1..weaponDamageRange)
+                player.stats.strength + bonuses.totalDamageBonus + (1..bonuses.weaponDamageRange).random()
+            } else {
+                // Unarmed fallback: strength + random(1..3)
+                player.stats.strength + (1..3).random()
+            }
             target.currentHp -= damage
 
             events.add(CombatEvent.Hit(
@@ -98,7 +107,9 @@ class CombatManager(
                 val targetSession = playersInRoom.randomOrNull() ?: continue
                 val targetPlayer = targetSession.player ?: continue
 
-                val damage = npc.damage.coerceAtLeast(1)
+                // NPC damage reduced by player's armor, minimum 1
+                val playerBonuses = equipmentService.getCombatBonuses(targetPlayer.name)
+                val damage = (npc.damage - playerBonuses.totalArmorValue).coerceAtLeast(1)
                 val newHp = (targetPlayer.currentHp - damage).coerceAtLeast(0)
                 targetSession.player = targetPlayer.copy(currentHp = newHp)
 

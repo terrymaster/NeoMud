@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Player(
     val name: String,
-    val characterClass: CharacterClass,
+    val characterClass: String,
     val stats: Stats,
     val currentHp: Int,
     val maxHp: Int,

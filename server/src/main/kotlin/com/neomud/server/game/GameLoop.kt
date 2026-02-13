@@ -2,8 +2,10 @@ package com.neomud.server.game
 
 import com.neomud.server.game.combat.CombatEvent
 import com.neomud.server.game.combat.CombatManager
+import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.SessionManager
+import com.neomud.server.world.LootTableCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.ActiveEffect
 import com.neomud.shared.model.EffectType
@@ -15,7 +17,9 @@ class GameLoop(
     private val sessionManager: SessionManager,
     private val npcManager: NpcManager,
     private val combatManager: CombatManager,
-    private val worldGraph: WorldGraph
+    private val worldGraph: WorldGraph,
+    private val lootService: LootService,
+    private val lootTableCatalog: LootTableCatalog
 ) {
     private val logger = LoggerFactory.getLogger(GameLoop::class.java)
 
@@ -69,6 +73,22 @@ class GameLoop(
                         event.roomId,
                         ServerMessage.NpcDied(event.npcId, event.npcName, event.killerName, event.roomId)
                     )
+
+                    // Roll and award loot to killer
+                    val lootTable = lootTableCatalog.getLootTable(event.npcId)
+                    if (lootTable.isNotEmpty()) {
+                        val lootedItems = lootService.rollLoot(lootTable)
+                        if (lootedItems.isNotEmpty()) {
+                            lootService.awardLoot(event.killerName, lootedItems)
+                            val killerSession = sessionManager.getSession(event.killerName)
+                            if (killerSession != null) {
+                                try {
+                                    killerSession.send(ServerMessage.LootReceived(event.npcName, lootedItems))
+                                } catch (_: Exception) { }
+                            }
+                        }
+                    }
+
                     // Auto-disable attack mode for players with no remaining targets
                     for (session in sessionManager.getSessionsInRoom(event.roomId)) {
                         if (session.attackMode) {

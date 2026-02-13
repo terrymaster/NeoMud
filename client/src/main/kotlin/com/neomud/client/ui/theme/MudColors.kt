@@ -32,6 +32,9 @@ object MudColors {
     val effect = Color(0xFFFF55FF)      // bright magenta - effects/spells
     val selfAction = Color(0xFFFFFFFF)  // white - your own actions
 
+    // Loot
+    val loot = Color(0xFFFFD700)        // gold - loot messages
+
     // Default
     val default = Color(0xFFCCCCCC)     // light grey
 }

@@ -1,5 +1,6 @@
 package com.neomud.server.persistence
 
+import com.neomud.server.persistence.tables.InventoryTable
 import com.neomud.server.persistence.tables.PlayersTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -16,7 +17,7 @@ object DatabaseFactory {
         )
 
         transaction(database) {
-            SchemaUtils.create(PlayersTable)
+            SchemaUtils.create(PlayersTable, InventoryTable)
         }
 
         logger.info("Database initialized")

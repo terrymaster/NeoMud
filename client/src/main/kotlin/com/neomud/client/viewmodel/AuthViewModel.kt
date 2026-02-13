@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neomud.client.network.ConnectionState
 import com.neomud.client.network.WebSocketClient
-import com.neomud.shared.model.CharacterClass
+import com.neomud.shared.model.CharacterClassDef
 import com.neomud.shared.model.Player
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
@@ -20,6 +20,9 @@ class AuthViewModel : ViewModel() {
 
     val connectionState: StateFlow<ConnectionState> = wsClient.connectionState
     val connectionError: StateFlow<String?> = wsClient.connectionError
+
+    private val _availableClasses = MutableStateFlow<List<CharacterClassDef>>(emptyList())
+    val availableClasses: StateFlow<List<CharacterClassDef>> = _availableClasses
 
     private var pendingLoginUsername: String? = null
     private var pendingLoginPassword: String? = null
@@ -48,6 +51,9 @@ class AuthViewModel : ViewModel() {
                         pendingLoginPassword = null
                         _authState.value = AuthState.Error(message.reason)
                     }
+                    is ServerMessage.ClassCatalogSync -> {
+                        _availableClasses.value = message.classes
+                    }
                     else -> { /* handled by GameViewModel */ }
                 }
             }
@@ -68,7 +74,7 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun register(username: String, password: String, characterName: String, characterClass: CharacterClass) {
+    fun register(username: String, password: String, characterName: String, characterClass: String) {
         _authState.value = AuthState.Loading
         pendingLoginUsername = username
         pendingLoginPassword = password

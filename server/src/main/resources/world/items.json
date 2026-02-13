@@ -1,0 +1,113 @@
+{
+  "items": [
+    {
+      "id": "item:iron_sword",
+      "name": "Iron Sword",
+      "description": "A sturdy iron blade, well-balanced for combat.",
+      "type": "weapon",
+      "slot": "weapon",
+      "damageBonus": 3,
+      "damageRange": 6,
+      "value": 50,
+      "weight": 5,
+      "levelRequirement": 1
+    },
+    {
+      "id": "item:wooden_shield",
+      "name": "Wooden Shield",
+      "description": "A round shield made of hardened oak.",
+      "type": "armor",
+      "slot": "shield",
+      "armorValue": 2,
+      "value": 30,
+      "weight": 4,
+      "levelRequirement": 1
+    },
+    {
+      "id": "item:leather_cap",
+      "name": "Leather Cap",
+      "description": "A simple cap of boiled leather.",
+      "type": "armor",
+      "slot": "head",
+      "armorValue": 1,
+      "value": 15,
+      "weight": 1,
+      "levelRequirement": 1
+    },
+    {
+      "id": "item:leather_chest",
+      "name": "Leather Vest",
+      "description": "A vest of thick tanned leather.",
+      "type": "armor",
+      "slot": "chest",
+      "armorValue": 3,
+      "value": 40,
+      "weight": 4,
+      "levelRequirement": 1
+    },
+    {
+      "id": "item:leather_legs",
+      "name": "Leather Leggings",
+      "description": "Tough leggings offering moderate protection.",
+      "type": "armor",
+      "slot": "legs",
+      "armorValue": 2,
+      "value": 25,
+      "weight": 3,
+      "levelRequirement": 1
+    },
+    {
+      "id": "item:leather_boots",
+      "name": "Leather Boots",
+      "description": "Well-worn boots that protect the feet.",
+      "type": "armor",
+      "slot": "feet",
+      "armorValue": 1,
+      "value": 15,
+      "weight": 2,
+      "levelRequirement": 1
+    },
+    {
+      "id": "item:leather_gloves",
+      "name": "Leather Gloves",
+      "description": "Supple gloves that allow a firm grip.",
+      "type": "armor",
+      "slot": "hands",
+      "armorValue": 1,
+      "value": 10,
+      "weight": 1,
+      "levelRequirement": 1
+    },
+    {
+      "id": "item:health_potion",
+      "name": "Health Potion",
+      "description": "A small vial of red liquid that restores health.",
+      "type": "consumable",
+      "useEffect": "heal:25",
+      "value": 20,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 10
+    },
+    {
+      "id": "item:spider_fang",
+      "name": "Spider Fang",
+      "description": "A venomous fang from a giant forest spider.",
+      "type": "junk",
+      "value": 5,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 20
+    },
+    {
+      "id": "item:wolf_pelt",
+      "name": "Wolf Pelt",
+      "description": "A dark pelt from a shadow wolf, prized by tanners.",
+      "type": "junk",
+      "value": 8,
+      "weight": 2,
+      "stackable": true,
+      "maxStack": 10
+    }
+  ]
+}

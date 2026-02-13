@@ -1,6 +1,5 @@
 package com.neomud.server
 
-import com.neomud.shared.model.CharacterClass
 import com.neomud.shared.model.Direction
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.MessageSerializer
@@ -26,6 +25,14 @@ class IntegrationTest {
         return "jdbc:sqlite:${tmpFile.absolutePath}"
     }
 
+    /** Consume the two catalog sync messages sent on connect */
+    private suspend fun DefaultClientWebSocketSession.consumeCatalogSync() {
+        val msg1 = receiveServerMessage()
+        assertIs<ServerMessage.ClassCatalogSync>(msg1)
+        val msg2 = receiveServerMessage()
+        assertIs<ServerMessage.ItemCatalogSync>(msg2)
+    }
+
     @Test
     fun testHealthEndpoint() = testApplication {
         application { module(jdbcUrl = testDbUrl()) }
@@ -44,9 +51,11 @@ class IntegrationTest {
         }
 
         wsClient.webSocket("/game") {
+            consumeCatalogSync()
+
             // Register
             send(Frame.Text(MessageSerializer.encodeClientMessage(
-                ClientMessage.Register("testuser", "testpass", "TestHero", CharacterClass.FIGHTER)
+                ClientMessage.Register("testuser", "testpass", "TestHero", "FIGHTER")
             )))
 
             val registerResponse = receiveServerMessage()
@@ -55,6 +64,8 @@ class IntegrationTest {
 
         // Login in new session
         wsClient.webSocket("/game") {
+            consumeCatalogSync()
+
             send(Frame.Text(MessageSerializer.encodeClientMessage(
                 ClientMessage.Login("testuser", "testpass")
             )))
@@ -62,7 +73,7 @@ class IntegrationTest {
             val loginResponse = receiveServerMessage()
             assertIs<ServerMessage.LoginOk>(loginResponse)
             assertEquals("TestHero", loginResponse.player.name)
-            assertEquals(CharacterClass.FIGHTER, loginResponse.player.characterClass)
+            assertEquals("FIGHTER", loginResponse.player.characterClass)
             assertEquals("town:square", loginResponse.player.currentRoomId)
 
             // Should receive RoomInfo
@@ -75,6 +86,10 @@ class IntegrationTest {
             assertIs<ServerMessage.MapData>(mapData)
             assertEquals("town:square", mapData.playerRoomId)
             assertTrue(mapData.rooms.isNotEmpty())
+
+            // Should receive InventoryUpdate
+            val invUpdate = receiveServerMessage()
+            assertIs<ServerMessage.InventoryUpdate>(invUpdate)
         }
     }
 
@@ -88,20 +103,23 @@ class IntegrationTest {
 
         // Register first
         wsClient.webSocket("/game") {
+            consumeCatalogSync()
             send(Frame.Text(MessageSerializer.encodeClientMessage(
-                ClientMessage.Register("mover", "pass123", "Mover", CharacterClass.ROGUE)
+                ClientMessage.Register("mover", "pass123", "Mover", "ROGUE")
             )))
             receiveServerMessage() // RegisterOk
         }
 
         // Login and move
         wsClient.webSocket("/game") {
+            consumeCatalogSync()
             send(Frame.Text(MessageSerializer.encodeClientMessage(
                 ClientMessage.Login("mover", "pass123")
             )))
             receiveServerMessage() // LoginOk
             receiveServerMessage() // RoomInfo
             receiveServerMessage() // MapData
+            receiveServerMessage() // InventoryUpdate
 
             // Move north to gate
             send(Frame.Text(MessageSerializer.encodeClientMessage(
@@ -129,20 +147,23 @@ class IntegrationTest {
 
         // Register
         wsClient.webSocket("/game") {
+            consumeCatalogSync()
             send(Frame.Text(MessageSerializer.encodeClientMessage(
-                ClientMessage.Register("stuck", "pass123", "Stuck", CharacterClass.CLERIC)
+                ClientMessage.Register("stuck", "pass123", "Stuck", "CLERIC")
             )))
             receiveServerMessage() // RegisterOk
         }
 
         // Login and try invalid move
         wsClient.webSocket("/game") {
+            consumeCatalogSync()
             send(Frame.Text(MessageSerializer.encodeClientMessage(
                 ClientMessage.Login("stuck", "pass123")
             )))
             receiveServerMessage() // LoginOk
             receiveServerMessage() // RoomInfo
             receiveServerMessage() // MapData
+            receiveServerMessage() // InventoryUpdate
 
             // Town Square has no UP exit
             send(Frame.Text(MessageSerializer.encodeClientMessage(
@@ -163,6 +184,7 @@ class IntegrationTest {
         }
 
         wsClient.webSocket("/game") {
+            consumeCatalogSync()
             // Try to move without logging in
             send(Frame.Text(MessageSerializer.encodeClientMessage(
                 ClientMessage.Move(Direction.NORTH)

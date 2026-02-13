@@ -1,7 +1,7 @@
 package com.neomud.server.persistence.repository
 
 import com.neomud.server.persistence.tables.PlayersTable
-import com.neomud.shared.model.CharacterClass
+import com.neomud.server.world.ClassCatalog
 import com.neomud.shared.model.Player
 import com.neomud.shared.model.RoomId
 import com.neomud.shared.model.Stats
@@ -16,8 +16,9 @@ class PlayerRepository {
         username: String,
         password: String,
         characterName: String,
-        characterClass: CharacterClass,
-        spawnRoomId: RoomId
+        characterClass: String,
+        spawnRoomId: RoomId,
+        classCatalog: ClassCatalog
     ): Result<Player> = runCatching {
         transaction {
             val existing = PlayersTable.selectAll().where {
@@ -32,14 +33,16 @@ class PlayerRepository {
                 }
             }
 
-            val stats = characterClass.baseStats
+            val classDef = classCatalog.getClass(characterClass)
+                ?: error("Unknown character class: $characterClass")
+            val stats = classDef.baseStats
             val maxHp = stats.maxHitPoints
 
             PlayersTable.insert {
                 it[PlayersTable.username] = username
                 it[passwordHash] = hashPassword(password)
                 it[PlayersTable.characterName] = characterName
-                it[PlayersTable.characterClass] = characterClass.name
+                it[PlayersTable.characterClass] = characterClass
                 it[strength] = stats.strength
                 it[dexterity] = stats.dexterity
                 it[constitution] = stats.constitution
@@ -83,7 +86,7 @@ class PlayerRepository {
 
             Player(
                 name = row[PlayersTable.characterName],
-                characterClass = CharacterClass.valueOf(row[PlayersTable.characterClass]),
+                characterClass = row[PlayersTable.characterClass],
                 stats = stats,
                 currentHp = row[PlayersTable.currentHp],
                 maxHp = stats.maxHitPoints,

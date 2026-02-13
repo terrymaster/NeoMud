@@ -16,19 +16,20 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.neomud.client.viewmodel.AuthState
-import com.neomud.shared.model.CharacterClass
+import com.neomud.shared.model.CharacterClassDef
 
 @Composable
 fun RegistrationScreen(
     authState: AuthState,
-    onRegister: (String, String, String, CharacterClass) -> Unit,
+    availableClasses: List<CharacterClassDef>,
+    onRegister: (String, String, String, String) -> Unit,
     onBack: () -> Unit,
     onClearError: () -> Unit
 ) {
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var characterName by rememberSaveable { mutableStateOf("") }
-    var selectedClass by rememberSaveable { mutableStateOf(CharacterClass.FIGHTER) }
+    var selectedClassId by rememberSaveable { mutableStateOf("FIGHTER") }
     val focusManager = LocalFocusManager.current
 
     Column(
@@ -86,36 +87,41 @@ fun RegistrationScreen(
         Text("Choose Class:", style = MaterialTheme.typography.titleSmall)
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Scrollable class list takes remaining space
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            items(CharacterClass.entries.toList()) { cls ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = selectedClass == cls,
-                        onClick = { selectedClass = cls }
-                    )
-                    Column(modifier = Modifier.padding(start = 8.dp)) {
-                        Text(cls.name, style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            cls.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        if (availableClasses.isEmpty()) {
+            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+            Text("Loading classes from server...", style = MaterialTheme.typography.bodySmall)
+        } else {
+            // Scrollable class list takes remaining space
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                items(availableClasses) { cls ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedClassId == cls.id,
+                            onClick = { selectedClassId = cls.id }
                         )
-                        val s = cls.baseStats
-                        Text(
-                            "STR:${s.strength} DEX:${s.dexterity} CON:${s.constitution} INT:${s.intelligence} WIS:${s.wisdom} | HP:${s.maxHitPoints}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                        )
+                        Column(modifier = Modifier.padding(start = 8.dp)) {
+                            Text(cls.name, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                cls.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            val s = cls.baseStats
+                            Text(
+                                "STR:${s.strength} DEX:${s.dexterity} CON:${s.constitution} INT:${s.intelligence} WIS:${s.wisdom} | HP:${s.maxHitPoints}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                            )
+                        }
                     }
                 }
             }
@@ -125,10 +131,11 @@ fun RegistrationScreen(
 
         // Buttons pinned at bottom
         Button(
-            onClick = { onRegister(username, password, characterName, selectedClass) },
+            onClick = { onRegister(username, password, characterName, selectedClassId) },
             modifier = Modifier.fillMaxWidth(),
             enabled = authState !is AuthState.Loading &&
-                    username.isNotBlank() && password.isNotBlank() && characterName.isNotBlank()
+                    username.isNotBlank() && password.isNotBlank() && characterName.isNotBlank() &&
+                    availableClasses.isNotEmpty()
         ) {
             if (authState is AuthState.Loading) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp))

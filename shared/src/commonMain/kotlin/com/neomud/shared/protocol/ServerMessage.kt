@@ -136,4 +136,44 @@ sealed class ServerMessage {
     @Serializable
     @SerialName("error")
     data class Error(val message: String) : ServerMessage()
+
+    // Catalog sync
+    @Serializable
+    @SerialName("class_catalog_sync")
+    data class ClassCatalogSync(val classes: List<CharacterClassDef>) : ServerMessage()
+
+    @Serializable
+    @SerialName("item_catalog_sync")
+    data class ItemCatalogSync(val items: List<Item>) : ServerMessage()
+
+    // Inventory
+    @Serializable
+    @SerialName("inventory_update")
+    data class InventoryUpdate(
+        val inventory: List<InventoryItem>,
+        val equipment: Map<String, String>
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("loot_received")
+    data class LootReceived(
+        val npcName: String,
+        val items: List<LootedItem>
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("item_used")
+    data class ItemUsed(
+        val itemName: String,
+        val message: String,
+        val newHp: Int
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("equip_update")
+    data class EquipUpdate(
+        val slot: String,
+        val itemId: String?,
+        val itemName: String?
+    ) : ServerMessage()
 }

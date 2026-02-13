@@ -17,6 +17,7 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
     val authState by authViewModel.authState.collectAsState()
     val connectionState by authViewModel.connectionState.collectAsState()
     val connectionError by authViewModel.connectionError.collectAsState()
+    val availableClasses by authViewModel.availableClasses.collectAsState()
 
     // Navigate to game screen on successful login
     LaunchedEffect(authState) {
@@ -48,6 +49,7 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
         composable("register") {
             RegistrationScreen(
                 authState = authState,
+                availableClasses = availableClasses,
                 onRegister = { username, password, characterName, characterClass ->
                     authViewModel.register(username, password, characterName, characterClass)
                 },

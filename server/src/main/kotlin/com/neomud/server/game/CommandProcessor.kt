@@ -1,6 +1,7 @@
 package com.neomud.server.game
 
 import com.neomud.server.game.commands.AttackCommand
+import com.neomud.server.game.commands.InventoryCommand
 import com.neomud.server.game.commands.LookCommand
 import com.neomud.server.game.commands.MoveCommand
 import com.neomud.server.game.commands.SayCommand
@@ -8,6 +9,8 @@ import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
+import com.neomud.server.world.ClassCatalog
+import com.neomud.server.world.ItemCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
@@ -17,13 +20,21 @@ class CommandProcessor(
     private val worldGraph: WorldGraph,
     private val sessionManager: SessionManager,
     private val npcManager: NpcManager,
-    private val playerRepository: PlayerRepository
+    private val playerRepository: PlayerRepository,
+    private val classCatalog: ClassCatalog,
+    private val itemCatalog: ItemCatalog,
+    private val inventoryCommand: InventoryCommand
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
     private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository)
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager)
     private val sayCommand = SayCommand(sessionManager)
     private val attackCommand = AttackCommand(npcManager)
+
+    suspend fun sendCatalogSync(session: PlayerSession) {
+        session.send(ServerMessage.ClassCatalogSync(classCatalog.getAllClasses()))
+        session.send(ServerMessage.ItemCatalogSync(itemCatalog.getAllItems()))
+    }
 
     suspend fun process(session: PlayerSession, message: ClientMessage) {
         when (message) {
@@ -47,6 +58,18 @@ class CommandProcessor(
             is ClientMessage.Ping -> {
                 session.send(ServerMessage.Pong)
             }
+            is ClientMessage.ViewInventory -> {
+                requireAuth(session) { inventoryCommand.handleViewInventory(session) }
+            }
+            is ClientMessage.EquipItem -> {
+                requireAuth(session) { inventoryCommand.handleEquipItem(session, message.itemId, message.slot) }
+            }
+            is ClientMessage.UnequipItem -> {
+                requireAuth(session) { inventoryCommand.handleUnequipItem(session, message.slot) }
+            }
+            is ClientMessage.UseItem -> {
+                requireAuth(session) { inventoryCommand.handleUseItem(session, message.itemId) }
+            }
         }
     }
 
@@ -61,7 +84,8 @@ class CommandProcessor(
             password = msg.password,
             characterName = msg.characterName,
             characterClass = msg.characterClass,
-            spawnRoomId = worldGraph.defaultSpawnRoom
+            spawnRoomId = worldGraph.defaultSpawnRoom,
+            classCatalog = classCatalog
         )
 
         result.fold(
@@ -120,6 +144,9 @@ class CommandProcessor(
                         exclude = player.name
                     )
                 }
+
+                // Send initial inventory
+                inventoryCommand.sendInventoryUpdate(session)
 
                 logger.info("Player logged in: ${player.name}")
             },

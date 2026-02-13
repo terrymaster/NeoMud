@@ -1,0 +1,12 @@
+{
+  "tables": {
+    "npc:shadow_wolf": [
+      { "itemId": "item:wolf_pelt", "chance": 0.8, "minQuantity": 1, "maxQuantity": 1 },
+      { "itemId": "item:health_potion", "chance": 0.15, "minQuantity": 1, "maxQuantity": 1 }
+    ],
+    "npc:forest_spider": [
+      { "itemId": "item:spider_fang", "chance": 0.9, "minQuantity": 1, "maxQuantity": 2 },
+      { "itemId": "item:leather_gloves", "chance": 0.1, "minQuantity": 1, "maxQuantity": 1 }
+    ]
+  }
+}

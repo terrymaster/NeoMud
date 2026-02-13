@@ -34,6 +34,19 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
     private val _selectedTargetId = MutableStateFlow<String?>(null)
     val selectedTargetId: StateFlow<String?> = _selectedTargetId
 
+    // Inventory
+    private val _inventory = MutableStateFlow<List<InventoryItem>>(emptyList())
+    val inventory: StateFlow<List<InventoryItem>> = _inventory
+
+    private val _equipment = MutableStateFlow<Map<String, String>>(emptyMap())
+    val equipment: StateFlow<Map<String, String>> = _equipment
+
+    private val _itemCatalog = MutableStateFlow<Map<String, Item>>(emptyMap())
+    val itemCatalog: StateFlow<Map<String, Item>> = _itemCatalog
+
+    private val _showInventory = MutableStateFlow(false)
+    val showInventory: StateFlow<Boolean> = _showInventory
+
     fun startCollecting() {
         viewModelScope.launch {
             wsClient.messages.collect { message ->
@@ -138,6 +151,31 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
             is ServerMessage.Pong -> { /* ignore */ }
             is ServerMessage.RegisterOk -> { /* handled by AuthViewModel */ }
             is ServerMessage.AuthError -> { /* handled by AuthViewModel */ }
+            is ServerMessage.ClassCatalogSync -> { /* handled by AuthViewModel */ }
+            is ServerMessage.ItemCatalogSync -> {
+                _itemCatalog.value = message.items.associateBy { it.id }
+            }
+            is ServerMessage.InventoryUpdate -> {
+                _inventory.value = message.inventory
+                _equipment.value = message.equipment
+            }
+            is ServerMessage.LootReceived -> {
+                for (lootedItem in message.items) {
+                    val qtyStr = if (lootedItem.quantity > 1) " x${lootedItem.quantity}" else ""
+                    addLog("You loot ${lootedItem.itemName}$qtyStr from ${message.npcName}.", MudColors.loot)
+                }
+            }
+            is ServerMessage.ItemUsed -> {
+                addLog(message.message, MudColors.effect)
+                _player.value = _player.value?.copy(currentHp = message.newHp)
+            }
+            is ServerMessage.EquipUpdate -> {
+                if (message.itemName != null) {
+                    addLog("You equip ${message.itemName}.", MudColors.selfAction)
+                } else {
+                    addLog("You unequip from ${message.slot}.", MudColors.selfAction)
+                }
+            }
         }
     }
 
@@ -201,6 +239,37 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
         _selectedTargetId.value = npcId
         viewModelScope.launch {
             wsClient.send(ClientMessage.SelectTarget(npcId))
+        }
+    }
+
+    fun toggleInventory() {
+        _showInventory.value = !_showInventory.value
+        if (_showInventory.value) {
+            viewInventory()
+        }
+    }
+
+    fun viewInventory() {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.ViewInventory)
+        }
+    }
+
+    fun equipItem(itemId: String, slot: String) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.EquipItem(itemId, slot))
+        }
+    }
+
+    fun unequipItem(slot: String) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.UnequipItem(slot))
+        }
+    }
+
+    fun useItem(itemId: String) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.UseItem(itemId))
         }
     }
 }

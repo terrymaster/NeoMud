@@ -100,4 +100,22 @@ class WorldLoaderTest {
         val result = WorldLoader.load()
         assertEquals("town:square", result.worldGraph.defaultSpawnRoom)
     }
+
+    @Test
+    fun testClassCatalogLoaded() {
+        val result = WorldLoader.load()
+        assertEquals(12, result.classCatalog.classCount)
+    }
+
+    @Test
+    fun testItemCatalogLoaded() {
+        val result = WorldLoader.load()
+        assertTrue(result.itemCatalog.itemCount >= 10, "Should load at least 10 items")
+    }
+
+    @Test
+    fun testLootTableCatalogLoaded() {
+        val result = WorldLoader.load()
+        assertTrue(result.lootTableCatalog.tableCount >= 2, "Should load at least 2 loot tables")
+    }
 }

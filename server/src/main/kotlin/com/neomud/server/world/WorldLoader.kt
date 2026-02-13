@@ -12,10 +12,16 @@ object WorldLoader {
 
     data class LoadResult(
         val worldGraph: WorldGraph,
-        val npcDataList: List<Pair<NpcData, String>>
+        val npcDataList: List<Pair<NpcData, String>>,
+        val classCatalog: ClassCatalog,
+        val itemCatalog: ItemCatalog,
+        val lootTableCatalog: LootTableCatalog
     )
 
     fun load(): LoadResult {
+        val classCatalog = ClassCatalog.load()
+        val itemCatalog = ItemCatalog.load()
+        val lootTableCatalog = LootTableCatalog.load()
         val worldGraph = WorldGraph()
         val allNpcData = mutableListOf<Pair<NpcData, String>>()
         val zoneFiles = listOf("world/town.zone.json", "world/forest.zone.json")
@@ -51,6 +57,6 @@ object WorldLoader {
         worldGraph.setDefaultSpawn("town:square")
         logger.info("World loaded: ${worldGraph.roomCount} rooms, ${allNpcData.size} NPCs")
 
-        return LoadResult(worldGraph, allNpcData)
+        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog)
     }
 }
