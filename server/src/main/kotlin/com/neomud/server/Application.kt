@@ -4,10 +4,13 @@ import com.neomud.server.game.CommandProcessor
 import com.neomud.server.game.GameLoop
 import com.neomud.server.game.combat.CombatManager
 import com.neomud.server.game.commands.InventoryCommand
+import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.inventory.EquipmentService
 import com.neomud.server.game.inventory.LootService
+import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.DatabaseFactory
+import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.plugins.configureRouting
@@ -65,15 +68,18 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     val sessionManager = SessionManager()
     val playerRepository = PlayerRepository()
     val inventoryRepository = InventoryRepository(itemCatalog)
-    val lootService = LootService(inventoryRepository, itemCatalog)
+    val coinRepository = CoinRepository()
+    val lootService = LootService(itemCatalog)
     val equipmentService = EquipmentService(inventoryRepository, itemCatalog)
-    val inventoryCommand = InventoryCommand(inventoryRepository, itemCatalog)
+    val roomItemManager = RoomItemManager()
+    val inventoryCommand = InventoryCommand(inventoryRepository, itemCatalog, coinRepository)
+    val pickupCommand = PickupCommand(roomItemManager, inventoryRepository, coinRepository, itemCatalog, sessionManager)
     val combatManager = CombatManager(npcManager, sessionManager, worldGraph, equipmentService)
     val commandProcessor = CommandProcessor(
         worldGraph, sessionManager, npcManager, playerRepository,
-        classCatalog, itemCatalog, inventoryCommand
+        classCatalog, itemCatalog, inventoryCommand, pickupCommand, roomItemManager
     )
-    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog)
+    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager)
 
     // Install plugins
     configureWebSockets()

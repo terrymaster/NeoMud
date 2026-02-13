@@ -47,6 +47,16 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
     private val _showInventory = MutableStateFlow(false)
     val showInventory: StateFlow<Boolean> = _showInventory
 
+    // Coins & ground items
+    private val _playerCoins = MutableStateFlow(Coins())
+    val playerCoins: StateFlow<Coins> = _playerCoins
+
+    private val _roomGroundItems = MutableStateFlow<List<GroundItem>>(emptyList())
+    val roomGroundItems: StateFlow<List<GroundItem>> = _roomGroundItems
+
+    private val _roomGroundCoins = MutableStateFlow(Coins())
+    val roomGroundCoins: StateFlow<Coins> = _roomGroundCoins
+
     fun startCollecting() {
         viewModelScope.launch {
             wsClient.messages.collect { message ->
@@ -66,6 +76,9 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
             is ServerMessage.MoveOk -> {
                 _roomInfo.value = ServerMessage.RoomInfo(message.room, message.players, message.npcs)
                 _roomEntities.value = message.npcs
+                // Clear ground items on move (will be refreshed by RoomItemsUpdate)
+                _roomGroundItems.value = emptyList()
+                _roomGroundCoins.value = Coins()
                 addLog("You move ${message.direction.name.lowercase()}.", MudColors.selfAction)
                 logRoomInfo(message.room, message.players, message.npcs)
             }
@@ -129,6 +142,8 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
                 )
                 _attackMode.value = false
                 _selectedTargetId.value = null
+                _roomGroundItems.value = emptyList()
+                _roomGroundCoins.value = Coins()
             }
             is ServerMessage.AttackModeUpdate -> {
                 _attackMode.value = message.enabled
@@ -158,6 +173,7 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
             is ServerMessage.InventoryUpdate -> {
                 _inventory.value = message.inventory
                 _equipment.value = message.equipment
+                _playerCoins.value = message.coins
             }
             is ServerMessage.LootReceived -> {
                 for (lootedItem in message.items) {
@@ -174,6 +190,34 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
                     addLog("You equip ${message.itemName}.", MudColors.selfAction)
                 } else {
                     addLog("You unequip from ${message.slot}.", MudColors.selfAction)
+                }
+            }
+            is ServerMessage.RoomItemsUpdate -> {
+                _roomGroundItems.value = message.items
+                _roomGroundCoins.value = message.coins
+            }
+            is ServerMessage.LootDropped -> {
+                val catalog = _itemCatalog.value
+                for (item in message.items) {
+                    val name = catalog[item.itemId]?.name ?: item.itemName
+                    val qtyStr = if (item.quantity > 1) " x${item.quantity}" else ""
+                    addLog("${message.npcName} dropped $name$qtyStr.", MudColors.loot)
+                }
+                if (!message.coins.isEmpty()) {
+                    val parts = mutableListOf<String>()
+                    if (message.coins.platinum > 0) parts.add("${message.coins.platinum} platinum")
+                    if (message.coins.gold > 0) parts.add("${message.coins.gold} gold")
+                    if (message.coins.silver > 0) parts.add("${message.coins.silver} silver")
+                    if (message.coins.copper > 0) parts.add("${message.coins.copper} copper")
+                    addLog("${message.npcName} dropped ${parts.joinToString(", ")}.", MudColors.loot)
+                }
+            }
+            is ServerMessage.PickupResult -> {
+                if (message.isCoin) {
+                    addLog("You pick up ${message.quantity} ${message.itemName}.", MudColors.loot)
+                } else {
+                    val qtyStr = if (message.quantity > 1) " x${message.quantity}" else ""
+                    addLog("You pick up ${message.itemName}$qtyStr.", MudColors.loot)
                 }
             }
         }
@@ -270,6 +314,18 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
     fun useItem(itemId: String) {
         viewModelScope.launch {
             wsClient.send(ClientMessage.UseItem(itemId))
+        }
+    }
+
+    fun pickupItem(itemId: String, quantity: Int) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.PickupItem(itemId, quantity))
+        }
+    }
+
+    fun pickupCoins(coinType: String) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.PickupCoins(coinType))
         }
     }
 }

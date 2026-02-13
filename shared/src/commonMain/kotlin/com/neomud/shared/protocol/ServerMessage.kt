@@ -151,7 +151,8 @@ sealed class ServerMessage {
     @SerialName("inventory_update")
     data class InventoryUpdate(
         val inventory: List<InventoryItem>,
-        val equipment: Map<String, String>
+        val equipment: Map<String, String>,
+        val coins: Coins = Coins()
     ) : ServerMessage()
 
     @Serializable
@@ -159,6 +160,30 @@ sealed class ServerMessage {
     data class LootReceived(
         val npcName: String,
         val items: List<LootedItem>
+    ) : ServerMessage()
+
+    // Ground items
+    @Serializable
+    @SerialName("room_items_update")
+    data class RoomItemsUpdate(
+        val items: List<GroundItem>,
+        val coins: Coins
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("loot_dropped")
+    data class LootDropped(
+        val npcName: String,
+        val items: List<LootedItem>,
+        val coins: Coins
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("pickup_result")
+    data class PickupResult(
+        val itemName: String,
+        val quantity: Int,
+        val isCoin: Boolean = false
     ) : ServerMessage()
 
     @Serializable

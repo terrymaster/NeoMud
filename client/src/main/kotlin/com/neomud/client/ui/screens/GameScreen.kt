@@ -16,6 +16,7 @@ import com.neomud.client.ui.components.EntitySidebar
 import com.neomud.client.ui.components.GameLog
 import com.neomud.client.ui.components.InventoryPanel
 import com.neomud.client.ui.components.MiniMap
+import com.neomud.client.ui.components.RoomItemsSidebar
 import com.neomud.client.viewmodel.GameViewModel
 
 @Composable
@@ -33,6 +34,9 @@ fun GameScreen(
     val inventory by gameViewModel.inventory.collectAsState()
     val equipment by gameViewModel.equipment.collectAsState()
     val itemCatalog by gameViewModel.itemCatalog.collectAsState()
+    val playerCoins by gameViewModel.playerCoins.collectAsState()
+    val roomGroundItems by gameViewModel.roomGroundItems.collectAsState()
+    val roomGroundCoins by gameViewModel.roomGroundCoins.collectAsState()
 
     var sayText by remember { mutableStateOf("") }
 
@@ -41,12 +45,21 @@ fun GameScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Top: Mini Map + Entity Sidebar (~35%)
+            // Top: Room Items Sidebar + Mini Map + Entity Sidebar (~35%)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.35f)
             ) {
+                // Room items sidebar (left of map)
+                RoomItemsSidebar(
+                    groundItems = roomGroundItems,
+                    groundCoins = roomGroundCoins,
+                    itemCatalog = itemCatalog,
+                    onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
+                    onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) }
+                )
+
                 // Map
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                     val data = mapData
@@ -228,6 +241,7 @@ fun GameScreen(
                 inventory = inventory,
                 equipment = equipment,
                 itemCatalog = itemCatalog,
+                playerCoins = playerCoins,
                 onEquipItem = { itemId, slot -> gameViewModel.equipItem(itemId, slot) },
                 onUnequipItem = { slot -> gameViewModel.unequipItem(slot) },
                 onUseItem = { itemId -> gameViewModel.useItem(itemId) },

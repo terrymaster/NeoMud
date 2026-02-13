@@ -17,15 +17,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.neomud.shared.model.Coins
 import com.neomud.shared.model.EquipmentSlots
 import com.neomud.shared.model.InventoryItem
 import com.neomud.shared.model.Item
+
+private val CopperColor = Color(0xFFCD7F32)
+private val SilverColor = Color(0xFFC0C0C0)
+private val GoldColor = Color(0xFFFFD700)
+private val PlatinumColor = Color(0xFFE5E4E2)
 
 @Composable
 fun InventoryPanel(
     inventory: List<InventoryItem>,
     equipment: Map<String, String>,
     itemCatalog: Map<String, Item>,
+    playerCoins: Coins,
     onEquipItem: (String, String) -> Unit,
     onUnequipItem: (String) -> Unit,
     onUseItem: (String) -> Unit,
@@ -69,6 +76,37 @@ fun InventoryPanel(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
+
+            // Coins section
+            if (!playerCoins.isEmpty()) {
+                Text(
+                    "Coins",
+                    color = Color(0xFFFFFF55),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (playerCoins.platinum > 0) {
+                        CoinBadge("${playerCoins.platinum} PP", PlatinumColor)
+                    }
+                    if (playerCoins.gold > 0) {
+                        CoinBadge("${playerCoins.gold} GP", GoldColor)
+                    }
+                    if (playerCoins.silver > 0) {
+                        CoinBadge("${playerCoins.silver} SP", SilverColor)
+                    }
+                    if (playerCoins.copper > 0) {
+                        CoinBadge("${playerCoins.copper} CP", CopperColor)
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(color = Color(0xFF555555))
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // Equipment section
             Text(
@@ -173,4 +211,18 @@ fun InventoryPanel(
             }
         }
     }
+}
+
+@Composable
+private fun CoinBadge(text: String, color: Color) {
+    Text(
+        text = text,
+        fontSize = 12.sp,
+        color = color,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .background(Color(0xFF2A2A2A), RoundedCornerShape(4.dp))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    )
 }

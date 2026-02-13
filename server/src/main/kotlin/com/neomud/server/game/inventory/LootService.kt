@@ -1,13 +1,13 @@
 package com.neomud.server.game.inventory
 
-import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.world.ItemCatalog
+import com.neomud.shared.model.CoinDrop
+import com.neomud.shared.model.Coins
 import com.neomud.shared.model.LootEntry
 import com.neomud.shared.model.LootedItem
 import org.slf4j.LoggerFactory
 
 class LootService(
-    private val inventoryRepository: InventoryRepository,
     private val itemCatalog: ItemCatalog
 ) {
     private val logger = LoggerFactory.getLogger(LootService::class.java)
@@ -32,9 +32,19 @@ class LootService(
         return results
     }
 
-    fun awardLoot(playerName: String, items: List<LootedItem>) {
-        for (lootedItem in items) {
-            inventoryRepository.addItem(playerName, lootedItem.itemId, lootedItem.quantity)
-        }
+    fun rollCoins(coinDrop: CoinDrop?): Coins {
+        if (coinDrop == null) return Coins()
+        return Coins(
+            copper = rollRange(coinDrop.minCopper, coinDrop.maxCopper),
+            silver = rollRange(coinDrop.minSilver, coinDrop.maxSilver),
+            gold = rollRange(coinDrop.minGold, coinDrop.maxGold),
+            platinum = rollRange(coinDrop.minPlatinum, coinDrop.maxPlatinum)
+        )
+    }
+
+    private fun rollRange(min: Int, max: Int): Int {
+        if (max <= 0) return 0
+        if (min == max) return min
+        return (min..max).random()
     }
 }

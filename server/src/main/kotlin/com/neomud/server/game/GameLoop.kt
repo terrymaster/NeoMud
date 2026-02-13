@@ -3,12 +3,14 @@ package com.neomud.server.game
 import com.neomud.server.game.combat.CombatEvent
 import com.neomud.server.game.combat.CombatManager
 import com.neomud.server.game.inventory.LootService
+import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.LootTableCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.ActiveEffect
 import com.neomud.shared.model.EffectType
+import com.neomud.shared.model.GroundItem
 import com.neomud.shared.protocol.ServerMessage
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
@@ -19,7 +21,8 @@ class GameLoop(
     private val combatManager: CombatManager,
     private val worldGraph: WorldGraph,
     private val lootService: LootService,
-    private val lootTableCatalog: LootTableCatalog
+    private val lootTableCatalog: LootTableCatalog,
+    private val roomItemManager: RoomItemManager
 ) {
     private val logger = LoggerFactory.getLogger(GameLoop::class.java)
 
@@ -74,19 +77,35 @@ class GameLoop(
                         ServerMessage.NpcDied(event.npcId, event.npcName, event.killerName, event.roomId)
                     )
 
-                    // Roll and award loot to killer
+                    // Roll loot and drop on ground
                     val lootTable = lootTableCatalog.getLootTable(event.npcId)
-                    if (lootTable.isNotEmpty()) {
-                        val lootedItems = lootService.rollLoot(lootTable)
+                    val coinDrop = lootTableCatalog.getCoinDrop(event.npcId)
+                    val lootedItems = lootService.rollLoot(lootTable)
+                    val coins = lootService.rollCoins(coinDrop)
+
+                    if (lootedItems.isNotEmpty() || !coins.isEmpty()) {
+                        // Place on ground
                         if (lootedItems.isNotEmpty()) {
-                            lootService.awardLoot(event.killerName, lootedItems)
-                            val killerSession = sessionManager.getSession(event.killerName)
-                            if (killerSession != null) {
-                                try {
-                                    killerSession.send(ServerMessage.LootReceived(event.npcName, lootedItems))
-                                } catch (_: Exception) { }
-                            }
+                            roomItemManager.addItems(
+                                event.roomId,
+                                lootedItems.map { GroundItem(it.itemId, it.quantity) }
+                            )
                         }
+                        roomItemManager.addCoins(event.roomId, coins)
+
+                        // Broadcast loot dropped
+                        sessionManager.broadcastToRoom(
+                            event.roomId,
+                            ServerMessage.LootDropped(event.npcName, lootedItems, coins)
+                        )
+
+                        // Broadcast updated ground state
+                        val groundItems = roomItemManager.getGroundItems(event.roomId)
+                        val groundCoins = roomItemManager.getGroundCoins(event.roomId)
+                        sessionManager.broadcastToRoom(
+                            event.roomId,
+                            ServerMessage.RoomItemsUpdate(groundItems, groundCoins)
+                        )
                     }
 
                     // Auto-disable attack mode for players with no remaining targets
@@ -155,6 +174,11 @@ class GameLoop(
                                 )
                             }
                             session.send(ServerMessage.MapData(mapRooms, event.respawnRoomId))
+
+                            // Send ground items for respawn room
+                            val groundItems = roomItemManager.getGroundItems(event.respawnRoomId)
+                            val groundCoins = roomItemManager.getGroundCoins(event.respawnRoomId)
+                            session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
                         } catch (_: Exception) { }
                     }
                 }

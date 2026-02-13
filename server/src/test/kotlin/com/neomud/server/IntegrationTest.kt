@@ -90,6 +90,10 @@ class IntegrationTest {
             // Should receive InventoryUpdate
             val invUpdate = receiveServerMessage()
             assertIs<ServerMessage.InventoryUpdate>(invUpdate)
+
+            // Should receive RoomItemsUpdate (ground items for current room)
+            val roomItems = receiveServerMessage()
+            assertIs<ServerMessage.RoomItemsUpdate>(roomItems)
         }
     }
 
@@ -120,6 +124,7 @@ class IntegrationTest {
             receiveServerMessage() // RoomInfo
             receiveServerMessage() // MapData
             receiveServerMessage() // InventoryUpdate
+            receiveServerMessage() // RoomItemsUpdate
 
             // Move north to gate
             send(Frame.Text(MessageSerializer.encodeClientMessage(
@@ -134,6 +139,9 @@ class IntegrationTest {
             val mapData = receiveServerMessage()
             assertIs<ServerMessage.MapData>(mapData)
             assertEquals("town:gate", mapData.playerRoomId)
+
+            val roomItems = receiveServerMessage()
+            assertIs<ServerMessage.RoomItemsUpdate>(roomItems)
         }
     }
 
@@ -164,6 +172,7 @@ class IntegrationTest {
             receiveServerMessage() // RoomInfo
             receiveServerMessage() // MapData
             receiveServerMessage() // InventoryUpdate
+            receiveServerMessage() // RoomItemsUpdate
 
             // Town Square has no UP exit
             send(Frame.Text(MessageSerializer.encodeClientMessage(

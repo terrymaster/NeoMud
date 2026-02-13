@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
@@ -9,7 +10,8 @@ import com.neomud.shared.protocol.ServerMessage
 class LookCommand(
     private val worldGraph: WorldGraph,
     private val sessionManager: SessionManager,
-    private val npcManager: NpcManager
+    private val npcManager: NpcManager,
+    private val roomItemManager: RoomItemManager
 ) {
     suspend fun execute(session: PlayerSession) {
         val currentRoomId = session.currentRoomId ?: return
@@ -34,5 +36,10 @@ class LookCommand(
             )
         }
         session.send(ServerMessage.MapData(mapRooms, currentRoomId))
+
+        // Send ground items
+        val groundItems = roomItemManager.getGroundItems(currentRoomId)
+        val groundCoins = roomItemManager.getGroundCoins(currentRoomId)
+        session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
     }
 }

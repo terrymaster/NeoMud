@@ -2,6 +2,8 @@ package com.neomud.server.world
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class LootTableCatalogTest {
@@ -39,5 +41,33 @@ class LootTableCatalogTest {
         val catalog = LootTableCatalog.load()
         val loot = catalog.getLootTable("npc:nonexistent")
         assertTrue(loot.isEmpty())
+    }
+
+    @Test
+    fun testShadowWolfCoinDrop() {
+        val catalog = LootTableCatalog.load()
+        val coinDrop = catalog.getCoinDrop("npc:shadow_wolf")
+        assertNotNull(coinDrop)
+        assertEquals(5, coinDrop.minCopper)
+        assertEquals(20, coinDrop.maxCopper)
+        assertEquals(0, coinDrop.minSilver)
+        assertEquals(1, coinDrop.maxSilver)
+    }
+
+    @Test
+    fun testForestSpiderCoinDrop() {
+        val catalog = LootTableCatalog.load()
+        val coinDrop = catalog.getCoinDrop("npc:forest_spider")
+        assertNotNull(coinDrop)
+        assertEquals(2, coinDrop.minCopper)
+        assertEquals(10, coinDrop.maxCopper)
+        assertEquals(0, coinDrop.minGold)
+        assertEquals(0, coinDrop.maxGold)
+    }
+
+    @Test
+    fun testUnknownNpcCoinDropReturnsNull() {
+        val catalog = LootTableCatalog.load()
+        assertNull(catalog.getCoinDrop("npc:nonexistent"))
     }
 }

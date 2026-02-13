@@ -351,4 +351,67 @@ class MessageSerializerTest {
         val decoded = MessageSerializer.decodeServerMessage(json)
         assertEquals(original, decoded)
     }
+
+    @Test
+    fun testInventoryUpdateWithCoinsRoundTrip() {
+        val inventory = listOf(InventoryItem("item:iron_sword", 1, true, "weapon"))
+        val equipment = mapOf("weapon" to "item:iron_sword")
+        val coins = Coins(copper = 50, silver = 10, gold = 2, platinum = 0)
+        val original = ServerMessage.InventoryUpdate(inventory, equipment, coins)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testRoomItemsUpdateRoundTrip() {
+        val items = listOf(GroundItem("item:wolf_pelt", 2), GroundItem("item:health_potion", 1))
+        val coins = Coins(copper = 15, silver = 1)
+        val original = ServerMessage.RoomItemsUpdate(items, coins)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testLootDroppedRoundTrip() {
+        val items = listOf(LootedItem("item:wolf_pelt", "Wolf Pelt", 1))
+        val coins = Coins(copper = 12, silver = 1)
+        val original = ServerMessage.LootDropped("Shadow Wolf", items, coins)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPickupResultRoundTrip() {
+        val original = ServerMessage.PickupResult("Wolf Pelt", 1)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPickupResultCoinRoundTrip() {
+        val original = ServerMessage.PickupResult("copper", 15, isCoin = true)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPickupItemRoundTrip() {
+        val original = ClientMessage.PickupItem("item:wolf_pelt", 2)
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPickupCoinsRoundTrip() {
+        val original = ClientMessage.PickupCoins("gold")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
 }

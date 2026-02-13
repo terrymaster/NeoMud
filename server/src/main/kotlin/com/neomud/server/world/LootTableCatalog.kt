@@ -1,18 +1,27 @@
 package com.neomud.server.world
 
+import com.neomud.shared.model.CoinDrop
 import com.neomud.shared.model.LootEntry
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
 @Serializable
-data class LootTableData(val tables: Map<String, List<LootEntry>>)
+data class LootTableEntry(
+    val items: List<LootEntry> = emptyList(),
+    val coinDrop: CoinDrop? = null
+)
 
-class LootTableCatalog(private val tables: Map<String, List<LootEntry>>) {
+@Serializable
+data class LootTableData(val tables: Map<String, LootTableEntry>)
+
+class LootTableCatalog(private val tables: Map<String, LootTableEntry>) {
 
     val tableCount: Int get() = tables.size
 
-    fun getLootTable(npcId: String): List<LootEntry> = tables[npcId] ?: emptyList()
+    fun getLootTable(npcId: String): List<LootEntry> = tables[npcId]?.items ?: emptyList()
+
+    fun getCoinDrop(npcId: String): CoinDrop? = tables[npcId]?.coinDrop
 
     companion object {
         private val logger = LoggerFactory.getLogger(LootTableCatalog::class.java)

@@ -66,4 +66,13 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("use_item")
     data class UseItem(val itemId: String) : ClientMessage()
+
+    // Pickup
+    @Serializable
+    @SerialName("pickup_item")
+    data class PickupItem(val itemId: String, val quantity: Int = 1) : ClientMessage()
+
+    @Serializable
+    @SerialName("pickup_coins")
+    data class PickupCoins(val coinType: String) : ClientMessage()
 }

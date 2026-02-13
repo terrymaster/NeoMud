@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.world.ItemCatalog
@@ -7,13 +8,15 @@ import com.neomud.shared.protocol.ServerMessage
 
 class InventoryCommand(
     private val inventoryRepository: InventoryRepository,
-    private val itemCatalog: ItemCatalog
+    private val itemCatalog: ItemCatalog,
+    private val coinRepository: CoinRepository
 ) {
     suspend fun handleViewInventory(session: PlayerSession) {
         val playerName = session.playerName ?: return
         val inventory = inventoryRepository.getInventory(playerName)
         val equipment = inventoryRepository.getEquippedItems(playerName)
-        session.send(ServerMessage.InventoryUpdate(inventory, equipment))
+        val coins = coinRepository.getCoins(playerName)
+        session.send(ServerMessage.InventoryUpdate(inventory, equipment, coins))
     }
 
     suspend fun handleEquipItem(session: PlayerSession, itemId: String, slot: String) {
@@ -91,6 +94,7 @@ class InventoryCommand(
         val playerName = session.playerName ?: return
         val inventory = inventoryRepository.getInventory(playerName)
         val equipment = inventoryRepository.getEquippedItems(playerName)
-        session.send(ServerMessage.InventoryUpdate(inventory, equipment))
+        val coins = coinRepository.getCoins(playerName)
+        session.send(ServerMessage.InventoryUpdate(inventory, equipment, coins))
     }
 }

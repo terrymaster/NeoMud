@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
@@ -15,7 +16,8 @@ class MoveCommand(
     private val worldGraph: WorldGraph,
     private val sessionManager: SessionManager,
     private val npcManager: NpcManager,
-    private val playerRepository: PlayerRepository
+    private val playerRepository: PlayerRepository,
+    private val roomItemManager: RoomItemManager
 ) {
     suspend fun execute(session: PlayerSession, direction: Direction) {
         val currentRoomId = session.currentRoomId ?: return
@@ -79,6 +81,11 @@ class MoveCommand(
             )
         }
         session.send(ServerMessage.MapData(mapRooms, targetRoomId))
+
+        // Send ground items for new room
+        val groundItems = roomItemManager.getGroundItems(targetRoomId)
+        val groundCoins = roomItemManager.getGroundCoins(targetRoomId)
+        session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
 
         // Persist position async
         val player = session.player

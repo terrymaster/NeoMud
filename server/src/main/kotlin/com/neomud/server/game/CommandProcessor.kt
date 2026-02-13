@@ -4,7 +4,9 @@ import com.neomud.server.game.commands.AttackCommand
 import com.neomud.server.game.commands.InventoryCommand
 import com.neomud.server.game.commands.LookCommand
 import com.neomud.server.game.commands.MoveCommand
+import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.commands.SayCommand
+import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
@@ -23,11 +25,13 @@ class CommandProcessor(
     private val playerRepository: PlayerRepository,
     private val classCatalog: ClassCatalog,
     private val itemCatalog: ItemCatalog,
-    private val inventoryCommand: InventoryCommand
+    private val inventoryCommand: InventoryCommand,
+    private val pickupCommand: PickupCommand,
+    private val roomItemManager: RoomItemManager
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
-    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository)
-    private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager)
+    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager)
+    private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager)
     private val sayCommand = SayCommand(sessionManager)
     private val attackCommand = AttackCommand(npcManager)
 
@@ -69,6 +73,12 @@ class CommandProcessor(
             }
             is ClientMessage.UseItem -> {
                 requireAuth(session) { inventoryCommand.handleUseItem(session, message.itemId) }
+            }
+            is ClientMessage.PickupItem -> {
+                requireAuth(session) { pickupCommand.handlePickupItem(session, message.itemId, message.quantity) }
+            }
+            is ClientMessage.PickupCoins -> {
+                requireAuth(session) { pickupCommand.handlePickupCoins(session, message.coinType) }
             }
         }
     }
@@ -147,6 +157,11 @@ class CommandProcessor(
 
                 // Send initial inventory
                 inventoryCommand.sendInventoryUpdate(session)
+
+                // Send ground items for current room
+                val groundItems = roomItemManager.getGroundItems(player.currentRoomId)
+                val groundCoins = roomItemManager.getGroundCoins(player.currentRoomId)
+                session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
 
                 logger.info("Player logged in: ${player.name}")
             },
