@@ -14,6 +14,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.neomud.client.network.ConnectionState
 import com.neomud.client.viewmodel.AuthState
+import com.neomud.shared.NeoMudVersion
 
 @Composable
 fun LoginScreen(
@@ -42,6 +43,11 @@ fun LoginScreen(
             text = "NeoMud",
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = NeoMudVersion.VERSION,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
         )
 
         Spacer(modifier = Modifier.height(32.dp))

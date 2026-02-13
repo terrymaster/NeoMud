@@ -10,11 +10,16 @@ import com.neomud.server.plugins.configureWebSockets
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.WorldLoader
 import io.ktor.server.application.*
+import com.neomud.shared.NeoMudVersion
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("NeoMud")
 
 fun main() {
+    logger.info("Starting ${NeoMudVersion.DISPLAY}")
     embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         module()
     }.start(wait = true)
