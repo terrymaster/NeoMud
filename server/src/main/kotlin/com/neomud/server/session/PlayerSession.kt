@@ -12,6 +12,8 @@ class PlayerSession(
     var currentRoomId: RoomId? = null
     var player: Player? = null
     val activeEffects: MutableList<ActiveEffect> = mutableListOf()
+    var attackMode: Boolean = false
+    var selectedTargetId: String? = null
 
     val isAuthenticated: Boolean get() = player != null
 

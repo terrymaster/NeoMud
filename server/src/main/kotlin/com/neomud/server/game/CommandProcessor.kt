@@ -1,5 +1,6 @@
 package com.neomud.server.game
 
+import com.neomud.server.game.commands.AttackCommand
 import com.neomud.server.game.commands.LookCommand
 import com.neomud.server.game.commands.MoveCommand
 import com.neomud.server.game.commands.SayCommand
@@ -22,6 +23,7 @@ class CommandProcessor(
     private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository)
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager)
     private val sayCommand = SayCommand(sessionManager)
+    private val attackCommand = AttackCommand(npcManager)
 
     suspend fun process(session: PlayerSession, message: ClientMessage) {
         when (message) {
@@ -35,6 +37,12 @@ class CommandProcessor(
             }
             is ClientMessage.Say -> {
                 requireAuth(session) { sayCommand.execute(session, message.message) }
+            }
+            is ClientMessage.AttackToggle -> {
+                requireAuth(session) { attackCommand.handleToggle(session, message.enabled) }
+            }
+            is ClientMessage.SelectTarget -> {
+                requireAuth(session) { attackCommand.handleSelectTarget(session, message.npcId) }
             }
             is ClientMessage.Ping -> {
                 session.send(ServerMessage.Pong)

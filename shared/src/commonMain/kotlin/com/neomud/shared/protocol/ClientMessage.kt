@@ -42,4 +42,12 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("ping")
     data object Ping : ClientMessage()
+
+    @Serializable
+    @SerialName("attack_toggle")
+    data class AttackToggle(val enabled: Boolean) : ClientMessage()
+
+    @Serializable
+    @SerialName("select_target")
+    data class SelectTarget(val npcId: String?) : ClientMessage()
 }

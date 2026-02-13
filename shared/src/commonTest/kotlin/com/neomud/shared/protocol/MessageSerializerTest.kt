@@ -141,6 +141,96 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testAttackToggleRoundTrip() {
+        val original = ClientMessage.AttackToggle(true)
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testSelectTargetRoundTrip() {
+        val original = ClientMessage.SelectTarget("npc:shadow_wolf")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testSelectTargetNullRoundTrip() {
+        val original = ClientMessage.SelectTarget(null)
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testCombatHitRoundTrip() {
+        val original = ServerMessage.CombatHit("Hero", "Shadow Wolf", 12, 38, 50, isPlayerDefender = false)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testCombatHitPlayerDefenderRoundTrip() {
+        val original = ServerMessage.CombatHit("Shadow Wolf", "Hero", 8, 92, 100, isPlayerDefender = true)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testNpcDiedRoundTrip() {
+        val original = ServerMessage.NpcDied("npc:shadow_wolf", "Shadow Wolf", "Hero", "forest:path")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPlayerDiedRoundTrip() {
+        val original = ServerMessage.PlayerDied("Shadow Wolf", "town:square", 100)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testAttackModeUpdateRoundTrip() {
+        val original = ServerMessage.AttackModeUpdate(true)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testNpcEnteredWithCombatFieldsRoundTrip() {
+        val original = ServerMessage.NpcEntered("Shadow Wolf", "forest:path", "npc:shadow_wolf", true, 45, 50)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testNpcLeftWithIdRoundTrip() {
+        val original = ServerMessage.NpcLeft("Shadow Wolf", "forest:path", Direction.NORTH, "npc:shadow_wolf")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testNpcWithHpRoundTrip() {
+        val npc = Npc("npc:wolf", "Wolf", "A grey wolf.", "forest:path", "wander", hostile = true, currentHp = 30, maxHp = 50)
+        val room = Room("forest:path", "Forest Path", "A winding path.", mapOf(Direction.NORTH to "forest:deep"), "forest", 0, 3)
+        val original = ServerMessage.RoomInfo(room, emptyList(), listOf(npc))
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
     fun testDirectionOpposite() {
         assertEquals(Direction.SOUTH, Direction.NORTH.opposite())
         assertEquals(Direction.NORTH, Direction.SOUTH.opposite())

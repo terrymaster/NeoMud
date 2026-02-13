@@ -60,15 +60,60 @@ sealed class ServerMessage {
 
     @Serializable
     @SerialName("npc_entered")
-    data class NpcEntered(val npcName: String, val roomId: RoomId) : ServerMessage()
+    data class NpcEntered(
+        val npcName: String,
+        val roomId: RoomId,
+        val npcId: String = "",
+        val hostile: Boolean = false,
+        val currentHp: Int = 0,
+        val maxHp: Int = 0
+    ) : ServerMessage()
 
     @Serializable
     @SerialName("npc_left")
-    data class NpcLeft(val npcName: String, val roomId: RoomId, val direction: Direction) : ServerMessage()
+    data class NpcLeft(
+        val npcName: String,
+        val roomId: RoomId,
+        val direction: Direction,
+        val npcId: String = ""
+    ) : ServerMessage()
 
     @Serializable
     @SerialName("player_says")
     data class PlayerSays(val playerName: String, val message: String) : ServerMessage()
+
+    // Combat
+    @Serializable
+    @SerialName("combat_hit")
+    data class CombatHit(
+        val attackerName: String,
+        val defenderName: String,
+        val damage: Int,
+        val defenderHp: Int,
+        val defenderMaxHp: Int,
+        val isPlayerDefender: Boolean = false
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("npc_died")
+    data class NpcDied(
+        val npcId: String,
+        val npcName: String,
+        val killerName: String,
+        val roomId: RoomId
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("player_died")
+    data class PlayerDied(
+        val killerName: String,
+        val respawnRoomId: RoomId,
+        val respawnHp: Int
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("attack_mode_update")
+    data class AttackModeUpdate(val enabled: Boolean) : ServerMessage()
 
     // Effects
     @Serializable

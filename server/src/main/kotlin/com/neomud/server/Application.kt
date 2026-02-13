@@ -2,6 +2,7 @@ package com.neomud.server
 
 import com.neomud.server.game.CommandProcessor
 import com.neomud.server.game.GameLoop
+import com.neomud.server.game.combat.CombatManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.DatabaseFactory
 import com.neomud.server.persistence.repository.PlayerRepository
@@ -25,9 +26,9 @@ fun main() {
     }.start(wait = true)
 }
 
-fun Application.module() {
+fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     // Initialize database
-    DatabaseFactory.init()
+    DatabaseFactory.init(jdbcUrl)
 
     // Load world
     val loadResult = WorldLoader.load()
@@ -38,8 +39,9 @@ fun Application.module() {
     // Create dependencies
     val sessionManager = SessionManager()
     val playerRepository = PlayerRepository()
+    val combatManager = CombatManager(npcManager, sessionManager, worldGraph)
     val commandProcessor = CommandProcessor(worldGraph, sessionManager, npcManager, playerRepository)
-    val gameLoop = GameLoop(sessionManager, npcManager)
+    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph)
 
     // Install plugins
     configureWebSockets()

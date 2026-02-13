@@ -51,6 +51,13 @@ class MoveCommand(
         session.currentRoomId = targetRoomId
         session.player = session.player?.copy(currentRoomId = targetRoomId)
 
+        // Cancel attack mode on move
+        if (session.attackMode) {
+            session.attackMode = false
+            session.selectedTargetId = null
+            session.send(ServerMessage.AttackModeUpdate(false))
+        }
+
         // Broadcast enter to new room
         sessionManager.broadcastToRoom(
             targetRoomId,

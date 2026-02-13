@@ -29,7 +29,11 @@ data class NpcEvent(
     val npcName: String,
     val fromRoomId: RoomId?,
     val toRoomId: RoomId?,
-    val direction: Direction?
+    val direction: Direction?,
+    val npcId: String = "",
+    val hostile: Boolean = false,
+    val currentHp: Int = 0,
+    val maxHp: Int = 0
 )
 
 class NpcManager(private val worldGraph: WorldGraph) {
@@ -65,6 +69,8 @@ class NpcManager(private val worldGraph: WorldGraph) {
         val events = mutableListOf<NpcEvent>()
 
         for (npc in npcs) {
+            if (npc.currentHp <= 0) continue // skip dead NPCs
+
             when (val action = npc.behavior.tick(npc, worldGraph)) {
                 is NpcAction.MoveTo -> {
                     val oldRoom = npc.currentRoomId
@@ -81,7 +87,11 @@ class NpcManager(private val worldGraph: WorldGraph) {
                             npcName = npc.name,
                             fromRoomId = oldRoom,
                             toRoomId = newRoom,
-                            direction = direction
+                            direction = direction,
+                            npcId = npc.id,
+                            hostile = npc.hostile,
+                            currentHp = npc.currentHp,
+                            maxHp = npc.maxHp
                         )
                     )
                 }
@@ -93,14 +103,26 @@ class NpcManager(private val worldGraph: WorldGraph) {
     }
 
     fun getNpcsInRoom(roomId: RoomId): List<Npc> =
-        npcs.filter { it.currentRoomId == roomId }.map { npcState ->
+        npcs.filter { it.currentRoomId == roomId && it.currentHp > 0 }.map { npcState ->
             Npc(
                 id = npcState.id,
                 name = npcState.name,
                 description = npcState.description,
                 currentRoomId = npcState.currentRoomId,
                 behaviorType = "unknown",
-                hostile = npcState.hostile
+                hostile = npcState.hostile,
+                currentHp = npcState.currentHp,
+                maxHp = npcState.maxHp
             )
         }
+
+    fun getLivingHostileNpcsInRoom(roomId: RoomId): List<NpcState> =
+        npcs.filter { it.currentRoomId == roomId && it.hostile && it.currentHp > 0 }
+
+    fun getNpcState(npcId: String): NpcState? =
+        npcs.find { it.id == npcId && it.currentHp > 0 }
+
+    fun markDead(npcId: String) {
+        npcs.find { it.id == npcId }?.let { it.currentHp = 0 }
+    }
 }

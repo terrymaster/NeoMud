@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory
 private val logger = LoggerFactory.getLogger("DatabaseFactory")
 
 object DatabaseFactory {
-    fun init() {
+    fun init(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
         val database = Database.connect(
-            url = "jdbc:sqlite:neomud.db",
+            url = jdbcUrl,
             driver = "org.sqlite.JDBC"
         )
 

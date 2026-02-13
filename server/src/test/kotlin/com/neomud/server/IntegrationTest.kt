@@ -11,6 +11,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import io.ktor.websocket.*
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -18,9 +19,16 @@ import kotlin.test.assertTrue
 
 class IntegrationTest {
 
+    private fun testDbUrl(): String {
+        val tmpFile = File.createTempFile("neomud_test_", ".db")
+        tmpFile.deleteOnExit()
+        tmpFile.delete() // SQLite will create it
+        return "jdbc:sqlite:${tmpFile.absolutePath}"
+    }
+
     @Test
     fun testHealthEndpoint() = testApplication {
-        application { module() }
+        application { module(jdbcUrl = testDbUrl()) }
 
         val response = client.get("/health")
         assertEquals(HttpStatusCode.OK, response.status)
@@ -29,7 +37,7 @@ class IntegrationTest {
 
     @Test
     fun testRegisterAndLogin() = testApplication {
-        application { module() }
+        application { module(jdbcUrl = testDbUrl()) }
 
         val wsClient = createClient {
             install(WebSockets)
@@ -72,7 +80,7 @@ class IntegrationTest {
 
     @Test
     fun testMoveCommand() = testApplication {
-        application { module() }
+        application { module(jdbcUrl = testDbUrl()) }
 
         val wsClient = createClient {
             install(WebSockets)
@@ -113,7 +121,7 @@ class IntegrationTest {
 
     @Test
     fun testInvalidMove() = testApplication {
-        application { module() }
+        application { module(jdbcUrl = testDbUrl()) }
 
         val wsClient = createClient {
             install(WebSockets)
@@ -148,7 +156,7 @@ class IntegrationTest {
 
     @Test
     fun testUnauthenticatedAccess() = testApplication {
-        application { module() }
+        application { module(jdbcUrl = testDbUrl()) }
 
         val wsClient = createClient {
             install(WebSockets)
