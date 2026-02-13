@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,7 +33,7 @@ fun EntitySidebar(
 ) {
     LazyColumn(
         modifier = modifier
-            .width(56.dp)
+            .width(44.dp)
             .fillMaxHeight()
             .background(Color(0xFF1A1A2E)),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -46,7 +45,7 @@ fun EntitySidebar(
 
             Column(
                 modifier = Modifier
-                    .padding(vertical = 4.dp)
+                    .padding(vertical = 3.dp)
                     .then(
                         if (isSelected) Modifier.background(SelectedBg, CircleShape)
                         else Modifier
@@ -61,10 +60,10 @@ fun EntitySidebar(
                 // NPC icon
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(32.dp)
                         .clip(CircleShape)
                         .border(
-                            width = if (isSelected) 3.dp else 2.dp,
+                            width = if (isSelected) 2.dp else 1.5.dp,
                             color = borderColor,
                             shape = CircleShape
                         )
@@ -73,7 +72,7 @@ fun EntitySidebar(
                 ) {
                     Text(
                         text = if (npc.hostile) "\u2694" else "\u263A",
-                        fontSize = 18.sp,
+                        fontSize = 14.sp,
                         color = borderColor
                     )
                 }
@@ -89,9 +88,9 @@ fun EntitySidebar(
                     LinearProgressIndicator(
                         progress = { hpFraction },
                         modifier = Modifier
-                            .width(36.dp)
-                            .height(4.dp)
-                            .padding(top = 2.dp),
+                            .width(28.dp)
+                            .height(3.dp)
+                            .padding(top = 1.dp),
                         color = hpColor,
                         trackColor = Color(0xFF333333),
                     )
@@ -100,12 +99,12 @@ fun EntitySidebar(
                 // NPC name (truncated)
                 Text(
                     text = npc.name,
-                    fontSize = 8.sp,
+                    fontSize = 7.sp,
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.width(52.dp)
+                    modifier = Modifier.width(42.dp)
                 )
             }
         }
