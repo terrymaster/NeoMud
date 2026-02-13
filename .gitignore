@@ -25,6 +25,7 @@ Thumbs.db
 
 # Kotlin
 *.class
+.kotlin/
 
 # Claude
 .claude/
