@@ -1,0 +1,121 @@
+package com.neomud.client.ui.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import com.neomud.client.network.ConnectionState
+import com.neomud.client.viewmodel.AuthState
+
+@Composable
+fun LoginScreen(
+    connectionState: ConnectionState,
+    authState: AuthState,
+    onConnect: (String, Int) -> Unit,
+    onLogin: (String, String) -> Unit,
+    onNavigateToRegister: () -> Unit,
+    onClearError: () -> Unit
+) {
+    var host by remember { mutableStateOf("10.0.2.2") }
+    var port by remember { mutableStateOf("8080") }
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "NeoMud",
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        if (connectionState == ConnectionState.DISCONNECTED) {
+            OutlinedTextField(
+                value = host,
+                onValueChange = { host = it },
+                label = { Text("Server Host") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = port,
+                onValueChange = { port = it },
+                label = { Text("Port") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { onConnect(host, port.toIntOrNull() ?: 8080) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Connect")
+            }
+        } else if (connectionState == ConnectionState.CONNECTING) {
+            CircularProgressIndicator()
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Connecting...")
+        } else {
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { onLogin(username, password) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = authState !is AuthState.Loading && username.isNotBlank() && password.isNotBlank()
+            ) {
+                if (authState is AuthState.Loading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                } else {
+                    Text("Login")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(onClick = onNavigateToRegister) {
+                Text("Create Account")
+            }
+        }
+
+        if (authState is AuthState.Error) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = authState.message,
+                color = MaterialTheme.colorScheme.error
+            )
+            TextButton(onClick = onClearError) {
+                Text("Dismiss")
+            }
+        }
+    }
+}

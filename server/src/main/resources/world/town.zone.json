@@ -1,0 +1,78 @@
+{
+  "id": "town",
+  "name": "Millhaven",
+  "description": "A bustling frontier town at the edge of the Whispering Forest.",
+  "rooms": [
+    {
+      "id": "town:square",
+      "name": "Town Square",
+      "description": "The heart of Millhaven. A weathered stone fountain stands in the center, surrounded by cobblestones worn smooth by countless boots. Merchants hawk their wares from colorful stalls, and the smell of fresh bread drifts from somewhere nearby. Roads lead in every direction.",
+      "x": 0,
+      "y": 0,
+      "exits": {
+        "NORTH": "town:gate",
+        "SOUTH": "town:temple",
+        "EAST": "town:market",
+        "WEST": "town:tavern"
+      }
+    },
+    {
+      "id": "town:tavern",
+      "name": "The Rusty Tankard",
+      "description": "A dim, smoky tavern with low wooden beams and a roaring fireplace. Scarred tables are scattered about, and the bar is stained with years of spilled ale. A grizzled barkeep polishes mugs behind the counter, eyeing newcomers with practiced suspicion.",
+      "x": -1,
+      "y": 0,
+      "exits": {
+        "EAST": "town:square"
+      }
+    },
+    {
+      "id": "town:market",
+      "name": "Market Street",
+      "description": "A narrow street lined with merchant stalls and shop fronts. Colorful awnings shade displays of weapons, armor, potions, and exotic trinkets. Haggling voices fill the air, competing with the clang of a blacksmith's hammer from a nearby forge.",
+      "x": 1,
+      "y": 0,
+      "exits": {
+        "WEST": "town:square"
+      }
+    },
+    {
+      "id": "town:gate",
+      "name": "North Gate",
+      "description": "The fortified northern gate of Millhaven. Thick oak doors reinforced with iron bands stand open during the day, flanked by stone watchtowers. Beyond the gate, a dirt road winds into the dark treeline of the Whispering Forest.",
+      "x": 0,
+      "y": 1,
+      "exits": {
+        "SOUTH": "town:square",
+        "NORTH": "forest:edge"
+      }
+    },
+    {
+      "id": "town:temple",
+      "name": "Temple of the Dawn",
+      "description": "A serene stone temple with stained glass windows that cast rainbow light across the marble floor. An altar draped in white cloth stands at the far end, and the air carries the faint scent of incense. Soft chanting echoes from somewhere within.",
+      "x": 0,
+      "y": -1,
+      "exits": {
+        "NORTH": "town:square"
+      }
+    }
+  ],
+  "npcs": [
+    {
+      "id": "npc:town_guard",
+      "name": "Town Guard",
+      "description": "A stern-looking guard in chainmail, hand resting on the pommel of a well-worn sword. He watches the comings and goings with vigilant eyes.",
+      "startRoomId": "town:gate",
+      "behaviorType": "patrol",
+      "patrolRoute": ["town:gate", "town:square", "town:market", "town:square", "town:gate"]
+    },
+    {
+      "id": "npc:barkeep",
+      "name": "Barkeep Grom",
+      "description": "A barrel-chested dwarf with a magnificent braided beard and arms like tree trunks. He moves behind the bar with surprising grace, simultaneously serving three customers and keeping an eye on the rowdy corner table.",
+      "startRoomId": "town:tavern",
+      "behaviorType": "idle"
+    }
+  ]
+}

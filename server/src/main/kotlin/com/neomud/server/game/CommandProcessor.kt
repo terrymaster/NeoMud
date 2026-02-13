@@ -1,0 +1,131 @@
+package com.neomud.server.game
+
+import com.neomud.server.game.commands.LookCommand
+import com.neomud.server.game.commands.MoveCommand
+import com.neomud.server.game.commands.SayCommand
+import com.neomud.server.game.npc.NpcManager
+import com.neomud.server.persistence.repository.PlayerRepository
+import com.neomud.server.session.PlayerSession
+import com.neomud.server.session.SessionManager
+import com.neomud.server.world.WorldGraph
+import com.neomud.shared.protocol.ClientMessage
+import com.neomud.shared.protocol.ServerMessage
+import org.slf4j.LoggerFactory
+
+class CommandProcessor(
+    private val worldGraph: WorldGraph,
+    private val sessionManager: SessionManager,
+    private val npcManager: NpcManager,
+    private val playerRepository: PlayerRepository
+) {
+    private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
+    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository)
+    private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager)
+    private val sayCommand = SayCommand(sessionManager)
+
+    suspend fun process(session: PlayerSession, message: ClientMessage) {
+        when (message) {
+            is ClientMessage.Register -> handleRegister(session, message)
+            is ClientMessage.Login -> handleLogin(session, message)
+            is ClientMessage.Move -> {
+                requireAuth(session) { moveCommand.execute(session, message.direction) }
+            }
+            is ClientMessage.Look -> {
+                requireAuth(session) { lookCommand.execute(session) }
+            }
+            is ClientMessage.Say -> {
+                requireAuth(session) { sayCommand.execute(session, message.message) }
+            }
+            is ClientMessage.Ping -> {
+                session.send(ServerMessage.Pong)
+            }
+        }
+    }
+
+    private suspend fun handleRegister(session: PlayerSession, msg: ClientMessage.Register) {
+        if (session.isAuthenticated) {
+            session.send(ServerMessage.AuthError("Already logged in"))
+            return
+        }
+
+        val result = playerRepository.createPlayer(
+            username = msg.username,
+            password = msg.password,
+            characterName = msg.characterName,
+            characterClass = msg.characterClass,
+            spawnRoomId = worldGraph.defaultSpawnRoom
+        )
+
+        result.fold(
+            onSuccess = {
+                session.send(ServerMessage.RegisterOk)
+                logger.info("Player registered: ${msg.characterName}")
+            },
+            onFailure = {
+                session.send(ServerMessage.AuthError(it.message ?: "Registration failed"))
+            }
+        )
+    }
+
+    private suspend fun handleLogin(session: PlayerSession, msg: ClientMessage.Login) {
+        if (session.isAuthenticated) {
+            session.send(ServerMessage.AuthError("Already logged in"))
+            return
+        }
+
+        if (sessionManager.isLoggedIn(msg.username)) {
+            session.send(ServerMessage.AuthError("Account already logged in"))
+            return
+        }
+
+        val result = playerRepository.authenticate(msg.username, msg.password)
+
+        result.fold(
+            onSuccess = { player ->
+                session.player = player
+                session.playerName = player.name
+                session.currentRoomId = player.currentRoomId
+                sessionManager.addSession(player.name, session)
+
+                session.send(ServerMessage.LoginOk(player))
+
+                // Send initial room info
+                val room = worldGraph.getRoom(player.currentRoomId)
+                if (room != null) {
+                    val playersInRoom = sessionManager.getPlayerNamesInRoom(player.currentRoomId)
+                        .filter { it != player.name }
+                    val npcsInRoom = npcManager.getNpcsInRoom(player.currentRoomId)
+                    session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
+
+                    val mapRooms = worldGraph.getRoomsNear(player.currentRoomId).map { mapRoom ->
+                        mapRoom.copy(
+                            hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
+                            hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
+                        )
+                    }
+                    session.send(ServerMessage.MapData(mapRooms, player.currentRoomId))
+
+                    // Broadcast to others in room
+                    sessionManager.broadcastToRoom(
+                        player.currentRoomId,
+                        ServerMessage.PlayerEntered(player.name, player.currentRoomId),
+                        exclude = player.name
+                    )
+                }
+
+                logger.info("Player logged in: ${player.name}")
+            },
+            onFailure = {
+                session.send(ServerMessage.AuthError(it.message ?: "Login failed"))
+            }
+        )
+    }
+
+    private suspend inline fun requireAuth(session: PlayerSession, block: () -> Unit) {
+        if (!session.isAuthenticated) {
+            session.send(ServerMessage.Error("You must log in first"))
+            return
+        }
+        block()
+    }
+}

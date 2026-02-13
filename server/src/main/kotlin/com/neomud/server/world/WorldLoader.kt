@@ -1,0 +1,56 @@
+package com.neomud.server.world
+
+import com.neomud.shared.model.Npc
+import com.neomud.shared.model.Room
+import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("WorldLoader")
+
+object WorldLoader {
+    private val json = Json { ignoreUnknownKeys = true }
+
+    data class LoadResult(
+        val worldGraph: WorldGraph,
+        val npcDataList: List<NpcData>
+    )
+
+    fun load(): LoadResult {
+        val worldGraph = WorldGraph()
+        val allNpcData = mutableListOf<NpcData>()
+        val zoneFiles = listOf("world/town.zone.json", "world/forest.zone.json")
+
+        for (file in zoneFiles) {
+            val resource = WorldLoader::class.java.classLoader.getResourceAsStream(file)
+            if (resource == null) {
+                logger.warn("Zone file not found: $file")
+                continue
+            }
+
+            val content = resource.bufferedReader().use { it.readText() }
+            val zone = json.decodeFromString<ZoneData>(content)
+
+            logger.info("Loading zone: ${zone.name} (${zone.rooms.size} rooms, ${zone.npcs.size} NPCs)")
+
+            for (roomData in zone.rooms) {
+                val room = Room(
+                    id = roomData.id,
+                    name = roomData.name,
+                    description = roomData.description,
+                    exits = roomData.exits,
+                    zoneId = zone.id,
+                    x = roomData.x,
+                    y = roomData.y
+                )
+                worldGraph.addRoom(room)
+            }
+
+            allNpcData.addAll(zone.npcs)
+        }
+
+        worldGraph.setDefaultSpawn("town:square")
+        logger.info("World loaded: ${worldGraph.roomCount} rooms, ${allNpcData.size} NPCs")
+
+        return LoadResult(worldGraph, allNpcData)
+    }
+}

@@ -1,0 +1,62 @@
+{
+  "id": "forest",
+  "name": "Whispering Forest",
+  "description": "An ancient forest where the trees seem to murmur secrets to one another.",
+  "rooms": [
+    {
+      "id": "forest:edge",
+      "name": "Forest Edge",
+      "description": "The treeline begins here, ancient oaks towering overhead and blotting out much of the sky. Shafts of sunlight pierce the canopy, illuminating patches of moss and wildflowers. The town walls are visible to the south, a reassuring sight as the forest grows denser to the north.",
+      "x": 0,
+      "y": 2,
+      "exits": {
+        "SOUTH": "town:gate",
+        "NORTH": "forest:path"
+      }
+    },
+    {
+      "id": "forest:path",
+      "name": "Winding Forest Path",
+      "description": "A narrow dirt path winds between massive tree trunks, their bark covered in luminescent moss. Strange birdcalls echo from the canopy above, and the undergrowth rustles with unseen creatures. The path splits ahead, continuing north into deeper woods or branching east toward a break in the trees.",
+      "x": 0,
+      "y": 3,
+      "exits": {
+        "SOUTH": "forest:edge",
+        "EAST": "forest:clearing",
+        "NORTH": "forest:deep"
+      }
+    },
+    {
+      "id": "forest:clearing",
+      "name": "Sunlit Clearing",
+      "description": "A peaceful clearing where sunlight streams down unimpeded. Wildflowers carpet the ground in a riot of color, and butterflies dance lazily in the warm air. A fallen log provides a natural resting spot, its surface covered in shelf mushrooms.",
+      "x": 1,
+      "y": 3,
+      "exits": {
+        "WEST": "forest:path"
+      }
+    },
+    {
+      "id": "forest:deep",
+      "name": "Deep Forest",
+      "description": "The forest grows thick and primeval here. Gnarled roots break through the earth like the fingers of buried giants, and the canopy is so dense that only a dim green twilight reaches the forest floor. The air is cool and damp, heavy with the scent of earth and decay.",
+      "x": 0,
+      "y": 4,
+      "exits": {
+        "SOUTH": "forest:path",
+        "EAST": "forest:stream"
+      }
+    },
+    {
+      "id": "forest:stream",
+      "name": "Forest Stream",
+      "description": "A crystal-clear stream burbles over smooth stones, cutting a gentle path through the forest floor. Ferns and water plants line the banks, and small silver fish dart in the shallows. The sound of running water is calming after the oppressive silence of the deep woods.",
+      "x": 1,
+      "y": 4,
+      "exits": {
+        "WEST": "forest:deep"
+      }
+    }
+  ],
+  "npcs": []
+}

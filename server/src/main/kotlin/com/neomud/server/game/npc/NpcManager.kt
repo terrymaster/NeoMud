@@ -1,0 +1,91 @@
+package com.neomud.server.game.npc
+
+import com.neomud.server.game.npc.behavior.BehaviorNode
+import com.neomud.server.game.npc.behavior.IdleBehavior
+import com.neomud.server.game.npc.behavior.NpcAction
+import com.neomud.server.game.npc.behavior.PatrolBehavior
+import com.neomud.server.world.NpcData
+import com.neomud.server.world.WorldGraph
+import com.neomud.shared.model.Direction
+import com.neomud.shared.model.Npc
+import com.neomud.shared.model.RoomId
+
+data class NpcState(
+    val id: String,
+    val name: String,
+    val description: String,
+    var currentRoomId: RoomId,
+    val behavior: BehaviorNode
+)
+
+data class NpcEvent(
+    val npcName: String,
+    val fromRoomId: RoomId?,
+    val toRoomId: RoomId?,
+    val direction: Direction?
+)
+
+class NpcManager(private val worldGraph: WorldGraph) {
+    private val npcs = mutableListOf<NpcState>()
+
+    fun loadNpcs(npcDataList: List<NpcData>) {
+        for (data in npcDataList) {
+            val behavior: BehaviorNode = when (data.behaviorType) {
+                "patrol" -> PatrolBehavior(data.patrolRoute)
+                else -> IdleBehavior()
+            }
+
+            npcs.add(
+                NpcState(
+                    id = data.id,
+                    name = data.name,
+                    description = data.description,
+                    currentRoomId = data.startRoomId,
+                    behavior = behavior
+                )
+            )
+        }
+    }
+
+    fun tick(): List<NpcEvent> {
+        val events = mutableListOf<NpcEvent>()
+
+        for (npc in npcs) {
+            when (val action = npc.behavior.tick(npc, worldGraph)) {
+                is NpcAction.MoveTo -> {
+                    val oldRoom = npc.currentRoomId
+                    val newRoom = action.targetRoomId
+
+                    // Find the direction of movement
+                    val room = worldGraph.getRoom(oldRoom)
+                    val direction = room?.exits?.entries?.find { it.value == newRoom }?.key
+
+                    npc.currentRoomId = newRoom
+
+                    events.add(
+                        NpcEvent(
+                            npcName = npc.name,
+                            fromRoomId = oldRoom,
+                            toRoomId = newRoom,
+                            direction = direction
+                        )
+                    )
+                }
+                is NpcAction.None -> { /* do nothing */ }
+            }
+        }
+
+        return events
+    }
+
+    fun getNpcsInRoom(roomId: RoomId): List<Npc> =
+        npcs.filter { it.currentRoomId == roomId }.map { npcState ->
+            Npc(
+                id = npcState.id,
+                name = npcState.name,
+                description = npcState.description,
+                currentRoomId = npcState.currentRoomId,
+                behaviorType = "unknown"
+            )
+        }
+}
