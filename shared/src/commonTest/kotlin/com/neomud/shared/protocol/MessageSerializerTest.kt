@@ -248,6 +248,61 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testStatsMaxManaPoints() {
+        val stats = Stats(strength = 16, dexterity = 12, constitution = 14, intelligence = 8, wisdom = 10)
+        // 20 + (8 * 4) + (10 * 2) = 20 + 32 + 20 = 72
+        assertEquals(72, stats.maxManaPoints)
+    }
+
+    @Test
+    fun testActiveEffectsUpdateRoundTrip() {
+        val effects = listOf(
+            ActiveEffect("Poison", EffectType.POISON, 3, 5),
+            ActiveEffect("Regeneration", EffectType.HEAL_OVER_TIME, 5, 3)
+        )
+        val original = ServerMessage.ActiveEffectsUpdate(effects)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testActiveEffectsUpdateEmptyRoundTrip() {
+        val original = ServerMessage.ActiveEffectsUpdate(emptyList())
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPlayerDiedWithRespawnMpRoundTrip() {
+        val original = ServerMessage.PlayerDied("Shadow Wolf", "town:square", 100, 72)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPlayerWithMpFieldsRoundTrip() {
+        val stats = Stats(strength = 16, dexterity = 12, constitution = 14, intelligence = 8, wisdom = 10)
+        val player = Player(
+            name = "TestHero",
+            characterClass = "FIGHTER",
+            stats = stats,
+            currentHp = 100,
+            maxHp = 152,
+            currentMp = 50,
+            maxMp = 72,
+            level = 1,
+            currentRoomId = "town:square"
+        )
+        val original = ServerMessage.LoginOk(player)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
     fun testClassCatalogSyncRoundTrip() {
         val classes = listOf(
             CharacterClassDef("FIGHTER", "Fighter", "A master of martial combat", Stats(16, 12, 14, 10, 10)),

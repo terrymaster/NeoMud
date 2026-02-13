@@ -31,7 +31,8 @@ sealed class CombatEvent {
         val playerSession: PlayerSession,
         val killerName: String,
         val respawnRoomId: RoomId,
-        val respawnHp: Int
+        val respawnHp: Int,
+        val respawnMp: Int
     ) : CombatEvent()
 }
 
@@ -128,7 +129,8 @@ class CombatManager(
                         playerSession = targetSession,
                         killerName = npc.name,
                         respawnRoomId = worldGraph.defaultSpawnRoom,
-                        respawnHp = targetPlayer.maxHp
+                        respawnHp = targetPlayer.maxHp,
+                        respawnMp = targetPlayer.maxMp
                     ))
                     logger.info("${npc.name} killed ${targetPlayer.name} in $roomId")
                 }

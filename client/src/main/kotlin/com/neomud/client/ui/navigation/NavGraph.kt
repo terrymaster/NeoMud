@@ -59,14 +59,11 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
         }
 
         composable("game") {
+            val initialPlayer = (authState as? AuthState.LoggedIn)?.player
             val gameViewModel = remember {
-                GameViewModel(authViewModel.wsClient).also { it.startCollecting() }
-            }
-            // Set player from auth state
-            LaunchedEffect(authState) {
-                val state = authState
-                if (state is AuthState.LoggedIn) {
-                    // Player data is already flowing via messages
+                GameViewModel(authViewModel.wsClient).also {
+                    if (initialPlayer != null) it.setInitialPlayer(initialPlayer)
+                    it.startCollecting()
                 }
             }
             GameScreen(gameViewModel = gameViewModel)

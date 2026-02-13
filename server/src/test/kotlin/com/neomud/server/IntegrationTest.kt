@@ -75,6 +75,8 @@ class IntegrationTest {
             assertEquals("TestHero", loginResponse.player.name)
             assertEquals("FIGHTER", loginResponse.player.characterClass)
             assertEquals("town:square", loginResponse.player.currentRoomId)
+            assertTrue(loginResponse.player.maxMp > 0, "maxMp should be > 0")
+            assertEquals(loginResponse.player.maxMp, loginResponse.player.currentMp, "New character should have full MP")
 
             // Should receive RoomInfo
             val roomInfo = receiveServerMessage()

@@ -131,7 +131,7 @@ class GameLoop(
 
                     // Send death message to player
                     try {
-                        session.send(ServerMessage.PlayerDied(event.killerName, event.respawnRoomId, event.respawnHp))
+                        session.send(ServerMessage.PlayerDied(event.killerName, event.respawnRoomId, event.respawnHp, event.respawnMp))
                     } catch (_: Exception) { }
 
                     // Disable attack mode
@@ -149,8 +149,10 @@ class GameLoop(
                     session.currentRoomId = event.respawnRoomId
                     session.player = session.player?.copy(
                         currentHp = event.respawnHp,
+                        currentMp = event.respawnMp,
                         currentRoomId = event.respawnRoomId
                     )
+                    session.activeEffects.clear()
 
                     // Broadcast enter to spawn room
                     sessionManager.broadcastToRoom(
@@ -188,6 +190,7 @@ class GameLoop(
         // 3. Process active effects on all authenticated players
         for (session in sessionManager.getAllAuthenticatedSessions()) {
             val effects = session.activeEffects.toList()
+            if (effects.isEmpty()) continue
             val expired = mutableListOf<ActiveEffect>()
 
             for (effect in effects) {
@@ -225,6 +228,11 @@ class GameLoop(
             }
 
             session.activeEffects.removeAll(expired)
+
+            // Send updated active effects list to client
+            try {
+                session.send(ServerMessage.ActiveEffectsUpdate(session.activeEffects.toList()))
+            } catch (_: Exception) { /* session closing */ }
         }
     }
 }

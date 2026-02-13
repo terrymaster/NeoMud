@@ -37,6 +37,7 @@ class PlayerRepository {
                 ?: error("Unknown character class: $characterClass")
             val stats = classDef.baseStats
             val maxHp = stats.maxHitPoints
+            val maxMp = stats.maxManaPoints
 
             PlayersTable.insert {
                 it[PlayersTable.username] = username
@@ -49,6 +50,7 @@ class PlayerRepository {
                 it[intelligence] = stats.intelligence
                 it[wisdom] = stats.wisdom
                 it[currentHp] = maxHp
+                it[currentMp] = maxMp
                 it[level] = 1
                 it[currentRoomId] = spawnRoomId
             }
@@ -59,6 +61,8 @@ class PlayerRepository {
                 stats = stats,
                 currentHp = maxHp,
                 maxHp = maxHp,
+                currentMp = maxMp,
+                maxMp = maxMp,
                 level = 1,
                 currentRoomId = spawnRoomId
             )
@@ -90,6 +94,8 @@ class PlayerRepository {
                 stats = stats,
                 currentHp = row[PlayersTable.currentHp],
                 maxHp = stats.maxHitPoints,
+                currentMp = row[PlayersTable.currentMp],
+                maxMp = stats.maxManaPoints,
                 level = row[PlayersTable.level],
                 currentRoomId = row[PlayersTable.currentRoomId]
             )
@@ -100,6 +106,7 @@ class PlayerRepository {
         transaction {
             PlayersTable.update({ PlayersTable.characterName eq player.name }) {
                 it[currentHp] = player.currentHp
+                it[currentMp] = player.currentMp
                 it[level] = player.level
                 it[currentRoomId] = player.currentRoomId
                 it[strength] = player.stats.strength

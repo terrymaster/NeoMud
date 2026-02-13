@@ -108,7 +108,8 @@ sealed class ServerMessage {
     data class PlayerDied(
         val killerName: String,
         val respawnRoomId: RoomId,
-        val respawnHp: Int
+        val respawnHp: Int,
+        val respawnMp: Int = 0
     ) : ServerMessage()
 
     @Serializable
@@ -116,6 +117,10 @@ sealed class ServerMessage {
     data class AttackModeUpdate(val enabled: Boolean) : ServerMessage()
 
     // Effects
+    @Serializable
+    @SerialName("active_effects_update")
+    data class ActiveEffectsUpdate(val effects: List<ActiveEffect>) : ServerMessage()
+
     @Serializable
     @SerialName("effect_tick")
     data class EffectTick(

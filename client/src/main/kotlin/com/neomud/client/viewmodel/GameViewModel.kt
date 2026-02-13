@@ -57,6 +57,21 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
     private val _roomGroundCoins = MutableStateFlow(Coins())
     val roomGroundCoins: StateFlow<Coins> = _roomGroundCoins
 
+    // Active effects
+    private val _activeEffects = MutableStateFlow<List<ActiveEffect>>(emptyList())
+    val activeEffects: StateFlow<List<ActiveEffect>> = _activeEffects
+
+    // Character sheet
+    private val _showCharacterSheet = MutableStateFlow(false)
+    val showCharacterSheet: StateFlow<Boolean> = _showCharacterSheet
+
+    private val _classCatalog = MutableStateFlow<Map<String, CharacterClassDef>>(emptyMap())
+    val classCatalog: StateFlow<Map<String, CharacterClassDef>> = _classCatalog
+
+    fun setInitialPlayer(player: Player) {
+        _player.value = player
+    }
+
     fun startCollecting() {
         viewModelScope.launch {
             wsClient.messages.collect { message ->
@@ -138,10 +153,12 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
                 addLog("You have been slain by ${message.killerName}! Respawning...", MudColors.death)
                 _player.value = _player.value?.copy(
                     currentHp = message.respawnHp,
+                    currentMp = message.respawnMp,
                     currentRoomId = message.respawnRoomId
                 )
                 _attackMode.value = false
                 _selectedTargetId.value = null
+                _activeEffects.value = emptyList()
                 _roomGroundItems.value = emptyList()
                 _roomGroundCoins.value = Coins()
             }
@@ -159,6 +176,9 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
                     LogSpan(" says: \"${message.message}\"", MudColors.say)
                 )))
             }
+            is ServerMessage.ActiveEffectsUpdate -> {
+                _activeEffects.value = message.effects
+            }
             is ServerMessage.EffectTick -> addLog(message.message, MudColors.effect)
             is ServerMessage.SystemMessage -> addLog("[System] ${message.message}", MudColors.system)
             is ServerMessage.Error -> addLog("[Error] ${message.message}", MudColors.error)
@@ -166,7 +186,9 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
             is ServerMessage.Pong -> { /* ignore */ }
             is ServerMessage.RegisterOk -> { /* handled by AuthViewModel */ }
             is ServerMessage.AuthError -> { /* handled by AuthViewModel */ }
-            is ServerMessage.ClassCatalogSync -> { /* handled by AuthViewModel */ }
+            is ServerMessage.ClassCatalogSync -> {
+                _classCatalog.value = message.classes.associateBy { it.id }
+            }
             is ServerMessage.ItemCatalogSync -> {
                 _itemCatalog.value = message.items.associateBy { it.id }
             }
@@ -327,5 +349,9 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
         viewModelScope.launch {
             wsClient.send(ClientMessage.PickupCoins(coinType))
         }
+    }
+
+    fun toggleCharacterSheet() {
+        _showCharacterSheet.value = !_showCharacterSheet.value
     }
 }

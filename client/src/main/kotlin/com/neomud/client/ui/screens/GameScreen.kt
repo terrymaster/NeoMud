@@ -11,11 +11,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.neomud.client.ui.components.CharacterSheet
 import com.neomud.client.ui.components.DirectionPad
 import com.neomud.client.ui.components.EntitySidebar
 import com.neomud.client.ui.components.GameLog
 import com.neomud.client.ui.components.InventoryPanel
 import com.neomud.client.ui.components.MiniMap
+import com.neomud.client.ui.components.PlayerStatusPanel
 import com.neomud.client.ui.components.RoomItemsSidebar
 import com.neomud.client.viewmodel.GameViewModel
 
@@ -37,6 +39,9 @@ fun GameScreen(
     val playerCoins by gameViewModel.playerCoins.collectAsState()
     val roomGroundItems by gameViewModel.roomGroundItems.collectAsState()
     val roomGroundCoins by gameViewModel.roomGroundCoins.collectAsState()
+    val activeEffects by gameViewModel.activeEffects.collectAsState()
+    val showCharacterSheet by gameViewModel.showCharacterSheet.collectAsState()
+    val classCatalog by gameViewModel.classCatalog.collectAsState()
 
     var sayText by remember { mutableStateOf("") }
 
@@ -177,30 +182,15 @@ fun GameScreen(
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // Player HP bar
+                        // Player status panel (HP, MP, effects)
                         val p = player
                         if (p != null && p.maxHp > 0) {
-                            val hpFraction = (p.currentHp.toFloat() / p.maxHp).coerceIn(0f, 1f)
-                            val hpColor = when {
-                                hpFraction > 0.5f -> Color(0xFF4CAF50)
-                                hpFraction > 0.25f -> Color(0xFFFF9800)
-                                else -> Color(0xFFF44336)
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "HP: ${p.currentHp}/${p.maxHp}",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                LinearProgressIndicator(
-                                    progress = { hpFraction },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(8.dp),
-                                    color = hpColor,
-                                    trackColor = Color(0xFF333333),
-                                )
-                            }
+                            PlayerStatusPanel(
+                                player = p,
+                                activeEffects = activeEffects,
+                                onClick = { gameViewModel.toggleCharacterSheet() },
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                     }
 
@@ -232,6 +222,22 @@ fun GameScreen(
                         }
                     }
                 }
+            }
+        }
+
+        // Character sheet overlay
+        if (showCharacterSheet) {
+            val p = player
+            if (p != null) {
+                CharacterSheet(
+                    player = p,
+                    classCatalog = classCatalog,
+                    equipment = equipment,
+                    itemCatalog = itemCatalog,
+                    activeEffects = activeEffects,
+                    playerCoins = playerCoins,
+                    onClose = { gameViewModel.toggleCharacterSheet() }
+                )
             }
         }
 

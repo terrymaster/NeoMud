@@ -14,6 +14,7 @@ object PlayersTable : Table("players") {
     val intelligence = integer("intelligence")
     val wisdom = integer("wisdom")
     val currentHp = integer("current_hp")
+    val currentMp = integer("current_mp").default(0)
     val level = integer("level").default(1)
     val currentRoomId = varchar("current_room_id", 100)
 
