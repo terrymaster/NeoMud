@@ -144,6 +144,7 @@ This is an active project. Here's what exists, what's in progress, and where it'
 - [ ] **World Events** — timed spawns, invasions, seasonal content
 - [ ] **Admin/GM Tools** — in-game world editing, spawn commands, player management
 - [ ] **iOS Client** — Compose Multiplatform or SwiftUI
+- [ ] **Sound Effects & Music** — ambient room audio, combat sounds, UI feedback, background music per zone
 - [ ] **Web Client** — browser-based alternative using the same WebSocket protocol
 
 ### NeoMUDMaker — The GM Toolkit
@@ -153,6 +154,7 @@ This is an active project. Here's what exists, what's in progress, and where it'
 - [ ] **Item Forge** — design weapons, armor, and consumables with stat previews and auto-generated art
 - [ ] **Quest Scripting** — visual quest builder with triggers, conditions, and branching outcomes
 - [ ] **Live Preview** — test your world in-client without restarting the server
+- [ ] **AI Sound Design** — generate ambient audio, combat sounds, and zone music from descriptions — full audioscape without a sound studio
 - [ ] **Publish & Share** — export zone packs for other NeoMud servers
 
 ### Someday/Maybe
