@@ -146,6 +146,15 @@ This is an active project. Here's what exists, what's in progress, and where it'
 - [ ] **iOS Client** — Compose Multiplatform or SwiftUI
 - [ ] **Web Client** — browser-based alternative using the same WebSocket protocol
 
+### NeoMUDMaker — The GM Toolkit
+- [ ] **Visual Zone Builder** — drag-and-drop room editor with connection mapping
+- [ ] **AI Art Pipeline** — generate room backgrounds, NPC sprites, and item icons from prompt templates using AI image generation — no artist required
+- [ ] **NPC Designer** — create NPCs with stats, behaviors, dialogue trees, and loot tables in a visual editor
+- [ ] **Item Forge** — design weapons, armor, and consumables with stat previews and auto-generated art
+- [ ] **Quest Scripting** — visual quest builder with triggers, conditions, and branching outcomes
+- [ ] **Live Preview** — test your world in-client without restarting the server
+- [ ] **Publish & Share** — export zone packs for other NeoMud servers
+
 ### Someday/Maybe
 - [ ] Procedural zone generation
 - [ ] Player housing
