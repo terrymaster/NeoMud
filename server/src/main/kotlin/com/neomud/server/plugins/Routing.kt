@@ -1,6 +1,7 @@
 package com.neomud.server.plugins
 
 import com.neomud.server.game.CommandProcessor
+import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.shared.protocol.ClientMessage
@@ -19,7 +20,8 @@ private val logger = LoggerFactory.getLogger("Routing")
 
 fun Application.configureRouting(
     sessionManager: SessionManager,
-    commandProcessor: CommandProcessor
+    commandProcessor: CommandProcessor,
+    playerRepository: PlayerRepository
 ) {
     routing {
         staticResources("/assets", "assets")
@@ -54,6 +56,15 @@ fun Application.configureRouting(
                 val playerName = session.playerName
                 if (playerName != null) {
                     val roomId = session.currentRoomId
+                    // Save player state before removing session
+                    val player = session.player
+                    if (player != null) {
+                        try {
+                            playerRepository.savePlayerState(player)
+                        } catch (e: Exception) {
+                            logger.error("Failed to save player state on disconnect: ${e.message}")
+                        }
+                    }
                     sessionManager.removeSession(playerName)
                     if (roomId != null) {
                         sessionManager.broadcastToRoom(
