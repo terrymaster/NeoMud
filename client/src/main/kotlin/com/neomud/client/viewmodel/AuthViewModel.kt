@@ -94,6 +94,12 @@ class AuthViewModel : ViewModel() {
         _authState.value = AuthState.Idle
     }
 
+    fun logout() {
+        wsClient.disconnect()
+        _authState.value = AuthState.Idle
+        _availableClasses.value = emptyList()
+    }
+
     override fun onCleared() {
         wsClient.disconnect()
     }

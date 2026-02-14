@@ -19,7 +19,7 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
     val connectionError by authViewModel.connectionError.collectAsState()
     val availableClasses by authViewModel.availableClasses.collectAsState()
 
-    // Navigate to game screen on successful login
+    // Navigate on auth state changes
     LaunchedEffect(authState) {
         if (authState is AuthState.LoggedIn) {
             navController.navigate("game") {
@@ -29,6 +29,15 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
         if (authState is AuthState.Registered) {
             navController.navigate("login") {
                 popUpTo("register") { inclusive = true }
+            }
+        }
+        // Handle logout: Idle while on game screen → back to login
+        if (authState is AuthState.Idle) {
+            val currentRoute = navController.currentBackStackEntry?.destination?.route
+            if (currentRoute == "game") {
+                navController.navigate("login") {
+                    popUpTo("game") { inclusive = true }
+                }
             }
         }
     }
@@ -66,7 +75,10 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
                     it.startCollecting()
                 }
             }
-            GameScreen(gameViewModel = gameViewModel)
+            GameScreen(
+                gameViewModel = gameViewModel,
+                onLogout = { authViewModel.logout() }
+            )
         }
     }
 }

@@ -65,6 +65,10 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
     private val _showCharacterSheet = MutableStateFlow(false)
     val showCharacterSheet: StateFlow<Boolean> = _showCharacterSheet
 
+    // Settings
+    private val _showSettings = MutableStateFlow(false)
+    val showSettings: StateFlow<Boolean> = _showSettings
+
     private val _classCatalog = MutableStateFlow<Map<String, CharacterClassDef>>(emptyMap())
     val classCatalog: StateFlow<Map<String, CharacterClassDef>> = _classCatalog
 
@@ -353,5 +357,9 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
 
     fun toggleCharacterSheet() {
         _showCharacterSheet.value = !_showCharacterSheet.value
+    }
+
+    fun toggleSettings() {
+        _showSettings.value = !_showSettings.value
     }
 }

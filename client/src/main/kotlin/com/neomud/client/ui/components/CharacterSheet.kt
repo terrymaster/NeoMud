@@ -1,5 +1,6 @@
 package com.neomud.client.ui.components
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +40,9 @@ fun CharacterSheet(
     playerCoins: Coins,
     onClose: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -77,128 +82,210 @@ fun CharacterSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Scrollable content
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // Name, class, level
-                val className = classCatalog[player.characterClass]?.name ?: player.characterClass
-                Text(
-                    text = player.name,
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+            if (isLandscape) {
+                CharacterSheetLandscape(
+                    player = player,
+                    classCatalog = classCatalog,
+                    equipment = equipment,
+                    itemCatalog = itemCatalog,
+                    activeEffects = activeEffects,
+                    playerCoins = playerCoins
                 )
-                Text(
-                    text = "$className  \u2022  Level ${player.level}",
-                    color = DimText,
-                    fontSize = 13.sp
+            } else {
+                CharacterSheetPortrait(
+                    player = player,
+                    classCatalog = classCatalog,
+                    equipment = equipment,
+                    itemCatalog = itemCatalog,
+                    activeEffects = activeEffects,
+                    playerCoins = playerCoins
                 )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Vitals
-                SectionHeader("Vitals")
-                Spacer(modifier = Modifier.height(4.dp))
-                VitalBar(
-                    label = "HP",
-                    current = player.currentHp,
-                    max = player.maxHp,
-                    color = when {
-                        player.maxHp > 0 && player.currentHp.toFloat() / player.maxHp > 0.5f -> Color(0xFF4CAF50)
-                        player.maxHp > 0 && player.currentHp.toFloat() / player.maxHp > 0.25f -> Color(0xFFFF9800)
-                        else -> Color(0xFFF44336)
-                    }
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                VitalBar(
-                    label = "MP",
-                    current = player.currentMp,
-                    max = player.maxMp,
-                    color = Color(0xFF448AFF)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Stats
-                SectionHeader("Stats")
-                Spacer(modifier = Modifier.height(4.dp))
-                StatsGrid(player.stats)
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Equipment
-                SectionHeader("Equipment")
-                Spacer(modifier = Modifier.height(4.dp))
-                for (slot in EquipmentSlots.DEFAULT_SLOTS) {
-                    val equippedItemId = equipment[slot]
-                    val item = equippedItemId?.let { itemCatalog[it] }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = slot.replaceFirstChar { it.uppercase() },
-                            color = DimText,
-                            fontSize = 12.sp,
-                            modifier = Modifier.width(64.dp)
-                        )
-                        Text(
-                            text = item?.name ?: "-- empty --",
-                            color = if (item != null) Color(0xFF55FF55) else Color(0xFF555555),
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Active Effects
-                SectionHeader("Active Effects")
-                Spacer(modifier = Modifier.height(4.dp))
-                if (activeEffects.isEmpty()) {
-                    Text("No active effects", color = Color(0xFF555555), fontSize = 12.sp)
-                } else {
-                    for (effect in activeEffects) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = effect.name,
-                                color = BrightText,
-                                fontSize = 12.sp,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Text(
-                                text = "${effect.remainingTicks} ticks",
-                                color = DimText,
-                                fontSize = 11.sp
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Coins
-                SectionHeader("Coins")
-                Spacer(modifier = Modifier.height(4.dp))
-                if (playerCoins.isEmpty()) {
-                    Text("No coins", color = Color(0xFF555555), fontSize = 12.sp)
-                } else {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        if (playerCoins.platinum > 0) CoinBadge("${playerCoins.platinum} PP", PlatinumColor)
-                        if (playerCoins.gold > 0) CoinBadge("${playerCoins.gold} GP", GoldColor)
-                        if (playerCoins.silver > 0) CoinBadge("${playerCoins.silver} SP", SilverColor)
-                        if (playerCoins.copper > 0) CoinBadge("${playerCoins.copper} CP", CopperColor)
-                    }
-                }
             }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.CharacterSheetPortrait(
+    player: Player,
+    classCatalog: Map<String, CharacterClassDef>,
+    equipment: Map<String, String>,
+    itemCatalog: Map<String, Item>,
+    activeEffects: List<ActiveEffect>,
+    playerCoins: Coins
+) {
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .verticalScroll(rememberScrollState())
+    ) {
+        NameAndVitals(player, classCatalog)
+        Spacer(modifier = Modifier.height(12.dp))
+        StatsSection(player)
+        Spacer(modifier = Modifier.height(12.dp))
+        EquipmentSection(equipment, itemCatalog)
+        Spacer(modifier = Modifier.height(12.dp))
+        ActiveEffectsSection(activeEffects)
+        Spacer(modifier = Modifier.height(12.dp))
+        CoinsSection(playerCoins)
+    }
+}
+
+@Composable
+private fun ColumnScope.CharacterSheetLandscape(
+    player: Player,
+    classCatalog: Map<String, CharacterClassDef>,
+    equipment: Map<String, String>,
+    itemCatalog: Map<String, Item>,
+    activeEffects: List<ActiveEffect>,
+    playerCoins: Coins
+) {
+    Row(
+        modifier = Modifier
+            .weight(1f),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Left column: Name, Vitals, Stats
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            NameAndVitals(player, classCatalog)
+            Spacer(modifier = Modifier.height(12.dp))
+            StatsSection(player)
+        }
+
+        VerticalDivider(color = Color(0xFF555555), thickness = 1.dp)
+
+        // Right column: Equipment, Effects, Coins
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            EquipmentSection(equipment, itemCatalog)
+            Spacer(modifier = Modifier.height(12.dp))
+            ActiveEffectsSection(activeEffects)
+            Spacer(modifier = Modifier.height(12.dp))
+            CoinsSection(playerCoins)
+        }
+    }
+}
+
+@Composable
+private fun NameAndVitals(player: Player, classCatalog: Map<String, CharacterClassDef>) {
+    val className = classCatalog[player.characterClass]?.name ?: player.characterClass
+    Text(
+        text = player.name,
+        color = Color.White,
+        fontSize = 16.sp,
+        fontWeight = FontWeight.Bold
+    )
+    Text(
+        text = "$className  \u2022  Level ${player.level}",
+        color = DimText,
+        fontSize = 13.sp
+    )
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    SectionHeader("Vitals")
+    Spacer(modifier = Modifier.height(4.dp))
+    VitalBar(
+        label = "HP",
+        current = player.currentHp,
+        max = player.maxHp,
+        color = when {
+            player.maxHp > 0 && player.currentHp.toFloat() / player.maxHp > 0.5f -> Color(0xFF4CAF50)
+            player.maxHp > 0 && player.currentHp.toFloat() / player.maxHp > 0.25f -> Color(0xFFFF9800)
+            else -> Color(0xFFF44336)
+        }
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    VitalBar(
+        label = "MP",
+        current = player.currentMp,
+        max = player.maxMp,
+        color = Color(0xFF448AFF)
+    )
+}
+
+@Composable
+private fun StatsSection(player: Player) {
+    SectionHeader("Stats")
+    Spacer(modifier = Modifier.height(4.dp))
+    StatsGrid(player.stats)
+}
+
+@Composable
+private fun EquipmentSection(equipment: Map<String, String>, itemCatalog: Map<String, Item>) {
+    SectionHeader("Equipment")
+    Spacer(modifier = Modifier.height(4.dp))
+    for (slot in EquipmentSlots.DEFAULT_SLOTS) {
+        val equippedItemId = equipment[slot]
+        val item = equippedItemId?.let { itemCatalog[it] }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = slot.replaceFirstChar { it.uppercase() },
+                color = DimText,
+                fontSize = 12.sp,
+                modifier = Modifier.width(64.dp)
+            )
+            Text(
+                text = item?.name ?: "-- empty --",
+                color = if (item != null) Color(0xFF55FF55) else Color(0xFF555555),
+                fontSize = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActiveEffectsSection(activeEffects: List<ActiveEffect>) {
+    SectionHeader("Active Effects")
+    Spacer(modifier = Modifier.height(4.dp))
+    if (activeEffects.isEmpty()) {
+        Text("No active effects", color = Color(0xFF555555), fontSize = 12.sp)
+    } else {
+        for (effect in activeEffects) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = effect.name,
+                    color = BrightText,
+                    fontSize = 12.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "${effect.remainingTicks} ticks",
+                    color = DimText,
+                    fontSize = 11.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoinsSection(playerCoins: Coins) {
+    SectionHeader("Coins")
+    Spacer(modifier = Modifier.height(4.dp))
+    if (playerCoins.isEmpty()) {
+        Text("No coins", color = Color(0xFF555555), fontSize = 12.sp)
+    } else {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (playerCoins.platinum > 0) CoinBadge("${playerCoins.platinum} PP", PlatinumColor)
+            if (playerCoins.gold > 0) CoinBadge("${playerCoins.gold} GP", GoldColor)
+            if (playerCoins.silver > 0) CoinBadge("${playerCoins.silver} SP", SilverColor)
+            if (playerCoins.copper > 0) CoinBadge("${playerCoins.copper} CP", CopperColor)
         }
     }
 }
