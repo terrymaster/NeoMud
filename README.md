@@ -1,6 +1,12 @@
 # NeoMud
 
-A love letter to the MUDs of the '90s, built with modern tools and vibes.
+A love letter to the MUDs of the '90s, built with modern tools and vibes. 100% vibe-coded with AI.
+
+<p align="center">
+  <img src="docs/screenshots/screenshot1.png" width="230" alt="Winding Forest Path" />
+  <img src="docs/screenshots/screenshot2.png" width="230" alt="Forest Edge" />
+  <img src="docs/screenshots/screenshot3.png" width="230" alt="Character Sheet" />
+</p>
 
 ## What Is This?
 
