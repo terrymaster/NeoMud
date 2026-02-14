@@ -105,6 +105,55 @@ The server starts on port 8080 with WebSocket at `/game` and health check at `/h
 ```
 Connect to `10.0.2.2:8080` from the emulator (or your server's IP from a device).
 
+## Roadmap
+
+This is an active project. Here's what exists, what's in progress, and where it's headed.
+
+### What's Built
+- [x] WebSocket multiplayer with real-time room presence
+- [x] Two zones (town + forest) with 10 rooms
+- [x] 8 character classes with stat-based differentiation
+- [x] Tick-based combat with hostile NPCs
+- [x] Basic inventory and equipment slots
+- [x] Loot tables and ground item drops
+- [x] Four-tier coin economy
+- [x] Room background art and sprite overlays
+- [x] Minimap, game log, character sheet
+- [x] Death and respawn system
+- [x] Player state persistence across sessions
+
+### Up Next
+- [ ] **Player Progression** — XP from combat, leveling, stat growth, scaling HP/MP per level
+- [ ] **Skill System** — class-specific abilities (spells, combat arts, healing), cooldowns, mana costs
+- [ ] **Vendor System** — NPC shops to buy/sell items and equipment, price balancing
+- [ ] **Inventory Management** — item stacking, sorting, item comparison tooltips, bag capacity
+- [ ] **Equipment Upgrades** — tiered gear, enchantments, item rarity system
+- [ ] **Better Player Creation** — appearance options, starting gear per class, tutorial zone
+- [ ] **NPC Dialogue** — conversation trees, quest givers, lore NPCs
+- [ ] **Quest System** — kill quests, fetch quests, quest log, rewards
+
+### Future Vision
+- [ ] **More Zones** — dungeons, caves, swamps, castles — each with unique NPCs and loot
+- [ ] **Crafting** — gather materials, combine into items, crafting recipes
+- [ ] **Party System** — group up, shared XP, party chat, group combat tactics
+- [ ] **PvP** — optional dueling, arenas, or PvP zones
+- [ ] **Guilds/Clans** — player organizations, shared banks, guild halls
+- [ ] **Boss Encounters** — multi-phase fights, special mechanics, rare drops
+- [ ] **Status Effects Expansion** — poison, stun, bleed, buffs/debuffs with tactical depth
+- [ ] **Emotes & Social** — /wave, /bow, roleplay support
+- [ ] **World Events** — timed spawns, invasions, seasonal content
+- [ ] **Admin/GM Tools** — in-game world editing, spawn commands, player management
+- [ ] **iOS Client** — Compose Multiplatform or SwiftUI
+- [ ] **Web Client** — browser-based alternative using the same WebSocket protocol
+
+### Someday/Maybe
+- [ ] Procedural zone generation
+- [ ] Player housing
+- [ ] Economy simulation (supply/demand pricing)
+- [ ] Achievement system
+- [ ] Leaderboards
+- [ ] LLM-powered NPC conversation
+
 ## The Spirit of the Thing
 
 This isn't a finished game. It's a living sketch — a place to experiment with what a MUD looks like when you can see it, when the protocol is type-safe, when the world data lives in version control alongside the code.
