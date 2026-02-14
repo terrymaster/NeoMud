@@ -8,6 +8,7 @@ import com.neomud.shared.protocol.MessageSerializer
 import com.neomud.shared.protocol.ServerMessage
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.http.content.staticResources
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
@@ -21,6 +22,8 @@ fun Application.configureRouting(
     commandProcessor: CommandProcessor
 ) {
     routing {
+        staticResources("/assets", "assets")
+
         get("/health") {
             call.respondText("OK", ContentType.Text.Plain)
         }

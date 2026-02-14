@@ -69,8 +69,9 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
 
         composable("game") {
             val initialPlayer = (authState as? AuthState.LoggedIn)?.player
+            val serverBaseUrl = authViewModel.serverBaseUrl
             val gameViewModel = remember {
-                GameViewModel(authViewModel.wsClient).also {
+                GameViewModel(authViewModel.wsClient, serverBaseUrl).also {
                     if (initialPlayer != null) it.setInitialPlayer(initialPlayer)
                     it.startCollecting()
                 }

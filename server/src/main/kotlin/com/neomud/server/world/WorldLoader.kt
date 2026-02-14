@@ -15,13 +15,15 @@ object WorldLoader {
         val npcDataList: List<Pair<NpcData, String>>,
         val classCatalog: ClassCatalog,
         val itemCatalog: ItemCatalog,
-        val lootTableCatalog: LootTableCatalog
+        val lootTableCatalog: LootTableCatalog,
+        val promptTemplateCatalog: PromptTemplateCatalog
     )
 
     fun load(): LoadResult {
         val classCatalog = ClassCatalog.load()
         val itemCatalog = ItemCatalog.load()
         val lootTableCatalog = LootTableCatalog.load()
+        val promptTemplateCatalog = PromptTemplateCatalog.load()
         val worldGraph = WorldGraph()
         val allNpcData = mutableListOf<Pair<NpcData, String>>()
         val zoneFiles = listOf("world/town.zone.json", "world/forest.zone.json")
@@ -46,7 +48,8 @@ object WorldLoader {
                     exits = roomData.exits,
                     zoneId = zone.id,
                     x = roomData.x,
-                    y = roomData.y
+                    y = roomData.y,
+                    backgroundImage = roomData.backgroundImage
                 )
                 worldGraph.addRoom(room)
             }
@@ -57,6 +60,6 @@ object WorldLoader {
         worldGraph.setDefaultSpawn("town:square")
         logger.info("World loaded: ${worldGraph.roomCount} rooms, ${allNpcData.size} NPCs")
 
-        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog)
+        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, promptTemplateCatalog)
     }
 }

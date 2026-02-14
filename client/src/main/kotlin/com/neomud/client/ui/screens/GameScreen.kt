@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -23,12 +25,15 @@ import androidx.compose.ui.unit.sp
 import com.neomud.client.ui.components.CharacterSheet
 import com.neomud.client.ui.components.DirectionPad
 import com.neomud.client.ui.components.EntitySidebar
+import com.neomud.client.ui.components.FloatingMiniMap
 import com.neomud.client.ui.components.GameLog
 import com.neomud.client.ui.components.InventoryPanel
 import com.neomud.client.ui.components.MiniMap
 import com.neomud.client.ui.components.PlayerStatusPanel
+import com.neomud.client.ui.components.RoomBackground
 import com.neomud.client.ui.components.RoomItemsSidebar
 import com.neomud.client.ui.components.SettingsPanel
+import com.neomud.client.ui.components.SpriteOverlay
 import com.neomud.client.viewmodel.GameViewModel
 import com.neomud.shared.model.Direction
 
@@ -55,6 +60,7 @@ fun GameScreen(
     val showCharacterSheet by gameViewModel.showCharacterSheet.collectAsState()
     val showSettings by gameViewModel.showSettings.collectAsState()
     val classCatalog by gameViewModel.classCatalog.collectAsState()
+    val deathMessage by gameViewModel.deathMessage.collectAsState()
 
     var sayText by remember { mutableStateOf("") }
 
@@ -140,6 +146,55 @@ fun GameScreen(
                 onClose = { gameViewModel.toggleSettings() }
             )
         }
+
+        // Death overlay
+        if (deathMessage != null) {
+            DeathOverlay(
+                message = deathMessage!!,
+                onDismiss = { gameViewModel.dismissDeath() }
+            )
+        }
+    }
+}
+
+@Composable
+private fun DeathOverlay(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    // Auto-dismiss after 4 seconds
+    LaunchedEffect(message) {
+        kotlinx.coroutines.delay(4000)
+        onDismiss()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xCC000000))
+            .clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "YOU DIED",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFCC0000)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = message,
+                fontSize = 16.sp,
+                color = Color(0xFFAAAAAA)
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "Tap to continue",
+                fontSize = 12.sp,
+                color = Color(0xFF666666)
+            )
+        }
     }
 }
 
@@ -165,35 +220,46 @@ private fun GameScreenPortrait(
     val activeEffects by gameViewModel.activeEffects.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Top: Room Items Sidebar + Mini Map + Entity Sidebar (~35%)
-        Row(
+        // Top: Room background + sidebars + floating minimap (~35%)
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(0.35f)
         ) {
-            RoomItemsSidebar(
+            // Layer 1: Full-bleed background image
+            val currentRoom = roomInfo?.room
+            RoomBackground(
+                imageUrl = currentRoom?.backgroundImage ?: "",
+                roomName = currentRoom?.name ?: "",
+                serverBaseUrl = gameViewModel.serverBaseUrl,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // Layer 1.5: NPC & item sprites overlaid on background
+            SpriteOverlay(
+                npcs = roomEntities,
                 groundItems = roomGroundItems,
                 groundCoins = roomGroundCoins,
                 itemCatalog = itemCatalog,
-                onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
-                onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) }
-            )
-
-            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                val data = mapData
-                if (data != null) {
-                    MiniMap(
-                        rooms = data.rooms,
-                        playerRoomId = data.playerRoomId
-                    )
-                }
-            }
-
-            EntitySidebar(
-                entities = roomEntities,
                 selectedTargetId = selectedTargetId,
-                onSelectTarget = { gameViewModel.selectTarget(it) }
+                onSelectTarget = { gameViewModel.selectTarget(it) },
+                onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
+                onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) },
+                serverBaseUrl = gameViewModel.serverBaseUrl,
+                modifier = Modifier.fillMaxSize()
             )
+
+            // Layer 2: Floating minimap
+            val data = mapData
+            if (data != null) {
+                FloatingMiniMap(
+                    rooms = data.rooms,
+                    playerRoomId = data.playerRoomId,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 4.dp, top = 4.dp)
+                )
+            }
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp)
@@ -284,35 +350,46 @@ private fun GameScreenLandscape(
                 .fillMaxWidth()
                 .weight(0.55f)
         ) {
-            // Left side: Room Items + Map + Entity sidebar
-            Row(
+            // Left side: Room background + sidebars + floating minimap
+            Box(
                 modifier = Modifier
                     .weight(0.55f)
                     .fillMaxHeight()
             ) {
-                RoomItemsSidebar(
+                // Layer 1: Full-bleed background image
+                val currentRoom = roomInfo?.room
+                RoomBackground(
+                    imageUrl = currentRoom?.backgroundImage ?: "",
+                    roomName = currentRoom?.name ?: "",
+                    serverBaseUrl = gameViewModel.serverBaseUrl,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // Layer 1.5: NPC & item sprites overlaid on background
+                SpriteOverlay(
+                    npcs = roomEntities,
                     groundItems = roomGroundItems,
                     groundCoins = roomGroundCoins,
                     itemCatalog = itemCatalog,
-                    onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
-                    onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) }
-                )
-
-                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                    val data = mapData
-                    if (data != null) {
-                        MiniMap(
-                            rooms = data.rooms,
-                            playerRoomId = data.playerRoomId
-                        )
-                    }
-                }
-
-                EntitySidebar(
-                    entities = roomEntities,
                     selectedTargetId = selectedTargetId,
-                    onSelectTarget = { gameViewModel.selectTarget(it) }
+                    onSelectTarget = { gameViewModel.selectTarget(it) },
+                    onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
+                    onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) },
+                    serverBaseUrl = gameViewModel.serverBaseUrl,
+                    modifier = Modifier.fillMaxSize()
                 )
+
+                // Layer 2: Floating minimap
+                val data = mapData
+                if (data != null) {
+                    FloatingMiniMap(
+                        rooms = data.rooms,
+                        playerRoomId = data.playerRoomId,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(end = 4.dp, top = 4.dp)
+                    )
+                }
             }
 
             VerticalDivider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp)

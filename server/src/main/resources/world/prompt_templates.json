@@ -1,0 +1,256 @@
+{
+  "templates": [
+    {
+      "entityType": "room",
+      "entityId": "town:square",
+      "prompt": "First-person view standing in a medieval fantasy town square. Flat cobblestone ground plane filling the lower third. A weathered stone fountain ahead in the mid-ground. Colorful merchant stalls and timber-framed buildings line left and right edges receding to a vanishing point. Clear sky above. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "room",
+      "entityId": "town:tavern",
+      "prompt": "First-person view standing inside a dim medieval tavern. Flat wooden plank floor filling the lower third. Low wooden beams overhead, a roaring fireplace on the back wall. A long bar counter ahead, scarred tables on either side. Warm candlelight and smoky atmosphere. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "room",
+      "entityId": "town:market",
+      "prompt": "First-person view standing on a narrow medieval market street. Flat stone-paved ground plane filling the lower third. Merchant stalls with colorful awnings lining both sides, receding toward a glowing blacksmith's forge ahead. Weapons and armor on display. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "room",
+      "entityId": "town:gate",
+      "prompt": "First-person view standing before a fortified medieval town gate. Flat dirt and cobblestone ground plane filling the lower third. Massive oak doors reinforced with iron bands ahead, flanked by stone watchtowers on each side. A dirt road visible beyond leading into a dark forest. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "room",
+      "entityId": "town:temple",
+      "prompt": "First-person view standing inside a serene stone temple. Flat polished marble floor filling the lower third. Tall stained glass windows on left and right casting rainbow light. A white-draped altar centered ahead at the far wall, incense smoke curling upward. Vaulted stone ceiling. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "room",
+      "entityId": "forest:edge",
+      "prompt": "First-person view standing at the edge of an ancient forest. Flat grass and dirt ground plane filling the lower third, transitioning from open field to tree roots. Towering oaks ahead framing a path into darkness. Shafts of golden sunlight pierce the canopy. Town walls faintly visible behind. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "room",
+      "entityId": "forest:path",
+      "prompt": "First-person view standing on a winding forest path. Flat dirt trail filling the lower third, flanked by exposed roots. Massive ancient tree trunks on both sides covered in luminescent moss, receding into the distance. Dappled light filters through the dense canopy. Path splits ahead. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "room",
+      "entityId": "forest:clearing",
+      "prompt": "First-person view standing in a sunlit forest clearing. Flat grassy ground plane carpeted with wildflowers filling the lower third. A moss-covered fallen log in the mid-ground. Trees form a natural wall around the edges. Warm golden sunlight streaming down from above. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "room",
+      "entityId": "forest:deep",
+      "prompt": "First-person view standing in a deep primeval forest. Flat dark earth ground plane with gnarled roots breaking through, filling the lower third. Massive ancient trunks on both sides disappearing upward into dense canopy. Only dim green twilight reaches the floor. Ominous and ancient atmosphere. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "room",
+      "entityId": "forest:stream",
+      "prompt": "First-person view standing at the bank of a forest stream. Flat mossy ground and smooth river stones filling the lower third. A crystal-clear stream cuts across the mid-ground from left to right. Ferns and water plants line the far bank. Trees frame both sides. Gentle dappled light filtering through canopy. No people or creatures.",
+      "style": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "negativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "width": 1024,
+      "height": 576
+    },
+    {
+      "entityType": "npc",
+      "entityId": "npc:town_guard",
+      "prompt": "Full-body medieval town guard standing upright facing the viewer, chainmail armor over tabard, hand on sword pommel, stern expression. Single character, isolated on solid transparent background, no ground, no scenery.",
+      "style": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
+      "negativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
+      "width": 384,
+      "height": 512
+    },
+    {
+      "entityType": "npc",
+      "entityId": "npc:barkeep",
+      "prompt": "Full-body stout dwarf barkeep standing upright facing the viewer, barrel chest, magnificent braided beard, leather apron, holding a tankard. Single character, isolated on solid transparent background, no ground, no scenery.",
+      "style": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
+      "negativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
+      "width": 384,
+      "height": 512
+    },
+    {
+      "entityType": "npc",
+      "entityId": "npc:shadow_wolf",
+      "prompt": "Full-body large wolf with midnight-black fur, amber glowing eyes, wisps of shadow clinging to its form, in an aggressive stalking pose facing the viewer. Single creature, isolated on solid transparent background, no ground, no scenery.",
+      "style": "fantasy creature sprite, full body, side-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",
+      "negativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
+      "width": 512,
+      "height": 384
+    },
+    {
+      "entityType": "npc",
+      "entityId": "npc:forest_spider",
+      "prompt": "Full-body massive spider the size of a large dog, chitinous body mottled green and brown, thick webs trailing from spinnerets, venom glistening on fangs, facing the viewer. Single creature, isolated on solid transparent background, no ground, no scenery.",
+      "style": "fantasy creature sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",
+      "negativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
+      "width": 512,
+      "height": 384
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:iron_sword",
+      "prompt": "A single sturdy iron sword with well-balanced blade, leather-wrapped grip, simple crossguard. Isolated object centered, no surface, no hands.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "negativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:wooden_shield",
+      "prompt": "A single round shield made of hardened oak with iron rim and central boss, weathered but sturdy. Isolated object centered, no surface, no hands.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "negativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:leather_cap",
+      "prompt": "A single simple cap made of boiled brown leather, basic head protection. Isolated object centered, no surface, no head or mannequin.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "negativePrompt": "background, surface, table, hands, person, head, mannequin, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:leather_chest",
+      "prompt": "A single vest of thick tanned brown leather with stitched seams, torso armor. Isolated object centered, no surface, no body or mannequin.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "negativePrompt": "background, surface, table, hands, person, body, mannequin, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:leather_legs",
+      "prompt": "A single pair of tough leather leggings with reinforced knee patches. Isolated object centered, no surface, no legs or mannequin.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "negativePrompt": "background, surface, table, hands, person, legs, mannequin, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:leather_boots",
+      "prompt": "A single pair of well-worn leather boots reaching mid-calf, thick soles and lacing. Isolated object centered, no surface, no feet.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "negativePrompt": "background, surface, table, hands, person, feet, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:leather_gloves",
+      "prompt": "A single pair of supple brown leather gloves with reinforced fingers. Isolated object centered, no surface, no hands.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "negativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:health_potion",
+      "prompt": "A single small glass vial filled with glowing red liquid, corked and sealed, magical healing potion with faint luminescence. Isolated object centered, no surface.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "negativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:spider_fang",
+      "prompt": "A single long curved venomous fang from a giant spider, sharp and translucent with green venom residue. Isolated object centered, no surface.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "negativePrompt": "background, surface, table, hands, person, spider, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "item",
+      "entityId": "item:wolf_pelt",
+      "prompt": "A single dark luxurious fur pelt from a shadow wolf, midnight black with a slight shimmer. Isolated object centered, no surface.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "negativePrompt": "background, surface, table, hands, person, wolf, multiple items, modern, sci-fi",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "coin",
+      "entityId": "coin:copper",
+      "prompt": "A small pile of round copper coins, dull brownish-orange metal, stamped with a simple shield emblem, stacked loosely in a heap. Isolated object centered, no surface.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, metallic sheen",
+      "negativePrompt": "background, surface, table, hands, person, multiple piles, modern, sci-fi, gold, silver",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "coin",
+      "entityId": "coin:silver",
+      "prompt": "A small pile of round silver coins, bright polished silver metal, stamped with a crown emblem, stacked loosely in a heap. Isolated object centered, no surface.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, metallic sheen",
+      "negativePrompt": "background, surface, table, hands, person, multiple piles, modern, sci-fi, gold, copper",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "coin",
+      "entityId": "coin:gold",
+      "prompt": "A small pile of round gold coins, gleaming rich yellow-gold metal, stamped with a dragon emblem, stacked loosely in a heap. Isolated object centered, no surface.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, metallic sheen",
+      "negativePrompt": "background, surface, table, hands, person, multiple piles, modern, sci-fi, silver, copper",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "entityType": "coin",
+      "entityId": "coin:platinum",
+      "prompt": "A small pile of round platinum coins, lustrous white-silver metal with a faint iridescent sheen, stamped with a star emblem, stacked loosely in a heap. Isolated object centered, no surface.",
+      "style": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, metallic sheen",
+      "negativePrompt": "background, surface, table, hands, person, multiple piles, modern, sci-fi, gold, copper",
+      "width": 256,
+      "height": 256
+    }
+  ]
+}

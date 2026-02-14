@@ -13,7 +13,8 @@
       "exits": {
         "SOUTH": "town:gate",
         "NORTH": "forest:path"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/forest_edge.webp"
     },
     {
       "id": "forest:path",
@@ -25,7 +26,8 @@
         "SOUTH": "forest:edge",
         "EAST": "forest:clearing",
         "NORTH": "forest:deep"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/forest_path.webp"
     },
     {
       "id": "forest:clearing",
@@ -35,7 +37,8 @@
       "y": 3,
       "exits": {
         "WEST": "forest:path"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/forest_clearing.webp"
     },
     {
       "id": "forest:deep",
@@ -46,7 +49,8 @@
       "exits": {
         "SOUTH": "forest:path",
         "EAST": "forest:stream"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/forest_deep.webp"
     },
     {
       "id": "forest:stream",
@@ -56,7 +60,8 @@
       "y": 4,
       "exits": {
         "WEST": "forest:deep"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/forest_stream.webp"
     }
   ],
   "npcs": [

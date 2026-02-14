@@ -21,7 +21,8 @@ data class RoomData(
     val description: String,
     val x: Int,
     val y: Int,
-    val exits: Map<Direction, RoomId>
+    val exits: Map<Direction, RoomId>,
+    val backgroundImage: String = ""
 )
 
 @Serializable

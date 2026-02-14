@@ -61,6 +61,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     val classCatalog = loadResult.classCatalog
     val itemCatalog = loadResult.itemCatalog
     val lootTableCatalog = loadResult.lootTableCatalog
+    val promptTemplateCatalog = loadResult.promptTemplateCatalog
     val npcManager = NpcManager(worldGraph)
     npcManager.loadNpcs(loadResult.npcDataList)
 

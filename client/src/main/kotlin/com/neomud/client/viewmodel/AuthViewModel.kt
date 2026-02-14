@@ -27,6 +27,10 @@ class AuthViewModel : ViewModel() {
     private var pendingLoginUsername: String? = null
     private var pendingLoginPassword: String? = null
 
+    private var _serverHost: String = ""
+    private var _serverPort: Int = 0
+    val serverBaseUrl: String get() = "http://$_serverHost:$_serverPort"
+
     init {
         viewModelScope.launch {
             wsClient.messages.collect { message ->
@@ -61,6 +65,8 @@ class AuthViewModel : ViewModel() {
     }
 
     fun connect(host: String, port: Int) {
+        _serverHost = host
+        _serverPort = port
         wsClient.connect(host, port, viewModelScope)
     }
 

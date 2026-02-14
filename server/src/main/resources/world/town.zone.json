@@ -15,7 +15,8 @@
         "SOUTH": "town:temple",
         "EAST": "town:market",
         "WEST": "town:tavern"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/town_square.webp"
     },
     {
       "id": "town:tavern",
@@ -25,7 +26,8 @@
       "y": 0,
       "exits": {
         "EAST": "town:square"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/town_tavern.webp"
     },
     {
       "id": "town:market",
@@ -35,7 +37,8 @@
       "y": 0,
       "exits": {
         "WEST": "town:square"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/town_market.webp"
     },
     {
       "id": "town:gate",
@@ -46,7 +49,8 @@
       "exits": {
         "SOUTH": "town:square",
         "NORTH": "forest:edge"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/town_gate.webp"
     },
     {
       "id": "town:temple",
@@ -56,7 +60,8 @@
       "y": -1,
       "exits": {
         "NORTH": "town:square"
-      }
+      },
+      "backgroundImage": "/assets/images/rooms/town_temple.webp"
     }
   ],
   "npcs": [

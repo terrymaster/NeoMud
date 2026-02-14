@@ -12,7 +12,8 @@ data class Room(
     val exits: Map<Direction, RoomId>,
     val zoneId: String,
     val x: Int,
-    val y: Int
+    val y: Int,
+    val backgroundImage: String = ""
 )
 
 @Serializable
@@ -23,5 +24,6 @@ data class MapRoom(
     val y: Int,
     val exits: Map<Direction, RoomId>,
     val hasPlayers: Boolean = false,
-    val hasNpcs: Boolean = false
+    val hasNpcs: Boolean = false,
+    val backgroundImage: String = ""
 )

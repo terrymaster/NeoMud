@@ -14,6 +14,7 @@ lifecycle = "2.8.7"
 ktor-client = "3.0.3"
 logback = "1.5.12"
 bcrypt = "0.10.2"
+coil = "2.7.0"
 
 [libraries]
 # Kotlin
@@ -53,6 +54,9 @@ activity-compose = { module = "androidx.activity:activity-compose", version.ref 
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+
+# Image Loading
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 
 # Logging
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }

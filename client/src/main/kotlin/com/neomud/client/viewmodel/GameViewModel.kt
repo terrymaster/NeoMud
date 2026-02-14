@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
+class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: String = "") : ViewModel() {
 
     private val _roomInfo = MutableStateFlow<ServerMessage.RoomInfo?>(null)
     val roomInfo: StateFlow<ServerMessage.RoomInfo?> = _roomInfo
@@ -64,6 +64,14 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
     // Character sheet
     private val _showCharacterSheet = MutableStateFlow(false)
     val showCharacterSheet: StateFlow<Boolean> = _showCharacterSheet
+
+    // Death notification
+    private val _deathMessage = MutableStateFlow<String?>(null)
+    val deathMessage: StateFlow<String?> = _deathMessage
+
+    fun dismissDeath() {
+        _deathMessage.value = null
+    }
 
     // Settings
     private val _showSettings = MutableStateFlow(false)
@@ -155,6 +163,7 @@ class GameViewModel(private val wsClient: WebSocketClient) : ViewModel() {
             }
             is ServerMessage.PlayerDied -> {
                 addLog("You have been slain by ${message.killerName}! Respawning...", MudColors.death)
+                _deathMessage.value = "Slain by ${message.killerName}"
                 _player.value = _player.value?.copy(
                     currentHp = message.respawnHp,
                     currentMp = message.respawnMp,
