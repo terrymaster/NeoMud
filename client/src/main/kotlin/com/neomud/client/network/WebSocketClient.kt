@@ -52,6 +52,8 @@ class WebSocketClient {
                         }
                     }
                 }
+            } catch (_: CancellationException) {
+                // Normal disconnection – not an error
             } catch (e: Exception) {
                 _connectionError.value = e.message ?: "Connection failed"
             } finally {

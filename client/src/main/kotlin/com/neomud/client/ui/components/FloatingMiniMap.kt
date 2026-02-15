@@ -22,8 +22,8 @@ fun FloatingMiniMap(
 ) {
     Box(
         modifier = modifier
-            .size(100.dp)
-            .alpha(0.85f)
+            .size(80.dp)
+            .alpha(0.6f)
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xCC0D1117))
             .border(1.dp, Color(0xFF444444), RoundedCornerShape(8.dp))

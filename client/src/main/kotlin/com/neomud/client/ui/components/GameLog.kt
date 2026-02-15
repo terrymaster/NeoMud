@@ -10,6 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -32,12 +35,46 @@ fun GameLog(
         }
     }
 
+    val scrollbarTrackColor = Color(0x33FFFFFF)
+    val scrollbarThumbColor = Color(0x99FFFFFF)
+    val scrollbarWidth = 4.dp
+
     LazyColumn(
         state = listState,
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0D1117))
             .padding(8.dp)
+            .drawWithContent {
+                drawContent()
+                val info = listState.layoutInfo
+                val totalItems = info.totalItemsCount
+                if (totalItems > 0 && info.visibleItemsInfo.isNotEmpty()) {
+                    val viewportHeight = info.viewportSize.height.toFloat()
+                    val firstVisible = info.visibleItemsInfo.first()
+                    val scrollFraction = firstVisible.index.toFloat() / totalItems
+                    val visibleFraction = (info.visibleItemsInfo.size.toFloat() / totalItems)
+                        .coerceAtMost(1f)
+                    val thumbHeight = (visibleFraction * viewportHeight).coerceAtLeast(16.dp.toPx())
+                    val trackHeight = viewportHeight
+                    val thumbTop = scrollFraction * (trackHeight - thumbHeight)
+                    val barW = scrollbarWidth.toPx()
+                    val barX = size.width - barW
+
+                    // Track
+                    drawRect(
+                        color = scrollbarTrackColor,
+                        topLeft = Offset(barX, 0f),
+                        size = Size(barW, trackHeight)
+                    )
+                    // Thumb
+                    drawRect(
+                        color = scrollbarThumbColor,
+                        topLeft = Offset(barX, thumbTop),
+                        size = Size(barW, thumbHeight)
+                    )
+                }
+            }
     ) {
         items(entries) { entry ->
             Text(
