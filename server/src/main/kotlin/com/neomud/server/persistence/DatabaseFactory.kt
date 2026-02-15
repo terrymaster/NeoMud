@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("DatabaseFactory")
 
-private const val SCHEMA_VERSION = 2 // Bumped for 6-stat progression system
+private const val SCHEMA_VERSION = 3 // Bumped for base stat columns (CP allocation at registration)
 
 object DatabaseFactory {
     fun init(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
@@ -20,16 +20,17 @@ object DatabaseFactory {
         )
 
         transaction(database) {
-            // Check if we need a fresh start by looking for old schema columns
+            // Check if schema is outdated — drop and recreate
             val needsFreshStart = try {
-                exec("SELECT dexterity FROM players LIMIT 1") { true }
-                true // Old schema detected
-            } catch (_: Exception) {
+                exec("SELECT base_strength FROM players LIMIT 1") { true }
                 false
+            } catch (_: Exception) {
+                // Missing columns from current schema — wipe and recreate
+                true
             }
 
             if (needsFreshStart) {
-                logger.warn("Old schema detected — dropping all tables for fresh start (progression overhaul)")
+                logger.warn("Outdated schema detected — dropping all tables for fresh start")
                 SchemaUtils.drop(PlayersTable, InventoryTable, PlayerCoinsTable)
             }
 

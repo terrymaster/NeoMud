@@ -1,6 +1,7 @@
 package com.neomud.server
 
 import com.neomud.shared.model.Direction
+import com.neomud.shared.model.Stats
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.MessageSerializer
 import com.neomud.shared.protocol.ServerMessage
@@ -35,6 +36,8 @@ class IntegrationTest {
         assertIs<ServerMessage.SkillCatalogSync>(msg3)
         val msg4 = receiveServerMessage()
         assertIs<ServerMessage.RaceCatalogSync>(msg4)
+        val msg5 = receiveServerMessage()
+        assertIs<ServerMessage.SpellCatalogSync>(msg5)
     }
 
     @Test
@@ -57,9 +60,10 @@ class IntegrationTest {
         wsClient.webSocket("/game") {
             consumeCatalogSync()
 
-            // Register
+            // Register — WARRIOR min: str=20,agi=12,int=8,wil=8,hlt=20,chm=8; +10 each = 60CP
             send(Frame.Text(MessageSerializer.encodeClientMessage(
-                ClientMessage.Register("testuser", "testpass", "TestHero", "WARRIOR")
+                ClientMessage.Register("testuser", "testpass", "TestHero", "WARRIOR",
+                    allocatedStats = Stats(strength = 30, agility = 22, intellect = 18, willpower = 18, health = 30, charm = 18))
             )))
 
             val registerResponse = receiveServerMessage()
@@ -113,7 +117,8 @@ class IntegrationTest {
         wsClient.webSocket("/game") {
             consumeCatalogSync()
             send(Frame.Text(MessageSerializer.encodeClientMessage(
-                ClientMessage.Register("mover", "pass123", "Mover", "THIEF")
+                ClientMessage.Register("mover", "pass123", "Mover", "THIEF",
+                    allocatedStats = Stats(strength = 20, agility = 30, intellect = 22, willpower = 18, health = 20, charm = 25))
             )))
             receiveServerMessage() // RegisterOk
         }
@@ -161,7 +166,8 @@ class IntegrationTest {
         wsClient.webSocket("/game") {
             consumeCatalogSync()
             send(Frame.Text(MessageSerializer.encodeClientMessage(
-                ClientMessage.Register("stuck", "pass123", "Stuck", "CLERIC")
+                ClientMessage.Register("stuck", "pass123", "Stuck", "CLERIC",
+                    allocatedStats = Stats(strength = 25, agility = 20, intellect = 20, willpower = 28, health = 25, charm = 22))
             )))
             receiveServerMessage() // RegisterOk
         }

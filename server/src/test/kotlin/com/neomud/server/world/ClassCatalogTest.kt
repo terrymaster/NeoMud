@@ -20,8 +20,8 @@ class ClassCatalogTest {
         val warrior = catalog.getClass("WARRIOR")
         assertNotNull(warrior)
         assertEquals("Warrior", warrior.name)
-        assertEquals(45, warrior.baseStats.strength)
-        assertEquals(45, warrior.baseStats.health)
+        assertEquals(20, warrior.minimumStats.strength)
+        assertEquals(20, warrior.minimumStats.health)
         assertEquals(6, warrior.hpPerLevelMin)
         assertEquals(10, warrior.hpPerLevelMax)
     }
@@ -32,8 +32,8 @@ class ClassCatalogTest {
         val mage = catalog.getClass("MAGE")
         assertNotNull(mage)
         assertEquals("Mage", mage.name)
-        assertEquals(50, mage.baseStats.intellect)
-        assertEquals(15, mage.baseStats.strength)
+        assertEquals(22, mage.minimumStats.intellect)
+        assertEquals(6, mage.minimumStats.strength)
         assertEquals(3, mage.magicSchools["mage"])
     }
 

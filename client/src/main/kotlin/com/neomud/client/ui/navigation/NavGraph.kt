@@ -61,8 +61,8 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
                 authState = authState,
                 availableClasses = availableClasses,
                 availableRaces = availableRaces,
-                onRegister = { username, password, characterName, characterClass, race ->
-                    authViewModel.register(username, password, characterName, characterClass, race)
+                onRegister = { username, password, characterName, characterClass, race, allocatedStats ->
+                    authViewModel.register(username, password, characterName, characterClass, race, allocatedStats)
                 },
                 onBack = { navController.popBackStack() },
                 onClearError = { authViewModel.clearError() }
@@ -72,9 +72,12 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
         composable("game") {
             val initialPlayer = (authState as? AuthState.LoggedIn)?.player
             val serverBaseUrl = authViewModel.serverBaseUrl
+            val initialClasses = authViewModel.availableClasses.value
+            val initialSpells = authViewModel.availableSpells.value
             val gameViewModel = remember {
                 GameViewModel(authViewModel.wsClient, serverBaseUrl).also {
                     if (initialPlayer != null) it.setInitialPlayer(initialPlayer)
+                    it.setInitialCatalogs(classes = initialClasses, spells = initialSpells)
                     it.startCollecting()
                 }
             }

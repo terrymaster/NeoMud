@@ -8,6 +8,7 @@ import com.neomud.server.game.commands.LookCommand
 import com.neomud.server.game.commands.MoveCommand
 import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.commands.SayCommand
+import com.neomud.server.game.commands.SpellCommand
 import com.neomud.server.game.commands.TrainerCommand
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
@@ -18,6 +19,7 @@ import com.neomud.server.world.ClassCatalog
 import com.neomud.server.world.ItemCatalog
 import com.neomud.server.world.RaceCatalog
 import com.neomud.server.world.SkillCatalog
+import com.neomud.server.world.SpellCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
@@ -35,7 +37,9 @@ class CommandProcessor(
     private val inventoryCommand: InventoryCommand,
     private val pickupCommand: PickupCommand,
     private val roomItemManager: RoomItemManager,
-    private val trainerCommand: TrainerCommand
+    private val trainerCommand: TrainerCommand,
+    private val spellCommand: SpellCommand,
+    private val spellCatalog: SpellCatalog
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
     private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager)
@@ -50,6 +54,7 @@ class CommandProcessor(
         session.send(ServerMessage.ItemCatalogSync(itemCatalog.getAllItems()))
         session.send(ServerMessage.SkillCatalogSync(skillCatalog.getAllSkills()))
         session.send(ServerMessage.RaceCatalogSync(raceCatalog.getAllRaces()))
+        session.send(ServerMessage.SpellCatalogSync(spellCatalog.getAllSpells()))
     }
 
     suspend fun process(session: PlayerSession, message: ClientMessage) {
@@ -112,6 +117,9 @@ class CommandProcessor(
             is ClientMessage.TrainStat -> {
                 requireAuth(session) { trainerCommand.handleTrainStat(session, message.stat, message.points) }
             }
+            is ClientMessage.CastSpell -> {
+                requireAuth(session) { spellCommand.execute(session, message.spellId, message.targetId) }
+            }
         }
     }
 
@@ -127,6 +135,7 @@ class CommandProcessor(
             characterName = msg.characterName,
             characterClass = msg.characterClass,
             race = msg.race,
+            allocatedStats = msg.allocatedStats,
             spawnRoomId = worldGraph.defaultSpawnRoom,
             classCatalog = classCatalog,
             raceCatalog = raceCatalog

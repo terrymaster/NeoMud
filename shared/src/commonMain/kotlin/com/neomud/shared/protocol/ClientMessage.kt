@@ -1,6 +1,7 @@
 package com.neomud.shared.protocol
 
 import com.neomud.shared.model.Direction
+import com.neomud.shared.model.Stats
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -13,7 +14,8 @@ sealed class ClientMessage {
         val password: String,
         val characterName: String,
         val characterClass: String,
-        val race: String = ""
+        val race: String = "",
+        val allocatedStats: Stats = Stats()
     ) : ClientMessage()
 
     @Serializable
@@ -96,4 +98,8 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("train_stat")
     data class TrainStat(val stat: String, val points: Int = 1) : ClientMessage()
+
+    @Serializable
+    @SerialName("cast_spell")
+    data class CastSpell(val spellId: String, val targetId: String? = null) : ClientMessage()
 }

@@ -5,6 +5,7 @@ import com.neomud.server.world.ClassCatalog
 import com.neomud.server.world.RaceCatalog
 import com.neomud.shared.model.Player
 import com.neomud.shared.model.RoomId
+import com.neomud.shared.model.StatAllocator
 import com.neomud.shared.model.Stats
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -19,6 +20,7 @@ class PlayerRepository {
         characterName: String,
         characterClass: String,
         race: String,
+        allocatedStats: Stats,
         spawnRoomId: RoomId,
         classCatalog: ClassCatalog,
         raceCatalog: RaceCatalog?
@@ -40,19 +42,23 @@ class PlayerRepository {
                 ?: error("Unknown character class: $characterClass")
             val raceDef = raceCatalog?.getRace(race)
 
-            // Apply race stat modifiers to class base stats
-            val baseStats = classDef.baseStats
+            // Validate CP allocation against class minimums
+            if (!StatAllocator.isValidAllocation(allocatedStats, classDef.minimumStats)) {
+                error("Invalid stat allocation")
+            }
+
+            // Apply race stat modifiers to allocated stats
             val stats = if (raceDef != null) {
                 Stats(
-                    strength = baseStats.strength + raceDef.statModifiers.strength,
-                    agility = baseStats.agility + raceDef.statModifiers.agility,
-                    intellect = baseStats.intellect + raceDef.statModifiers.intellect,
-                    willpower = baseStats.willpower + raceDef.statModifiers.willpower,
-                    health = baseStats.health + raceDef.statModifiers.health,
-                    charm = baseStats.charm + raceDef.statModifiers.charm
+                    strength = allocatedStats.strength + raceDef.statModifiers.strength,
+                    agility = allocatedStats.agility + raceDef.statModifiers.agility,
+                    intellect = allocatedStats.intellect + raceDef.statModifiers.intellect,
+                    willpower = allocatedStats.willpower + raceDef.statModifiers.willpower,
+                    health = allocatedStats.health + raceDef.statModifiers.health,
+                    charm = allocatedStats.charm + raceDef.statModifiers.charm
                 )
             } else {
-                baseStats
+                allocatedStats
             }
 
             // Level 1 gets max HP roll for fairness
@@ -72,6 +78,12 @@ class PlayerRepository {
                 it[willpower] = stats.willpower
                 it[health] = stats.health
                 it[charm] = stats.charm
+                it[baseStrength] = allocatedStats.strength
+                it[baseAgility] = allocatedStats.agility
+                it[baseIntellect] = allocatedStats.intellect
+                it[baseWillpower] = allocatedStats.willpower
+                it[baseHealth] = allocatedStats.health
+                it[baseCharm] = allocatedStats.charm
                 it[currentHp] = maxHp
                 it[PlayersTable.maxHp] = maxHp
                 it[currentMp] = maxMp
@@ -138,6 +150,21 @@ class PlayerRepository {
                 xpToNextLevel = row[PlayersTable.xpToNextLevel],
                 unspentCp = row[PlayersTable.unspentCp],
                 totalCpEarned = row[PlayersTable.totalCpEarned]
+            )
+        }
+    }
+
+    fun getBaseStats(characterName: String): Stats? = transaction {
+        PlayersTable.selectAll().where {
+            PlayersTable.characterName eq characterName
+        }.firstOrNull()?.let { row ->
+            Stats(
+                strength = row[PlayersTable.baseStrength],
+                agility = row[PlayersTable.baseAgility],
+                intellect = row[PlayersTable.baseIntellect],
+                willpower = row[PlayersTable.baseWillpower],
+                health = row[PlayersTable.baseHealth],
+                charm = row[PlayersTable.baseCharm]
             )
         }
     }

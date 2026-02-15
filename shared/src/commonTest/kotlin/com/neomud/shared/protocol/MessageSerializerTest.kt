@@ -39,6 +39,15 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testRegisterWithAllocatedStatsRoundTrip() {
+        val stats = Stats(strength = 20, agility = 15, intellect = 30, willpower = 25, health = 15, charm = 18)
+        val original = ClientMessage.Register("user1", "pass123", "Gandalf", "MAGE", race = "ELF", allocatedStats = stats)
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
     fun testSayMessageRoundTrip() {
         val original = ClientMessage.Say("Hello, world!")
         val json = MessageSerializer.encodeClientMessage(original)
@@ -320,10 +329,10 @@ class MessageSerializerTest {
     fun testClassCatalogSyncRoundTrip() {
         val classes = listOf(
             CharacterClassDef("WARRIOR", "Warrior", "A master of martial combat",
-                Stats(strength = 40, agility = 30, intellect = 25, willpower = 25, health = 40, charm = 25),
+                minimumStats = Stats(strength = 20, agility = 12, intellect = 8, willpower = 8, health = 20, charm = 8),
                 hpPerLevelMin = 6, hpPerLevelMax = 10),
             CharacterClassDef("MAGE", "Mage", "A scholarly mage",
-                Stats(strength = 20, agility = 25, intellect = 45, willpower = 40, health = 25, charm = 30),
+                minimumStats = Stats(strength = 6, agility = 8, intellect = 22, willpower = 15, health = 8, charm = 10),
                 hpPerLevelMin = 3, hpPerLevelMax = 6, mpPerLevelMin = 5, mpPerLevelMax = 10,
                 magicSchools = mapOf("mage" to 3))
         )
@@ -553,11 +562,74 @@ class MessageSerializerTest {
     fun testCharacterClassDefWithSkillsRoundTrip() {
         val classDef = CharacterClassDef(
             "THIEF", "Thief", "A scoundrel",
-            Stats(strength = 25, agility = 40, intellect = 30, willpower = 25, health = 30, charm = 35),
+            minimumStats = Stats(strength = 10, agility = 20, intellect = 12, willpower = 8, health = 10, charm = 15),
             skills = listOf("HIDE", "SNEAK", "BACKSTAB"),
             hpPerLevelMin = 4, hpPerLevelMax = 7
         )
         val original = ServerMessage.ClassCatalogSync(listOf(classDef))
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testCastSpellRoundTrip() {
+        val original = ClientMessage.CastSpell("FIREBALL", "npc:shadow_wolf")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testCastSpellNoTargetRoundTrip() {
+        val original = ClientMessage.CastSpell("MINOR_HEAL")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testSpellCatalogSyncRoundTrip() {
+        val spells = listOf(
+            SpellDef("FIREBALL", "Fireball", "A fireball.", "mage", SpellType.DAMAGE, 18,
+                cooldownTicks = 4, levelRequired = 5, basePower = 22, targetType = TargetType.ENEMY,
+                castMessage = "hurls a fireball at"),
+            SpellDef("MINOR_HEAL", "Minor Heal", "Heals.", "priest", SpellType.HEAL, 5,
+                cooldownTicks = 2, primaryStat = "willpower", basePower = 10, targetType = TargetType.SELF)
+        )
+        val original = ServerMessage.SpellCatalogSync(spells)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testSpellCastResultRoundTrip() {
+        val original = ServerMessage.SpellCastResult(true, "Fireball", "Hero hurls a fireball!", 42, null)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testSpellCastResultWithHpRoundTrip() {
+        val original = ServerMessage.SpellCastResult(true, "Minor Heal", "Hero heals!", 38, 95)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testSpellEffectRoundTrip() {
+        val original = ServerMessage.SpellEffect("Hero", "Shadow Wolf", "Fireball", 25, 15, 50)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testSpellEffectPlayerTargetRoundTrip() {
+        val original = ServerMessage.SpellEffect("Hero", "Hero", "Minor Heal", 15, 90, 100, isPlayerTarget = true)
         val json = MessageSerializer.encodeServerMessage(original)
         val decoded = MessageSerializer.decodeServerMessage(json)
         assertEquals(original, decoded)

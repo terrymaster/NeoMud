@@ -7,6 +7,8 @@ import com.neomud.client.network.WebSocketClient
 import com.neomud.shared.model.CharacterClassDef
 import com.neomud.shared.model.Player
 import com.neomud.shared.model.RaceDef
+import com.neomud.shared.model.SpellDef
+import com.neomud.shared.model.Stats
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +29,9 @@ class AuthViewModel : ViewModel() {
 
     private val _availableRaces = MutableStateFlow<List<RaceDef>>(emptyList())
     val availableRaces: StateFlow<List<RaceDef>> = _availableRaces
+
+    private val _availableSpells = MutableStateFlow<List<SpellDef>>(emptyList())
+    val availableSpells: StateFlow<List<SpellDef>> = _availableSpells
 
     private var pendingLoginUsername: String? = null
     private var pendingLoginPassword: String? = null
@@ -65,6 +70,9 @@ class AuthViewModel : ViewModel() {
                     is ServerMessage.RaceCatalogSync -> {
                         _availableRaces.value = message.races
                     }
+                    is ServerMessage.SpellCatalogSync -> {
+                        _availableSpells.value = message.spells
+                    }
                     else -> { /* handled by GameViewModel */ }
                 }
             }
@@ -87,13 +95,13 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun register(username: String, password: String, characterName: String, characterClass: String, race: String = "") {
+    fun register(username: String, password: String, characterName: String, characterClass: String, race: String = "", allocatedStats: Stats = Stats()) {
         _authState.value = AuthState.Loading
         pendingLoginUsername = username
         pendingLoginPassword = password
         viewModelScope.launch {
             val sent = wsClient.send(
-                ClientMessage.Register(username, password, characterName, characterClass, race)
+                ClientMessage.Register(username, password, characterName, characterClass, race, allocatedStats)
             )
             if (!sent) {
                 pendingLoginUsername = null

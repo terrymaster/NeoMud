@@ -7,7 +7,7 @@ data class CharacterClassDef(
     val id: String,
     val name: String,
     val description: String,
-    val baseStats: Stats,
+    val minimumStats: Stats,
     val skills: List<String> = emptyList(),
     val properties: Map<String, String> = emptyMap(),
     val hpPerLevelMin: Int = 4,

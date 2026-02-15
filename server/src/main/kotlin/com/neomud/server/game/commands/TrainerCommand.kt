@@ -29,8 +29,7 @@ class TrainerCommand(
             return
         }
 
-        val classDef = classCatalog.getClass(player.characterClass)
-        val baseStats = classDef?.baseStats ?: player.stats
+        val baseStats = playerRepository.getBaseStats(player.name) ?: player.stats
         val canLevelUp = XpCalculator.isReadyToLevel(player.currentXp, player.xpToNextLevel, player.level)
 
         session.send(ServerMessage.TrainerInfo(
@@ -130,8 +129,7 @@ class TrainerCommand(
             return
         }
 
-        val classDef = classCatalog.getClass(player.characterClass) ?: return
-        val baseStats = classDef.baseStats
+        val baseStats = playerRepository.getBaseStats(player.name) ?: return
 
         val (currentValue, baseValue) = when (stat.lowercase()) {
             "strength" -> player.stats.strength to baseStats.strength
