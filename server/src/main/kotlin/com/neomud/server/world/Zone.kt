@@ -5,13 +5,21 @@ import com.neomud.shared.model.RoomId
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class SpawnConfig(
+    val maxEntities: Int = 0,
+    val maxPerRoom: Int = 0,
+    val rateTicks: Int = 0
+)
+
+@Serializable
 data class ZoneData(
     val id: String,
     val name: String,
     val description: String,
     val safe: Boolean = true,
     val rooms: List<RoomData>,
-    val npcs: List<NpcData> = emptyList()
+    val npcs: List<NpcData> = emptyList(),
+    val spawnConfig: SpawnConfig = SpawnConfig()
 )
 
 @Serializable

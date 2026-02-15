@@ -155,7 +155,12 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
             is ServerMessage.PlayerLeft -> addLog("${message.playerName} left ${message.direction.name.lowercase()}.", MudColors.playerEvent)
             is ServerMessage.NpcEntered -> {
                 val color = if (message.hostile) MudColors.hostile else MudColors.friendly
-                addLog("${message.npcName} has arrived.", color)
+                val text = if (message.spawned) {
+                    "${message.npcName} emerges from the shadows."
+                } else {
+                    "${message.npcName} has arrived."
+                }
+                addLog(text, color)
                 if (message.npcId.isNotEmpty()) {
                     val current = _roomEntities.value.toMutableList()
                     current.add(Npc(

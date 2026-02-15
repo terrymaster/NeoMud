@@ -66,7 +66,8 @@ sealed class ServerMessage {
         val npcId: String = "",
         val hostile: Boolean = false,
         val currentHp: Int = 0,
-        val maxHp: Int = 0
+        val maxHp: Int = 0,
+        val spawned: Boolean = false
     ) : ServerMessage()
 
     @Serializable

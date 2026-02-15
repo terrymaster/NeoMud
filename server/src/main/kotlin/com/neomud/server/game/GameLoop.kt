@@ -41,6 +41,52 @@ class GameLoop(
     }
 
     private suspend fun tick() {
+        // 0. Safety net: force-respawn any player stuck at 0 HP
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            val player = session.player ?: continue
+            if (player.currentHp <= 0) {
+                val playerName = session.playerName ?: continue
+                val respawnRoomId = worldGraph.defaultSpawnRoom
+                logger.warn("Safety respawn: $playerName had ${player.currentHp} HP, forcing respawn")
+
+                session.attackMode = false
+                session.selectedTargetId = null
+                session.isHidden = false
+                session.activeEffects.clear()
+
+                val oldRoomId = session.currentRoomId
+                session.currentRoomId = respawnRoomId
+                session.player = player.copy(
+                    currentHp = player.maxHp,
+                    currentMp = player.maxMp,
+                    currentRoomId = respawnRoomId
+                )
+
+                try {
+                    session.send(ServerMessage.PlayerDied("unknown", respawnRoomId, player.maxHp, player.maxMp))
+                    if (oldRoomId != null && oldRoomId != respawnRoomId) {
+                        sessionManager.broadcastToRoom(
+                            oldRoomId,
+                            ServerMessage.PlayerLeft(playerName, oldRoomId, com.neomud.shared.model.Direction.NORTH),
+                            exclude = playerName
+                        )
+                    }
+                    sessionManager.broadcastToRoom(
+                        respawnRoomId,
+                        ServerMessage.PlayerEntered(playerName, respawnRoomId),
+                        exclude = playerName
+                    )
+                    val room = worldGraph.getRoom(respawnRoomId)
+                    if (room != null) {
+                        val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(respawnRoomId).filter { it != playerName }
+                        val npcsInRoom = npcManager.getNpcsInRoom(respawnRoomId)
+                        session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
+                    }
+                    session.player?.let { p -> playerRepository.savePlayerState(p) }
+                } catch (_: Exception) { }
+            }
+        }
+
         // 1. NPC behavior
         val npcEvents = npcManager.tick()
         for (event in npcEvents) {
@@ -52,12 +98,14 @@ class GameLoop(
                 )
             }
             // Broadcast NPC entered new room
+            val isSpawn = event.fromRoomId == null
             if (event.toRoomId != null) {
                 sessionManager.broadcastToRoom(
                     event.toRoomId,
                     ServerMessage.NpcEntered(
                         event.npcName, event.toRoomId,
-                        event.npcId, event.hostile, event.currentHp, event.maxHp
+                        event.npcId, event.hostile, event.currentHp, event.maxHp,
+                        spawned = isSpawn
                     )
                 )
 
@@ -105,9 +153,10 @@ class GameLoop(
                         ServerMessage.NpcDied(event.npcId, event.npcName, event.killerName, event.roomId)
                     )
 
-                    // Roll loot and drop on ground
-                    val lootTable = lootTableCatalog.getLootTable(event.npcId)
-                    val coinDrop = lootTableCatalog.getCoinDrop(event.npcId)
+                    // Roll loot and drop on ground (use templateId for spawned copies)
+                    val lootKey = event.templateId.ifEmpty { event.npcId }
+                    val lootTable = lootTableCatalog.getLootTable(lootKey)
+                    val coinDrop = lootTableCatalog.getCoinDrop(lootKey)
                     val lootedItems = lootService.rollLoot(lootTable)
                     val coins = lootService.rollCoins(coinDrop)
 

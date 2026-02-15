@@ -19,7 +19,8 @@ object WorldLoader {
         val promptTemplateCatalog: PromptTemplateCatalog,
         val skillCatalog: SkillCatalog,
         val raceCatalog: RaceCatalog,
-        val spellCatalog: SpellCatalog
+        val spellCatalog: SpellCatalog,
+        val zoneSpawnConfigs: Map<String, SpawnConfig>
     )
 
     fun load(): LoadResult {
@@ -32,6 +33,7 @@ object WorldLoader {
         val spellCatalog = SpellCatalog.load()
         val worldGraph = WorldGraph()
         val allNpcData = mutableListOf<Pair<NpcData, String>>()
+        val zoneSpawnConfigs = mutableMapOf<String, SpawnConfig>()
         val zoneFiles = listOf("world/town.zone.json", "world/forest.zone.json")
 
         for (file in zoneFiles) {
@@ -61,11 +63,12 @@ object WorldLoader {
             }
 
             allNpcData.addAll(zone.npcs.map { it to zone.id })
+            zoneSpawnConfigs[zone.id] = zone.spawnConfig
         }
 
         worldGraph.setDefaultSpawn("town:square")
         logger.info("World loaded: ${worldGraph.roomCount} rooms, ${allNpcData.size} NPCs")
 
-        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, promptTemplateCatalog, skillCatalog, raceCatalog, spellCatalog)
+        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, promptTemplateCatalog, skillCatalog, raceCatalog, spellCatalog, zoneSpawnConfigs)
     }
 }

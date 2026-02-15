@@ -3,6 +3,7 @@
   "name": "Millhaven",
   "description": "A bustling frontier town at the edge of the Whispering Forest.",
   "safe": true,
+  "spawnConfig": { "maxEntities": 0, "maxPerRoom": 0, "rateTicks": 0 },
   "rooms": [
     {
       "id": "town:square",

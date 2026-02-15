@@ -3,6 +3,7 @@
   "name": "Whispering Forest",
   "description": "An ancient forest where the trees seem to murmur secrets to one another.",
   "safe": false,
+  "spawnConfig": { "maxEntities": 4, "maxPerRoom": 2, "rateTicks": 40 },
   "rooms": [
     {
       "id": "forest:edge",

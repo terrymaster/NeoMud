@@ -6,6 +6,7 @@ import com.neomud.server.game.npc.behavior.NpcAction
 import com.neomud.server.game.npc.behavior.PatrolBehavior
 import com.neomud.server.game.npc.behavior.WanderBehavior
 import com.neomud.server.world.NpcData
+import com.neomud.server.world.SpawnConfig
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
 import com.neomud.shared.model.Npc
@@ -25,7 +26,9 @@ data class NpcState(
     val perception: Int = 0,
     val xpReward: Long = 0,
     val behaviorType: String = "idle",
-    val zoneId: String = ""
+    val zoneId: String = "",
+    val startRoomId: RoomId = "",
+    val templateId: String = ""
 ) {
     val isAlive: Boolean get() = maxHp == 0 || currentHp > 0
 }
@@ -38,54 +41,85 @@ data class NpcEvent(
     val npcId: String = "",
     val hostile: Boolean = false,
     val currentHp: Int = 0,
-    val maxHp: Int = 0
+    val maxHp: Int = 0,
+    val templateId: String = ""
 )
 
-class NpcManager(private val worldGraph: WorldGraph) {
+class NpcManager(
+    private val worldGraph: WorldGraph,
+    private val zoneSpawnConfigs: Map<String, SpawnConfig> = emptyMap()
+) {
     private val logger = org.slf4j.LoggerFactory.getLogger(NpcManager::class.java)
     private val npcs = mutableListOf<NpcState>()
+    private val zoneTemplates = mutableMapOf<String, List<Pair<NpcData, String>>>()
+    private val zoneSpawnTimers = mutableMapOf<String, Int>()
+    private var nextSpawnIndex = 1
 
     fun loadNpcs(npcDataList: List<Pair<NpcData, String>>) {
-        for ((data, zoneId) in npcDataList) {
-            val behavior: BehaviorNode = when (data.behaviorType) {
-                "patrol" -> PatrolBehavior(data.patrolRoute)
-                "wander" -> WanderBehavior()
-                else -> IdleBehavior()
-            }
+        // Store hostile templates per zone for continuous spawning
+        zoneTemplates.putAll(
+            npcDataList
+                .filter { it.first.hostile }
+                .groupBy { it.second }
+        )
 
-            npcs.add(
-                NpcState(
-                    id = data.id,
-                    name = data.name,
-                    description = data.description,
-                    currentRoomId = data.startRoomId,
-                    behavior = behavior,
-                    hostile = data.hostile,
-                    maxHp = data.maxHp,
-                    currentHp = data.maxHp,
-                    damage = data.damage,
-                    level = data.level,
-                    perception = data.perception,
-                    xpReward = data.xpReward,
-                    behaviorType = data.behaviorType,
-                    zoneId = zoneId
-                )
-            )
+        for ((data, zoneId) in npcDataList) {
+            npcs.add(createNpcState(data, zoneId, data.id))
         }
     }
+
+    private fun createNpcState(data: NpcData, zoneId: String, instanceId: String): NpcState {
+        val behavior: BehaviorNode = when (data.behaviorType) {
+            "patrol" -> PatrolBehavior(data.patrolRoute)
+            "wander" -> WanderBehavior()
+            else -> IdleBehavior()
+        }
+
+        return NpcState(
+            id = instanceId,
+            name = data.name,
+            description = data.description,
+            currentRoomId = data.startRoomId,
+            behavior = behavior,
+            hostile = data.hostile,
+            maxHp = data.maxHp,
+            currentHp = data.maxHp,
+            damage = data.damage,
+            level = data.level,
+            perception = data.perception,
+            xpReward = data.xpReward,
+            behaviorType = data.behaviorType,
+            zoneId = zoneId,
+            startRoomId = data.startRoomId,
+            templateId = data.id
+        )
+    }
+
+    private fun aliveNpcsInRoom(roomId: RoomId): Int =
+        npcs.count { it.currentRoomId == roomId && it.isAlive }
+
+    private fun aliveNpcsInZone(zoneId: String): Int =
+        npcs.count { it.zoneId == zoneId && it.isAlive }
 
     fun tick(): List<NpcEvent> {
         val events = mutableListOf<NpcEvent>()
 
+        // 1. Process living NPC behaviors
         for (npc in npcs) {
-            if (!npc.isAlive) continue // skip dead NPCs
+            if (!npc.isAlive) continue
 
-            when (val action = npc.behavior.tick(npc, worldGraph)) {
+            val spawnConfig = zoneSpawnConfigs[npc.zoneId]
+            val maxPerRoom = spawnConfig?.maxPerRoom ?: 0
+
+            val canMoveTo: (RoomId) -> Boolean = { targetRoomId ->
+                maxPerRoom == 0 || aliveNpcsInRoom(targetRoomId) < maxPerRoom
+            }
+
+            when (val action = npc.behavior.tick(npc, worldGraph, canMoveTo)) {
                 is NpcAction.MoveTo -> {
                     val oldRoom = npc.currentRoomId
                     val newRoom = action.targetRoomId
 
-                    // Find the direction of movement
                     val room = worldGraph.getRoom(oldRoom)
                     val direction = room?.exits?.entries?.find { it.value == newRoom }?.key
 
@@ -100,12 +134,55 @@ class NpcManager(private val worldGraph: WorldGraph) {
                             npcId = npc.id,
                             hostile = npc.hostile,
                             currentHp = npc.currentHp,
-                            maxHp = npc.maxHp
+                            maxHp = npc.maxHp,
+                            templateId = npc.templateId
                         )
                     )
                 }
                 is NpcAction.None -> { /* do nothing */ }
             }
+        }
+
+        // 2. Clean up dead NPCs (remove from list)
+        npcs.removeAll { !it.isAlive }
+
+        // 3. Zone spawn timers — spawn new NPC copies up to maxEntities
+        for ((zoneId, config) in zoneSpawnConfigs) {
+            if (config.rateTicks == 0 || config.maxEntities == 0) continue
+
+            val timer = zoneSpawnTimers.getOrPut(zoneId) { 0 } + 1
+            zoneSpawnTimers[zoneId] = timer
+
+            if (timer < config.rateTicks) continue
+            zoneSpawnTimers[zoneId] = 0
+
+            if (aliveNpcsInZone(zoneId) >= config.maxEntities) continue
+
+            val templates = zoneTemplates[zoneId] ?: continue
+            if (templates.isEmpty()) continue
+
+            // Pick a random template and try to spawn at its startRoomId
+            val (template, _) = templates.random()
+            if (config.maxPerRoom > 0 && aliveNpcsInRoom(template.startRoomId) >= config.maxPerRoom) continue
+
+            val instanceId = "${template.id}#${nextSpawnIndex++}"
+            val spawned = createNpcState(template, zoneId, instanceId)
+            npcs.add(spawned)
+            logger.info("Spawned ${spawned.name} ($instanceId) at ${spawned.startRoomId}")
+
+            events.add(
+                NpcEvent(
+                    npcName = spawned.name,
+                    fromRoomId = null,
+                    toRoomId = spawned.startRoomId,
+                    direction = null,
+                    npcId = spawned.id,
+                    hostile = spawned.hostile,
+                    currentHp = spawned.currentHp,
+                    maxHp = spawned.maxHp,
+                    templateId = spawned.templateId
+                )
+            )
         }
 
         return events

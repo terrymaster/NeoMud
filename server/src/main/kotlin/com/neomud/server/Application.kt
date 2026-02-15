@@ -67,7 +67,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     val skillCatalog = loadResult.skillCatalog
     val raceCatalog = loadResult.raceCatalog
     val spellCatalog = loadResult.spellCatalog
-    val npcManager = NpcManager(worldGraph)
+    val npcManager = NpcManager(worldGraph, loadResult.zoneSpawnConfigs)
     npcManager.loadNpcs(loadResult.npcDataList)
 
     // Create dependencies

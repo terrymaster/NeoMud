@@ -28,7 +28,8 @@ sealed class CombatEvent {
         val killerName: String,
         val roomId: RoomId,
         val npcLevel: Int = 1,
-        val xpReward: Long = 0
+        val xpReward: Long = 0,
+        val templateId: String = ""
     ) : CombatEvent()
 
     data class PlayerKilled(
@@ -115,7 +116,8 @@ class CombatManager(
                     killerName = player.name,
                     roomId = roomId,
                     npcLevel = target.level,
-                    xpReward = target.xpReward
+                    xpReward = target.xpReward,
+                    templateId = target.templateId
                 ))
                 logger.info("${player.name} killed ${target.name} in $roomId")
             }
@@ -132,7 +134,7 @@ class CombatManager(
         for ((roomId, playersInRoom) in playersByRoom) {
             val hostiles = npcManager.getLivingHostileNpcsInRoom(roomId)
             for (npc in hostiles) {
-                val visiblePlayers = playersInRoom.filter { !it.isHidden }
+                val visiblePlayers = playersInRoom.filter { !it.isHidden && (it.player?.currentHp ?: 0) > 0 }
                 val targetSession = visiblePlayers.randomOrNull() ?: continue
                 val targetPlayer = targetSession.player ?: continue
 

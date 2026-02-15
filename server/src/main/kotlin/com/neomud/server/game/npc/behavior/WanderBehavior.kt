@@ -1,6 +1,7 @@
 package com.neomud.server.game.npc.behavior
 
 import com.neomud.server.game.npc.NpcState
+import com.neomud.shared.model.RoomId
 import com.neomud.server.world.WorldGraph
 
 class WanderBehavior(
@@ -8,7 +9,7 @@ class WanderBehavior(
 ) : BehaviorNode {
     private var tickCounter = 0
 
-    override fun tick(npc: NpcState, world: WorldGraph): NpcAction {
+    override fun tick(npc: NpcState, world: WorldGraph, canMoveTo: (RoomId) -> Boolean): NpcAction {
         tickCounter++
         if (tickCounter < moveEveryNTicks) return NpcAction.None
         tickCounter = 0
@@ -18,7 +19,7 @@ class WanderBehavior(
         // Filter exits to only rooms in the same zone (prevents forest monsters entering town)
         val sameZoneExits = currentRoom.exits.values.filter { targetRoomId ->
             val targetRoom = world.getRoom(targetRoomId)
-            targetRoom != null && targetRoom.zoneId == npc.zoneId
+            targetRoom != null && targetRoom.zoneId == npc.zoneId && canMoveTo(targetRoomId)
         }
 
         if (sameZoneExits.isEmpty()) return NpcAction.None
