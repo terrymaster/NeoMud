@@ -253,4 +253,30 @@ sealed class ServerMessage {
         val cpSpent: Int,
         val remainingCp: Int
     ) : ServerMessage()
+
+    @Serializable
+    @SerialName("spell_catalog_sync")
+    data class SpellCatalogSync(val spells: List<SpellDef>) : ServerMessage()
+
+    @Serializable
+    @SerialName("spell_cast_result")
+    data class SpellCastResult(
+        val success: Boolean,
+        val spellName: String,
+        val message: String,
+        val newMp: Int,
+        val newHp: Int? = null
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("spell_effect")
+    data class SpellEffect(
+        val casterName: String,
+        val targetName: String,
+        val spellName: String,
+        val effectAmount: Int,
+        val targetNewHp: Int,
+        val targetMaxHp: Int,
+        val isPlayerTarget: Boolean = false
+    ) : ServerMessage()
 }

@@ -42,6 +42,9 @@ object MudColors {
     val xp = Color(0xFF55FFFF)          // bright cyan - XP gain
     val levelUp = Color(0xFFFFFF55)     // bright yellow - level up
 
+    // Spells
+    val spell = Color(0xFF9B59FF)       // purple - spell messages
+
     // Default
     val default = Color(0xFFCCCCCC)     // light grey
 }

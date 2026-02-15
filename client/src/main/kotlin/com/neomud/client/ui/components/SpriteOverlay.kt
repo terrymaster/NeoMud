@@ -43,6 +43,8 @@ fun SpriteOverlay(
     onPickupItem: (String, Int) -> Unit,
     onPickupCoins: (String) -> Unit,
     serverBaseUrl: String,
+    readiedSpellId: String? = null,
+    onCastSpell: ((String, String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -74,7 +76,11 @@ fun SpriteOverlay(
                             )
                             .clickable(enabled = npc.hostile) {
                                 if (npc.hostile) {
-                                    onSelectTarget(if (isSelected) null else npc.id)
+                                    if (readiedSpellId != null && onCastSpell != null) {
+                                        onCastSpell(readiedSpellId, npc.id)
+                                    } else {
+                                        onSelectTarget(if (isSelected) null else npc.id)
+                                    }
                                 }
                             },
                         contentAlignment = Alignment.BottomCenter

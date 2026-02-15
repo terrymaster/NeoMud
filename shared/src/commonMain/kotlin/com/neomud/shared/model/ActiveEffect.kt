@@ -9,7 +9,9 @@ enum class EffectType {
     @SerialName("HEAL_OVER_TIME") HEAL_OVER_TIME,
     @SerialName("BUFF_STRENGTH") BUFF_STRENGTH,
     @SerialName("BUFF_AGILITY") BUFF_AGILITY,
-    @SerialName("HASTE") HASTE
+    @SerialName("HASTE") HASTE,
+    @SerialName("BUFF_INTELLECT") BUFF_INTELLECT,
+    @SerialName("BUFF_WILLPOWER") BUFF_WILLPOWER
 }
 
 @Serializable

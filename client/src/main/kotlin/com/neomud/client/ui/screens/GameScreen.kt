@@ -34,6 +34,8 @@ import com.neomud.client.ui.components.PlayerStatusPanel
 import com.neomud.client.ui.components.RoomBackground
 import com.neomud.client.ui.components.RoomItemsSidebar
 import com.neomud.client.ui.components.SettingsPanel
+import com.neomud.client.ui.components.SpellBar
+import com.neomud.client.ui.components.SpellPicker
 import com.neomud.client.ui.components.SpriteOverlay
 import com.neomud.client.ui.components.TrainerPanel
 import com.neomud.client.viewmodel.GameViewModel
@@ -65,6 +67,11 @@ fun GameScreen(
     val deathMessage by gameViewModel.deathMessage.collectAsState()
     val showTrainer by gameViewModel.showTrainer.collectAsState()
     val trainerInfo by gameViewModel.trainerInfo.collectAsState()
+    val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
+    val spellSlots by gameViewModel.spellSlots.collectAsState()
+    val readiedSpellId by gameViewModel.readiedSpellId.collectAsState()
+    val showSpellPicker by gameViewModel.showSpellPicker.collectAsState()
+    val editingSlotIndex by gameViewModel.editingSlotIndex.collectAsState()
 
     var sayText by remember { mutableStateOf("") }
 
@@ -169,6 +176,23 @@ fun GameScreen(
             }
         }
 
+        // Spell picker overlay
+        if (showSpellPicker) {
+            val slotIdx = editingSlotIndex
+            if (slotIdx != null) {
+                val p = player
+                val cd = p?.let { classCatalog[it.characterClass] }
+                SpellPicker(
+                    slotIndex = slotIdx,
+                    spells = spellCatalogState.values.toList(),
+                    classDef = cd,
+                    playerLevel = p?.level ?: 1,
+                    onAssignSpell = { spellId -> gameViewModel.assignSpellToSlot(slotIdx, spellId) },
+                    onClose = { gameViewModel.dismissSpellPicker() }
+                )
+            }
+        }
+
         // Death overlay
         if (deathMessage != null) {
             DeathOverlay(
@@ -242,6 +266,9 @@ private fun GameScreenPortrait(
     val activeEffects by gameViewModel.activeEffects.collectAsState()
     val isHidden by gameViewModel.isHidden.collectAsState()
     val classCatalog by gameViewModel.classCatalog.collectAsState()
+    val readiedSpellId by gameViewModel.readiedSpellId.collectAsState()
+    val spellSlots by gameViewModel.spellSlots.collectAsState()
+    val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Top: Room background + sidebars + floating minimap (~35%)
@@ -270,6 +297,8 @@ private fun GameScreenPortrait(
                 onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
                 onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) },
                 serverBaseUrl = gameViewModel.serverBaseUrl,
+                readiedSpellId = readiedSpellId,
+                onCastSpell = { spellId, targetId -> gameViewModel.castSpell(spellId, targetId) },
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -323,7 +352,11 @@ private fun GameScreenPortrait(
                     showInventory = showInventory,
                     player = player,
                     activeEffects = activeEffects,
-                    isHidden = isHidden
+                    isHidden = isHidden,
+                    spellSlots = spellSlots,
+                    spellCatalog = spellCatalogState,
+                    readiedSpellId = readiedSpellId,
+                    classCatalog = classCatalog
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -369,6 +402,9 @@ private fun GameScreenLandscape(
     val activeEffects by gameViewModel.activeEffects.collectAsState()
     val isHidden by gameViewModel.isHidden.collectAsState()
     val classCatalog by gameViewModel.classCatalog.collectAsState()
+    val readiedSpellId by gameViewModel.readiedSpellId.collectAsState()
+    val spellSlots by gameViewModel.spellSlots.collectAsState()
+    val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Top row (~55%): Map area + Controls side-by-side
@@ -403,6 +439,8 @@ private fun GameScreenLandscape(
                     onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
                     onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) },
                     serverBaseUrl = gameViewModel.serverBaseUrl,
+                    readiedSpellId = readiedSpellId,
+                    onCastSpell = { spellId, targetId -> gameViewModel.castSpell(spellId, targetId) },
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -465,7 +503,13 @@ private fun GameScreenLandscape(
                             showInventory = showInventory,
                             player = null, // Status is above in landscape
                             activeEffects = activeEffects,
-                            isHidden = isHidden
+                            isHidden = isHidden,
+                            spellSlots = spellSlots,
+                            spellCatalog = spellCatalogState,
+                            readiedSpellId = readiedSpellId,
+                            classCatalog = classCatalog,
+                            playerCharacterClass = player?.characterClass,
+                            currentMp = player?.currentMp ?: 0
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         SettingsGearButton(onClick = { gameViewModel.toggleSettings() })
@@ -508,8 +552,15 @@ private fun ActionButtonRow(
     showInventory: Boolean,
     player: com.neomud.shared.model.Player?,
     activeEffects: List<com.neomud.shared.model.ActiveEffect>,
-    isHidden: Boolean = false
+    isHidden: Boolean = false,
+    spellSlots: List<String?> = listOf(null, null, null, null),
+    spellCatalog: Map<String, com.neomud.shared.model.SpellDef> = emptyMap(),
+    readiedSpellId: String? = null,
+    classCatalog: Map<String, com.neomud.shared.model.CharacterClassDef> = emptyMap(),
+    playerCharacterClass: String? = player?.characterClass,
+    currentMp: Int = player?.currentMp ?: 0
 ) {
+    Column {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
@@ -616,6 +667,21 @@ private fun ActionButtonRow(
             )
         }
     }
+
+    // Spell bar on its own row (only if class has magic schools)
+    val hasMagic = playerCharacterClass != null && classCatalog[playerCharacterClass]?.magicSchools?.isNotEmpty() == true
+    if (hasMagic) {
+        Spacer(modifier = Modifier.height(4.dp))
+        SpellBar(
+            spellSlots = spellSlots,
+            spellCatalog = spellCatalog,
+            readiedSpellId = readiedSpellId,
+            currentMp = currentMp,
+            onReadySpell = { gameViewModel.readySpell(it) },
+            onOpenSpellPicker = { gameViewModel.openSpellPicker(it) }
+        )
+    }
+    } // end Column
 }
 
 @Composable

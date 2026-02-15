@@ -80,6 +80,22 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     private val _showTrainer = MutableStateFlow(false)
     val showTrainer: StateFlow<Boolean> = _showTrainer
 
+    // Spells
+    private val _spellCatalog = MutableStateFlow<Map<String, SpellDef>>(emptyMap())
+    val spellCatalog: StateFlow<Map<String, SpellDef>> = _spellCatalog
+
+    private val _spellSlots = MutableStateFlow<List<String?>>(listOf(null, null, null, null))
+    val spellSlots: StateFlow<List<String?>> = _spellSlots
+
+    private val _readiedSpellId = MutableStateFlow<String?>(null)
+    val readiedSpellId: StateFlow<String?> = _readiedSpellId
+
+    private val _showSpellPicker = MutableStateFlow(false)
+    val showSpellPicker: StateFlow<Boolean> = _showSpellPicker
+
+    private val _editingSlotIndex = MutableStateFlow<Int?>(null)
+    val editingSlotIndex: StateFlow<Int?> = _editingSlotIndex
+
     // Death notification
     private val _deathMessage = MutableStateFlow<String?>(null)
     val deathMessage: StateFlow<String?> = _deathMessage
@@ -97,6 +113,15 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
 
     fun setInitialPlayer(player: Player) {
         _player.value = player
+    }
+
+    fun setInitialCatalogs(
+        classes: List<CharacterClassDef> = emptyList(),
+        spells: List<SpellDef> = emptyList()
+    ) {
+        if (classes.isNotEmpty()) _classCatalog.value = classes.associateBy { it.id }
+        if (spells.isNotEmpty()) _spellCatalog.value = spells.associateBy { it.id }
+        autoAssignSpells()
     }
 
     fun startCollecting() {
@@ -286,6 +311,31 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 _skillCatalog.value = message.skills.associateBy { it.id }
             }
             is ServerMessage.RaceCatalogSync -> { /* handled by AuthViewModel */ }
+            is ServerMessage.SpellCatalogSync -> {
+                _spellCatalog.value = message.spells.associateBy { it.id }
+                autoAssignSpells()
+            }
+            is ServerMessage.SpellCastResult -> {
+                val color = if (message.success) MudColors.spell else MudColors.error
+                addLog(message.message, color)
+                if (message.success) {
+                    _player.value = _player.value?.let { p ->
+                        val newHp = message.newHp ?: p.currentHp
+                        p.copy(currentMp = message.newMp, currentHp = newHp)
+                    }
+                }
+                _readiedSpellId.value = null
+            }
+            is ServerMessage.SpellEffect -> {
+                if (!message.isPlayerTarget) {
+                    // Update NPC HP in room entities
+                    _roomEntities.value = _roomEntities.value.map { npc ->
+                        if (npc.name == message.targetName) {
+                            npc.copy(currentHp = message.targetNewHp)
+                        } else npc
+                    }
+                }
+            }
             is ServerMessage.XpGained -> {
                 addLog("+${message.amount} XP (${message.currentXp}/${message.xpToNextLevel})", MudColors.xp)
                 _player.value = _player.value?.copy(
@@ -477,5 +527,65 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     fun dismissTrainer() {
         _showTrainer.value = false
         _trainerInfo.value = null
+    }
+
+    // Spell methods
+    fun castSpell(spellId: String, targetId: String? = null) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.CastSpell(spellId, targetId))
+        }
+    }
+
+    fun readySpell(slotIndex: Int) {
+        val spellId = _spellSlots.value.getOrNull(slotIndex) ?: return
+        val spell = _spellCatalog.value[spellId] ?: return
+
+        if (spell.targetType == TargetType.SELF) {
+            // Self spells cast immediately
+            castSpell(spellId)
+        } else {
+            // Enemy spells enter readied state
+            _readiedSpellId.value = if (_readiedSpellId.value == spellId) null else spellId
+        }
+    }
+
+    fun assignSpellToSlot(index: Int, spellId: String?) {
+        val slots = _spellSlots.value.toMutableList()
+        slots[index] = spellId
+        _spellSlots.value = slots
+        _showSpellPicker.value = false
+        _editingSlotIndex.value = null
+    }
+
+    fun openSpellPicker(slotIndex: Int) {
+        _editingSlotIndex.value = slotIndex
+        _showSpellPicker.value = true
+    }
+
+    fun dismissSpellPicker() {
+        _showSpellPicker.value = false
+        _editingSlotIndex.value = null
+    }
+
+    private fun autoAssignSpells() {
+        val player = _player.value ?: return
+        val classDef = _classCatalog.value[player.characterClass] ?: return
+        if (classDef.magicSchools.isEmpty()) return
+
+        val catalog = _spellCatalog.value
+        val classSchools = classDef.magicSchools.keys
+        val classSpells = catalog.values
+            .filter { it.school in classSchools && player.level >= it.levelRequired }
+            .sortedBy { it.levelRequired }
+
+        val slots = _spellSlots.value.toMutableList()
+        var spellIdx = 0
+        for (i in slots.indices) {
+            if (slots[i] == null && spellIdx < classSpells.size) {
+                slots[i] = classSpells[spellIdx].id
+                spellIdx++
+            }
+        }
+        _spellSlots.value = slots
     }
 }

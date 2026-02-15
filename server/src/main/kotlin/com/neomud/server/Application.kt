@@ -5,6 +5,7 @@ import com.neomud.server.game.GameLoop
 import com.neomud.server.game.combat.CombatManager
 import com.neomud.server.game.commands.InventoryCommand
 import com.neomud.server.game.commands.PickupCommand
+import com.neomud.server.game.commands.SpellCommand
 import com.neomud.server.game.commands.TrainerCommand
 import com.neomud.server.game.inventory.EquipmentService
 import com.neomud.server.game.inventory.LootService
@@ -65,6 +66,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     val promptTemplateCatalog = loadResult.promptTemplateCatalog
     val skillCatalog = loadResult.skillCatalog
     val raceCatalog = loadResult.raceCatalog
+    val spellCatalog = loadResult.spellCatalog
     val npcManager = NpcManager(worldGraph)
     npcManager.loadNpcs(loadResult.npcDataList)
 
@@ -80,10 +82,11 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     val pickupCommand = PickupCommand(roomItemManager, inventoryRepository, coinRepository, itemCatalog, sessionManager)
     val combatManager = CombatManager(npcManager, sessionManager, worldGraph, equipmentService)
     val trainerCommand = TrainerCommand(classCatalog, raceCatalog, playerRepository, sessionManager, npcManager)
+    val spellCommand = SpellCommand(spellCatalog, classCatalog, npcManager, sessionManager, playerRepository)
     val commandProcessor = CommandProcessor(
         worldGraph, sessionManager, npcManager, playerRepository,
         classCatalog, itemCatalog, skillCatalog, raceCatalog, inventoryCommand, pickupCommand, roomItemManager,
-        trainerCommand
+        trainerCommand, spellCommand, spellCatalog
     )
     val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository)
 
