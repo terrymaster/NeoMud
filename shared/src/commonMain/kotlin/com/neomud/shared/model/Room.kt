@@ -13,7 +13,8 @@ data class Room(
     val zoneId: String,
     val x: Int,
     val y: Int,
-    val backgroundImage: String = ""
+    val backgroundImage: String = "",
+    val healPerTick: Int = 0
 )
 
 @Serializable

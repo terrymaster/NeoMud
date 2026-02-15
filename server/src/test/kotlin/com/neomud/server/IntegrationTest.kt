@@ -82,17 +82,17 @@ class IntegrationTest {
             assertIs<ServerMessage.LoginOk>(loginResponse)
             assertEquals("TestHero", loginResponse.player.name)
             assertEquals("WARRIOR", loginResponse.player.characterClass)
-            assertEquals("town:square", loginResponse.player.currentRoomId)
+            assertEquals("town:temple", loginResponse.player.currentRoomId)
 
             // Should receive RoomInfo
             val roomInfo = receiveServerMessage()
             assertIs<ServerMessage.RoomInfo>(roomInfo)
-            assertEquals("Town Square", roomInfo.room.name)
+            assertEquals("Temple of the Dawn", roomInfo.room.name)
 
             // Should receive MapData
             val mapData = receiveServerMessage()
             assertIs<ServerMessage.MapData>(mapData)
-            assertEquals("town:square", mapData.playerRoomId)
+            assertEquals("town:temple", mapData.playerRoomId)
             assertTrue(mapData.rooms.isNotEmpty())
 
             // Should receive InventoryUpdate
@@ -135,7 +135,7 @@ class IntegrationTest {
             receiveServerMessage() // InventoryUpdate
             receiveServerMessage() // RoomItemsUpdate
 
-            // Move north to gate
+            // Move north to town square (from temple)
             send(Frame.Text(MessageSerializer.encodeClientMessage(
                 ClientMessage.Move(Direction.NORTH)
             )))
@@ -143,11 +143,11 @@ class IntegrationTest {
             val moveOk = receiveServerMessage()
             assertIs<ServerMessage.MoveOk>(moveOk)
             assertEquals(Direction.NORTH, moveOk.direction)
-            assertEquals("North Gate", moveOk.room.name)
+            assertEquals("Town Square", moveOk.room.name)
 
             val mapData = receiveServerMessage()
             assertIs<ServerMessage.MapData>(mapData)
-            assertEquals("town:gate", mapData.playerRoomId)
+            assertEquals("town:square", mapData.playerRoomId)
 
             val roomItems = receiveServerMessage()
             assertIs<ServerMessage.RoomItemsUpdate>(roomItems)

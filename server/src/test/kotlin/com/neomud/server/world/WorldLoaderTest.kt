@@ -98,7 +98,7 @@ class WorldLoaderTest {
     @Test
     fun testDefaultSpawnRoom() {
         val result = WorldLoader.load()
-        assertEquals("town:square", result.worldGraph.defaultSpawnRoom)
+        assertEquals("town:temple", result.worldGraph.defaultSpawnRoom)
     }
 
     @Test

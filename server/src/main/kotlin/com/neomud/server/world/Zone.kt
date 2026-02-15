@@ -19,7 +19,8 @@ data class ZoneData(
     val safe: Boolean = true,
     val rooms: List<RoomData>,
     val npcs: List<NpcData> = emptyList(),
-    val spawnConfig: SpawnConfig = SpawnConfig()
+    val spawnConfig: SpawnConfig = SpawnConfig(),
+    val spawnRoom: String? = null
 )
 
 @Serializable
@@ -30,7 +31,8 @@ data class RoomData(
     val x: Int,
     val y: Int,
     val exits: Map<Direction, RoomId>,
-    val backgroundImage: String = ""
+    val backgroundImage: String = "",
+    val healPerTick: Int = 0
 )
 
 @Serializable

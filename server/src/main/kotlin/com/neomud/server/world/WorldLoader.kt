@@ -35,6 +35,7 @@ object WorldLoader {
         val allNpcData = mutableListOf<Pair<NpcData, String>>()
         val zoneSpawnConfigs = mutableMapOf<String, SpawnConfig>()
         val zoneFiles = listOf("world/town.zone.json", "world/forest.zone.json")
+        var dataDefinedSpawn: String? = null
 
         for (file in zoneFiles) {
             val resource = WorldLoader::class.java.classLoader.getResourceAsStream(file)
@@ -57,16 +58,21 @@ object WorldLoader {
                     zoneId = zone.id,
                     x = roomData.x,
                     y = roomData.y,
-                    backgroundImage = roomData.backgroundImage
+                    backgroundImage = roomData.backgroundImage,
+                    healPerTick = roomData.healPerTick
                 )
                 worldGraph.addRoom(room)
             }
 
             allNpcData.addAll(zone.npcs.map { it to zone.id })
             zoneSpawnConfigs[zone.id] = zone.spawnConfig
+
+            if (dataDefinedSpawn == null && zone.spawnRoom != null) {
+                dataDefinedSpawn = zone.spawnRoom
+            }
         }
 
-        worldGraph.setDefaultSpawn("town:square")
+        worldGraph.setDefaultSpawn(dataDefinedSpawn ?: "town:square")
         logger.info("World loaded: ${worldGraph.roomCount} rooms, ${allNpcData.size} NPCs")
 
         return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, promptTemplateCatalog, skillCatalog, raceCatalog, spellCatalog, zoneSpawnConfigs)

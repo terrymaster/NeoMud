@@ -3,6 +3,7 @@
   "name": "Millhaven",
   "description": "A bustling frontier town at the edge of the Whispering Forest.",
   "safe": true,
+  "spawnRoom": "town:temple",
   "spawnConfig": { "maxEntities": 0, "maxPerRoom": 0, "rateTicks": 0 },
   "rooms": [
     {
@@ -62,7 +63,8 @@
       "exits": {
         "NORTH": "town:square"
       },
-      "backgroundImage": "/assets/images/rooms/town_temple.webp"
+      "backgroundImage": "/assets/images/rooms/town_temple.webp",
+      "healPerTick": 5
     }
   ],
   "npcs": [

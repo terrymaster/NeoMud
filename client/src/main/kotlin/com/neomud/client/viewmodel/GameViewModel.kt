@@ -240,7 +240,10 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
             is ServerMessage.ActiveEffectsUpdate -> {
                 _activeEffects.value = message.effects
             }
-            is ServerMessage.EffectTick -> addLog(message.message, MudColors.effect)
+            is ServerMessage.EffectTick -> {
+                addLog(message.message, MudColors.effect)
+                _player.value = _player.value?.copy(currentHp = message.newHp)
+            }
             is ServerMessage.SystemMessage -> addLog("[System] ${message.message}", MudColors.system)
             is ServerMessage.Error -> addLog("[Error] ${message.message}", MudColors.error)
             is ServerMessage.LoginOk -> _player.value = message.player
