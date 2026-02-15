@@ -200,7 +200,7 @@ class NpcManager(
                 name = npcState.name,
                 description = npcState.description,
                 currentRoomId = npcState.currentRoomId,
-                behaviorType = "unknown",
+                behaviorType = npcState.behaviorType,
                 hostile = npcState.hostile,
                 currentHp = npcState.currentHp,
                 maxHp = npcState.maxHp

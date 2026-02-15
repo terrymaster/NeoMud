@@ -80,6 +80,9 @@ fun GameScreen(
 
     val availableExits = roomInfo?.room?.exits?.keys ?: emptySet()
     val hasHostiles = roomEntities.any { it.hostile }
+    val hasTrainer = roomEntities.any { it.behaviorType == "trainer" }
+    val canLevelUp = player?.let { it.currentXp >= it.xpToNextLevel && it.level < 30 } == true
+    val showTrainerButton = hasTrainer && (canLevelUp || (player?.unspentCp ?: 0) > 0)
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -103,6 +106,7 @@ fun GameScreen(
                 gameViewModel = gameViewModel,
                 availableExits = availableExits,
                 hasHostiles = hasHostiles,
+                showTrainerButton = showTrainerButton,
                 sayText = sayText,
                 onSayTextChange = { sayText = it }
             )
@@ -111,6 +115,7 @@ fun GameScreen(
                 gameViewModel = gameViewModel,
                 availableExits = availableExits,
                 hasHostiles = hasHostiles,
+                showTrainerButton = showTrainerButton,
                 sayText = sayText,
                 onSayTextChange = { sayText = it }
             )
@@ -130,6 +135,7 @@ fun GameScreen(
                     activeEffects = activeEffects,
                     playerCoins = playerCoins,
                     skillCatalog = skillCatalog,
+                    spellCatalog = spellCatalogState,
                     isHidden = isHidden,
                     onClose = { gameViewModel.toggleCharacterSheet() }
                 )
@@ -249,6 +255,7 @@ private fun GameScreenPortrait(
     gameViewModel: GameViewModel,
     availableExits: Set<Direction>,
     hasHostiles: Boolean,
+    showTrainerButton: Boolean,
     sayText: String,
     onSayTextChange: (String) -> Unit
 ) {
@@ -361,7 +368,7 @@ private fun GameScreenPortrait(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Say bar + gear in bottom row
+                // Say bar + gear/trainer in bottom row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -373,6 +380,9 @@ private fun GameScreenPortrait(
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
+                    if (showTrainerButton) {
+                        TrainerStarButton(onClick = { gameViewModel.interactTrainer() })
+                    }
                     SettingsGearButton(onClick = { gameViewModel.toggleSettings() })
                 }
             }
@@ -385,6 +395,7 @@ private fun GameScreenLandscape(
     gameViewModel: GameViewModel,
     availableExits: Set<Direction>,
     hasHostiles: Boolean,
+    showTrainerButton: Boolean,
     sayText: String,
     onSayTextChange: (String) -> Unit
 ) {
@@ -494,7 +505,8 @@ private fun GameScreenLandscape(
 
                     // Action buttons + gear in a column
                     Column(
-                        horizontalAlignment = Alignment.End
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.fillMaxHeight()
                     ) {
                         ActionButtonRow(
                             gameViewModel = gameViewModel,
@@ -511,8 +523,13 @@ private fun GameScreenLandscape(
                             playerCharacterClass = player?.characterClass,
                             currentMp = player?.currentMp ?: 0
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        SettingsGearButton(onClick = { gameViewModel.toggleSettings() })
+                        Spacer(modifier = Modifier.weight(1f))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (showTrainerButton) {
+                                TrainerStarButton(onClick = { gameViewModel.interactTrainer() })
+                            }
+                            SettingsGearButton(onClick = { gameViewModel.toggleSettings() })
+                        }
                     }
                 }
             }
@@ -682,6 +699,20 @@ private fun ActionButtonRow(
         )
     }
     } // end Column
+}
+
+@Composable
+private fun TrainerStarButton(onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(28.dp)
+    ) {
+        Text(
+            text = "\u2B50",
+            fontSize = 16.sp,
+            color = Color(0xFFFFD700)
+        )
+    }
 }
 
 @Composable

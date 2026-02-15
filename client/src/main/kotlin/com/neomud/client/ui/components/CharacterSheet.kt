@@ -39,6 +39,7 @@ fun CharacterSheet(
     activeEffects: List<ActiveEffect>,
     playerCoins: Coins,
     skillCatalog: Map<String, SkillDef> = emptyMap(),
+    spellCatalog: Map<String, SpellDef> = emptyMap(),
     isHidden: Boolean = false,
     onClose: () -> Unit
 ) {
@@ -93,6 +94,7 @@ fun CharacterSheet(
                     activeEffects = activeEffects,
                     playerCoins = playerCoins,
                     skillCatalog = skillCatalog,
+                    spellCatalog = spellCatalog,
                     isHidden = isHidden
                 )
             } else {
@@ -104,6 +106,7 @@ fun CharacterSheet(
                     activeEffects = activeEffects,
                     playerCoins = playerCoins,
                     skillCatalog = skillCatalog,
+                    spellCatalog = spellCatalog,
                     isHidden = isHidden
                 )
             }
@@ -120,6 +123,7 @@ private fun ColumnScope.CharacterSheetPortrait(
     activeEffects: List<ActiveEffect>,
     playerCoins: Coins,
     skillCatalog: Map<String, SkillDef> = emptyMap(),
+    spellCatalog: Map<String, SpellDef> = emptyMap(),
     isHidden: Boolean = false
 ) {
     Column(
@@ -134,6 +138,8 @@ private fun ColumnScope.CharacterSheetPortrait(
         EquipmentSection(equipment, itemCatalog)
         Spacer(modifier = Modifier.height(12.dp))
         SkillsSection(player, classCatalog, skillCatalog)
+        Spacer(modifier = Modifier.height(12.dp))
+        SpellsSection(player, classCatalog, spellCatalog)
         Spacer(modifier = Modifier.height(12.dp))
         ActiveEffectsSection(activeEffects, isHidden)
         Spacer(modifier = Modifier.height(12.dp))
@@ -150,6 +156,7 @@ private fun ColumnScope.CharacterSheetLandscape(
     activeEffects: List<ActiveEffect>,
     playerCoins: Coins,
     skillCatalog: Map<String, SkillDef> = emptyMap(),
+    spellCatalog: Map<String, SpellDef> = emptyMap(),
     isHidden: Boolean = false
 ) {
     Row(
@@ -157,7 +164,7 @@ private fun ColumnScope.CharacterSheetLandscape(
             .weight(1f),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Left column: Name, Vitals, Stats, Skills
+        // Left column: Name, Vitals, Stats, Skills, Spells
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -168,6 +175,8 @@ private fun ColumnScope.CharacterSheetLandscape(
             StatsSection(player)
             Spacer(modifier = Modifier.height(12.dp))
             SkillsSection(player, classCatalog, skillCatalog)
+            Spacer(modifier = Modifier.height(12.dp))
+            SpellsSection(player, classCatalog, spellCatalog)
         }
 
         VerticalDivider(color = Color(0xFF555555), thickness = 1.dp)
@@ -304,6 +313,54 @@ private fun SkillsSection(
                 )
                 Text(
                     text = skill.description,
+                    color = DimText,
+                    fontSize = 11.sp,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpellsSection(
+    player: Player,
+    classCatalog: Map<String, CharacterClassDef>,
+    spellCatalog: Map<String, SpellDef>
+) {
+    val classDef = classCatalog[player.characterClass]
+    val schools = classDef?.magicSchools ?: emptyMap()
+    if (schools.isEmpty()) return
+
+    val knownSpells = spellCatalog.values
+        .filter { spell -> spell.school in schools && spell.levelRequired <= player.level }
+        .sortedWith(compareBy({ it.school }, { it.levelRequired }, { it.name }))
+
+    SectionHeader("Spells")
+    Spacer(modifier = Modifier.height(4.dp))
+    if (knownSpells.isEmpty()) {
+        Text("No spells learned yet", color = Color(0xFF555555), fontSize = 12.sp)
+    } else {
+        for (spell in knownSpells) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = spell.name,
+                    color = Color(0xFF88AAFF),
+                    fontSize = 12.sp,
+                    modifier = Modifier.width(90.dp)
+                )
+                Text(
+                    text = "${spell.manaCost} MP",
+                    color = Color(0xFF448AFF),
+                    fontSize = 11.sp,
+                    modifier = Modifier.width(40.dp)
+                )
+                Text(
+                    text = spell.description,
                     color = DimText,
                     fontSize = 11.sp,
                     modifier = Modifier.weight(1f),
