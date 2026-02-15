@@ -22,6 +22,7 @@ class VendorCommand(
     suspend fun handleInteract(session: PlayerSession) {
         val roomId = session.currentRoomId ?: return
         val playerName = session.playerName ?: return
+        val player = session.player ?: return
 
         val vendor = npcManager.getVendorInRoom(roomId)
         if (vendor == null) {
@@ -41,7 +42,8 @@ class VendorCommand(
             vendorName = vendor.name,
             items = vendorItems,
             playerCoins = playerCoins,
-            playerInventory = playerInventory
+            playerInventory = playerInventory,
+            playerCharm = player.stats.charm
         ))
     }
 
@@ -103,6 +105,7 @@ class VendorCommand(
         if (quantity < 1) return
         val roomId = session.currentRoomId ?: return
         val playerName = session.playerName ?: return
+        val player = session.player ?: return
 
         val vendor = npcManager.getVendorInRoom(roomId)
         if (vendor == null) {
@@ -127,7 +130,7 @@ class VendorCommand(
             return
         }
 
-        val sellPriceCopper = ((item.value.toLong() * quantity) / 2).coerceAtLeast(1L)
+        val sellPriceCopper = Coins.sellPriceCopper(item.value, quantity, player.stats.charm)
         val sellPrice = Coins.fromCopper(sellPriceCopper)
         coinRepository.addCoins(playerName, sellPrice)
         logger.info("$playerName sold ${item.name} x$quantity for ${sellPrice.displayString()}")

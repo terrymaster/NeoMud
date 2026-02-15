@@ -113,10 +113,14 @@ fun VendorPanel(
                     if (selectedTab == 0) {
                         // Buy tab
                         for (vendorItem in vendorInfo.items) {
+                            val ownedQty = vendorInfo.playerInventory
+                                .filter { it.itemId == vendorItem.item.id }
+                                .sumOf { it.quantity }
                             BuyItemRow(
                                 vendorItem = vendorItem,
                                 playerCoins = vendorInfo.playerCoins,
                                 playerLevel = playerLevel,
+                                ownedCount = ownedQty,
                                 onBuy = { onBuy(vendorItem.item.id) }
                             )
                         }
@@ -136,6 +140,7 @@ fun VendorPanel(
                             SellItemRow(
                                 inventoryItem = invItem,
                                 item = item,
+                                playerCharm = vendorInfo.playerCharm,
                                 onSell = { onSell(invItem.itemId) }
                             )
                         }
@@ -151,6 +156,7 @@ private fun BuyItemRow(
     vendorItem: VendorItem,
     playerCoins: Coins,
     playerLevel: Int,
+    ownedCount: Int,
     onBuy: () -> Unit
 ) {
     val item = vendorItem.item
@@ -183,6 +189,13 @@ private fun BuyItemRow(
                         text = " Lv${item.levelRequirement}",
                         fontSize = 11.sp,
                         color = if (meetsLevel) Color(0xFF888888) else Color(0xFFCC4444)
+                    )
+                }
+                if (ownedCount > 0) {
+                    Text(
+                        text = " Owned: $ownedCount",
+                        fontSize = 11.sp,
+                        color = Color(0xFF66BB6A)
                     )
                 }
             }
@@ -227,11 +240,12 @@ private fun BuyItemRow(
 private fun SellItemRow(
     inventoryItem: InventoryItem,
     item: Item?,
+    playerCharm: Int,
     onSell: () -> Unit
 ) {
     val itemName = item?.name ?: inventoryItem.itemId
     val itemValue = item?.value ?: 0
-    val sellPriceCopper = ((itemValue.toLong() * inventoryItem.quantity) / 2).coerceAtLeast(if (itemValue > 0) 1L else 0L)
+    val sellPriceCopper = if (itemValue > 0) Coins.sellPriceCopper(itemValue, inventoryItem.quantity, playerCharm) else 0L
     val sellPrice = Coins.fromCopper(sellPriceCopper)
     val canSell = itemValue > 0
 

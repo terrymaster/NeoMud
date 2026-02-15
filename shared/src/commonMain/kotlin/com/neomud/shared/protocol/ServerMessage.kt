@@ -287,7 +287,8 @@ sealed class ServerMessage {
         val vendorName: String,
         val items: List<VendorItem>,
         val playerCoins: Coins,
-        val playerInventory: List<InventoryItem>
+        val playerInventory: List<InventoryItem>,
+        val playerCharm: Int = 0
     ) : ServerMessage()
 
     @Serializable

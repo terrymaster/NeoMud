@@ -34,6 +34,11 @@ data class Coins(
     }
 
     companion object {
+        fun sellPriceCopper(itemValue: Int, quantity: Int, charm: Int): Long {
+            val sellPercent = (25 + charm * 74 / 100).coerceIn(25, 99)
+            return (itemValue.toLong() * quantity * sellPercent / 100).coerceAtLeast(1L)
+        }
+
         fun fromCopper(total: Long): Coins {
             var remaining = total.coerceAtLeast(0L)
             val plat = (remaining / 1_000_000).toInt()
