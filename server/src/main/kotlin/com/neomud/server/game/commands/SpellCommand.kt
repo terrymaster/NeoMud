@@ -228,7 +228,7 @@ class SpellCommand(
     }
 
     private suspend fun handleNpcKill(target: com.neomud.server.game.npc.NpcState, killerName: String, roomId: String, session: PlayerSession) {
-        npcManager.markDead(target.id)
+        if (!npcManager.markDead(target.id)) return
         sessionManager.broadcastToRoom(
             roomId,
             ServerMessage.NpcDied(target.id, target.name, killerName, roomId)

@@ -219,8 +219,12 @@ class NpcManager(
     fun getNpcState(npcId: String): NpcState? =
         npcs.find { it.id == npcId && it.isAlive }
 
-    fun markDead(npcId: String) {
-        npcs.find { it.id == npcId }?.let { it.currentHp = 0 }
+    @Synchronized
+    fun markDead(npcId: String): Boolean {
+        val npc = npcs.find { it.id == npcId } ?: return false
+        if (npc.currentHp <= 0) return false
+        npc.currentHp = 0
+        return true
     }
 
     fun getTrainerInRoom(roomId: RoomId): NpcState? =

@@ -11,6 +11,10 @@ class InventoryCommand(
     private val itemCatalog: ItemCatalog,
     private val coinRepository: CoinRepository
 ) {
+    companion object {
+        private val VALID_SLOTS = setOf("weapon", "shield", "head", "chest", "legs", "feet", "hands")
+    }
+
     suspend fun handleViewInventory(session: PlayerSession) {
         val playerName = session.playerName ?: return
         val inventory = inventoryRepository.getInventory(playerName)
@@ -22,6 +26,11 @@ class InventoryCommand(
     suspend fun handleEquipItem(session: PlayerSession, itemId: String, slot: String) {
         val playerName = session.playerName ?: return
         val player = session.player ?: return
+
+        if (slot !in VALID_SLOTS) {
+            session.send(ServerMessage.Error("Invalid equipment slot."))
+            return
+        }
 
         val item = itemCatalog.getItem(itemId)
         if (item == null) {

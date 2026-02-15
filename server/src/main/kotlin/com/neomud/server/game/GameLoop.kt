@@ -147,7 +147,7 @@ class GameLoop(
                     )
                 }
                 is CombatEvent.NpcKilled -> {
-                    npcManager.markDead(event.npcId)
+                    if (!npcManager.markDead(event.npcId)) continue
                     sessionManager.broadcastToRoom(
                         event.roomId,
                         ServerMessage.NpcDied(event.npcId, event.npcName, event.killerName, event.roomId)
