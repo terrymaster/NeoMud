@@ -91,7 +91,8 @@ sealed class ServerMessage {
         val damage: Int,
         val defenderHp: Int,
         val defenderMaxHp: Int,
-        val isPlayerDefender: Boolean = false
+        val isPlayerDefender: Boolean = false,
+        val isBackstab: Boolean = false
     ) : ServerMessage()
 
     @Serializable
@@ -206,4 +207,12 @@ sealed class ServerMessage {
         val itemId: String?,
         val itemName: String?
     ) : ServerMessage()
+
+    @Serializable
+    @SerialName("hide_mode_update")
+    data class HideModeUpdate(val hidden: Boolean, val message: String = "") : ServerMessage()
+
+    @Serializable
+    @SerialName("skill_catalog_sync")
+    data class SkillCatalogSync(val skills: List<SkillDef>) : ServerMessage()
 }

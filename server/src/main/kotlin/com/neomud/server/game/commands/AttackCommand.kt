@@ -17,6 +17,7 @@ class AttackCommand(
                 session.send(ServerMessage.SystemMessage("No hostile targets here."))
                 return
             }
+
             session.attackMode = true
             session.send(ServerMessage.AttackModeUpdate(true))
         } else {

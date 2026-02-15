@@ -38,6 +38,8 @@ fun CharacterSheet(
     itemCatalog: Map<String, Item>,
     activeEffects: List<ActiveEffect>,
     playerCoins: Coins,
+    skillCatalog: Map<String, SkillDef> = emptyMap(),
+    isHidden: Boolean = false,
     onClose: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
@@ -89,7 +91,9 @@ fun CharacterSheet(
                     equipment = equipment,
                     itemCatalog = itemCatalog,
                     activeEffects = activeEffects,
-                    playerCoins = playerCoins
+                    playerCoins = playerCoins,
+                    skillCatalog = skillCatalog,
+                    isHidden = isHidden
                 )
             } else {
                 CharacterSheetPortrait(
@@ -98,7 +102,9 @@ fun CharacterSheet(
                     equipment = equipment,
                     itemCatalog = itemCatalog,
                     activeEffects = activeEffects,
-                    playerCoins = playerCoins
+                    playerCoins = playerCoins,
+                    skillCatalog = skillCatalog,
+                    isHidden = isHidden
                 )
             }
         }
@@ -112,7 +118,9 @@ private fun ColumnScope.CharacterSheetPortrait(
     equipment: Map<String, String>,
     itemCatalog: Map<String, Item>,
     activeEffects: List<ActiveEffect>,
-    playerCoins: Coins
+    playerCoins: Coins,
+    skillCatalog: Map<String, SkillDef> = emptyMap(),
+    isHidden: Boolean = false
 ) {
     Column(
         modifier = Modifier
@@ -125,7 +133,9 @@ private fun ColumnScope.CharacterSheetPortrait(
         Spacer(modifier = Modifier.height(12.dp))
         EquipmentSection(equipment, itemCatalog)
         Spacer(modifier = Modifier.height(12.dp))
-        ActiveEffectsSection(activeEffects)
+        SkillsSection(player, classCatalog, skillCatalog)
+        Spacer(modifier = Modifier.height(12.dp))
+        ActiveEffectsSection(activeEffects, isHidden)
         Spacer(modifier = Modifier.height(12.dp))
         CoinsSection(playerCoins)
     }
@@ -138,14 +148,16 @@ private fun ColumnScope.CharacterSheetLandscape(
     equipment: Map<String, String>,
     itemCatalog: Map<String, Item>,
     activeEffects: List<ActiveEffect>,
-    playerCoins: Coins
+    playerCoins: Coins,
+    skillCatalog: Map<String, SkillDef> = emptyMap(),
+    isHidden: Boolean = false
 ) {
     Row(
         modifier = Modifier
             .weight(1f),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Left column: Name, Vitals, Stats
+        // Left column: Name, Vitals, Stats, Skills
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -154,6 +166,8 @@ private fun ColumnScope.CharacterSheetLandscape(
             NameAndVitals(player, classCatalog)
             Spacer(modifier = Modifier.height(12.dp))
             StatsSection(player)
+            Spacer(modifier = Modifier.height(12.dp))
+            SkillsSection(player, classCatalog, skillCatalog)
         }
 
         VerticalDivider(color = Color(0xFF555555), thickness = 1.dp)
@@ -166,7 +180,7 @@ private fun ColumnScope.CharacterSheetLandscape(
         ) {
             EquipmentSection(equipment, itemCatalog)
             Spacer(modifier = Modifier.height(12.dp))
-            ActiveEffectsSection(activeEffects)
+            ActiveEffectsSection(activeEffects, isHidden)
             Spacer(modifier = Modifier.height(12.dp))
             CoinsSection(playerCoins)
         }
@@ -245,12 +259,67 @@ private fun EquipmentSection(equipment: Map<String, String>, itemCatalog: Map<St
 }
 
 @Composable
-private fun ActiveEffectsSection(activeEffects: List<ActiveEffect>) {
+private fun SkillsSection(
+    player: Player,
+    classCatalog: Map<String, CharacterClassDef>,
+    skillCatalog: Map<String, SkillDef>
+) {
+    SectionHeader("Skills")
+    Spacer(modifier = Modifier.height(4.dp))
+    val classDef = classCatalog[player.characterClass]
+    val classSkillIds = classDef?.skills ?: emptyList()
+    if (classSkillIds.isEmpty() || skillCatalog.isEmpty()) {
+        Text("No skills", color = Color(0xFF555555), fontSize = 12.sp)
+    } else {
+        for (skillId in classSkillIds) {
+            val skill = skillCatalog[skillId] ?: continue
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = skill.name,
+                    color = BrightText,
+                    fontSize = 12.sp,
+                    modifier = Modifier.width(80.dp)
+                )
+                Text(
+                    text = skill.description,
+                    color = DimText,
+                    fontSize = 11.sp,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActiveEffectsSection(activeEffects: List<ActiveEffect>, isHidden: Boolean = false) {
     SectionHeader("Active Effects")
     Spacer(modifier = Modifier.height(4.dp))
-    if (activeEffects.isEmpty()) {
+    if (activeEffects.isEmpty() && !isHidden) {
         Text("No active effects", color = Color(0xFF555555), fontSize = 12.sp)
     } else {
+        if (isHidden) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Hidden",
+                    color = Color(0xFF888888),
+                    fontSize = 12.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "stealth",
+                    color = Color(0xFF666666),
+                    fontSize = 11.sp
+                )
+            }
+        }
         for (effect in activeEffects) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),

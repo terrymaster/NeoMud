@@ -61,6 +61,14 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     private val _activeEffects = MutableStateFlow<List<ActiveEffect>>(emptyList())
     val activeEffects: StateFlow<List<ActiveEffect>> = _activeEffects
 
+    // Stealth
+    private val _isHidden = MutableStateFlow(false)
+    val isHidden: StateFlow<Boolean> = _isHidden
+
+    // Skill catalog
+    private val _skillCatalog = MutableStateFlow<Map<String, SkillDef>>(emptyMap())
+    val skillCatalog: StateFlow<Map<String, SkillDef>> = _skillCatalog
+
     // Character sheet
     private val _showCharacterSheet = MutableStateFlow(false)
     val showCharacterSheet: StateFlow<Boolean> = _showCharacterSheet
@@ -141,8 +149,10 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
             }
             is ServerMessage.CombatHit -> {
                 if (message.damage > 0) {
-                    val color = if (message.isPlayerDefender) MudColors.combatEnemy else MudColors.combatYou
-                    addLog("${message.attackerName} hits ${message.defenderName} for ${message.damage} damage! (${message.defenderHp}/${message.defenderMaxHp} HP)", color)
+                    val verb = if (message.isBackstab) "backstabs" else "hits"
+                    val color = if (message.isPlayerDefender) MudColors.combatEnemy
+                        else if (message.isBackstab) MudColors.stealth else MudColors.combatYou
+                    addLog("${message.attackerName} $verb ${message.defenderName} for ${message.damage} damage! (${message.defenderHp}/${message.defenderMaxHp} HP)", color)
                 }
                 if (message.isPlayerDefender) {
                     _player.value = _player.value?.copy(currentHp = message.defenderHp)
@@ -172,6 +182,7 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 _attackMode.value = false
                 _selectedTargetId.value = null
                 _activeEffects.value = emptyList()
+                _isHidden.value = false
                 _roomGroundItems.value = emptyList()
                 _roomGroundCoins.value = Coins()
             }
@@ -254,6 +265,18 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                     val qtyStr = if (message.quantity > 1) " x${message.quantity}" else ""
                     addLog("You pick up ${message.itemName}$qtyStr.", MudColors.loot)
                 }
+            }
+            is ServerMessage.HideModeUpdate -> {
+                _isHidden.value = message.hidden
+                if (message.message.isNotEmpty()) {
+                    addLog(message.message, MudColors.stealth)
+                }
+                if (message.hidden) {
+                    _attackMode.value = false
+                }
+            }
+            is ServerMessage.SkillCatalogSync -> {
+                _skillCatalog.value = message.skills.associateBy { it.id }
             }
         }
     }
@@ -361,6 +384,18 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     fun pickupCoins(coinType: String) {
         viewModelScope.launch {
             wsClient.send(ClientMessage.PickupCoins(coinType))
+        }
+    }
+
+    fun toggleHideMode(enabled: Boolean) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.HideToggle(enabled))
+        }
+    }
+
+    fun useSkill(skillId: String, targetId: String? = null) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.UseSkill(skillId, targetId))
         }
     }
 

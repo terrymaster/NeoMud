@@ -27,6 +27,11 @@ class SessionManager {
             .filter { it.currentRoomId == roomId && it.playerName != null }
             .map { it.playerName!! }
 
+    fun getVisiblePlayerNamesInRoom(roomId: RoomId): List<String> =
+        sessions.values
+            .filter { it.currentRoomId == roomId && it.playerName != null && !it.isHidden }
+            .map { it.playerName!! }
+
     fun getAllAuthenticatedSessions(): List<PlayerSession> =
         sessions.values.filter { it.isAuthenticated }
 

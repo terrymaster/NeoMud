@@ -8,5 +8,6 @@ data class CharacterClassDef(
     val name: String,
     val description: String,
     val baseStats: Stats,
+    val skills: List<String> = emptyList(),
     val properties: Map<String, String> = emptyMap()
 )

@@ -36,5 +36,6 @@ data class NpcData(
     val hostile: Boolean = false,
     val maxHp: Int = 0,
     val damage: Int = 0,
-    val level: Int = 1
+    val level: Int = 1,
+    val perception: Int = 0
 )

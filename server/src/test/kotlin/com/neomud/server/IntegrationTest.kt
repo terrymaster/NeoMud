@@ -25,12 +25,14 @@ class IntegrationTest {
         return "jdbc:sqlite:${tmpFile.absolutePath}"
     }
 
-    /** Consume the two catalog sync messages sent on connect */
+    /** Consume the catalog sync messages sent on connect */
     private suspend fun DefaultClientWebSocketSession.consumeCatalogSync() {
         val msg1 = receiveServerMessage()
         assertIs<ServerMessage.ClassCatalogSync>(msg1)
         val msg2 = receiveServerMessage()
         assertIs<ServerMessage.ItemCatalogSync>(msg2)
+        val msg3 = receiveServerMessage()
+        assertIs<ServerMessage.SkillCatalogSync>(msg3)
     }
 
     @Test

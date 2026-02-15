@@ -4,73 +4,85 @@
       "id": "BARBARIAN",
       "name": "Barbarian",
       "description": "A fierce warrior driven by primal rage",
-      "baseStats": { "strength": 16, "dexterity": 12, "constitution": 14, "intelligence": 8, "wisdom": 10 }
+      "baseStats": { "strength": 16, "dexterity": 12, "constitution": 14, "intelligence": 8, "wisdom": 10 },
+      "skills": ["BASH", "KICK", "PARRY", "TRACK"]
     },
     {
       "id": "BARD",
       "name": "Bard",
       "description": "A magical entertainer weaving spells through performance",
-      "baseStats": { "strength": 8, "dexterity": 14, "constitution": 12, "intelligence": 14, "wisdom": 12 }
+      "baseStats": { "strength": 8, "dexterity": 14, "constitution": 12, "intelligence": 14, "wisdom": 12 },
+      "skills": ["HIDE", "PICK_LOCK", "HAGGLE", "MEDITATE"]
     },
     {
       "id": "CLERIC",
       "name": "Cleric",
       "description": "A divine champion wielding the power of the gods",
-      "baseStats": { "strength": 12, "dexterity": 10, "constitution": 14, "intelligence": 10, "wisdom": 16 }
+      "baseStats": { "strength": 12, "dexterity": 10, "constitution": 14, "intelligence": 10, "wisdom": 16 },
+      "skills": ["BASH", "MEDITATE"]
     },
     {
       "id": "DRUID",
       "name": "Druid",
       "description": "A keeper of the old faith, commanding nature's wrath",
-      "baseStats": { "strength": 8, "dexterity": 12, "constitution": 14, "intelligence": 12, "wisdom": 16 }
+      "baseStats": { "strength": 8, "dexterity": 12, "constitution": 14, "intelligence": 12, "wisdom": 16 },
+      "skills": ["MEDITATE", "PERCEPTION", "TRACK"]
     },
     {
       "id": "FIGHTER",
       "name": "Fighter",
       "description": "A master of martial combat and battlefield tactics",
-      "baseStats": { "strength": 16, "dexterity": 12, "constitution": 14, "intelligence": 10, "wisdom": 10 }
+      "baseStats": { "strength": 16, "dexterity": 12, "constitution": 14, "intelligence": 10, "wisdom": 10 },
+      "skills": ["BASH", "KICK", "PARRY", "DODGE"]
     },
     {
       "id": "MONK",
       "name": "Monk",
       "description": "A martial artist channeling the power of ki",
-      "baseStats": { "strength": 10, "dexterity": 16, "constitution": 12, "intelligence": 10, "wisdom": 14 }
+      "baseStats": { "strength": 10, "dexterity": 16, "constitution": 12, "intelligence": 10, "wisdom": 14 },
+      "skills": ["KICK", "DODGE", "SNEAK", "PERCEPTION", "MEDITATE"]
     },
     {
       "id": "PALADIN",
       "name": "Paladin",
       "description": "A holy warrior bound by a sacred oath",
-      "baseStats": { "strength": 16, "dexterity": 10, "constitution": 14, "intelligence": 8, "wisdom": 12 }
+      "baseStats": { "strength": 16, "dexterity": 10, "constitution": 14, "intelligence": 8, "wisdom": 12 },
+      "skills": ["BASH", "PARRY", "MEDITATE"]
     },
     {
       "id": "RANGER",
       "name": "Ranger",
       "description": "A skilled hunter and tracker of the wilds",
-      "baseStats": { "strength": 12, "dexterity": 16, "constitution": 12, "intelligence": 10, "wisdom": 14 }
+      "baseStats": { "strength": 12, "dexterity": 16, "constitution": 12, "intelligence": 10, "wisdom": 14 },
+      "skills": ["HIDE", "SNEAK", "KICK", "DODGE", "PERCEPTION", "TRACK"]
     },
     {
       "id": "ROGUE",
       "name": "Rogue",
       "description": "A scoundrel who uses stealth and cunning",
-      "baseStats": { "strength": 10, "dexterity": 16, "constitution": 12, "intelligence": 14, "wisdom": 10 }
+      "baseStats": { "strength": 10, "dexterity": 16, "constitution": 12, "intelligence": 14, "wisdom": 10 },
+      "skills": ["HIDE", "SNEAK", "BACKSTAB", "PICK_LOCK", "DODGE", "PERCEPTION", "HAGGLE"]
     },
     {
       "id": "SORCERER",
       "name": "Sorcerer",
       "description": "A spellcaster drawing on innate magical power",
-      "baseStats": { "strength": 8, "dexterity": 12, "constitution": 14, "intelligence": 16, "wisdom": 12 }
+      "baseStats": { "strength": 8, "dexterity": 12, "constitution": 14, "intelligence": 16, "wisdom": 12 },
+      "skills": ["MEDITATE"]
     },
     {
       "id": "WARLOCK",
       "name": "Warlock",
       "description": "A wielder of magic granted by an otherworldly pact",
-      "baseStats": { "strength": 8, "dexterity": 12, "constitution": 14, "intelligence": 14, "wisdom": 12 }
+      "baseStats": { "strength": 8, "dexterity": 12, "constitution": 14, "intelligence": 14, "wisdom": 12 },
+      "skills": ["MEDITATE"]
     },
     {
       "id": "WIZARD",
       "name": "Wizard",
       "description": "A scholarly mage whose power comes from study",
-      "baseStats": { "strength": 8, "dexterity": 10, "constitution": 12, "intelligence": 16, "wisdom": 14 }
+      "baseStats": { "strength": 8, "dexterity": 10, "constitution": 12, "intelligence": 16, "wisdom": 14 },
+      "skills": ["MEDITATE", "PERCEPTION"]
     }
   ]
 }

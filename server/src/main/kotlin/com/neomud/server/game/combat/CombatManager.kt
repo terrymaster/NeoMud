@@ -17,7 +17,8 @@ sealed class CombatEvent {
         val defenderHp: Int,
         val defenderMaxHp: Int,
         val isPlayerDefender: Boolean,
-        val roomId: RoomId
+        val roomId: RoomId,
+        val isBackstab: Boolean = false
     ) : CombatEvent()
 
     data class NpcKilled(
@@ -62,15 +63,30 @@ class CombatManager(
                 continue
             }
 
+            // Check if this is a backstab (first attack from stealth)
+            val isBackstab = session.isHidden
+
+            // Break stealth on attack
+            if (session.isHidden) {
+                session.isHidden = false
+            }
+
             // Calculate damage with equipment bonuses
             val bonuses = equipmentService.getCombatBonuses(player.name)
-            val damage = if (bonuses.weaponDamageRange > 0) {
+            var damage = if (bonuses.weaponDamageRange > 0) {
                 // Has weapon: strength + damageBonus + random(1..weaponDamageRange)
                 player.stats.strength + bonuses.totalDamageBonus + (1..bonuses.weaponDamageRange).random()
             } else {
                 // Unarmed fallback: strength + random(1..3)
                 player.stats.strength + (1..3).random()
             }
+
+            // Backstab: 3x damage multiplier
+            if (isBackstab) {
+                damage *= 3
+                logger.info("${player.name} backstabs ${target.name} for $damage damage in $roomId")
+            }
+
             target.currentHp -= damage
 
             events.add(CombatEvent.Hit(
@@ -80,7 +96,8 @@ class CombatManager(
                 defenderHp = target.currentHp.coerceAtLeast(0),
                 defenderMaxHp = target.maxHp,
                 isPlayerDefender = false,
-                roomId = roomId
+                roomId = roomId,
+                isBackstab = isBackstab
             ))
 
             if (target.currentHp <= 0) {
@@ -105,7 +122,8 @@ class CombatManager(
         for ((roomId, playersInRoom) in playersByRoom) {
             val hostiles = npcManager.getLivingHostileNpcsInRoom(roomId)
             for (npc in hostiles) {
-                val targetSession = playersInRoom.randomOrNull() ?: continue
+                val visiblePlayers = playersInRoom.filter { !it.isHidden }
+                val targetSession = visiblePlayers.randomOrNull() ?: continue
                 val targetPlayer = targetSession.player ?: continue
 
                 // NPC damage reduced by player's armor, minimum 1

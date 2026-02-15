@@ -8,9 +8,12 @@ import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.LootTableCatalog
 import com.neomud.server.world.WorldGraph
+import com.neomud.server.game.npc.NpcState
+import com.neomud.server.session.PlayerSession
 import com.neomud.shared.model.ActiveEffect
 import com.neomud.shared.model.EffectType
 import com.neomud.shared.model.GroundItem
+import com.neomud.shared.model.RoomId
 import com.neomud.shared.protocol.ServerMessage
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
@@ -54,6 +57,12 @@ class GameLoop(
                         event.npcId, event.hostile, event.currentHp, event.maxHp
                     )
                 )
+
+                // Any NPC entering a room does a perception check against hidden players
+                val npc = npcManager.getNpcState(event.npcId)
+                if (npc != null) {
+                    npcPerceptionScan(npc, event.toRoomId)
+                }
             }
         }
 
@@ -62,11 +71,27 @@ class GameLoop(
         for (event in combatEvents) {
             when (event) {
                 is CombatEvent.Hit -> {
+                    // If this was a backstab, notify the attacker their stealth broke
+                    if (event.isBackstab) {
+                        val attackerSession = sessionManager.getSession(event.attackerName)
+                        if (attackerSession != null) {
+                            try {
+                                attackerSession.send(ServerMessage.HideModeUpdate(false, "You strike from the shadows!"))
+                            } catch (_: Exception) { }
+                            // Reveal to other players
+                            sessionManager.broadcastToRoom(
+                                event.roomId,
+                                ServerMessage.PlayerEntered(event.attackerName, event.roomId),
+                                exclude = event.attackerName
+                            )
+                        }
+                    }
                     sessionManager.broadcastToRoom(
                         event.roomId,
                         ServerMessage.CombatHit(
                             event.attackerName, event.defenderName, event.damage,
-                            event.defenderHp, event.defenderMaxHp, event.isPlayerDefender
+                            event.defenderHp, event.defenderMaxHp, event.isPlayerDefender,
+                            event.isBackstab
                         )
                     )
                 }
@@ -134,9 +159,10 @@ class GameLoop(
                         session.send(ServerMessage.PlayerDied(event.killerName, event.respawnRoomId, event.respawnHp, event.respawnMp))
                     } catch (_: Exception) { }
 
-                    // Disable attack mode
+                    // Disable attack mode and stealth
                     session.attackMode = false
                     session.selectedTargetId = null
+                    session.isHidden = false
 
                     // Broadcast leave from death room
                     sessionManager.broadcastToRoom(
@@ -164,7 +190,7 @@ class GameLoop(
                     // Send room info and map to respawned player
                     val room = worldGraph.getRoom(event.respawnRoomId)
                     if (room != null) {
-                        val playersInRoom = sessionManager.getPlayerNamesInRoom(event.respawnRoomId)
+                        val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(event.respawnRoomId)
                             .filter { it != playerName }
                         val npcsInRoom = npcManager.getNpcsInRoom(event.respawnRoomId)
                         try {
@@ -187,7 +213,20 @@ class GameLoop(
             }
         }
 
-        // 3. Process active effects on all authenticated players
+        // 3. Tick down skill cooldowns
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            val iter = session.skillCooldowns.iterator()
+            while (iter.hasNext()) {
+                val entry = iter.next()
+                entry.setValue(entry.value - 1)
+                if (entry.value <= 0) iter.remove()
+            }
+        }
+
+        // 4. NPC perception scans for hidden players
+        npcPerceptionPhase()
+
+        // 5. Process active effects on all authenticated players
         for (session in sessionManager.getAllAuthenticatedSessions()) {
             val effects = session.activeEffects.toList()
             if (effects.isEmpty()) continue
@@ -233,6 +272,69 @@ class GameLoop(
             try {
                 session.send(ServerMessage.ActiveEffectsUpdate(session.activeEffects.toList()))
             } catch (_: Exception) { /* session closing */ }
+        }
+    }
+
+    /**
+     * Periodic scan: each NPC in a room with hidden players rolls perception.
+     * Only one check per NPC per tick to avoid spam.
+     */
+    private suspend fun npcPerceptionPhase() {
+        // Collect rooms that have hidden players
+        val hiddenByRoom = mutableMapOf<RoomId, MutableList<PlayerSession>>()
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            if (session.isHidden) {
+                val roomId = session.currentRoomId ?: continue
+                hiddenByRoom.getOrPut(roomId) { mutableListOf() }.add(session)
+            }
+        }
+
+        for ((roomId, hiddenPlayers) in hiddenByRoom) {
+            val npcsInRoom = npcManager.getLivingNpcsInRoom(roomId)
+            for (npc in npcsInRoom) {
+                for (session in hiddenPlayers) {
+                    if (!session.isHidden) continue // may have been revealed by a prior NPC this tick
+                    npcPerceptionCheck(npc, session, roomId)
+                }
+            }
+        }
+    }
+
+    /**
+     * Immediate scan when an NPC enters a room - checks all hidden players there.
+     */
+    private suspend fun npcPerceptionScan(npc: NpcState, roomId: RoomId) {
+        val hiddenPlayers = sessionManager.getSessionsInRoom(roomId).filter { it.isHidden }
+        for (session in hiddenPlayers) {
+            npcPerceptionCheck(npc, session, roomId)
+        }
+    }
+
+    /**
+     * NPC perception vs player stealth.
+     * NPC roll: perception + level + d20
+     * Player passive stealth DC: DEX + INT/2 + level/2 + 10
+     */
+    private suspend fun npcPerceptionCheck(npc: NpcState, session: PlayerSession, roomId: RoomId) {
+        val player = session.player ?: return
+        val playerName = session.playerName ?: return
+
+        val npcRoll = npc.perception + npc.level + (1..20).random()
+        val stealthDc = player.stats.dexterity + player.stats.intelligence / 2 + player.level / 2 + 10
+
+        if (npcRoll >= stealthDc) {
+            // Detected!
+            session.isHidden = false
+            try {
+                session.send(ServerMessage.HideModeUpdate(false, "${npc.name} spots you lurking in the shadows!"))
+            } catch (_: Exception) { }
+
+            // Reveal to other players in the room
+            sessionManager.broadcastToRoom(
+                roomId,
+                ServerMessage.PlayerEntered(playerName, roomId),
+                exclude = playerName
+            )
         }
     }
 }

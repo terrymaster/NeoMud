@@ -23,6 +23,7 @@ import com.neomud.shared.model.Player
 fun PlayerStatusPanel(
     player: Player,
     activeEffects: List<ActiveEffect>,
+    isHidden: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -73,9 +74,25 @@ fun PlayerStatusPanel(
         }
 
         // Active effect icons
-        if (activeEffects.isNotEmpty()) {
+        if (activeEffects.isNotEmpty() || isHidden) {
             Spacer(modifier = Modifier.height(2.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (isHidden) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF555555).copy(alpha = 0.8f))
+                            .border(1.dp, Color(0xFF888888), CircleShape)
+                    ) {
+                        Text(
+                            text = "\uD83D\uDC41",
+                            fontSize = 10.sp,
+                            color = Color.White
+                        )
+                    }
+                }
                 for (effect in activeEffects) {
                     EffectIcon(effect)
                 }

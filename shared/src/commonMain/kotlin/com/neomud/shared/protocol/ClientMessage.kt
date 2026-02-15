@@ -75,4 +75,12 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("pickup_coins")
     data class PickupCoins(val coinType: String) : ClientMessage()
+
+    @Serializable
+    @SerialName("hide_toggle")
+    data class HideToggle(val enabled: Boolean) : ClientMessage()
+
+    @Serializable
+    @SerialName("use_skill")
+    data class UseSkill(val skillId: String, val targetId: String? = null) : ClientMessage()
 }

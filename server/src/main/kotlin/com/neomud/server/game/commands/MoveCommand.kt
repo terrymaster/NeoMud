@@ -41,13 +41,35 @@ class MoveCommand(
         }
 
         val playerName = session.playerName!!
+        val player = session.player
 
-        // Broadcast leave to old room
-        sessionManager.broadcastToRoom(
-            currentRoomId,
-            ServerMessage.PlayerLeft(playerName, currentRoomId, direction),
-            exclude = playerName
-        )
+        // Stealth check on room transition
+        var sneaking = false
+        if (session.isHidden && player != null) {
+            val stats = player.stats
+            val roll = (1..20).random()
+            val check = stats.dexterity + stats.intelligence / 2 + player.level / 2 + roll
+            val difficulty = 15
+
+            if (check >= difficulty) {
+                // Sneak successful - stay hidden, no broadcasts
+                sneaking = true
+                session.send(ServerMessage.HideModeUpdate(true, "Sneaking..."))
+            } else {
+                // Sneak failed - stealth breaks
+                session.isHidden = false
+                session.send(ServerMessage.HideModeUpdate(false, "Your movement gives you away!"))
+            }
+        }
+
+        // Broadcast leave to old room (only if not sneaking)
+        if (!sneaking) {
+            sessionManager.broadcastToRoom(
+                currentRoomId,
+                ServerMessage.PlayerLeft(playerName, currentRoomId, direction),
+                exclude = playerName
+            )
+        }
 
         // Update session
         session.currentRoomId = targetRoomId
@@ -60,15 +82,39 @@ class MoveCommand(
             session.send(ServerMessage.AttackModeUpdate(false))
         }
 
-        // Broadcast enter to new room
-        sessionManager.broadcastToRoom(
-            targetRoomId,
-            ServerMessage.PlayerEntered(playerName, targetRoomId),
-            exclude = playerName
-        )
+        // Broadcast enter to new room (only if not sneaking)
+        if (!sneaking) {
+            sessionManager.broadcastToRoom(
+                targetRoomId,
+                ServerMessage.PlayerEntered(playerName, targetRoomId),
+                exclude = playerName
+            )
+        } else {
+            // Even if the player's sneak check passed, NPCs in the new room get perception rolls
+            val npcsHere = npcManager.getLivingNpcsInRoom(targetRoomId)
+            if (npcsHere.isNotEmpty() && player != null) {
+                val stats = player.stats
+                val stealthDc = stats.dexterity + stats.intelligence / 2 + player.level / 2 + 10
+                for (npc in npcsHere) {
+                    if (!session.isHidden) break // already detected by a prior NPC
+                    val npcRoll = npc.perception + npc.level + (1..20).random()
+                    if (npcRoll >= stealthDc) {
+                        session.isHidden = false
+                        sneaking = false
+                        session.send(ServerMessage.HideModeUpdate(false, "${npc.name} notices you sneaking in!"))
+                        sessionManager.broadcastToRoom(
+                            targetRoomId,
+                            ServerMessage.PlayerEntered(playerName, targetRoomId),
+                            exclude = playerName
+                        )
+                        break
+                    }
+                }
+            }
+        }
 
         // Send MoveOk + MapData to the player
-        val playersInRoom = sessionManager.getPlayerNamesInRoom(targetRoomId)
+        val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(targetRoomId)
             .filter { it != playerName }
         val npcsInRoom = npcManager.getNpcsInRoom(targetRoomId)
 
@@ -88,12 +134,12 @@ class MoveCommand(
         session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
 
         // Persist position async
-        val player = session.player
-        if (player != null) {
+        val playerState = session.player
+        if (playerState != null) {
             coroutineScope {
                 launch(Dispatchers.IO) {
                     try {
-                        playerRepository.savePlayerState(player)
+                        playerRepository.savePlayerState(playerState)
                     } catch (_: Exception) {
                         // Fire-and-forget
                     }

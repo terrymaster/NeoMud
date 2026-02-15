@@ -11,6 +11,17 @@ class SayCommand(
         val roomId = session.currentRoomId ?: return
         val playerName = session.playerName ?: return
 
+        // Break stealth on say
+        if (session.isHidden) {
+            session.isHidden = false
+            session.send(ServerMessage.HideModeUpdate(false, "Speaking reveals your presence!"))
+            sessionManager.broadcastToRoom(
+                roomId,
+                ServerMessage.PlayerEntered(playerName, roomId),
+                exclude = playerName
+            )
+        }
+
         sessionManager.broadcastToRoom(
             roomId,
             ServerMessage.PlayerSays(playerName, message)

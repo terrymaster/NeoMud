@@ -62,6 +62,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     val itemCatalog = loadResult.itemCatalog
     val lootTableCatalog = loadResult.lootTableCatalog
     val promptTemplateCatalog = loadResult.promptTemplateCatalog
+    val skillCatalog = loadResult.skillCatalog
     val npcManager = NpcManager(worldGraph)
     npcManager.loadNpcs(loadResult.npcDataList)
 
@@ -78,7 +79,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     val combatManager = CombatManager(npcManager, sessionManager, worldGraph, equipmentService)
     val commandProcessor = CommandProcessor(
         worldGraph, sessionManager, npcManager, playerRepository,
-        classCatalog, itemCatalog, inventoryCommand, pickupCommand, roomItemManager
+        classCatalog, itemCatalog, skillCatalog, inventoryCommand, pickupCommand, roomItemManager
     )
     val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager)
 

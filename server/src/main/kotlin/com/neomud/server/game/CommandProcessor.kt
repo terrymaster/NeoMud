@@ -1,6 +1,8 @@
 package com.neomud.server.game
 
 import com.neomud.server.game.commands.AttackCommand
+import com.neomud.server.game.commands.BackstabCommand
+import com.neomud.server.game.commands.HideCommand
 import com.neomud.server.game.commands.InventoryCommand
 import com.neomud.server.game.commands.LookCommand
 import com.neomud.server.game.commands.MoveCommand
@@ -13,6 +15,7 @@ import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ClassCatalog
 import com.neomud.server.world.ItemCatalog
+import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
@@ -25,6 +28,7 @@ class CommandProcessor(
     private val playerRepository: PlayerRepository,
     private val classCatalog: ClassCatalog,
     private val itemCatalog: ItemCatalog,
+    private val skillCatalog: SkillCatalog,
     private val inventoryCommand: InventoryCommand,
     private val pickupCommand: PickupCommand,
     private val roomItemManager: RoomItemManager
@@ -34,10 +38,13 @@ class CommandProcessor(
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager)
     private val sayCommand = SayCommand(sessionManager)
     private val attackCommand = AttackCommand(npcManager)
+    private val hideCommand = HideCommand(sessionManager, npcManager)
+    private val backstabCommand = BackstabCommand(npcManager, sessionManager)
 
     suspend fun sendCatalogSync(session: PlayerSession) {
         session.send(ServerMessage.ClassCatalogSync(classCatalog.getAllClasses()))
         session.send(ServerMessage.ItemCatalogSync(itemCatalog.getAllItems()))
+        session.send(ServerMessage.SkillCatalogSync(skillCatalog.getAllSkills()))
     }
 
     suspend fun process(session: PlayerSession, message: ClientMessage) {
@@ -79,6 +86,17 @@ class CommandProcessor(
             }
             is ClientMessage.PickupCoins -> {
                 requireAuth(session) { pickupCommand.handlePickupCoins(session, message.coinType) }
+            }
+            is ClientMessage.HideToggle -> {
+                requireAuth(session) { hideCommand.handleToggle(session, message.enabled) }
+            }
+            is ClientMessage.UseSkill -> {
+                requireAuth(session) {
+                    when (message.skillId.uppercase()) {
+                        "BACKSTAB" -> backstabCommand.execute(session, message.targetId)
+                        else -> session.send(ServerMessage.SystemMessage("Unknown skill: ${message.skillId}"))
+                    }
+                }
             }
         }
     }
@@ -134,7 +152,7 @@ class CommandProcessor(
                 // Send initial room info
                 val room = worldGraph.getRoom(player.currentRoomId)
                 if (room != null) {
-                    val playersInRoom = sessionManager.getPlayerNamesInRoom(player.currentRoomId)
+                    val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(player.currentRoomId)
                         .filter { it != player.name }
                     val npcsInRoom = npcManager.getNpcsInRoom(player.currentRoomId)
                     session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))

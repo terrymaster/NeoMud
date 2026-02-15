@@ -14,6 +14,8 @@ class PlayerSession(
     val activeEffects: MutableList<ActiveEffect> = mutableListOf()
     var attackMode: Boolean = false
     var selectedTargetId: String? = null
+    var isHidden: Boolean = false
+    val skillCooldowns: MutableMap<String, Int> = mutableMapOf()
 
     val isAuthenticated: Boolean get() = player != null
 

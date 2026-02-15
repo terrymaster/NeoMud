@@ -22,6 +22,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.neomud.client.ui.theme.MudColors
 import com.neomud.client.ui.components.CharacterSheet
 import com.neomud.client.ui.components.DirectionPad
 import com.neomud.client.ui.components.EntitySidebar
@@ -63,6 +64,9 @@ fun GameScreen(
     val deathMessage by gameViewModel.deathMessage.collectAsState()
 
     var sayText by remember { mutableStateOf("") }
+
+    val isHidden by gameViewModel.isHidden.collectAsState()
+    val skillCatalog by gameViewModel.skillCatalog.collectAsState()
 
     val availableExits = roomInfo?.room?.exits?.keys ?: emptySet()
     val hasHostiles = roomEntities.any { it.hostile }
@@ -115,6 +119,8 @@ fun GameScreen(
                     itemCatalog = itemCatalog,
                     activeEffects = activeEffects,
                     playerCoins = playerCoins,
+                    skillCatalog = skillCatalog,
+                    isHidden = isHidden,
                     onClose = { gameViewModel.toggleCharacterSheet() }
                 )
             }
@@ -218,6 +224,8 @@ private fun GameScreenPortrait(
     val roomGroundItems by gameViewModel.roomGroundItems.collectAsState()
     val roomGroundCoins by gameViewModel.roomGroundCoins.collectAsState()
     val activeEffects by gameViewModel.activeEffects.collectAsState()
+    val isHidden by gameViewModel.isHidden.collectAsState()
+    val classCatalog by gameViewModel.classCatalog.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Top: Room background + sidebars + floating minimap (~35%)
@@ -298,7 +306,8 @@ private fun GameScreenPortrait(
                     hasHostiles = hasHostiles,
                     showInventory = showInventory,
                     player = player,
-                    activeEffects = activeEffects
+                    activeEffects = activeEffects,
+                    isHidden = isHidden
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -342,6 +351,8 @@ private fun GameScreenLandscape(
     val roomGroundItems by gameViewModel.roomGroundItems.collectAsState()
     val roomGroundCoins by gameViewModel.roomGroundCoins.collectAsState()
     val activeEffects by gameViewModel.activeEffects.collectAsState()
+    val isHidden by gameViewModel.isHidden.collectAsState()
+    val classCatalog by gameViewModel.classCatalog.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Top row (~55%): Map area + Controls side-by-side
@@ -407,6 +418,7 @@ private fun GameScreenLandscape(
                     PlayerStatusPanel(
                         player = p,
                         activeEffects = activeEffects,
+                        isHidden = isHidden,
                         onClick = { gameViewModel.toggleCharacterSheet() },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -436,7 +448,8 @@ private fun GameScreenLandscape(
                             hasHostiles = hasHostiles,
                             showInventory = showInventory,
                             player = null, // Status is above in landscape
-                            activeEffects = activeEffects
+                            activeEffects = activeEffects,
+                            isHidden = isHidden
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         SettingsGearButton(onClick = { gameViewModel.toggleSettings() })
@@ -478,7 +491,8 @@ private fun ActionButtonRow(
     hasHostiles: Boolean,
     showInventory: Boolean,
     player: com.neomud.shared.model.Player?,
-    activeEffects: List<com.neomud.shared.model.ActiveEffect>
+    activeEffects: List<com.neomud.shared.model.ActiveEffect>,
+    isHidden: Boolean = false
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -519,6 +533,38 @@ private fun ActionButtonRow(
 
         Spacer(modifier = Modifier.width(4.dp))
 
+        // Hide/Stealth button (available to all classes)
+        val hideEnabled = !attackMode || isHidden
+        val hideBorderColor = when {
+            isHidden -> MudColors.stealth
+            else -> MaterialTheme.colorScheme.primary
+        }
+        val hideBgColor = if (isHidden) Color(0x44888888) else Color.Transparent
+        OutlinedButton(
+            onClick = { gameViewModel.toggleHideMode(!isHidden) },
+            enabled = hideEnabled,
+            modifier = Modifier.size(48.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(
+                width = if (isHidden) 2.dp else 1.dp,
+                color = hideBorderColor
+            ),
+            contentPadding = PaddingValues(0.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = hideBgColor,
+                disabledContainerColor = Color.Transparent
+            )
+        ) {
+            // Dark cloak icon
+            Text(
+                text = "\uD83E\uDDE5",
+                fontSize = 20.sp,
+                color = hideBorderColor
+            )
+        }
+
+        Spacer(modifier = Modifier.width(4.dp))
+
         // Bag button
         val bagBorderColor = if (showInventory) Color(0xFFFFD700) else MaterialTheme.colorScheme.primary
         OutlinedButton(
@@ -548,6 +594,7 @@ private fun ActionButtonRow(
             PlayerStatusPanel(
                 player = player,
                 activeEffects = activeEffects,
+                isHidden = isHidden,
                 onClick = { gameViewModel.toggleCharacterSheet() },
                 modifier = Modifier.weight(1f)
             )

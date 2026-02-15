@@ -22,6 +22,7 @@ data class NpcState(
     var currentHp: Int = 0,
     val damage: Int = 0,
     val level: Int = 1,
+    val perception: Int = 0,
     val zoneId: String = ""
 ) {
     val isAlive: Boolean get() = maxHp == 0 || currentHp > 0
@@ -62,6 +63,7 @@ class NpcManager(private val worldGraph: WorldGraph) {
                     currentHp = data.maxHp,
                     damage = data.damage,
                     level = data.level,
+                    perception = data.perception,
                     zoneId = zoneId
                 )
             )
@@ -127,6 +129,9 @@ class NpcManager(private val worldGraph: WorldGraph) {
 
     fun getLivingHostileNpcsInRoom(roomId: RoomId): List<NpcState> =
         npcs.filter { it.currentRoomId == roomId && it.hostile && it.currentHp > 0 }
+
+    fun getLivingNpcsInRoom(roomId: RoomId): List<NpcState> =
+        npcs.filter { it.currentRoomId == roomId && it.currentHp > 0 }
 
     fun getNpcState(npcId: String): NpcState? =
         npcs.find { it.id == npcId && it.isAlive }

@@ -306,7 +306,7 @@ class MessageSerializerTest {
     fun testClassCatalogSyncRoundTrip() {
         val classes = listOf(
             CharacterClassDef("FIGHTER", "Fighter", "A master of martial combat", Stats(16, 12, 14, 10, 10)),
-            CharacterClassDef("WIZARD", "Wizard", "A scholarly mage", Stats(8, 10, 12, 16, 14), mapOf("spellbook" to "true"))
+            CharacterClassDef("WIZARD", "Wizard", "A scholarly mage", Stats(8, 10, 12, 16, 14), properties = mapOf("spellbook" to "true"))
         )
         val original = ServerMessage.ClassCatalogSync(classes)
         val json = MessageSerializer.encodeServerMessage(original)
@@ -467,6 +467,78 @@ class MessageSerializerTest {
         val original = ClientMessage.PickupCoins("gold")
         val json = MessageSerializer.encodeClientMessage(original)
         val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testHideToggleRoundTrip() {
+        val original = ClientMessage.HideToggle(true)
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testHideToggleDisableRoundTrip() {
+        val original = ClientMessage.HideToggle(false)
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testUseSkillRoundTrip() {
+        val original = ClientMessage.UseSkill("BACKSTAB", "npc:shadow_wolf")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testUseSkillNoTargetRoundTrip() {
+        val original = ClientMessage.UseSkill("HIDE")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testHideModeUpdateRoundTrip() {
+        val original = ServerMessage.HideModeUpdate(true, "You slip into the shadows.")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testHideModeUpdateNoMessageRoundTrip() {
+        val original = ServerMessage.HideModeUpdate(false)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testSkillCatalogSyncRoundTrip() {
+        val skills = listOf(
+            SkillDef("HIDE", "Hide", "Slip into shadows.", "stealth", "dexterity", "intelligence", cooldownTicks = 2, difficulty = 15),
+            SkillDef("BACKSTAB", "Backstab", "Strike from shadows.", "combat", "dexterity", "strength", cooldownTicks = 4, properties = mapOf("damageMultiplier" to "3"))
+        )
+        val original = ServerMessage.SkillCatalogSync(skills)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testCharacterClassDefWithSkillsRoundTrip() {
+        val classDef = CharacterClassDef(
+            "ROGUE", "Rogue", "A scoundrel", Stats(10, 16, 12, 14, 10),
+            skills = listOf("HIDE", "SNEAK", "BACKSTAB")
+        )
+        val original = ServerMessage.ClassCatalogSync(listOf(classDef))
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
         assertEquals(original, decoded)
     }
 }
