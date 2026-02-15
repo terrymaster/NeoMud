@@ -280,4 +280,33 @@ sealed class ServerMessage {
         val targetMaxHp: Int,
         val isPlayerTarget: Boolean = false
     ) : ServerMessage()
+
+    @Serializable
+    @SerialName("vendor_info")
+    data class VendorInfo(
+        val vendorName: String,
+        val items: List<VendorItem>,
+        val playerCoins: Coins,
+        val playerInventory: List<InventoryItem>
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("buy_result")
+    data class BuyResult(
+        val success: Boolean,
+        val message: String,
+        val updatedCoins: Coins,
+        val updatedInventory: List<InventoryItem>,
+        val equipment: Map<String, String>
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("sell_result")
+    data class SellResult(
+        val success: Boolean,
+        val message: String,
+        val updatedCoins: Coins,
+        val updatedInventory: List<InventoryItem>,
+        val equipment: Map<String, String>
+    ) : ServerMessage()
 }

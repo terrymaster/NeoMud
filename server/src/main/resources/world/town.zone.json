@@ -89,6 +89,29 @@
       "description": "A weathered veteran in ornate armor, bearing the scars of countless battles. His keen eyes assess you with the practiced gaze of someone who has trained hundreds of warriors. He serves as the guild trainer for all adventurers.",
       "startRoomId": "town:square",
       "behaviorType": "trainer"
+    },
+    {
+      "id": "npc:blacksmith",
+      "name": "Blacksmith Torren",
+      "description": "A brawny human blacksmith with arms like oak branches and a soot-stained leather apron. He works the forge with practiced ease, hammer ringing against glowing steel. Racks of weapons and armor line the walls of his shop.",
+      "startRoomId": "town:market",
+      "behaviorType": "vendor",
+      "vendorItems": [
+        "item:iron_sword",
+        "item:wooden_shield",
+        "item:leather_cap",
+        "item:leather_chest",
+        "item:leather_legs",
+        "item:leather_boots",
+        "item:leather_gloves",
+        "item:chain_coif",
+        "item:chainmail_vest",
+        "item:chain_leggings",
+        "item:iron_boots",
+        "item:iron_gauntlets",
+        "item:iron_shield",
+        "item:steel_longsword"
+      ]
     }
   ]
 }

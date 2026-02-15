@@ -22,9 +22,11 @@ class SayCommand(
             )
         }
 
+        val sanitized = message.take(500)
+
         sessionManager.broadcastToRoom(
             roomId,
-            ServerMessage.PlayerSays(playerName, message)
+            ServerMessage.PlayerSays(playerName, sanitized)
         )
     }
 }

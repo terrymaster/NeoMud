@@ -102,4 +102,16 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("cast_spell")
     data class CastSpell(val spellId: String, val targetId: String? = null) : ClientMessage()
+
+    @Serializable
+    @SerialName("interact_vendor")
+    data object InteractVendor : ClientMessage()
+
+    @Serializable
+    @SerialName("buy_item")
+    data class BuyItem(val itemId: String, val quantity: Int = 1) : ClientMessage()
+
+    @Serializable
+    @SerialName("sell_item")
+    data class SellItem(val itemId: String, val quantity: Int = 1) : ClientMessage()
 }

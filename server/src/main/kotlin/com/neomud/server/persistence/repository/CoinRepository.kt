@@ -6,8 +6,10 @@ import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import org.slf4j.LoggerFactory
 
 class CoinRepository {
+    private val logger = LoggerFactory.getLogger(CoinRepository::class.java)
 
     fun getCoins(playerName: String): Coins = transaction {
         PlayerCoinsTable.selectAll().where {
@@ -20,6 +22,25 @@ class CoinRepository {
                 platinum = row[PlayerCoinsTable.platinum]
             )
         } ?: Coins()
+    }
+
+    fun subtractCoins(playerName: String, cost: Coins): Boolean = transaction {
+        val current = getCoins(playerName)
+        val currentTotal = current.totalCopper()
+        val costTotal = cost.totalCopper()
+        if (currentTotal < costTotal) {
+            false
+        } else {
+            val remaining = Coins.fromCopper(currentTotal - costTotal)
+            PlayerCoinsTable.update({ PlayerCoinsTable.playerName eq playerName }) {
+                it[copper] = remaining.copper
+                it[silver] = remaining.silver
+                it[gold] = remaining.gold
+                it[platinum] = remaining.platinum
+            }
+            logger.info("Subtracted ${cost.displayString()} from $playerName, remaining: ${remaining.displayString()}")
+            true
+        }
     }
 
     fun addCoins(playerName: String, coins: Coins): Unit = transaction {

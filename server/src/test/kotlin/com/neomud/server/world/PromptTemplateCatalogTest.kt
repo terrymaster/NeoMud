@@ -11,7 +11,7 @@ class PromptTemplateCatalogTest {
     @Test
     fun testLoadPromptTemplates() {
         val catalog = PromptTemplateCatalog.load()
-        assertEquals(28, catalog.templateCount, "Should load 28 prompt templates")
+        assertEquals(29, catalog.templateCount, "Should load 29 prompt templates")
     }
 
     @Test
@@ -50,7 +50,7 @@ class PromptTemplateCatalogTest {
         val rooms = catalog.getTemplatesByType("room")
         assertEquals(10, rooms.size, "Should have 10 room templates")
         val npcs = catalog.getTemplatesByType("npc")
-        assertEquals(4, npcs.size, "Should have 4 NPC templates")
+        assertEquals(5, npcs.size, "Should have 5 NPC templates")
         val items = catalog.getTemplatesByType("item")
         assertEquals(10, items.size, "Should have 10 item templates")
     }

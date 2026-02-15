@@ -110,6 +110,15 @@
     },
     {
       "entityType": "npc",
+      "entityId": "npc:blacksmith",
+      "prompt": "Full-body brawny human blacksmith standing upright facing the viewer, muscular arms, soot-stained leather apron, holding a forge hammer in one hand and tongs in the other, short dark hair. Single character, isolated on solid transparent background, no ground, no scenery.",
+      "style": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
+      "negativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
+      "width": 384,
+      "height": 512
+    },
+    {
+      "entityType": "npc",
       "entityId": "npc:shadow_wolf",
       "prompt": "Full-body large wolf with midnight-black fur, amber glowing eyes, wisps of shadow clinging to its form, in an aggressive stalking pose facing the viewer. Single creature, isolated on solid transparent background, no ground, no scenery.",
       "style": "fantasy creature sprite, full body, side-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",

@@ -17,6 +17,7 @@ class PickupCommand(
     private val sessionManager: SessionManager
 ) {
     suspend fun handlePickupItem(session: PlayerSession, itemId: String, quantity: Int) {
+        if (quantity < 1) return
         val playerName = session.playerName ?: return
         val roomId = session.currentRoomId ?: return
 

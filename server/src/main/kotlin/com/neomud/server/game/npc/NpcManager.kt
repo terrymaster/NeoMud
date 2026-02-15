@@ -28,7 +28,8 @@ data class NpcState(
     val behaviorType: String = "idle",
     val zoneId: String = "",
     val startRoomId: RoomId = "",
-    val templateId: String = ""
+    val templateId: String = "",
+    val vendorItems: List<String> = emptyList()
 ) {
     val isAlive: Boolean get() = maxHp == 0 || currentHp > 0
 }
@@ -91,7 +92,8 @@ class NpcManager(
             behaviorType = data.behaviorType,
             zoneId = zoneId,
             startRoomId = data.startRoomId,
-            templateId = data.id
+            templateId = data.id,
+            vendorItems = data.vendorItems
         )
     }
 
@@ -223,4 +225,7 @@ class NpcManager(
 
     fun getTrainerInRoom(roomId: RoomId): NpcState? =
         npcs.find { it.currentRoomId == roomId && it.behaviorType == "trainer" && it.isAlive }
+
+    fun getVendorInRoom(roomId: RoomId): NpcState? =
+        npcs.find { it.currentRoomId == roomId && it.behaviorType == "vendor" && it.isAlive }
 }

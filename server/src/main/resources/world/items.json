@@ -90,6 +90,84 @@
       "maxStack": 10
     },
     {
+      "id": "item:chain_coif",
+      "name": "Chain Coif",
+      "description": "A hood of interlocking iron rings that protects the head.",
+      "type": "armor",
+      "slot": "head",
+      "armorValue": 3,
+      "value": 45,
+      "weight": 3,
+      "levelRequirement": 3
+    },
+    {
+      "id": "item:chainmail_vest",
+      "name": "Chainmail Vest",
+      "description": "A vest of interlocking iron rings, offering solid protection.",
+      "type": "armor",
+      "slot": "chest",
+      "armorValue": 7,
+      "value": 120,
+      "weight": 8,
+      "levelRequirement": 3
+    },
+    {
+      "id": "item:chain_leggings",
+      "name": "Chain Leggings",
+      "description": "Leggings reinforced with iron chain links.",
+      "type": "armor",
+      "slot": "legs",
+      "armorValue": 5,
+      "value": 75,
+      "weight": 5,
+      "levelRequirement": 3
+    },
+    {
+      "id": "item:iron_boots",
+      "name": "Iron Boots",
+      "description": "Heavy boots with iron plating for superior foot protection.",
+      "type": "armor",
+      "slot": "feet",
+      "armorValue": 3,
+      "value": 45,
+      "weight": 4,
+      "levelRequirement": 3
+    },
+    {
+      "id": "item:iron_gauntlets",
+      "name": "Iron Gauntlets",
+      "description": "Sturdy gauntlets of hammered iron.",
+      "type": "armor",
+      "slot": "hands",
+      "armorValue": 2,
+      "value": 35,
+      "weight": 2,
+      "levelRequirement": 3
+    },
+    {
+      "id": "item:iron_shield",
+      "name": "Iron Shield",
+      "description": "A solid iron-banded shield that can deflect heavy blows.",
+      "type": "armor",
+      "slot": "shield",
+      "armorValue": 4,
+      "value": 80,
+      "weight": 6,
+      "levelRequirement": 3
+    },
+    {
+      "id": "item:steel_longsword",
+      "name": "Steel Longsword",
+      "description": "A finely forged steel longsword with a keen edge.",
+      "type": "weapon",
+      "slot": "weapon",
+      "damageBonus": 5,
+      "damageRange": 8,
+      "value": 150,
+      "weight": 6,
+      "levelRequirement": 3
+    },
+    {
       "id": "item:spider_fang",
       "name": "Spider Fang",
       "description": "A venomous fang from a giant forest spider.",

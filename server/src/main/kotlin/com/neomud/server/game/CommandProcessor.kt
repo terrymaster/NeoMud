@@ -10,6 +10,7 @@ import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.commands.SayCommand
 import com.neomud.server.game.commands.SpellCommand
 import com.neomud.server.game.commands.TrainerCommand
+import com.neomud.server.game.commands.VendorCommand
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.repository.PlayerRepository
@@ -39,7 +40,8 @@ class CommandProcessor(
     private val roomItemManager: RoomItemManager,
     private val trainerCommand: TrainerCommand,
     private val spellCommand: SpellCommand,
-    private val spellCatalog: SpellCatalog
+    private val spellCatalog: SpellCatalog,
+    private val vendorCommand: VendorCommand
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
     private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager)
@@ -119,6 +121,15 @@ class CommandProcessor(
             }
             is ClientMessage.CastSpell -> {
                 requireAuth(session) { spellCommand.execute(session, message.spellId, message.targetId) }
+            }
+            is ClientMessage.InteractVendor -> {
+                requireAuth(session) { vendorCommand.handleInteract(session) }
+            }
+            is ClientMessage.BuyItem -> {
+                requireAuth(session) { vendorCommand.handleBuy(session, message.itemId, message.quantity) }
+            }
+            is ClientMessage.SellItem -> {
+                requireAuth(session) { vendorCommand.handleSell(session, message.itemId, message.quantity) }
             }
         }
     }

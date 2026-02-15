@@ -96,6 +96,13 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     private val _editingSlotIndex = MutableStateFlow<Int?>(null)
     val editingSlotIndex: StateFlow<Int?> = _editingSlotIndex
 
+    // Vendor
+    private val _vendorInfo = MutableStateFlow<ServerMessage.VendorInfo?>(null)
+    val vendorInfo: StateFlow<ServerMessage.VendorInfo?> = _vendorInfo
+
+    private val _showVendor = MutableStateFlow(false)
+    val showVendor: StateFlow<Boolean> = _showVendor
+
     // Death notification
     private val _deathMessage = MutableStateFlow<String?>(null)
     val deathMessage: StateFlow<String?> = _deathMessage
@@ -336,13 +343,39 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
             }
             is ServerMessage.SpellEffect -> {
                 if (!message.isPlayerTarget) {
-                    // Update NPC HP in room entities
                     _roomEntities.value = _roomEntities.value.map { npc ->
                         if (npc.name == message.targetName) {
                             npc.copy(currentHp = message.targetNewHp)
                         } else npc
                     }
                 }
+            }
+            is ServerMessage.VendorInfo -> {
+                _vendorInfo.value = message
+                _showVendor.value = true
+            }
+            is ServerMessage.BuyResult -> {
+                if (message.success) {
+                    addLog(message.message, MudColors.loot)
+                } else {
+                    addLog(message.message, MudColors.error)
+                }
+                _playerCoins.value = message.updatedCoins
+                _inventory.value = message.updatedInventory
+                _equipment.value = message.equipment
+                // Refresh vendor info if panel is open
+                if (_showVendor.value) interactVendor()
+            }
+            is ServerMessage.SellResult -> {
+                if (message.success) {
+                    addLog(message.message, MudColors.loot)
+                } else {
+                    addLog(message.message, MudColors.error)
+                }
+                _playerCoins.value = message.updatedCoins
+                _inventory.value = message.updatedInventory
+                _equipment.value = message.equipment
+                if (_showVendor.value) interactVendor()
             }
             is ServerMessage.XpGained -> {
                 addLog("+${message.amount} XP (${message.currentXp}/${message.xpToNextLevel})", MudColors.xp)
@@ -535,6 +568,29 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     fun dismissTrainer() {
         _showTrainer.value = false
         _trainerInfo.value = null
+    }
+
+    fun interactVendor() {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.InteractVendor)
+        }
+    }
+
+    fun buyItem(itemId: String, quantity: Int = 1) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.BuyItem(itemId, quantity))
+        }
+    }
+
+    fun sellItem(itemId: String, quantity: Int = 1) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.SellItem(itemId, quantity))
+        }
+    }
+
+    fun dismissVendor() {
+        _showVendor.value = false
+        _vendorInfo.value = null
     }
 
     // Spell methods

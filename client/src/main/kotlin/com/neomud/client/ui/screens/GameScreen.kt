@@ -38,6 +38,7 @@ import com.neomud.client.ui.components.SpellBar
 import com.neomud.client.ui.components.SpellPicker
 import com.neomud.client.ui.components.SpriteOverlay
 import com.neomud.client.ui.components.TrainerPanel
+import com.neomud.client.ui.components.VendorPanel
 import com.neomud.client.viewmodel.GameViewModel
 import com.neomud.shared.model.Direction
 
@@ -67,6 +68,8 @@ fun GameScreen(
     val deathMessage by gameViewModel.deathMessage.collectAsState()
     val showTrainer by gameViewModel.showTrainer.collectAsState()
     val trainerInfo by gameViewModel.trainerInfo.collectAsState()
+    val showVendor by gameViewModel.showVendor.collectAsState()
+    val vendorInfo by gameViewModel.vendorInfo.collectAsState()
     val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
     val spellSlots by gameViewModel.spellSlots.collectAsState()
     val readiedSpellId by gameViewModel.readiedSpellId.collectAsState()
@@ -83,6 +86,7 @@ fun GameScreen(
     val hasTrainer = roomEntities.any { it.behaviorType == "trainer" }
     val canLevelUp = player?.let { it.currentXp >= it.xpToNextLevel && it.level < 30 } == true
     val showTrainerButton = hasTrainer && (canLevelUp || (player?.unspentCp ?: 0) > 0)
+    val hasVendor = roomEntities.any { it.behaviorType == "vendor" }
 
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -107,6 +111,7 @@ fun GameScreen(
                 availableExits = availableExits,
                 hasHostiles = hasHostiles,
                 showTrainerButton = showTrainerButton,
+                showVendorButton = hasVendor,
                 sayText = sayText,
                 onSayTextChange = { sayText = it }
             )
@@ -116,6 +121,7 @@ fun GameScreen(
                 availableExits = availableExits,
                 hasHostiles = hasHostiles,
                 showTrainerButton = showTrainerButton,
+                showVendorButton = hasVendor,
                 sayText = sayText,
                 onSayTextChange = { sayText = it }
             )
@@ -178,6 +184,21 @@ fun GameScreen(
                     onLevelUp = { gameViewModel.trainLevelUp() },
                     onTrainStat = { stat, points -> gameViewModel.trainStat(stat, points) },
                     onClose = { gameViewModel.dismissTrainer() }
+                )
+            }
+        }
+
+        // Vendor overlay
+        if (showVendor) {
+            val info = vendorInfo
+            if (info != null) {
+                VendorPanel(
+                    vendorInfo = info,
+                    playerLevel = player?.level ?: 1,
+                    itemCatalog = itemCatalog,
+                    onBuy = { itemId -> gameViewModel.buyItem(itemId) },
+                    onSell = { itemId -> gameViewModel.sellItem(itemId) },
+                    onClose = { gameViewModel.dismissVendor() }
                 )
             }
         }
@@ -256,6 +277,7 @@ private fun GameScreenPortrait(
     availableExits: Set<Direction>,
     hasHostiles: Boolean,
     showTrainerButton: Boolean,
+    showVendorButton: Boolean,
     sayText: String,
     onSayTextChange: (String) -> Unit
 ) {
@@ -380,6 +402,9 @@ private fun GameScreenPortrait(
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
+                    if (showVendorButton) {
+                        VendorShopButton(onClick = { gameViewModel.interactVendor() })
+                    }
                     if (showTrainerButton) {
                         TrainerStarButton(onClick = { gameViewModel.interactTrainer() })
                     }
@@ -396,6 +421,7 @@ private fun GameScreenLandscape(
     availableExits: Set<Direction>,
     hasHostiles: Boolean,
     showTrainerButton: Boolean,
+    showVendorButton: Boolean,
     sayText: String,
     onSayTextChange: (String) -> Unit
 ) {
@@ -525,6 +551,9 @@ private fun GameScreenLandscape(
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (showVendorButton) {
+                                VendorShopButton(onClick = { gameViewModel.interactVendor() })
+                            }
                             if (showTrainerButton) {
                                 TrainerStarButton(onClick = { gameViewModel.interactTrainer() })
                             }
@@ -699,6 +728,20 @@ private fun ActionButtonRow(
         )
     }
     } // end Column
+}
+
+@Composable
+private fun VendorShopButton(onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(28.dp)
+    ) {
+        Text(
+            text = "\uD83D\uDEE0\uFE0F",
+            fontSize = 16.sp,
+            color = Color(0xFFCC8833)
+        )
+    }
 }
 
 @Composable

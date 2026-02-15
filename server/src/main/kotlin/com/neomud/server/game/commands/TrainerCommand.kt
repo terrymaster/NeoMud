@@ -120,6 +120,7 @@ class TrainerCommand(
     }
 
     suspend fun handleTrainStat(session: PlayerSession, stat: String, points: Int) {
+        val clampedPoints = points.coerceIn(1, 50)
         val roomId = session.currentRoomId ?: return
         val player = session.player ?: return
 
@@ -144,7 +145,7 @@ class TrainerCommand(
             }
         }
 
-        val result = CpAllocator.allocate(currentValue, baseValue, player.unspentCp, points)
+        val result = CpAllocator.allocate(currentValue, baseValue, player.unspentCp, clampedPoints)
         if (result == null) {
             session.send(ServerMessage.SystemMessage("Not enough CP to train $stat."))
             return

@@ -48,5 +48,6 @@ data class NpcData(
     val damage: Int = 0,
     val level: Int = 1,
     val perception: Int = 0,
-    val xpReward: Long = 0
+    val xpReward: Long = 0,
+    val vendorItems: List<String> = emptyList()
 )

@@ -78,11 +78,16 @@ class InventoryCommand(
         // Parse effect
         val effect = item.useEffect
         if (effect.startsWith("heal:")) {
+            val removed = inventoryRepository.removeItem(playerName, itemId, 1)
+            if (!removed) {
+                session.send(ServerMessage.Error("You don't have that item."))
+                return
+            }
+
             val amount = effect.removePrefix("heal:").toIntOrNull() ?: 0
             val newHp = (player.currentHp + amount).coerceAtMost(player.maxHp)
             session.player = player.copy(currentHp = newHp)
 
-            inventoryRepository.removeItem(playerName, itemId, 1)
             session.send(ServerMessage.ItemUsed(item.name, "You drink the ${item.name} and recover $amount HP.", newHp))
             sendInventoryUpdate(session)
         } else {
