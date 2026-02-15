@@ -14,22 +14,23 @@ class SkillCheckTest {
         name = "Hide",
         description = "Slip into the shadows.",
         category = "stealth",
-        primaryStat = "dexterity",
-        secondaryStat = "intelligence",
+        primaryStat = "agility",
+        secondaryStat = "intellect",
         difficulty = 15
     )
 
     private val rogueStats = Stats(
-        strength = 10,
-        dexterity = 16,
-        constitution = 12,
-        intelligence = 14,
-        wisdom = 10
+        strength = 25,
+        agility = 40,
+        intellect = 30,
+        willpower = 25,
+        health = 30,
+        charm = 35
     )
 
     @Test
     fun testHighRollSucceeds() {
-        // DEX(16) + INT/2(7) + level/2(0) + roll(20) = 43 vs 15
+        // AGI(40) + INT/2(15) + level/2(0) + roll(20) = 75 vs 15
         val result = SkillCheck.check(hideSkill, rogueStats, level = 1, roll = 20)
         assertTrue(result.success)
         assertEquals(20, result.roll)
@@ -38,12 +39,10 @@ class SkillCheckTest {
 
     @Test
     fun testLowRollFails() {
-        // DEX(16) + INT/2(7) + level/2(0) + roll(1) = 24 vs 15 -- actually this still passes
-        // Let's use a harder difficulty
-        val hardSkill = hideSkill.copy(difficulty = 30)
+        val hardSkill = hideSkill.copy(difficulty = 100)
         val result = SkillCheck.check(hardSkill, rogueStats, level = 1, roll = 1)
         assertFalse(result.success)
-        assertEquals(30, result.difficulty)
+        assertEquals(100, result.difficulty)
     }
 
     @Test
@@ -63,9 +62,9 @@ class SkillCheckTest {
 
     @Test
     fun testFormulaCalculation() {
-        // primary=DEX(16) + secondary/2=INT/2(7) + level/2(2) + roll(5) = 30
+        // primary=AGI(40) + secondary/2=INT/2(15) + level/2(2) + roll(5) = 62
         val result = SkillCheck.check(hideSkill, rogueStats, level = 5, roll = 5)
-        assertEquals(30, result.total)
+        assertEquals(62, result.total)
         assertEquals(15, result.difficulty)
         assertTrue(result.success)
     }

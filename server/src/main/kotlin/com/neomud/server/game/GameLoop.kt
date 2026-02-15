@@ -5,6 +5,8 @@ import com.neomud.server.game.combat.CombatManager
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
+import com.neomud.server.game.progression.XpCalculator
+import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.LootTableCatalog
 import com.neomud.server.world.WorldGraph
@@ -25,7 +27,8 @@ class GameLoop(
     private val worldGraph: WorldGraph,
     private val lootService: LootService,
     private val lootTableCatalog: LootTableCatalog,
-    private val roomItemManager: RoomItemManager
+    private val roomItemManager: RoomItemManager,
+    private val playerRepository: PlayerRepository
 ) {
     private val logger = LoggerFactory.getLogger(GameLoop::class.java)
 
@@ -133,6 +136,24 @@ class GameLoop(
                         )
                     }
 
+                    // Award XP to killer
+                    if (event.xpReward > 0) {
+                        val killerSession = sessionManager.getSession(event.killerName)
+                        val killerPlayer = killerSession?.player
+                        if (killerSession != null && killerPlayer != null) {
+                            val xpGained = XpCalculator.xpForKill(event.npcLevel, killerPlayer.level, event.xpReward)
+                            val newXp = killerPlayer.currentXp + xpGained
+                            killerSession.player = killerPlayer.copy(currentXp = newXp)
+                            try {
+                                killerSession.send(ServerMessage.XpGained(xpGained, newXp, killerPlayer.xpToNextLevel))
+                                if (XpCalculator.isReadyToLevel(newXp, killerPlayer.xpToNextLevel, killerPlayer.level)) {
+                                    killerSession.send(ServerMessage.SystemMessage("You have enough experience to level up! Visit a trainer."))
+                                }
+                                playerRepository.savePlayerState(killerSession.player!!)
+                            } catch (_: Exception) { }
+                        }
+                    }
+
                     // Auto-disable attack mode for players with no remaining targets
                     for (session in sessionManager.getSessionsInRoom(event.roomId)) {
                         if (session.attackMode) {
@@ -171,12 +192,17 @@ class GameLoop(
                         exclude = playerName
                     )
 
+                    // XP penalty: lose 10% of current XP on death
+                    val player = session.player
+                    val xpPenalty = if (player != null) (player.currentXp * 0.10).toLong() else 0L
+
                     // Respawn
                     session.currentRoomId = event.respawnRoomId
                     session.player = session.player?.copy(
                         currentHp = event.respawnHp,
                         currentMp = event.respawnMp,
-                        currentRoomId = event.respawnRoomId
+                        currentRoomId = event.respawnRoomId,
+                        currentXp = ((player?.currentXp ?: 0L) - xpPenalty).coerceAtLeast(0L)
                     )
                     session.activeEffects.clear()
 
@@ -208,6 +234,11 @@ class GameLoop(
                             val groundCoins = roomItemManager.getGroundCoins(event.respawnRoomId)
                             session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
                         } catch (_: Exception) { }
+                    }
+
+                    // Persist death state
+                    session.player?.let { p ->
+                        try { playerRepository.savePlayerState(p) } catch (_: Exception) { }
                     }
                 }
             }
@@ -320,7 +351,7 @@ class GameLoop(
         val playerName = session.playerName ?: return
 
         val npcRoll = npc.perception + npc.level + (1..20).random()
-        val stealthDc = player.stats.dexterity + player.stats.intelligence / 2 + player.level / 2 + 10
+        val stealthDc = player.stats.agility + player.stats.intellect / 2 + player.level / 2 + 10
 
         if (npcRoll >= stealthDc) {
             // Detected!

@@ -17,19 +17,22 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.neomud.client.viewmodel.AuthState
 import com.neomud.shared.model.CharacterClassDef
+import com.neomud.shared.model.RaceDef
 
 @Composable
 fun RegistrationScreen(
     authState: AuthState,
     availableClasses: List<CharacterClassDef>,
-    onRegister: (String, String, String, String) -> Unit,
+    availableRaces: List<RaceDef> = emptyList(),
+    onRegister: (String, String, String, String, String) -> Unit,
     onBack: () -> Unit,
     onClearError: () -> Unit
 ) {
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var characterName by rememberSaveable { mutableStateOf("") }
-    var selectedClassId by rememberSaveable { mutableStateOf("FIGHTER") }
+    var selectedClassId by rememberSaveable { mutableStateOf("WARRIOR") }
+    var selectedRaceId by rememberSaveable { mutableStateOf("HUMAN") }
     val focusManager = LocalFocusManager.current
 
     Column(
@@ -84,19 +87,71 @@ fun RegistrationScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text("Choose Class:", style = MaterialTheme.typography.titleSmall)
-        Spacer(modifier = Modifier.height(4.dp))
-
         if (availableClasses.isEmpty()) {
             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
             Text("Loading classes from server...", style = MaterialTheme.typography.bodySmall)
         } else {
-            // Scrollable class list takes remaining space
+            // Scrollable race + class list takes remaining space
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
             ) {
+                // Race section
+                if (availableRaces.isNotEmpty()) {
+                    item {
+                        Text("Choose Race:", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                    items(availableRaces) { race ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedRaceId == race.id,
+                                onClick = { selectedRaceId = race.id }
+                            )
+                            Column(modifier = Modifier.padding(start = 8.dp)) {
+                                Text(race.name, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    race.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                                val m = race.statModifiers
+                                val mods = listOf(
+                                    "STR" to m.strength, "AGI" to m.agility, "INT" to m.intellect,
+                                    "WIL" to m.willpower, "HLT" to m.health, "CHM" to m.charm
+                                ).filter { it.second != 0 }
+                                    .joinToString(" ") { "${it.first}:${if (it.second > 0) "+" else ""}${it.second}" }
+                                if (mods.isNotEmpty()) {
+                                    Text(
+                                        mods,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                    )
+                                }
+                                if (race.xpModifier != 1.0) {
+                                    Text(
+                                        "XP: ${(race.xpModifier * 100).toInt()}%",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    item { Spacer(modifier = Modifier.height(12.dp)) }
+                }
+
+                // Class section
+                item {
+                    Text("Choose Class:", style = MaterialTheme.typography.titleSmall)
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
                 items(availableClasses) { cls ->
                     Row(
                         modifier = Modifier
@@ -117,7 +172,7 @@ fun RegistrationScreen(
                             )
                             val s = cls.baseStats
                             Text(
-                                "STR:${s.strength} DEX:${s.dexterity} CON:${s.constitution} INT:${s.intelligence} WIS:${s.wisdom} | HP:${s.maxHitPoints}",
+                                "STR:${s.strength} AGI:${s.agility} INT:${s.intellect} WIL:${s.willpower} HLT:${s.health} CHM:${s.charm}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                             )
@@ -131,7 +186,7 @@ fun RegistrationScreen(
 
         // Buttons pinned at bottom
         Button(
-            onClick = { onRegister(username, password, characterName, selectedClassId) },
+            onClick = { onRegister(username, password, characterName, selectedClassId, selectedRaceId) },
             modifier = Modifier.fillMaxWidth(),
             enabled = authState !is AuthState.Loading &&
                     username.isNotBlank() && password.isNotBlank() && characterName.isNotBlank() &&

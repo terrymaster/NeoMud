@@ -5,6 +5,7 @@ import com.neomud.server.game.GameLoop
 import com.neomud.server.game.combat.CombatManager
 import com.neomud.server.game.commands.InventoryCommand
 import com.neomud.server.game.commands.PickupCommand
+import com.neomud.server.game.commands.TrainerCommand
 import com.neomud.server.game.inventory.EquipmentService
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
@@ -63,6 +64,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     val lootTableCatalog = loadResult.lootTableCatalog
     val promptTemplateCatalog = loadResult.promptTemplateCatalog
     val skillCatalog = loadResult.skillCatalog
+    val raceCatalog = loadResult.raceCatalog
     val npcManager = NpcManager(worldGraph)
     npcManager.loadNpcs(loadResult.npcDataList)
 
@@ -77,11 +79,13 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
     val inventoryCommand = InventoryCommand(inventoryRepository, itemCatalog, coinRepository)
     val pickupCommand = PickupCommand(roomItemManager, inventoryRepository, coinRepository, itemCatalog, sessionManager)
     val combatManager = CombatManager(npcManager, sessionManager, worldGraph, equipmentService)
+    val trainerCommand = TrainerCommand(classCatalog, raceCatalog, playerRepository, sessionManager, npcManager)
     val commandProcessor = CommandProcessor(
         worldGraph, sessionManager, npcManager, playerRepository,
-        classCatalog, itemCatalog, skillCatalog, inventoryCommand, pickupCommand, roomItemManager
+        classCatalog, itemCatalog, skillCatalog, raceCatalog, inventoryCommand, pickupCommand, roomItemManager,
+        trainerCommand
     )
-    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager)
+    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository)
 
     // Install plugins
     configureWebSockets()

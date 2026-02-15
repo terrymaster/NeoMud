@@ -6,6 +6,7 @@ import com.neomud.client.network.ConnectionState
 import com.neomud.client.network.WebSocketClient
 import com.neomud.shared.model.CharacterClassDef
 import com.neomud.shared.model.Player
+import com.neomud.shared.model.RaceDef
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,9 @@ class AuthViewModel : ViewModel() {
 
     private val _availableClasses = MutableStateFlow<List<CharacterClassDef>>(emptyList())
     val availableClasses: StateFlow<List<CharacterClassDef>> = _availableClasses
+
+    private val _availableRaces = MutableStateFlow<List<RaceDef>>(emptyList())
+    val availableRaces: StateFlow<List<RaceDef>> = _availableRaces
 
     private var pendingLoginUsername: String? = null
     private var pendingLoginPassword: String? = null
@@ -58,6 +62,9 @@ class AuthViewModel : ViewModel() {
                     is ServerMessage.ClassCatalogSync -> {
                         _availableClasses.value = message.classes
                     }
+                    is ServerMessage.RaceCatalogSync -> {
+                        _availableRaces.value = message.races
+                    }
                     else -> { /* handled by GameViewModel */ }
                 }
             }
@@ -80,13 +87,13 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun register(username: String, password: String, characterName: String, characterClass: String) {
+    fun register(username: String, password: String, characterName: String, characterClass: String, race: String = "") {
         _authState.value = AuthState.Loading
         pendingLoginUsername = username
         pendingLoginPassword = password
         viewModelScope.launch {
             val sent = wsClient.send(
-                ClientMessage.Register(username, password, characterName, characterClass)
+                ClientMessage.Register(username, password, characterName, characterClass, race)
             )
             if (!sent) {
                 pendingLoginUsername = null

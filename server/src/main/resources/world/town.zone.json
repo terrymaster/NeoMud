@@ -79,6 +79,13 @@
       "description": "A barrel-chested dwarf with a magnificent braided beard and arms like tree trunks. He moves behind the bar with surprising grace, simultaneously serving three customers and keeping an eye on the rowdy corner table.",
       "startRoomId": "town:tavern",
       "behaviorType": "idle"
+    },
+    {
+      "id": "npc:guildmaster",
+      "name": "Guildmaster Aldric",
+      "description": "A weathered veteran in ornate armor, bearing the scars of countless battles. His keen eyes assess you with the practiced gaze of someone who has trained hundreds of warriors. He serves as the guild trainer for all adventurers.",
+      "startRoomId": "town:square",
+      "behaviorType": "trainer"
     }
   ]
 }

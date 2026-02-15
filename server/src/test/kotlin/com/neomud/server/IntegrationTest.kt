@@ -33,6 +33,8 @@ class IntegrationTest {
         assertIs<ServerMessage.ItemCatalogSync>(msg2)
         val msg3 = receiveServerMessage()
         assertIs<ServerMessage.SkillCatalogSync>(msg3)
+        val msg4 = receiveServerMessage()
+        assertIs<ServerMessage.RaceCatalogSync>(msg4)
     }
 
     @Test
@@ -57,7 +59,7 @@ class IntegrationTest {
 
             // Register
             send(Frame.Text(MessageSerializer.encodeClientMessage(
-                ClientMessage.Register("testuser", "testpass", "TestHero", "FIGHTER")
+                ClientMessage.Register("testuser", "testpass", "TestHero", "WARRIOR")
             )))
 
             val registerResponse = receiveServerMessage()
@@ -75,10 +77,8 @@ class IntegrationTest {
             val loginResponse = receiveServerMessage()
             assertIs<ServerMessage.LoginOk>(loginResponse)
             assertEquals("TestHero", loginResponse.player.name)
-            assertEquals("FIGHTER", loginResponse.player.characterClass)
+            assertEquals("WARRIOR", loginResponse.player.characterClass)
             assertEquals("town:square", loginResponse.player.currentRoomId)
-            assertTrue(loginResponse.player.maxMp > 0, "maxMp should be > 0")
-            assertEquals(loginResponse.player.maxMp, loginResponse.player.currentMp, "New character should have full MP")
 
             // Should receive RoomInfo
             val roomInfo = receiveServerMessage()
@@ -113,7 +113,7 @@ class IntegrationTest {
         wsClient.webSocket("/game") {
             consumeCatalogSync()
             send(Frame.Text(MessageSerializer.encodeClientMessage(
-                ClientMessage.Register("mover", "pass123", "Mover", "ROGUE")
+                ClientMessage.Register("mover", "pass123", "Mover", "THIEF")
             )))
             receiveServerMessage() // RegisterOk
         }

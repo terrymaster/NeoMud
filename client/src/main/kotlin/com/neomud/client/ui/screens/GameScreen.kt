@@ -35,6 +35,7 @@ import com.neomud.client.ui.components.RoomBackground
 import com.neomud.client.ui.components.RoomItemsSidebar
 import com.neomud.client.ui.components.SettingsPanel
 import com.neomud.client.ui.components.SpriteOverlay
+import com.neomud.client.ui.components.TrainerPanel
 import com.neomud.client.viewmodel.GameViewModel
 import com.neomud.shared.model.Direction
 
@@ -62,6 +63,8 @@ fun GameScreen(
     val showSettings by gameViewModel.showSettings.collectAsState()
     val classCatalog by gameViewModel.classCatalog.collectAsState()
     val deathMessage by gameViewModel.deathMessage.collectAsState()
+    val showTrainer by gameViewModel.showTrainer.collectAsState()
+    val trainerInfo by gameViewModel.trainerInfo.collectAsState()
 
     var sayText by remember { mutableStateOf("") }
 
@@ -151,6 +154,19 @@ fun GameScreen(
                 },
                 onClose = { gameViewModel.toggleSettings() }
             )
+        }
+
+        // Trainer overlay
+        if (showTrainer) {
+            val info = trainerInfo
+            if (info != null) {
+                TrainerPanel(
+                    trainerInfo = info,
+                    onLevelUp = { gameViewModel.trainLevelUp() },
+                    onTrainStat = { stat, points -> gameViewModel.trainStat(stat, points) },
+                    onClose = { gameViewModel.dismissTrainer() }
+                )
+            }
         }
 
         // Death overlay

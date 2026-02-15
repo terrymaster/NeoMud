@@ -107,7 +107,7 @@ private fun EffectIcon(effect: ActiveEffect) {
         EffectType.POISON -> Color(0xFF4CAF50) to "\u2620"
         EffectType.HEAL_OVER_TIME -> Color(0xFFE91E63) to "\u2764"
         EffectType.BUFF_STRENGTH -> Color(0xFFF44336) to "\u2694"
-        EffectType.BUFF_DEXTERITY -> Color(0xFFFFEB3B) to "\u26A1"
+        EffectType.BUFF_AGILITY -> Color(0xFFFFEB3B) to "\u26A1"
         EffectType.HASTE -> Color(0xFF00BCD4) to "\u21BB"
     }
     Box(

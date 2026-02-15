@@ -4,12 +4,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Stats(
-    val strength: Int,
-    val dexterity: Int,
-    val constitution: Int,
-    val intelligence: Int,
-    val wisdom: Int
-) {
-    val maxHitPoints: Int get() = 50 + (constitution * 5) + (strength * 2)
-    val maxManaPoints: Int get() = 20 + (intelligence * 4) + (wisdom * 2)
-}
+    val strength: Int = 30,
+    val agility: Int = 30,
+    val intellect: Int = 30,
+    val willpower: Int = 30,
+    val health: Int = 30,
+    val charm: Int = 30
+)

@@ -24,7 +24,15 @@ class MessageSerializerTest {
 
     @Test
     fun testRegisterMessageRoundTrip() {
-        val original = ClientMessage.Register("user1", "pass123", "Gandalf", "WIZARD")
+        val original = ClientMessage.Register("user1", "pass123", "Gandalf", "MAGE")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testRegisterWithRaceRoundTrip() {
+        val original = ClientMessage.Register("user1", "pass123", "Gandalf", "MAGE", race = "ELF")
         val json = MessageSerializer.encodeClientMessage(original)
         val decoded = MessageSerializer.decodeClientMessage(json)
         assertEquals(original, decoded)
@@ -241,17 +249,23 @@ class MessageSerializerTest {
     }
 
     @Test
-    fun testStatsMaxHitPoints() {
-        val stats = Stats(strength = 16, dexterity = 12, constitution = 14, intelligence = 8, wisdom = 10)
-        // 50 + (14 * 5) + (16 * 2) = 50 + 70 + 32 = 152
-        assertEquals(152, stats.maxHitPoints)
-    }
-
-    @Test
-    fun testStatsMaxManaPoints() {
-        val stats = Stats(strength = 16, dexterity = 12, constitution = 14, intelligence = 8, wisdom = 10)
-        // 20 + (8 * 4) + (10 * 2) = 20 + 32 + 20 = 72
-        assertEquals(72, stats.maxManaPoints)
+    fun testStatsSerializationRoundTrip() {
+        val stats = Stats(strength = 40, agility = 35, intellect = 30, willpower = 25, health = 45, charm = 20)
+        val player = Player(
+            name = "TestHero",
+            characterClass = "WARRIOR",
+            stats = stats,
+            currentHp = 100,
+            maxHp = 120,
+            currentMp = 50,
+            maxMp = 60,
+            level = 1,
+            currentRoomId = "town:square"
+        )
+        val original = ServerMessage.LoginOk(player)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
     }
 
     @Test
@@ -284,15 +298,15 @@ class MessageSerializerTest {
 
     @Test
     fun testPlayerWithMpFieldsRoundTrip() {
-        val stats = Stats(strength = 16, dexterity = 12, constitution = 14, intelligence = 8, wisdom = 10)
+        val stats = Stats(strength = 40, agility = 35, intellect = 30, willpower = 25, health = 45, charm = 20)
         val player = Player(
             name = "TestHero",
-            characterClass = "FIGHTER",
+            characterClass = "WARRIOR",
             stats = stats,
             currentHp = 100,
-            maxHp = 152,
+            maxHp = 120,
             currentMp = 50,
-            maxMp = 72,
+            maxMp = 60,
             level = 1,
             currentRoomId = "town:square"
         )
@@ -305,8 +319,13 @@ class MessageSerializerTest {
     @Test
     fun testClassCatalogSyncRoundTrip() {
         val classes = listOf(
-            CharacterClassDef("FIGHTER", "Fighter", "A master of martial combat", Stats(16, 12, 14, 10, 10)),
-            CharacterClassDef("WIZARD", "Wizard", "A scholarly mage", Stats(8, 10, 12, 16, 14), properties = mapOf("spellbook" to "true"))
+            CharacterClassDef("WARRIOR", "Warrior", "A master of martial combat",
+                Stats(strength = 40, agility = 30, intellect = 25, willpower = 25, health = 40, charm = 25),
+                hpPerLevelMin = 6, hpPerLevelMax = 10),
+            CharacterClassDef("MAGE", "Mage", "A scholarly mage",
+                Stats(strength = 20, agility = 25, intellect = 45, willpower = 40, health = 25, charm = 30),
+                hpPerLevelMin = 3, hpPerLevelMax = 6, mpPerLevelMin = 5, mpPerLevelMax = 10,
+                magicSchools = mapOf("mage" to 3))
         )
         val original = ServerMessage.ClassCatalogSync(classes)
         val json = MessageSerializer.encodeServerMessage(original)
@@ -521,8 +540,8 @@ class MessageSerializerTest {
     @Test
     fun testSkillCatalogSyncRoundTrip() {
         val skills = listOf(
-            SkillDef("HIDE", "Hide", "Slip into shadows.", "stealth", "dexterity", "intelligence", cooldownTicks = 2, difficulty = 15),
-            SkillDef("BACKSTAB", "Backstab", "Strike from shadows.", "combat", "dexterity", "strength", cooldownTicks = 4, properties = mapOf("damageMultiplier" to "3"))
+            SkillDef("HIDE", "Hide", "Slip into shadows.", "stealth", "agility", "intellect", cooldownTicks = 2, difficulty = 15),
+            SkillDef("BACKSTAB", "Backstab", "Strike from shadows.", "combat", "agility", "strength", cooldownTicks = 4, properties = mapOf("damageMultiplier" to "3"))
         )
         val original = ServerMessage.SkillCatalogSync(skills)
         val json = MessageSerializer.encodeServerMessage(original)
@@ -533,10 +552,27 @@ class MessageSerializerTest {
     @Test
     fun testCharacterClassDefWithSkillsRoundTrip() {
         val classDef = CharacterClassDef(
-            "ROGUE", "Rogue", "A scoundrel", Stats(10, 16, 12, 14, 10),
-            skills = listOf("HIDE", "SNEAK", "BACKSTAB")
+            "THIEF", "Thief", "A scoundrel",
+            Stats(strength = 25, agility = 40, intellect = 30, willpower = 25, health = 30, charm = 35),
+            skills = listOf("HIDE", "SNEAK", "BACKSTAB"),
+            hpPerLevelMin = 4, hpPerLevelMax = 7
         )
         val original = ServerMessage.ClassCatalogSync(listOf(classDef))
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testRaceDefRoundTrip() {
+        val raceDef = RaceDef(
+            id = "HUMAN",
+            name = "Human",
+            description = "Balanced and adaptable.",
+            statModifiers = Stats(0, 0, 0, 0, 0, 0),
+            xpModifier = 1.0
+        )
+        val original = ServerMessage.RaceCatalogSync(listOf(raceDef))
         val json = MessageSerializer.encodeServerMessage(original)
         val decoded = MessageSerializer.decodeServerMessage(json)
         assertEquals(original, decoded)

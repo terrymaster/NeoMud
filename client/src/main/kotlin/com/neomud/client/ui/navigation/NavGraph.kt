@@ -18,6 +18,7 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
     val connectionState by authViewModel.connectionState.collectAsState()
     val connectionError by authViewModel.connectionError.collectAsState()
     val availableClasses by authViewModel.availableClasses.collectAsState()
+    val availableRaces by authViewModel.availableRaces.collectAsState()
 
     // Navigate on auth state changes
     LaunchedEffect(authState) {
@@ -59,8 +60,9 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
             RegistrationScreen(
                 authState = authState,
                 availableClasses = availableClasses,
-                onRegister = { username, password, characterName, characterClass ->
-                    authViewModel.register(username, password, characterName, characterClass)
+                availableRaces = availableRaces,
+                onRegister = { username, password, characterName, characterClass, race ->
+                    authViewModel.register(username, password, characterName, characterClass, race)
                 },
                 onBack = { navController.popBackStack() },
                 onClearError = { authViewModel.clearError() }

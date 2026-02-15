@@ -104,7 +104,7 @@ class WorldLoaderTest {
     @Test
     fun testClassCatalogLoaded() {
         val result = WorldLoader.load()
-        assertEquals(12, result.classCatalog.classCount)
+        assertEquals(15, result.classCatalog.classCount)
     }
 
     @Test

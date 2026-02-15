@@ -51,7 +51,7 @@ class HideCommand(
         // Skill check: DEX + INT/2 + d20 vs 15
         val stats = player.stats
         val roll = (1..20).random()
-        val check = stats.dexterity + stats.intelligence / 2 + roll
+        val check = stats.agility + stats.intellect / 2 + roll
         val difficulty = 15
 
         session.skillCooldowns["HIDE"] = 2
@@ -68,7 +68,7 @@ class HideCommand(
         for (npc in npcsInRoom) {
             // NPC perception: perception + level + d20 vs player stealth DC: DEX + INT/2 + level/2 + 10
             val npcRoll = npc.perception + npc.level + (1..20).random()
-            val stealthDc = stats.dexterity + stats.intelligence / 2 + player.level / 2 + 10
+            val stealthDc = stats.agility + stats.intellect / 2 + player.level / 2 + 10
 
             if (npcRoll >= stealthDc) {
                 session.send(ServerMessage.HideModeUpdate(false, "${npc.name} notices your attempt to hide!"))

@@ -215,4 +215,42 @@ sealed class ServerMessage {
     @Serializable
     @SerialName("skill_catalog_sync")
     data class SkillCatalogSync(val skills: List<SkillDef>) : ServerMessage()
+
+    @Serializable
+    @SerialName("race_catalog_sync")
+    data class RaceCatalogSync(val races: List<RaceDef>) : ServerMessage()
+
+    @Serializable
+    @SerialName("xp_gained")
+    data class XpGained(val amount: Long, val currentXp: Long, val xpToNextLevel: Long) : ServerMessage()
+
+    @Serializable
+    @SerialName("level_up")
+    data class LevelUp(
+        val newLevel: Int,
+        val hpRoll: Int,
+        val newMaxHp: Int,
+        val mpRoll: Int,
+        val newMaxMp: Int,
+        val cpGained: Int,
+        val totalUnspentCp: Int
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("trainer_info")
+    data class TrainerInfo(
+        val canLevelUp: Boolean,
+        val unspentCp: Int,
+        val baseStats: Stats,
+        val currentStats: Stats
+    ) : ServerMessage()
+
+    @Serializable
+    @SerialName("stat_trained")
+    data class StatTrained(
+        val stat: String,
+        val newValue: Int,
+        val cpSpent: Int,
+        val remainingCp: Int
+    ) : ServerMessage()
 }

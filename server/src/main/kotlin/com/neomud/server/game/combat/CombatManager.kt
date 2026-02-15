@@ -3,6 +3,7 @@ package com.neomud.server.game.combat
 import com.neomud.server.game.inventory.EquipmentService
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.npc.NpcState
+import com.neomud.server.game.progression.ThresholdBonuses
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.WorldGraph
@@ -25,7 +26,9 @@ sealed class CombatEvent {
         val npcId: String,
         val npcName: String,
         val killerName: String,
-        val roomId: RoomId
+        val roomId: RoomId,
+        val npcLevel: Int = 1,
+        val xpReward: Long = 0
     ) : CombatEvent()
 
     data class PlayerKilled(
@@ -71,14 +74,19 @@ class CombatManager(
                 session.isHidden = false
             }
 
-            // Calculate damage with equipment bonuses
+            // Calculate damage with equipment bonuses + stat thresholds
             val bonuses = equipmentService.getCombatBonuses(player.name)
+            val thresholds = ThresholdBonuses.compute(player.stats)
             var damage = if (bonuses.weaponDamageRange > 0) {
-                // Has weapon: strength + damageBonus + random(1..weaponDamageRange)
-                player.stats.strength + bonuses.totalDamageBonus + (1..bonuses.weaponDamageRange).random()
+                player.stats.strength + bonuses.totalDamageBonus + thresholds.meleeDamageBonus + (1..bonuses.weaponDamageRange).random()
             } else {
-                // Unarmed fallback: strength + random(1..3)
-                player.stats.strength + (1..3).random()
+                player.stats.strength + thresholds.meleeDamageBonus + (1..3).random()
+            }
+
+            // Crit check
+            if (thresholds.critChance > 0 && Math.random() < thresholds.critChance) {
+                damage = (damage * 1.5).toInt()
+                logger.info("${player.name} crits for $damage damage!")
             }
 
             // Backstab: 3x damage multiplier
@@ -105,7 +113,9 @@ class CombatManager(
                     npcId = target.id,
                     npcName = target.name,
                     killerName = player.name,
-                    roomId = roomId
+                    roomId = roomId,
+                    npcLevel = target.level,
+                    xpReward = target.xpReward
                 ))
                 logger.info("${player.name} killed ${target.name} in $roomId")
             }
@@ -125,6 +135,12 @@ class CombatManager(
                 val visiblePlayers = playersInRoom.filter { !it.isHidden }
                 val targetSession = visiblePlayers.randomOrNull() ?: continue
                 val targetPlayer = targetSession.player ?: continue
+
+                // Dodge check
+                val playerThresholds = ThresholdBonuses.compute(targetPlayer.stats)
+                if (playerThresholds.dodgeChance > 0 && Math.random() < playerThresholds.dodgeChance) {
+                    continue // Dodged!
+                }
 
                 // NPC damage reduced by player's armor, minimum 1
                 val playerBonuses = equipmentService.getCombatBonuses(targetPlayer.name)

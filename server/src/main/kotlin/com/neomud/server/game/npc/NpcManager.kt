@@ -23,6 +23,8 @@ data class NpcState(
     val damage: Int = 0,
     val level: Int = 1,
     val perception: Int = 0,
+    val xpReward: Long = 0,
+    val behaviorType: String = "idle",
     val zoneId: String = ""
 ) {
     val isAlive: Boolean get() = maxHp == 0 || currentHp > 0
@@ -64,6 +66,8 @@ class NpcManager(private val worldGraph: WorldGraph) {
                     damage = data.damage,
                     level = data.level,
                     perception = data.perception,
+                    xpReward = data.xpReward,
+                    behaviorType = data.behaviorType,
                     zoneId = zoneId
                 )
             )
@@ -139,4 +143,7 @@ class NpcManager(private val worldGraph: WorldGraph) {
     fun markDead(npcId: String) {
         npcs.find { it.id == npcId }?.let { it.currentHp = 0 }
     }
+
+    fun getTrainerInRoom(roomId: RoomId): NpcState? =
+        npcs.find { it.currentRoomId == roomId && it.behaviorType == "trainer" && it.isAlive }
 }

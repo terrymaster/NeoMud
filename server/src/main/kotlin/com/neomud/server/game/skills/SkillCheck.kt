@@ -32,10 +32,11 @@ object SkillCheck {
 
     private fun getStatValue(statName: String, stats: Stats): Int = when (statName.lowercase()) {
         "strength" -> stats.strength
-        "dexterity" -> stats.dexterity
-        "constitution" -> stats.constitution
-        "intelligence" -> stats.intelligence
-        "wisdom" -> stats.wisdom
+        "agility" -> stats.agility
+        "intellect" -> stats.intellect
+        "willpower" -> stats.willpower
+        "health" -> stats.health
+        "charm" -> stats.charm
         else -> 0
     }
 }

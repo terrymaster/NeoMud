@@ -48,7 +48,7 @@ class MoveCommand(
         if (session.isHidden && player != null) {
             val stats = player.stats
             val roll = (1..20).random()
-            val check = stats.dexterity + stats.intelligence / 2 + player.level / 2 + roll
+            val check = stats.agility + stats.intellect / 2 + player.level / 2 + roll
             val difficulty = 15
 
             if (check >= difficulty) {
@@ -94,7 +94,7 @@ class MoveCommand(
             val npcsHere = npcManager.getLivingNpcsInRoom(targetRoomId)
             if (npcsHere.isNotEmpty() && player != null) {
                 val stats = player.stats
-                val stealthDc = stats.dexterity + stats.intelligence / 2 + player.level / 2 + 10
+                val stealthDc = stats.agility + stats.intellect / 2 + player.level / 2 + 10
                 for (npc in npcsHere) {
                     if (!session.isHidden) break // already detected by a prior NPC
                     val npcRoll = npc.perception + npc.level + (1..20).random()
@@ -132,6 +132,11 @@ class MoveCommand(
         val groundItems = roomItemManager.getGroundItems(targetRoomId)
         val groundCoins = roomItemManager.getGroundCoins(targetRoomId)
         session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
+
+        // Auto-detect trainer in room
+        if (npcManager.getTrainerInRoom(targetRoomId) != null) {
+            session.send(ServerMessage.SystemMessage("A trainer is here. You can interact to train your skills."))
+        }
 
         // Persist position async
         val playerState = session.player

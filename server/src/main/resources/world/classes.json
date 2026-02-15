@@ -1,88 +1,169 @@
 {
   "classes": [
     {
-      "id": "BARBARIAN",
-      "name": "Barbarian",
-      "description": "A fierce warrior driven by primal rage",
-      "baseStats": { "strength": 16, "dexterity": 12, "constitution": 14, "intelligence": 8, "wisdom": 10 },
-      "skills": ["BASH", "KICK", "PARRY", "TRACK"]
+      "id": "WARRIOR",
+      "name": "Warrior",
+      "description": "A master of martial combat and battlefield tactics",
+      "baseStats": { "strength": 45, "agility": 30, "intellect": 20, "willpower": 20, "health": 45, "charm": 20 },
+      "hpPerLevelMin": 6, "hpPerLevelMax": 10,
+      "mpPerLevelMin": 0, "mpPerLevelMax": 0,
+      "xpModifier": 1.0,
+      "magicSchools": {},
+      "skills": ["BASH", "KICK", "PARRY", "DODGE"]
     },
     {
-      "id": "BARD",
-      "name": "Bard",
-      "description": "A magical entertainer weaving spells through performance",
-      "baseStats": { "strength": 8, "dexterity": 14, "constitution": 12, "intelligence": 14, "wisdom": 12 },
-      "skills": ["HIDE", "PICK_LOCK", "HAGGLE", "MEDITATE"]
+      "id": "PALADIN",
+      "name": "Paladin",
+      "description": "A holy warrior bound by a sacred oath",
+      "baseStats": { "strength": 40, "agility": 25, "intellect": 25, "willpower": 35, "health": 40, "charm": 25 },
+      "hpPerLevelMin": 5, "hpPerLevelMax": 9,
+      "mpPerLevelMin": 1, "mpPerLevelMax": 4,
+      "xpModifier": 1.15,
+      "magicSchools": { "priest": 1 },
+      "skills": ["BASH", "PARRY", "MEDITATE"]
+    },
+    {
+      "id": "WITCHHUNTER",
+      "name": "Witch Hunter",
+      "description": "A fearless fighter specializing in hunting magical foes",
+      "baseStats": { "strength": 40, "agility": 30, "intellect": 25, "willpower": 35, "health": 40, "charm": 20 },
+      "hpPerLevelMin": 6, "hpPerLevelMax": 10,
+      "mpPerLevelMin": 0, "mpPerLevelMax": 0,
+      "xpModifier": 1.1,
+      "magicSchools": {},
+      "skills": ["BASH", "KICK", "PARRY", "TRACK"]
     },
     {
       "id": "CLERIC",
       "name": "Cleric",
-      "description": "A divine champion wielding the power of the gods",
-      "baseStats": { "strength": 12, "dexterity": 10, "constitution": 14, "intelligence": 10, "wisdom": 16 },
+      "description": "A divine champion wielding the power of the gods in combat",
+      "baseStats": { "strength": 35, "agility": 25, "intellect": 25, "willpower": 40, "health": 35, "charm": 25 },
+      "hpPerLevelMin": 4, "hpPerLevelMax": 8,
+      "mpPerLevelMin": 2, "mpPerLevelMax": 6,
+      "xpModifier": 1.1,
+      "magicSchools": { "priest": 2 },
+      "skills": ["BASH", "MEDITATE"]
+    },
+    {
+      "id": "PRIEST",
+      "name": "Priest",
+      "description": "A devoted healer and spiritual leader",
+      "baseStats": { "strength": 20, "agility": 20, "intellect": 30, "willpower": 45, "health": 25, "charm": 35 },
+      "hpPerLevelMin": 3, "hpPerLevelMax": 6,
+      "mpPerLevelMin": 4, "mpPerLevelMax": 10,
+      "xpModifier": 1.2,
+      "magicSchools": { "priest": 3 },
+      "skills": ["MEDITATE", "PERCEPTION"]
+    },
+    {
+      "id": "MISSIONARY",
+      "name": "Missionary",
+      "description": "A thief-priest blending faith with subterfuge",
+      "baseStats": { "strength": 25, "agility": 35, "intellect": 25, "willpower": 35, "health": 30, "charm": 30 },
+      "hpPerLevelMin": 4, "hpPerLevelMax": 7,
+      "mpPerLevelMin": 2, "mpPerLevelMax": 5,
+      "xpModifier": 1.15,
+      "magicSchools": { "priest": 2 },
+      "skills": ["HIDE", "SNEAK", "PICK_LOCK", "MEDITATE"]
+    },
+    {
+      "id": "MAGE",
+      "name": "Mage",
+      "description": "A scholarly mage whose power comes from arcane study",
+      "baseStats": { "strength": 15, "agility": 20, "intellect": 50, "willpower": 35, "health": 20, "charm": 25 },
+      "hpPerLevelMin": 3, "hpPerLevelMax": 6,
+      "mpPerLevelMin": 5, "mpPerLevelMax": 12,
+      "xpModifier": 1.2,
+      "magicSchools": { "mage": 3 },
+      "skills": ["MEDITATE", "PERCEPTION"]
+    },
+    {
+      "id": "WARLOCK",
+      "name": "Warlock",
+      "description": "A battle-mage blending martial skill with arcane power",
+      "baseStats": { "strength": 35, "agility": 25, "intellect": 40, "willpower": 30, "health": 35, "charm": 20 },
+      "hpPerLevelMin": 4, "hpPerLevelMax": 8,
+      "mpPerLevelMin": 2, "mpPerLevelMax": 6,
+      "xpModifier": 1.15,
+      "magicSchools": { "mage": 2 },
       "skills": ["BASH", "MEDITATE"]
     },
     {
       "id": "DRUID",
       "name": "Druid",
       "description": "A keeper of the old faith, commanding nature's wrath",
-      "baseStats": { "strength": 8, "dexterity": 12, "constitution": 14, "intelligence": 12, "wisdom": 16 },
+      "baseStats": { "strength": 20, "agility": 25, "intellect": 35, "willpower": 45, "health": 30, "charm": 25 },
+      "hpPerLevelMin": 4, "hpPerLevelMax": 7,
+      "mpPerLevelMin": 4, "mpPerLevelMax": 10,
+      "xpModifier": 1.15,
+      "magicSchools": { "druid": 3 },
       "skills": ["MEDITATE", "PERCEPTION", "TRACK"]
-    },
-    {
-      "id": "FIGHTER",
-      "name": "Fighter",
-      "description": "A master of martial combat and battlefield tactics",
-      "baseStats": { "strength": 16, "dexterity": 12, "constitution": 14, "intelligence": 10, "wisdom": 10 },
-      "skills": ["BASH", "KICK", "PARRY", "DODGE"]
-    },
-    {
-      "id": "MONK",
-      "name": "Monk",
-      "description": "A martial artist channeling the power of ki",
-      "baseStats": { "strength": 10, "dexterity": 16, "constitution": 12, "intelligence": 10, "wisdom": 14 },
-      "skills": ["KICK", "DODGE", "SNEAK", "PERCEPTION", "MEDITATE"]
-    },
-    {
-      "id": "PALADIN",
-      "name": "Paladin",
-      "description": "A holy warrior bound by a sacred oath",
-      "baseStats": { "strength": 16, "dexterity": 10, "constitution": 14, "intelligence": 8, "wisdom": 12 },
-      "skills": ["BASH", "PARRY", "MEDITATE"]
     },
     {
       "id": "RANGER",
       "name": "Ranger",
       "description": "A skilled hunter and tracker of the wilds",
-      "baseStats": { "strength": 12, "dexterity": 16, "constitution": 12, "intelligence": 10, "wisdom": 14 },
+      "baseStats": { "strength": 35, "agility": 40, "intellect": 25, "willpower": 30, "health": 35, "charm": 20 },
+      "hpPerLevelMin": 5, "hpPerLevelMax": 9,
+      "mpPerLevelMin": 1, "mpPerLevelMax": 3,
+      "xpModifier": 1.1,
+      "magicSchools": { "druid": 1 },
       "skills": ["HIDE", "SNEAK", "KICK", "DODGE", "PERCEPTION", "TRACK"]
     },
     {
-      "id": "ROGUE",
-      "name": "Rogue",
-      "description": "A scoundrel who uses stealth and cunning",
-      "baseStats": { "strength": 10, "dexterity": 16, "constitution": 12, "intelligence": 14, "wisdom": 10 },
+      "id": "THIEF",
+      "name": "Thief",
+      "description": "A cunning scoundrel who uses stealth and guile",
+      "baseStats": { "strength": 25, "agility": 45, "intellect": 30, "willpower": 20, "health": 25, "charm": 35 },
+      "hpPerLevelMin": 4, "hpPerLevelMax": 7,
+      "mpPerLevelMin": 0, "mpPerLevelMax": 0,
+      "xpModifier": 1.0,
+      "magicSchools": {},
       "skills": ["HIDE", "SNEAK", "BACKSTAB", "PICK_LOCK", "DODGE", "PERCEPTION", "HAGGLE"]
     },
     {
-      "id": "SORCERER",
-      "name": "Sorcerer",
-      "description": "A spellcaster drawing on innate magical power",
-      "baseStats": { "strength": 8, "dexterity": 12, "constitution": 14, "intelligence": 16, "wisdom": 12 },
-      "skills": ["MEDITATE"]
+      "id": "NINJA",
+      "name": "Ninja",
+      "description": "A deadly shadow assassin trained in exotic arts",
+      "baseStats": { "strength": 30, "agility": 45, "intellect": 25, "willpower": 25, "health": 30, "charm": 20 },
+      "hpPerLevelMin": 4, "hpPerLevelMax": 8,
+      "mpPerLevelMin": 0, "mpPerLevelMax": 0,
+      "xpModifier": 1.1,
+      "magicSchools": {},
+      "skills": ["HIDE", "SNEAK", "BACKSTAB", "KICK", "DODGE"]
     },
     {
-      "id": "WARLOCK",
-      "name": "Warlock",
-      "description": "A wielder of magic granted by an otherworldly pact",
-      "baseStats": { "strength": 8, "dexterity": 12, "constitution": 14, "intelligence": 14, "wisdom": 12 },
-      "skills": ["MEDITATE"]
+      "id": "MYSTIC",
+      "name": "Mystic",
+      "description": "A martial artist channeling the power of Kai",
+      "baseStats": { "strength": 30, "agility": 40, "intellect": 25, "willpower": 35, "health": 30, "charm": 20 },
+      "hpPerLevelMin": 4, "hpPerLevelMax": 8,
+      "mpPerLevelMin": 1, "mpPerLevelMax": 4,
+      "xpModifier": 1.1,
+      "magicSchools": { "kai": 1 },
+      "skills": ["KICK", "DODGE", "SNEAK", "PERCEPTION", "MEDITATE"]
     },
     {
-      "id": "WIZARD",
-      "name": "Wizard",
-      "description": "A scholarly mage whose power comes from study",
-      "baseStats": { "strength": 8, "dexterity": 10, "constitution": 12, "intelligence": 16, "wisdom": 14 },
-      "skills": ["MEDITATE", "PERCEPTION"]
+      "id": "BARD",
+      "name": "Bard",
+      "description": "A magical entertainer weaving spells through performance",
+      "baseStats": { "strength": 20, "agility": 30, "intellect": 30, "willpower": 25, "health": 25, "charm": 45 },
+      "hpPerLevelMin": 4, "hpPerLevelMax": 7,
+      "mpPerLevelMin": 2, "mpPerLevelMax": 5,
+      "xpModifier": 1.1,
+      "magicSchools": { "bard": 1 },
+      "skills": ["HIDE", "PICK_LOCK", "HAGGLE", "MEDITATE"]
+    },
+    {
+      "id": "GYPSY",
+      "name": "Gypsy",
+      "description": "A wandering thief-mage with mystical talents",
+      "baseStats": { "strength": 20, "agility": 40, "intellect": 35, "willpower": 25, "health": 25, "charm": 35 },
+      "hpPerLevelMin": 4, "hpPerLevelMax": 7,
+      "mpPerLevelMin": 1, "mpPerLevelMax": 4,
+      "xpModifier": 1.1,
+      "magicSchools": { "mage": 1 },
+      "skills": ["HIDE", "SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE"]
     }
   ]
 }

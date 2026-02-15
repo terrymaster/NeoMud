@@ -38,6 +38,10 @@ object MudColors {
     // Loot
     val loot = Color(0xFFFFD700)        // gold - loot messages
 
+    // Progression
+    val xp = Color(0xFF55FFFF)          // bright cyan - XP gain
+    val levelUp = Color(0xFFFFFF55)     // bright yellow - level up
+
     // Default
     val default = Color(0xFFCCCCCC)     // light grey
 }

@@ -74,7 +74,8 @@
       "hostile": true,
       "maxHp": 30,
       "damage": 5,
-      "level": 2
+      "level": 2,
+      "xpReward": 25
     },
     {
       "id": "npc:forest_spider",
@@ -85,7 +86,8 @@
       "hostile": true,
       "maxHp": 20,
       "damage": 8,
-      "level": 3
+      "level": 3,
+      "xpReward": 40
     }
   ]
 }

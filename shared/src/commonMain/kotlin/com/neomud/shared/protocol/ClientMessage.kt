@@ -12,7 +12,8 @@ sealed class ClientMessage {
         val username: String,
         val password: String,
         val characterName: String,
-        val characterClass: String
+        val characterClass: String,
+        val race: String = ""
     ) : ClientMessage()
 
     @Serializable
@@ -83,4 +84,16 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("use_skill")
     data class UseSkill(val skillId: String, val targetId: String? = null) : ClientMessage()
+
+    @Serializable
+    @SerialName("interact_trainer")
+    data object InteractTrainer : ClientMessage()
+
+    @Serializable
+    @SerialName("train_level_up")
+    data object TrainLevelUp : ClientMessage()
+
+    @Serializable
+    @SerialName("train_stat")
+    data class TrainStat(val stat: String, val points: Int = 1) : ClientMessage()
 }

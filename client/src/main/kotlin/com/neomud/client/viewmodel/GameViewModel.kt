@@ -73,6 +73,13 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     private val _showCharacterSheet = MutableStateFlow(false)
     val showCharacterSheet: StateFlow<Boolean> = _showCharacterSheet
 
+    // Trainer
+    private val _trainerInfo = MutableStateFlow<ServerMessage.TrainerInfo?>(null)
+    val trainerInfo: StateFlow<ServerMessage.TrainerInfo?> = _trainerInfo
+
+    private val _showTrainer = MutableStateFlow(false)
+    val showTrainer: StateFlow<Boolean> = _showTrainer
+
     // Death notification
     private val _deathMessage = MutableStateFlow<String?>(null)
     val deathMessage: StateFlow<String?> = _deathMessage
@@ -278,6 +285,48 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
             is ServerMessage.SkillCatalogSync -> {
                 _skillCatalog.value = message.skills.associateBy { it.id }
             }
+            is ServerMessage.RaceCatalogSync -> { /* handled by AuthViewModel */ }
+            is ServerMessage.XpGained -> {
+                addLog("+${message.amount} XP (${message.currentXp}/${message.xpToNextLevel})", MudColors.xp)
+                _player.value = _player.value?.copy(
+                    currentXp = message.currentXp,
+                    xpToNextLevel = message.xpToNextLevel
+                )
+            }
+            is ServerMessage.LevelUp -> {
+                addLog("LEVEL UP! You are now level ${message.newLevel}! HP+${message.hpRoll} MP+${message.mpRoll} CP+${message.cpGained}", MudColors.levelUp)
+                _player.value = _player.value?.copy(
+                    level = message.newLevel,
+                    maxHp = message.newMaxHp,
+                    currentHp = message.newMaxHp,
+                    maxMp = message.newMaxMp,
+                    currentMp = message.newMaxMp,
+                    unspentCp = message.totalUnspentCp
+                )
+                // Refresh trainer info if trainer panel is open
+                if (_showTrainer.value) interactTrainer()
+            }
+            is ServerMessage.TrainerInfo -> {
+                _trainerInfo.value = message
+                _showTrainer.value = true
+            }
+            is ServerMessage.StatTrained -> {
+                addLog("Trained ${message.stat} to ${message.newValue} (${message.cpSpent} CP spent, ${message.remainingCp} remaining)", MudColors.system)
+                _player.value = _player.value?.let { p ->
+                    val newStats = when (message.stat.lowercase()) {
+                        "strength" -> p.stats.copy(strength = message.newValue)
+                        "agility" -> p.stats.copy(agility = message.newValue)
+                        "intellect" -> p.stats.copy(intellect = message.newValue)
+                        "willpower" -> p.stats.copy(willpower = message.newValue)
+                        "health" -> p.stats.copy(health = message.newValue)
+                        "charm" -> p.stats.copy(charm = message.newValue)
+                        else -> p.stats
+                    }
+                    p.copy(stats = newStats, unspentCp = message.remainingCp)
+                }
+                // Refresh trainer info after training
+                interactTrainer()
+            }
         }
     }
 
@@ -405,5 +454,28 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
 
     fun toggleSettings() {
         _showSettings.value = !_showSettings.value
+    }
+
+    fun interactTrainer() {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.InteractTrainer)
+        }
+    }
+
+    fun trainLevelUp() {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.TrainLevelUp)
+        }
+    }
+
+    fun trainStat(stat: String, points: Int = 1) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.TrainStat(stat, points))
+        }
+    }
+
+    fun dismissTrainer() {
+        _showTrainer.value = false
+        _trainerInfo.value = null
     }
 }

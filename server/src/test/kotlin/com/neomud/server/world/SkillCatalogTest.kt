@@ -21,7 +21,7 @@ class SkillCatalogTest {
         assertNotNull(hide)
         assertEquals("Hide", hide.name)
         assertEquals("stealth", hide.category)
-        assertEquals("dexterity", hide.primaryStat)
+        assertEquals("agility", hide.primaryStat)
     }
 
     @Test
@@ -42,9 +42,9 @@ class SkillCatalogTest {
     @Test
     fun testGetSkillsForClass() {
         val catalog = SkillCatalog.load()
-        val rogueSkills = catalog.getSkillsForClass("ROGUE")
-        assertTrue(rogueSkills.any { it.id == "HIDE" })
-        assertTrue(rogueSkills.any { it.id == "BACKSTAB" })
+        val thiefSkills = catalog.getSkillsForClass("THIEF")
+        assertTrue(thiefSkills.any { it.id == "HIDE" })
+        assertTrue(thiefSkills.any { it.id == "BACKSTAB" })
     }
 
     @Test
@@ -54,6 +54,6 @@ class SkillCatalogTest {
         assertNotNull(backstab)
         assertEquals("3", backstab.properties["damageMultiplier"])
         assertEquals(4, backstab.cooldownTicks)
-        assertTrue(backstab.classRestrictions.contains("ROGUE"))
+        assertTrue(backstab.classRestrictions.contains("THIEF"))
     }
 }

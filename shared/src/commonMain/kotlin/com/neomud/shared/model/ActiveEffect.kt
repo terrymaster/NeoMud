@@ -8,7 +8,7 @@ enum class EffectType {
     @SerialName("POISON") POISON,
     @SerialName("HEAL_OVER_TIME") HEAL_OVER_TIME,
     @SerialName("BUFF_STRENGTH") BUFF_STRENGTH,
-    @SerialName("BUFF_DEXTERITY") BUFF_DEXTERITY,
+    @SerialName("BUFF_AGILITY") BUFF_AGILITY,
     @SerialName("HASTE") HASTE
 }
 

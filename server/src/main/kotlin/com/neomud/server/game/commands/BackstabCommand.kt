@@ -49,7 +49,7 @@ class BackstabCommand(
         )
 
         // Calculate backstab damage: weapon base * 3 multiplier
-        val baseDamage = player.stats.strength + player.stats.dexterity / 2 + (1..6).random()
+        val baseDamage = player.stats.strength + player.stats.agility / 2 + (1..6).random()
         val damage = baseDamage * 3
         target.currentHp -= damage
 

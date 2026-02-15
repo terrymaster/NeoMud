@@ -2,6 +2,7 @@ package com.neomud.server.persistence.repository
 
 import com.neomud.server.persistence.tables.PlayersTable
 import com.neomud.server.world.ClassCatalog
+import com.neomud.server.world.RaceCatalog
 import com.neomud.shared.model.Player
 import com.neomud.shared.model.RoomId
 import com.neomud.shared.model.Stats
@@ -17,8 +18,10 @@ class PlayerRepository {
         password: String,
         characterName: String,
         characterClass: String,
+        race: String,
         spawnRoomId: RoomId,
-        classCatalog: ClassCatalog
+        classCatalog: ClassCatalog,
+        raceCatalog: RaceCatalog?
     ): Result<Player> = runCatching {
         transaction {
             val existing = PlayersTable.selectAll().where {
@@ -35,24 +38,50 @@ class PlayerRepository {
 
             val classDef = classCatalog.getClass(characterClass)
                 ?: error("Unknown character class: $characterClass")
-            val stats = classDef.baseStats
-            val maxHp = stats.maxHitPoints
-            val maxMp = stats.maxManaPoints
+            val raceDef = raceCatalog?.getRace(race)
+
+            // Apply race stat modifiers to class base stats
+            val baseStats = classDef.baseStats
+            val stats = if (raceDef != null) {
+                Stats(
+                    strength = baseStats.strength + raceDef.statModifiers.strength,
+                    agility = baseStats.agility + raceDef.statModifiers.agility,
+                    intellect = baseStats.intellect + raceDef.statModifiers.intellect,
+                    willpower = baseStats.willpower + raceDef.statModifiers.willpower,
+                    health = baseStats.health + raceDef.statModifiers.health,
+                    charm = baseStats.charm + raceDef.statModifiers.charm
+                )
+            } else {
+                baseStats
+            }
+
+            // Level 1 gets max HP roll for fairness
+            val maxHp = classDef.hpPerLevelMax + (stats.health / 10) * 4
+            val maxMp = if (classDef.mpPerLevelMax > 0) classDef.mpPerLevelMax + (stats.willpower / 10) * 2 else 0
+            val initialXpToNext = (100 * Math.pow(1.0, 2.2)).toLong().coerceAtLeast(100)
 
             PlayersTable.insert {
                 it[PlayersTable.username] = username
                 it[passwordHash] = hashPassword(password)
                 it[PlayersTable.characterName] = characterName
                 it[PlayersTable.characterClass] = characterClass
+                it[PlayersTable.race] = race
                 it[strength] = stats.strength
-                it[dexterity] = stats.dexterity
-                it[constitution] = stats.constitution
-                it[intelligence] = stats.intelligence
-                it[wisdom] = stats.wisdom
+                it[agility] = stats.agility
+                it[intellect] = stats.intellect
+                it[willpower] = stats.willpower
+                it[health] = stats.health
+                it[charm] = stats.charm
                 it[currentHp] = maxHp
+                it[PlayersTable.maxHp] = maxHp
                 it[currentMp] = maxMp
+                it[PlayersTable.maxMp] = maxMp
                 it[level] = 1
                 it[currentRoomId] = spawnRoomId
+                it[currentXp] = 0
+                it[xpToNextLevel] = initialXpToNext
+                it[unspentCp] = 0
+                it[totalCpEarned] = 0
             }
 
             Player(
@@ -64,7 +93,12 @@ class PlayerRepository {
                 currentMp = maxMp,
                 maxMp = maxMp,
                 level = 1,
-                currentRoomId = spawnRoomId
+                currentRoomId = spawnRoomId,
+                race = race,
+                currentXp = 0,
+                xpToNextLevel = initialXpToNext,
+                unspentCp = 0,
+                totalCpEarned = 0
             )
         }
     }
@@ -82,10 +116,11 @@ class PlayerRepository {
 
             val stats = Stats(
                 strength = row[PlayersTable.strength],
-                dexterity = row[PlayersTable.dexterity],
-                constitution = row[PlayersTable.constitution],
-                intelligence = row[PlayersTable.intelligence],
-                wisdom = row[PlayersTable.wisdom]
+                agility = row[PlayersTable.agility],
+                intellect = row[PlayersTable.intellect],
+                willpower = row[PlayersTable.willpower],
+                health = row[PlayersTable.health],
+                charm = row[PlayersTable.charm]
             )
 
             Player(
@@ -93,11 +128,16 @@ class PlayerRepository {
                 characterClass = row[PlayersTable.characterClass],
                 stats = stats,
                 currentHp = row[PlayersTable.currentHp],
-                maxHp = stats.maxHitPoints,
+                maxHp = row[PlayersTable.maxHp],
                 currentMp = row[PlayersTable.currentMp],
-                maxMp = stats.maxManaPoints,
+                maxMp = row[PlayersTable.maxMp],
                 level = row[PlayersTable.level],
-                currentRoomId = row[PlayersTable.currentRoomId]
+                currentRoomId = row[PlayersTable.currentRoomId],
+                race = row[PlayersTable.race],
+                currentXp = row[PlayersTable.currentXp],
+                xpToNextLevel = row[PlayersTable.xpToNextLevel],
+                unspentCp = row[PlayersTable.unspentCp],
+                totalCpEarned = row[PlayersTable.totalCpEarned]
             )
         }
     }
@@ -106,14 +146,21 @@ class PlayerRepository {
         transaction {
             PlayersTable.update({ PlayersTable.characterName eq player.name }) {
                 it[currentHp] = player.currentHp
+                it[maxHp] = player.maxHp
                 it[currentMp] = player.currentMp
+                it[maxMp] = player.maxMp
                 it[level] = player.level
                 it[currentRoomId] = player.currentRoomId
                 it[strength] = player.stats.strength
-                it[dexterity] = player.stats.dexterity
-                it[constitution] = player.stats.constitution
-                it[intelligence] = player.stats.intelligence
-                it[wisdom] = player.stats.wisdom
+                it[agility] = player.stats.agility
+                it[intellect] = player.stats.intellect
+                it[willpower] = player.stats.willpower
+                it[health] = player.stats.health
+                it[charm] = player.stats.charm
+                it[currentXp] = player.currentXp
+                it[xpToNextLevel] = player.xpToNextLevel
+                it[unspentCp] = player.unspentCp
+                it[totalCpEarned] = player.totalCpEarned
             }
         }
     }

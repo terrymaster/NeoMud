@@ -8,6 +8,7 @@ import com.neomud.server.game.commands.LookCommand
 import com.neomud.server.game.commands.MoveCommand
 import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.commands.SayCommand
+import com.neomud.server.game.commands.TrainerCommand
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.repository.PlayerRepository
@@ -15,6 +16,7 @@ import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ClassCatalog
 import com.neomud.server.world.ItemCatalog
+import com.neomud.server.world.RaceCatalog
 import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ClientMessage
@@ -29,9 +31,11 @@ class CommandProcessor(
     private val classCatalog: ClassCatalog,
     private val itemCatalog: ItemCatalog,
     private val skillCatalog: SkillCatalog,
+    private val raceCatalog: RaceCatalog,
     private val inventoryCommand: InventoryCommand,
     private val pickupCommand: PickupCommand,
-    private val roomItemManager: RoomItemManager
+    private val roomItemManager: RoomItemManager,
+    private val trainerCommand: TrainerCommand
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
     private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager)
@@ -45,6 +49,7 @@ class CommandProcessor(
         session.send(ServerMessage.ClassCatalogSync(classCatalog.getAllClasses()))
         session.send(ServerMessage.ItemCatalogSync(itemCatalog.getAllItems()))
         session.send(ServerMessage.SkillCatalogSync(skillCatalog.getAllSkills()))
+        session.send(ServerMessage.RaceCatalogSync(raceCatalog.getAllRaces()))
     }
 
     suspend fun process(session: PlayerSession, message: ClientMessage) {
@@ -98,6 +103,15 @@ class CommandProcessor(
                     }
                 }
             }
+            is ClientMessage.InteractTrainer -> {
+                requireAuth(session) { trainerCommand.handleInteract(session) }
+            }
+            is ClientMessage.TrainLevelUp -> {
+                requireAuth(session) { trainerCommand.handleLevelUp(session) }
+            }
+            is ClientMessage.TrainStat -> {
+                requireAuth(session) { trainerCommand.handleTrainStat(session, message.stat, message.points) }
+            }
         }
     }
 
@@ -112,8 +126,10 @@ class CommandProcessor(
             password = msg.password,
             characterName = msg.characterName,
             characterClass = msg.characterClass,
+            race = msg.race,
             spawnRoomId = worldGraph.defaultSpawnRoom,
-            classCatalog = classCatalog
+            classCatalog = classCatalog,
+            raceCatalog = raceCatalog
         )
 
         result.fold(

@@ -9,5 +9,11 @@ data class CharacterClassDef(
     val description: String,
     val baseStats: Stats,
     val skills: List<String> = emptyList(),
-    val properties: Map<String, String> = emptyMap()
+    val properties: Map<String, String> = emptyMap(),
+    val hpPerLevelMin: Int = 4,
+    val hpPerLevelMax: Int = 8,
+    val mpPerLevelMin: Int = 0,
+    val mpPerLevelMax: Int = 0,
+    val xpModifier: Double = 1.0,
+    val magicSchools: Map<String, Int> = emptyMap()
 )

@@ -196,8 +196,9 @@ private fun NameAndVitals(player: Player, classCatalog: Map<String, CharacterCla
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold
     )
+    val raceLabel = if (player.race.isNotEmpty()) "${player.race}  \u2022  " else ""
     Text(
-        text = "$className  \u2022  Level ${player.level}",
+        text = "$raceLabel$className  \u2022  Level ${player.level}",
         color = DimText,
         fontSize = 13.sp
     )
@@ -223,6 +224,24 @@ private fun NameAndVitals(player: Player, classCatalog: Map<String, CharacterCla
         max = player.maxMp,
         color = Color(0xFF448AFF)
     )
+
+    if (player.xpToNextLevel > 0) {
+        Spacer(modifier = Modifier.height(4.dp))
+        VitalBar(
+            label = "XP",
+            current = player.currentXp.toInt(),
+            max = player.xpToNextLevel.toInt(),
+            color = Color(0xFF55FFFF)
+        )
+    }
+    if (player.unspentCp > 0) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "Unspent CP: ${player.unspentCp}",
+            fontSize = 12.sp,
+            color = Color(0xFFFFFF55)
+        )
+    }
 }
 
 @Composable
@@ -392,10 +411,11 @@ private fun VitalBar(label: String, current: Int, max: Int, color: Color) {
 private fun StatsGrid(stats: Stats) {
     val statEntries = listOf(
         "STR" to stats.strength,
-        "DEX" to stats.dexterity,
-        "CON" to stats.constitution,
-        "INT" to stats.intelligence,
-        "WIS" to stats.wisdom
+        "AGI" to stats.agility,
+        "INT" to stats.intellect,
+        "WIL" to stats.willpower,
+        "HLT" to stats.health,
+        "CHM" to stats.charm
     )
     Row(
         modifier = Modifier.fillMaxWidth(),
