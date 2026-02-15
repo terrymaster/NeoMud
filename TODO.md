@@ -20,6 +20,14 @@ Active work items and known issues, ordered roughly by priority.
 - Consider adding a confirmation or cooldown indicator for consumable use
 - Scrolls and other single-use items should work the same way
 
+### Sound Effects System
+- Add audio feedback for core game actions: combat hits, item pickup, equip/unequip, spell casting, potion use
+- Death sound and respawn chime
+- Ambient room audio per zone (town bustle, forest ambiance)
+- UI feedback sounds: button taps, panel open/close, error buzzes
+- Volume controls in settings panel
+- Sound assets served from server alongside sprites, or bundled in client APK
+
 ## Medium Priority
 
 ### Player Status Panel Condensing
