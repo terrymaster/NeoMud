@@ -18,7 +18,7 @@ This project is a tribute to that era, but it doesn't try to be a museum piece. 
 
 Because MUDs were the original MMOs, and they got a lot of things right that modern games lost along the way:
 
-- **Worlds driven by data, not code.** Rooms, items, NPCs, and loot tables are all JSON. A game master can reshape the world without recompiling anything.
+- **Worlds driven by data, not code.** Rooms, items, NPCs, loot tables, spells, and skills are all JSON. A game master can reshape the world without recompiling anything.
 - **Emergent multiplayer.** You share a room with other players. You see them arrive and leave. You talk. You fight the same monsters. No instancing, no sharding — just a shared world.
 - **Mechanical transparency.** You know your stats. You know your weapon damage. You can reason about the systems, and that reasoning is the game.
 
@@ -33,7 +33,7 @@ NeoMud/
 └── client/     Jetpack Compose — Android client with sprite rendering
 ```
 
-**Server** runs a 1.5-second tick-based game loop. NPCs wander, patrol, and attack. Combat resolves each tick. Loot drops. The world turns.
+**Server** runs a 1.5-second tick-based game loop. NPCs wander, patrol, and attack. Combat resolves each tick. Loot drops. Spells cool down. The world turns.
 
 **Client** connects over WebSocket and renders the game as a layered scene: room background, NPC and item sprites, floating minimap, game log, and controls.
 
@@ -42,25 +42,46 @@ NeoMud/
 ## Features
 
 ### The World
-- Two zones: the town of Millhaven and the Whispering Forest
-- 10 rooms with hand-crafted background art (AI-generated, background-removed, served as WebP)
+- Two zones: the town of Millhaven (safe) and the Whispering Forest (dangerous)
+- 17 rooms with hand-crafted background art (AI-generated, background-removed, served as WebP)
 - JSON-driven room definitions with coordinates, exits, and background images
-- BFS-based minimap showing nearby rooms
+- BFS-based minimap showing nearby rooms with player/NPC presence indicators
+- Temple of the Dawn healing aura — passively restores HP each tick while you rest
 
 ### Characters
-- 8 playable classes: Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger
-- 5-stat system (STR/DEX/CON/INT/WIS) with class-specific base stats
-- HP derived from Constitution, MP from Intelligence
+- 6 races: Human, Dwarf, Elf, Halfling, Gnome, Half-Orc — each with stat modifiers and XP scaling
+- 15 character classes: Warrior, Paladin, Witch Hunter, Cleric, Priest, Missionary, Mage, Warlock, Druid, Ranger, Thief, Ninja, Mystic, Bard, Gypsy
+- 6-stat system: Strength, Agility, Intellect, Willpower, Health, Charm
+- 60 CP stat allocation at character creation with escalating costs above class minimums
 - Equipment slots: weapon, shield, helmet, chest, hands, legs, feet
+
+### Progression
+- 30 level cap with XP from combat (scaled by level difference)
+- CP gains per level: 10 (levels 1–10), 15 (levels 11–20), 20 (levels 21+)
+- Trainers for spending CP on stat increases
+- 10% XP penalty on death
+
+### Spells & Skills
+- 5 magic schools: Mage, Priest, Druid, Kai, Bard
+- 20 spells with mana costs, cooldowns, and school-based progression
+- 12 skills: combat (Bash, Kick, Backstab, Parry, Dodge), stealth (Hide, Sneak), utility (Meditate, Perception, Pick Lock, Track, Haggle)
+- Spell bar UI with drag-to-assign slots
 
 ### Combat
 - Tick-based (1.5s) — no button mashing, just tactical decisions
 - Weapon damage = Strength + bonus + random roll; armor reduces incoming damage
-- NPCs attack on sight if hostile
-- Death respawns you at town square with a "YOU DIED" overlay (a nod to a certain other game)
+- NPCs attack on sight if hostile; perception checks reveal hidden players
+- Backstab from stealth for bonus damage
+- Death respawns you at the Temple of the Dawn with a "YOU DIED" overlay
+
+### NPCs & Spawning
+- 4 behavior types: idle, patrol, wander, trainer
+- Continuous spawn system — hostile NPCs respawn over time to maintain zone population
+- Per-zone spawn config: max entities, max per room, spawn rate in ticks
+- NPC perception vs player stealth rolls each tick
 
 ### Items & Economy
-- Data-driven items: weapons, armor, consumables, quest drops
+- Data-driven items: weapons, armor, consumables, loot drops
 - Loot tables per NPC with weighted drops
 - Four-tier coin system: Copper, Silver, Gold, Platinum
 - Ground loot rendered as clickable sprites
@@ -111,24 +132,29 @@ This is an active project. Here's what exists, what's in progress, and where it'
 
 ### What's Built
 - [x] WebSocket multiplayer with real-time room presence
-- [x] Two zones (town + forest) with 10 rooms
-- [x] 8 character classes with stat-based differentiation
+- [x] Two zones (town + forest) with 17 rooms
+- [x] 6 races with stat modifiers and XP scaling
+- [x] 15 character classes with stat-based differentiation
+- [x] 60 CP stat allocation at registration with escalating costs
 - [x] Tick-based combat with hostile NPCs
-- [x] Basic inventory and equipment slots
+- [x] Stealth system with hide, backstab, and NPC perception checks
+- [x] 5 magic schools, 20 spells with cooldowns and mana costs
+- [x] 12 skills (combat, stealth, utility)
+- [x] XP and leveling system (30 level cap) with trainers
+- [x] Inventory, equipment slots, and item usage
 - [x] Loot tables and ground item drops
 - [x] Four-tier coin economy
+- [x] Continuous NPC spawn system per zone
 - [x] Room background art and sprite overlays
-- [x] Minimap, game log, character sheet
-- [x] Death and respawn system
+- [x] Minimap, game log, character sheet, spell bar
+- [x] Death/respawn with XP penalty and temple spawn point
+- [x] Room healing aura (Temple of the Dawn)
 - [x] Player state persistence across sessions
 
 ### Up Next
-- [ ] **Player Progression** — XP from combat, leveling, stat growth, scaling HP/MP per level
-- [ ] **Skill System** — class-specific abilities (spells, combat arts, healing), cooldowns, mana costs
 - [ ] **Vendor System** — NPC shops to buy/sell items and equipment, price balancing
 - [ ] **Inventory Management** — item stacking, sorting, item comparison tooltips, bag capacity
 - [ ] **Equipment Upgrades** — tiered gear, enchantments, item rarity system
-- [ ] **Better Player Creation** — appearance options, starting gear per class, tutorial zone
 - [ ] **NPC Dialogue** — conversation trees, quest givers, lore NPCs
 - [ ] **Quest System** — kill quests, fetch quests, quest log, rewards
 
