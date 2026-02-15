@@ -53,7 +53,7 @@ NeoMud/
 - 15 character classes: Warrior, Paladin, Witch Hunter, Cleric, Priest, Missionary, Mage, Warlock, Druid, Ranger, Thief, Ninja, Mystic, Bard, Gypsy
 - 6-stat system: Strength, Agility, Intellect, Willpower, Health, Charm
 - 60 CP stat allocation at character creation with escalating costs above class minimums
-- Equipment slots: weapon, shield, helmet, chest, hands, legs, feet
+- Equipment slots: weapon, shield, head, chest, hands, legs, feet — managed via paperdoll screen
 
 ### Progression
 - 30 level cap with XP from combat (scaled by level difference)
@@ -141,7 +141,9 @@ This is an active project. Here's what exists, what's in progress, and where it'
 - [x] 5 magic schools, 20 spells with cooldowns and mana costs
 - [x] 12 skills (combat, stealth, utility)
 - [x] XP and leveling system (30 level cap) with trainers
-- [x] Inventory, equipment slots, and item usage
+- [x] Inventory icon grid with item sprites and tap-to-use consumables
+- [x] Paperdoll equipment screen with slot-based equip/unequip
+- [x] Vendor system with buy/sell tabs and charm-based pricing
 - [x] Loot tables and ground item drops
 - [x] Four-tier coin economy
 - [x] Continuous NPC spawn system per zone
@@ -152,8 +154,11 @@ This is an active project. Here's what exists, what's in progress, and where it'
 - [x] Player state persistence across sessions
 
 ### Up Next
-- [ ] **Vendor System** — NPC shops to buy/sell items and equipment, price balancing
-- [ ] **Inventory Management** — item stacking, sorting, item comparison tooltips, bag capacity
+- [ ] **Game Balance Pass** — rebalance combat, XP curves, item stats, and NPC difficulty across all content
+- [ ] **Missing Item Art** — add icons for items without sprites (e.g., leather chest piece)
+- [ ] **Consumable Items from Inventory** — tap-to-use single-use items (potions, scrolls) directly from the bag grid
+- [ ] **Player Status Condensing** — compact the HP/MP/XP status panel, explore horizontal orientation
+- [ ] **Action Panel Reorganization** — separate permanent class actions (attack, hide, spells) from contextual actions (level up, shop, train)
 - [ ] **Equipment Upgrades** — tiered gear, enchantments, item rarity system
 - [ ] **NPC Dialogue** — conversation trees, quest givers, lore NPCs
 - [ ] **Quest System** — kill quests, fetch quests, quest log, rewards
