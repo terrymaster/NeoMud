@@ -1,13 +1,13 @@
 package com.neomud.client.ui.components
 
-import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -15,12 +15,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.neomud.shared.model.Coins
-import com.neomud.shared.model.EquipmentSlots
 import com.neomud.shared.model.InventoryItem
 import com.neomud.shared.model.Item
 
@@ -28,21 +33,26 @@ private val CopperColor = Color(0xFFCD7F32)
 private val SilverColor = Color(0xFFC0C0C0)
 private val GoldColor = Color(0xFFFFD700)
 private val PlatinumColor = Color(0xFFE5E4E2)
+private val ConsumableBorder = Color(0xFF55FFFF)
+private val DefaultBorder = Color(0xFF555555)
+private val CellBgColor = Color(0xFF1A1A2E)
+
+/** Format raw item ID as display name: "item:leather_cap" -> "Leather Cap" */
+internal fun displayName(item: Item?, itemId: String): String {
+    if (item != null) return item.name
+    val raw = itemId.substringAfter(":")
+    return raw.split('_').joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+}
 
 @Composable
 fun InventoryPanel(
     inventory: List<InventoryItem>,
-    equipment: Map<String, String>,
     itemCatalog: Map<String, Item>,
     playerCoins: Coins,
-    onEquipItem: (String, String) -> Unit,
-    onUnequipItem: (String) -> Unit,
+    serverBaseUrl: String,
     onUseItem: (String) -> Unit,
     onClose: () -> Unit
 ) {
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -82,85 +92,12 @@ fun InventoryPanel(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (isLandscape) {
-                InventoryLandscape(
-                    inventory = inventory,
-                    equipment = equipment,
-                    itemCatalog = itemCatalog,
-                    playerCoins = playerCoins,
-                    onEquipItem = onEquipItem,
-                    onUnequipItem = onUnequipItem,
-                    onUseItem = onUseItem
-                )
-            } else {
-                InventoryPortrait(
-                    inventory = inventory,
-                    equipment = equipment,
-                    itemCatalog = itemCatalog,
-                    playerCoins = playerCoins,
-                    onEquipItem = onEquipItem,
-                    onUnequipItem = onUnequipItem,
-                    onUseItem = onUseItem
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ColumnScope.InventoryPortrait(
-    inventory: List<InventoryItem>,
-    equipment: Map<String, String>,
-    itemCatalog: Map<String, Item>,
-    playerCoins: Coins,
-    onEquipItem: (String, String) -> Unit,
-    onUnequipItem: (String) -> Unit,
-    onUseItem: (String) -> Unit
-) {
-    CoinsDisplay(playerCoins)
-    EquipmentList(equipment, itemCatalog, onUnequipItem)
-
-    Spacer(modifier = Modifier.height(8.dp))
-    HorizontalDivider(color = Color(0xFF555555))
-    Spacer(modifier = Modifier.height(8.dp))
-
-    BagSection(
-        inventory = inventory,
-        itemCatalog = itemCatalog,
-        onEquipItem = onEquipItem,
-        onUseItem = onUseItem,
-        modifier = Modifier.weight(1f)
-    )
-}
-
-@Composable
-private fun ColumnScope.InventoryLandscape(
-    inventory: List<InventoryItem>,
-    equipment: Map<String, String>,
-    itemCatalog: Map<String, Item>,
-    playerCoins: Coins,
-    onEquipItem: (String, String) -> Unit,
-    onUnequipItem: (String) -> Unit,
-    onUseItem: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier.weight(1f),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Left column: Equipment
-        Column(modifier = Modifier.weight(1f)) {
-            EquipmentList(equipment, itemCatalog, onUnequipItem)
-        }
-
-        VerticalDivider(color = Color(0xFF555555), thickness = 1.dp)
-
-        // Right column: Coins + Bag
-        Column(modifier = Modifier.weight(1f)) {
             CoinsDisplay(playerCoins)
-            BagSection(
+
+            BagGrid(
                 inventory = inventory,
                 itemCatalog = itemCatalog,
-                onEquipItem = onEquipItem,
+                serverBaseUrl = serverBaseUrl,
                 onUseItem = onUseItem,
                 modifier = Modifier.weight(1f)
             )
@@ -194,64 +131,10 @@ private fun CoinsDisplay(playerCoins: Coins) {
 }
 
 @Composable
-private fun EquipmentList(
-    equipment: Map<String, String>,
-    itemCatalog: Map<String, Item>,
-    onUnequipItem: (String) -> Unit
-) {
-    Text(
-        "Equipment",
-        color = Color(0xFFFFFF55),
-        fontSize = 14.sp,
-        fontWeight = FontWeight.Bold
-    )
-    Spacer(modifier = Modifier.height(4.dp))
-
-    for (slot in EquipmentSlots.DEFAULT_SLOTS) {
-        val equippedItemId = equipment[slot]
-        val item = equippedItemId?.let { itemCatalog[it] }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = slot.replaceFirstChar { it.uppercase() }.padEnd(8),
-                color = Color(0xFFAAAAAA),
-                fontSize = 12.sp,
-                modifier = Modifier.width(64.dp)
-            )
-            if (item != null) {
-                Text(
-                    text = item.name,
-                    color = Color(0xFF55FF55),
-                    fontSize = 12.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                TextButton(
-                    onClick = { onUnequipItem(slot) },
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                ) {
-                    Text("Unequip", fontSize = 10.sp, color = Color(0xFFFF9800))
-                }
-            } else {
-                Text(
-                    text = "-- empty --",
-                    color = Color(0xFF555555),
-                    fontSize = 12.sp,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun BagSection(
+private fun BagGrid(
     inventory: List<InventoryItem>,
     itemCatalog: Map<String, Item>,
-    onEquipItem: (String, String) -> Unit,
+    serverBaseUrl: String,
     onUseItem: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -267,41 +150,84 @@ private fun BagSection(
     if (bagItems.isEmpty()) {
         Text("Your bag is empty.", color = Color(0xFF555555), fontSize = 12.sp)
     } else {
-        LazyColumn(modifier = modifier) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             items(bagItems) { invItem ->
                 val item = itemCatalog[invItem.itemId]
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = (item?.name ?: invItem.itemId) +
-                            if (invItem.quantity > 1) " x${invItem.quantity}" else "",
-                        color = Color(0xFFCCCCCC),
-                        fontSize = 12.sp,
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (item != null && item.slot.isNotEmpty()) {
-                        TextButton(
-                            onClick = { onEquipItem(invItem.itemId, item.slot) },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                        ) {
-                            Text("Equip", fontSize = 10.sp, color = Color(0xFF55FF55))
-                        }
-                    }
-                    if (item != null && item.type == "consumable") {
-                        TextButton(
-                            onClick = { onUseItem(invItem.itemId) },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                        ) {
-                            Text("Use", fontSize = 10.sp, color = Color(0xFF55FFFF))
-                        }
-                    }
-                }
+                BagItemCell(
+                    invItem = invItem,
+                    item = item,
+                    serverBaseUrl = serverBaseUrl,
+                    onUseItem = onUseItem
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun BagItemCell(
+    invItem: InventoryItem,
+    item: Item?,
+    serverBaseUrl: String,
+    onUseItem: (String) -> Unit
+) {
+    val isConsumable = item?.type == "consumable"
+    val borderColor = if (isConsumable) ConsumableBorder else DefaultBorder
+    val context = LocalContext.current
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.then(
+            if (isConsumable) Modifier.clickable { onUseItem(invItem.itemId) }
+            else Modifier
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .background(CellBgColor, RoundedCornerShape(6.dp))
+                .border(1.dp, borderColor, RoundedCornerShape(6.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(spriteUrl(serverBaseUrl, invItem.itemId))
+                    .crossfade(200)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = displayName(item, invItem.itemId),
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .size(48.dp)
+                    .padding(2.dp)
+            )
+            if (invItem.quantity > 1) {
+                Text(
+                    text = "${invItem.quantity}",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .background(Color(0xCC000000), RoundedCornerShape(3.dp))
+                        .padding(horizontal = 3.dp, vertical = 1.dp)
+                )
+            }
+        }
+        Text(
+            text = displayName(item, invItem.itemId),
+            fontSize = 10.sp,
+            color = Color(0xFFCCCCCC),
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

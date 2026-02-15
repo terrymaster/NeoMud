@@ -47,6 +47,9 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     private val _showInventory = MutableStateFlow(false)
     val showInventory: StateFlow<Boolean> = _showInventory
 
+    private val _showEquipment = MutableStateFlow(false)
+    val showEquipment: StateFlow<Boolean> = _showEquipment
+
     // Coins & ground items
     private val _playerCoins = MutableStateFlow(Coins())
     val playerCoins: StateFlow<Coins> = _playerCoins
@@ -124,9 +127,11 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
 
     fun setInitialCatalogs(
         classes: List<CharacterClassDef> = emptyList(),
+        items: List<Item> = emptyList(),
         spells: List<SpellDef> = emptyList()
     ) {
         if (classes.isNotEmpty()) _classCatalog.value = classes.associateBy { it.id }
+        if (items.isNotEmpty()) _itemCatalog.value = items.associateBy { it.id }
         if (spells.isNotEmpty()) _spellCatalog.value = spells.associateBy { it.id }
         autoAssignSpells()
     }
@@ -487,6 +492,15 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     fun toggleInventory() {
         _showInventory.value = !_showInventory.value
         if (_showInventory.value) {
+            _showEquipment.value = false
+            viewInventory()
+        }
+    }
+
+    fun toggleEquipment() {
+        _showEquipment.value = !_showEquipment.value
+        if (_showEquipment.value) {
+            _showInventory.value = false
             viewInventory()
         }
     }

@@ -28,6 +28,7 @@ import com.neomud.client.ui.components.DirectionPad
 import com.neomud.client.ui.components.EntitySidebar
 import com.neomud.client.ui.components.FloatingMiniMap
 import com.neomud.client.ui.components.GameLog
+import com.neomud.client.ui.components.EquipmentPanel
 import com.neomud.client.ui.components.InventoryPanel
 import com.neomud.client.ui.components.MiniMap
 import com.neomud.client.ui.components.PlayerStatusPanel
@@ -55,6 +56,7 @@ fun GameScreen(
     val attackMode by gameViewModel.attackMode.collectAsState()
     val selectedTargetId by gameViewModel.selectedTargetId.collectAsState()
     val showInventory by gameViewModel.showInventory.collectAsState()
+    val showEquipment by gameViewModel.showEquipment.collectAsState()
     val inventory by gameViewModel.inventory.collectAsState()
     val equipment by gameViewModel.equipment.collectAsState()
     val itemCatalog by gameViewModel.itemCatalog.collectAsState()
@@ -152,13 +154,24 @@ fun GameScreen(
         if (showInventory) {
             InventoryPanel(
                 inventory = inventory,
-                equipment = equipment,
                 itemCatalog = itemCatalog,
                 playerCoins = playerCoins,
-                onEquipItem = { itemId, slot -> gameViewModel.equipItem(itemId, slot) },
-                onUnequipItem = { slot -> gameViewModel.unequipItem(slot) },
+                serverBaseUrl = gameViewModel.serverBaseUrl,
                 onUseItem = { itemId -> gameViewModel.useItem(itemId) },
                 onClose = { gameViewModel.toggleInventory() }
+            )
+        }
+
+        // Equipment overlay
+        if (showEquipment) {
+            EquipmentPanel(
+                inventory = inventory,
+                equipment = equipment,
+                itemCatalog = itemCatalog,
+                serverBaseUrl = gameViewModel.serverBaseUrl,
+                onEquipItem = { itemId, slot -> gameViewModel.equipItem(itemId, slot) },
+                onUnequipItem = { slot -> gameViewModel.unequipItem(slot) },
+                onClose = { gameViewModel.toggleEquipment() }
             )
         }
 
@@ -289,6 +302,7 @@ private fun GameScreenPortrait(
     val attackMode by gameViewModel.attackMode.collectAsState()
     val selectedTargetId by gameViewModel.selectedTargetId.collectAsState()
     val showInventory by gameViewModel.showInventory.collectAsState()
+    val showEquipmentState by gameViewModel.showEquipment.collectAsState()
     val itemCatalog by gameViewModel.itemCatalog.collectAsState()
     val roomGroundItems by gameViewModel.roomGroundItems.collectAsState()
     val roomGroundCoins by gameViewModel.roomGroundCoins.collectAsState()
@@ -379,6 +393,7 @@ private fun GameScreenPortrait(
                     attackMode = attackMode,
                     hasHostiles = hasHostiles,
                     showInventory = showInventory,
+                    showEquipment = showEquipmentState,
                     player = player,
                     activeEffects = activeEffects,
                     isHidden = isHidden,
@@ -433,6 +448,7 @@ private fun GameScreenLandscape(
     val attackMode by gameViewModel.attackMode.collectAsState()
     val selectedTargetId by gameViewModel.selectedTargetId.collectAsState()
     val showInventory by gameViewModel.showInventory.collectAsState()
+    val showEquipmentState by gameViewModel.showEquipment.collectAsState()
     val itemCatalog by gameViewModel.itemCatalog.collectAsState()
     val roomGroundItems by gameViewModel.roomGroundItems.collectAsState()
     val roomGroundCoins by gameViewModel.roomGroundCoins.collectAsState()
@@ -539,6 +555,7 @@ private fun GameScreenLandscape(
                             attackMode = attackMode,
                             hasHostiles = hasHostiles,
                             showInventory = showInventory,
+                            showEquipment = showEquipmentState,
                             player = null, // Status is above in landscape
                             activeEffects = activeEffects,
                             isHidden = isHidden,
@@ -596,6 +613,7 @@ private fun ActionButtonRow(
     attackMode: Boolean,
     hasHostiles: Boolean,
     showInventory: Boolean,
+    showEquipment: Boolean = false,
     player: com.neomud.shared.model.Player?,
     activeEffects: List<com.neomud.shared.model.ActiveEffect>,
     isHidden: Boolean = false,
@@ -673,6 +691,31 @@ private fun ActionButtonRow(
                 text = "\uD83E\uDDE5",
                 fontSize = 20.sp,
                 color = hideBorderColor
+            )
+        }
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        // Equipment button
+        val equipBorderColor = if (showEquipment) Color(0xFFFFD700) else MaterialTheme.colorScheme.primary
+        val equipBgColor = if (showEquipment) Color(0x44FFD700) else Color.Transparent
+        OutlinedButton(
+            onClick = { gameViewModel.toggleEquipment() },
+            modifier = Modifier.size(48.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(
+                width = if (showEquipment) 2.dp else 1.dp,
+                color = equipBorderColor
+            ),
+            contentPadding = PaddingValues(0.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = equipBgColor
+            )
+        ) {
+            Text(
+                text = "\uD83D\uDEE1\uFE0F",
+                fontSize = 20.sp,
+                color = equipBorderColor
             )
         }
 

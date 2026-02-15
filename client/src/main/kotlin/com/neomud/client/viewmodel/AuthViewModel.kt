@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.neomud.client.network.ConnectionState
 import com.neomud.client.network.WebSocketClient
 import com.neomud.shared.model.CharacterClassDef
+import com.neomud.shared.model.Item
 import com.neomud.shared.model.Player
 import com.neomud.shared.model.RaceDef
 import com.neomud.shared.model.SpellDef
@@ -32,6 +33,9 @@ class AuthViewModel : ViewModel() {
 
     private val _availableSpells = MutableStateFlow<List<SpellDef>>(emptyList())
     val availableSpells: StateFlow<List<SpellDef>> = _availableSpells
+
+    private val _availableItems = MutableStateFlow<List<Item>>(emptyList())
+    val availableItems: StateFlow<List<Item>> = _availableItems
 
     private var pendingLoginUsername: String? = null
     private var pendingLoginPassword: String? = null
@@ -72,6 +76,9 @@ class AuthViewModel : ViewModel() {
                     }
                     is ServerMessage.SpellCatalogSync -> {
                         _availableSpells.value = message.spells
+                    }
+                    is ServerMessage.ItemCatalogSync -> {
+                        _availableItems.value = message.items
                     }
                     else -> { /* handled by GameViewModel */ }
                 }
