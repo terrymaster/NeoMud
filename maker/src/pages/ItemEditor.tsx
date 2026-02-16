@@ -46,7 +46,7 @@ const fields: FieldConfig[] = [
 ];
 
 function ItemEditor() {
-  return <GenericCrudEditor entityName="Item" apiPath="/items" fields={fields} />;
+  return <GenericCrudEditor entityName="Item" apiPath="/items" fields={fields} imagePreview={{ entityType: 'item' }} />;
 }
 
 export default ItemEditor;

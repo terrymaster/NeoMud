@@ -64,7 +64,7 @@ function NpcEditor() {
     { key: 'deathSound', label: 'Death Sound', type: 'text' },
   ];
 
-  return <GenericCrudEditor entityName="NPC" apiPath="/npcs" fields={fields} />;
+  return <GenericCrudEditor entityName="NPC" apiPath="/npcs" fields={fields} imagePreview={{ entityType: 'npc' }} />;
 }
 
 export default NpcEditor;

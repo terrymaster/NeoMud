@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
+import ImagePreview from './ImagePreview';
 import type { CSSProperties } from 'react';
 
 export interface FieldConfig {
@@ -18,6 +19,7 @@ interface GenericCrudEditorProps {
   apiPath: string;
   fields: FieldConfig[];
   idField?: string;
+  imagePreview?: { entityType: string };
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -176,7 +178,7 @@ function prettyJson(value: string): string {
   }
 }
 
-function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id' }: GenericCrudEditorProps) {
+function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imagePreview }: GenericCrudEditorProps) {
   const [items, setItems] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, any>>({});
@@ -335,6 +337,13 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id' }: Gene
             <div style={styles.sectionTitle}>
               {isNew ? `New ${entityName}` : `Edit ${entityName}`}
             </div>
+            {imagePreview && !isNew && selectedId && (
+              <ImagePreview
+                entityType={imagePreview.entityType}
+                entityId={selectedId}
+                description={form.description}
+              />
+            )}
             {fields.map((field) => {
               const isIdDisabled = field.key === idField && !isNew;
               const disabled = field.disabled || isIdDisabled;

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../api';
 import MapCanvas from '../components/MapCanvas';
+import ImagePreview from '../components/ImagePreview';
 import type { CSSProperties } from 'react';
 
 interface Zone {
@@ -520,6 +521,12 @@ function ZoneEditor() {
       <div style={styles.rightPanel}>
         {selectedRoom ? (
           <>
+            <ImagePreview
+              entityType="room"
+              entityId={selectedRoom.id}
+              description={roomForm.description}
+              assetPath={roomForm.backgroundImage}
+            />
             <div style={styles.sectionTitle}>Room Properties</div>
             <label style={styles.label}>ID</label>
             <input style={styles.input} value={selectedRoom.id} disabled />
