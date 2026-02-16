@@ -33,12 +33,15 @@ data class NpcState(
     val accuracy: Int = 0,
     val defense: Int = 0,
     val evasion: Int = 0,
+    val agility: Int = 10,
     val attackSound: String = "",
     val missSound: String = "",
     val deathSound: String = ""
 ) {
     /** Set by [NpcManager.markDead] to prevent double-processing kills. */
     var deathProcessed: Boolean = false
+    /** When > 0, NPC skips attack ticks (decremented each combat tick). */
+    var stunTicks: Int = 0
     val isAlive: Boolean get() = !deathProcessed && (maxHp == 0 || currentHp > 0)
 }
 
@@ -111,6 +114,7 @@ class NpcManager(
             accuracy = data.accuracy,
             defense = data.defense,
             evasion = data.evasion,
+            agility = data.agility,
             attackSound = data.attackSound,
             missSound = data.missSound,
             deathSound = data.deathSound

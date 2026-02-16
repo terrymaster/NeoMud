@@ -33,6 +33,7 @@ model Room {
   healPerTick     Int    @default(0)
   bgm             String @default("")
   departSound     String @default("")
+  lockedExits     String @default("{}")
   exits           Exit[] @relation("fromRoom")
   incomingExits   Exit[] @relation("toRoom")
 }

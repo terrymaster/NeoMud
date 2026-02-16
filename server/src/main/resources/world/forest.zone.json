@@ -55,6 +55,7 @@
         "SOUTH": "forest:path",
         "EAST": "forest:stream"
       },
+      "lockedExits": { "EAST": 14 },
       "backgroundImage": "/assets/images/rooms/forest_deep.webp",
       "departSound": "footstep_dirt"
     },
@@ -86,6 +87,7 @@
       "accuracy": 10,
       "defense": 5,
       "evasion": 15,
+      "agility": 18,
       "attackSound": "wolf_bite",
       "missSound": "wolf_miss",
       "deathSound": "wolf_death"
@@ -104,6 +106,7 @@
       "accuracy": 15,
       "defense": 10,
       "evasion": 5,
+      "agility": 8,
       "attackSound": "spider_bite",
       "missSound": "spider_miss",
       "deathSound": "spider_death"

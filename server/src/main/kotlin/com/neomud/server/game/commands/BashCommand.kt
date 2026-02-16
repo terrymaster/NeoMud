@@ -6,7 +6,7 @@ import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.shared.protocol.ServerMessage
 
-class BackstabCommand(
+class BashCommand(
     private val npcManager: NpcManager,
     private val sessionManager: SessionManager,
     private val killHandler: SkillKillHandler
@@ -16,18 +16,13 @@ class BackstabCommand(
         val playerName = session.playerName ?: return
         val player = session.player ?: return
 
-        if (!session.isHidden) {
-            session.send(ServerMessage.SystemMessage("You must be hidden to backstab!"))
-            return
-        }
-
-        val cooldown = session.skillCooldowns["BACKSTAB"]
+        val cooldown = session.skillCooldowns["BASH"]
         if (cooldown != null && cooldown > 0) {
-            session.send(ServerMessage.SystemMessage("Backstab is on cooldown ($cooldown ticks remaining)."))
+            session.send(ServerMessage.SystemMessage("Bash is on cooldown ($cooldown ticks remaining)."))
             return
         }
 
-        // Resolve target
+        // Resolve target — auto-enter attack mode if hostiles present
         val resolvedTargetId = targetId ?: session.selectedTargetId
         val target = if (resolvedTargetId != null) {
             val npc = npcManager.getNpcState(resolvedTargetId)
@@ -37,31 +32,35 @@ class BackstabCommand(
         }
 
         if (target == null) {
-            session.send(ServerMessage.SystemMessage("No valid target for backstab."))
+            session.send(ServerMessage.SystemMessage("No valid target for bash."))
             return
         }
 
-        // Break stealth
-        session.isHidden = false
-        session.send(ServerMessage.HideModeUpdate(false, "You strike from the shadows!"))
-        sessionManager.broadcastToRoom(
-            roomId,
-            ServerMessage.PlayerEntered(playerName, roomId),
-            exclude = playerName
-        )
+        // Enter attack mode if not already
+        if (!session.attackMode) {
+            session.attackMode = true
+            session.selectedTargetId = target.id
+            session.send(ServerMessage.AttackModeUpdate(true))
+        }
 
-        // Calculate backstab damage: weapon base * 3 multiplier (using buffed stats)
         val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
-        val baseDamage = effStats.strength + effStats.agility / 2 + (1..6).random()
-        val damage = baseDamage * 3
+        val damage = effStats.strength + (1..4).random()
         target.currentHp -= damage
 
-        session.skillCooldowns["BACKSTAB"] = 4
+        // 30% chance to stun
+        val stunned = (1..100).random() <= 30
+        if (stunned) {
+            target.stunTicks = 1
+        }
 
-        // Start attack mode and set target
-        session.attackMode = true
-        session.selectedTargetId = target.id
-        session.send(ServerMessage.AttackModeUpdate(true))
+        session.skillCooldowns["BASH"] = 3
+
+        val message = if (stunned) {
+            "You bash ${target.name} for $damage damage, stunning them!"
+        } else {
+            "You bash ${target.name} for $damage damage!"
+        }
+        session.send(ServerMessage.SystemMessage(message))
 
         // Broadcast hit
         sessionManager.broadcastToRoom(

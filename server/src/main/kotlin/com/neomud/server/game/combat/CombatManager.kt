@@ -52,205 +52,244 @@ class CombatManager(
 ) {
     private val logger = LoggerFactory.getLogger(CombatManager::class.java)
 
+    private sealed class Combatant {
+        abstract val agility: Int
+        abstract val roomId: RoomId
+
+        data class PlayerCombatant(
+            val session: PlayerSession,
+            override val agility: Int,
+            override val roomId: RoomId
+        ) : Combatant()
+
+        data class NpcCombatant(
+            val npc: NpcState,
+            override val agility: Int,
+            override val roomId: RoomId
+        ) : Combatant()
+    }
+
     fun processCombatTick(): List<CombatEvent> {
         val events = mutableListOf<CombatEvent>()
 
-        // Phase 1: Player attacks
+        // Build unified combatant list
+        val combatants = mutableListOf<Combatant>()
+
+        // Collect players in attack mode
         for (session in sessionManager.getAllAuthenticatedSessions()) {
             if (!session.attackMode) continue
             val roomId = session.currentRoomId ?: continue
             val player = session.player ?: continue
-
-            // Resolve target
-            val target = resolveTarget(session, roomId)
-            if (target == null) {
-                // No valid targets — auto-disable attack mode
-                session.attackMode = false
-                session.selectedTargetId = null
-                continue
-            }
-
-            // Check if this is a backstab (first attack from stealth)
-            val isBackstab = session.isHidden
-
-            // Break stealth on attack
-            if (session.isHidden) {
-                session.isHidden = false
-            }
-
-            // Calculate effective stats with active buffs
             val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
-            val bonuses = equipmentService.getCombatBonuses(player.name)
-            val thresholds = ThresholdBonuses.compute(effStats)
-
-            // To-hit roll: player accuracy vs NPC defense
-            val accuracy = CombatUtils.computePlayerAccuracy(effStats, thresholds, player.level, bonuses)
-            val npcDefense = CombatUtils.computeNpcDefense(target)
-
-            if (!CombatUtils.rollToHit(accuracy, npcDefense)) {
-                // Miss
-                events.add(CombatEvent.Hit(
-                    attackerName = player.name,
-                    defenderName = target.name,
-                    damage = 0,
-                    defenderHp = target.currentHp,
-                    defenderMaxHp = target.maxHp,
-                    isPlayerDefender = false,
-                    roomId = roomId,
-                    isMiss = true,
-                    defenderId = target.id
-                ))
-                continue
-            }
-
-            // Evasion roll: NPC dodge chance
-            val npcEvasion = CombatUtils.npcEvasion(target)
-            if (npcEvasion > 0 && CombatUtils.rollEvasion(npcEvasion)) {
-                events.add(CombatEvent.Hit(
-                    attackerName = player.name,
-                    defenderName = target.name,
-                    damage = 0,
-                    defenderHp = target.currentHp,
-                    defenderMaxHp = target.maxHp,
-                    isPlayerDefender = false,
-                    roomId = roomId,
-                    isDodge = true,
-                    defenderId = target.id
-                ))
-                continue
-            }
-
-            // Calculate damage with equipment bonuses + stat thresholds
-            var damage = if (bonuses.weaponDamageRange > 0) {
-                effStats.strength + bonuses.totalDamageBonus + thresholds.meleeDamageBonus + (1..bonuses.weaponDamageRange).random()
-            } else {
-                effStats.strength + thresholds.meleeDamageBonus + (1..3).random()
-            }
-
-            // Crit check
-            if (thresholds.critChance > 0 && Math.random() < thresholds.critChance) {
-                damage = (damage * 1.5).toInt()
-                logger.info("${player.name} crits for $damage damage!")
-            }
-
-            // Backstab: 3x damage multiplier
-            if (isBackstab) {
-                damage *= 3
-                logger.info("${player.name} backstabs ${target.name} for $damage damage in $roomId")
-            }
-
-            target.currentHp -= damage
-
-            events.add(CombatEvent.Hit(
-                attackerName = player.name,
-                defenderName = target.name,
-                damage = damage,
-                defenderHp = target.currentHp.coerceAtLeast(0),
-                defenderMaxHp = target.maxHp,
-                isPlayerDefender = false,
-                roomId = roomId,
-                isBackstab = isBackstab,
-                defenderId = target.id
-            ))
-
-            if (target.currentHp <= 0) {
-                events.add(CombatEvent.NpcKilled(
-                    npcId = target.id,
-                    npcName = target.name,
-                    killerName = player.name,
-                    roomId = roomId,
-                    npcLevel = target.level,
-                    xpReward = target.xpReward,
-                    templateId = target.templateId
-                ))
-                logger.info("${player.name} killed ${target.name} in $roomId")
-            }
+            combatants.add(Combatant.PlayerCombatant(session, effStats.agility, roomId))
         }
 
-        // Phase 2: NPC retaliation
-        // Collect rooms with authenticated players
+        // Collect rooms with visible players for NPC retaliation
         val playersByRoom = mutableMapOf<RoomId, MutableList<PlayerSession>>()
         for (session in sessionManager.getAllAuthenticatedSessions()) {
             val roomId = session.currentRoomId ?: continue
             playersByRoom.getOrPut(roomId) { mutableListOf() }.add(session)
         }
 
-        for ((roomId, playersInRoom) in playersByRoom) {
-            val hostiles = npcManager.getLivingHostileNpcsInRoom(roomId)
-            for (npc in hostiles) {
-                val visiblePlayers = playersInRoom.filter { !it.isHidden && !it.godMode && (it.player?.currentHp ?: 0) > 0 }
-                val targetSession = visiblePlayers.randomOrNull() ?: continue
-                val targetPlayer = targetSession.player ?: continue
+        for ((roomId, _) in playersByRoom) {
+            for (npc in npcManager.getLivingHostileNpcsInRoom(roomId)) {
+                combatants.add(Combatant.NpcCombatant(npc, npc.agility, roomId))
+            }
+        }
 
-                // Effective stats with buffs
-                val effStats = CombatUtils.effectiveStats(targetPlayer.stats, targetSession.activeEffects.toList())
-                val playerBonuses = equipmentService.getCombatBonuses(targetPlayer.name)
-                val playerThresholds = ThresholdBonuses.compute(effStats)
+        // Sort by agility descending; shuffle first for random tiebreaking
+        combatants.shuffle()
+        combatants.sortByDescending { it.agility }
 
-                // To-hit roll: NPC accuracy vs player defense
-                val npcAccuracy = CombatUtils.computeNpcAccuracy(npc)
-                val playerDefense = CombatUtils.computePlayerDefense(effStats, playerBonuses, targetPlayer.level)
+        // Resolve each combatant's action in initiative order
+        for (combatant in combatants) {
+            when (combatant) {
+                is Combatant.PlayerCombatant -> {
+                    val session = combatant.session
+                    val player = session.player ?: continue
+                    if (player.currentHp <= 0) continue
+                    if (!session.attackMode) continue
 
-                if (!CombatUtils.rollToHit(npcAccuracy, playerDefense)) {
-                    // NPC misses
+                    val roomId = combatant.roomId
+
+                    val target = resolveTarget(session, roomId)
+                    if (target == null) {
+                        session.attackMode = false
+                        session.selectedTargetId = null
+                        continue
+                    }
+
+                    // Skip if target already dead this tick
+                    if (target.currentHp <= 0) continue
+
+                    val isBackstab = session.isHidden
+                    if (session.isHidden) {
+                        session.isHidden = false
+                    }
+
+                    val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+                    val bonuses = equipmentService.getCombatBonuses(player.name)
+                    val thresholds = ThresholdBonuses.compute(effStats)
+
+                    val accuracy = CombatUtils.computePlayerAccuracy(effStats, thresholds, player.level, bonuses)
+                    val npcDefense = CombatUtils.computeNpcDefense(target)
+
+                    if (!CombatUtils.rollToHit(accuracy, npcDefense)) {
+                        events.add(CombatEvent.Hit(
+                            attackerName = player.name,
+                            defenderName = target.name,
+                            damage = 0,
+                            defenderHp = target.currentHp,
+                            defenderMaxHp = target.maxHp,
+                            isPlayerDefender = false,
+                            roomId = roomId,
+                            isMiss = true,
+                            defenderId = target.id
+                        ))
+                        continue
+                    }
+
+                    val npcEvasion = CombatUtils.npcEvasion(target)
+                    if (npcEvasion > 0 && CombatUtils.rollEvasion(npcEvasion)) {
+                        events.add(CombatEvent.Hit(
+                            attackerName = player.name,
+                            defenderName = target.name,
+                            damage = 0,
+                            defenderHp = target.currentHp,
+                            defenderMaxHp = target.maxHp,
+                            isPlayerDefender = false,
+                            roomId = roomId,
+                            isDodge = true,
+                            defenderId = target.id
+                        ))
+                        continue
+                    }
+
+                    var damage = if (bonuses.weaponDamageRange > 0) {
+                        effStats.strength + bonuses.totalDamageBonus + thresholds.meleeDamageBonus + (1..bonuses.weaponDamageRange).random()
+                    } else {
+                        effStats.strength + thresholds.meleeDamageBonus + (1..3).random()
+                    }
+
+                    if (thresholds.critChance > 0 && Math.random() < thresholds.critChance) {
+                        damage = (damage * 1.5).toInt()
+                        logger.info("${player.name} crits for $damage damage!")
+                    }
+
+                    if (isBackstab) {
+                        damage *= 3
+                        logger.info("${player.name} backstabs ${target.name} for $damage damage in $roomId")
+                    }
+
+                    target.currentHp -= damage
+
+                    events.add(CombatEvent.Hit(
+                        attackerName = player.name,
+                        defenderName = target.name,
+                        damage = damage,
+                        defenderHp = target.currentHp.coerceAtLeast(0),
+                        defenderMaxHp = target.maxHp,
+                        isPlayerDefender = false,
+                        roomId = roomId,
+                        isBackstab = isBackstab,
+                        defenderId = target.id
+                    ))
+
+                    if (target.currentHp <= 0) {
+                        events.add(CombatEvent.NpcKilled(
+                            npcId = target.id,
+                            npcName = target.name,
+                            killerName = player.name,
+                            roomId = roomId,
+                            npcLevel = target.level,
+                            xpReward = target.xpReward,
+                            templateId = target.templateId
+                        ))
+                        logger.info("${player.name} killed ${target.name} in $roomId")
+                    }
+                }
+
+                is Combatant.NpcCombatant -> {
+                    val npc = combatant.npc
+                    if (npc.currentHp <= 0) continue
+
+                    // Stunned NPCs skip their attack
+                    if (npc.stunTicks > 0) {
+                        npc.stunTicks--
+                        continue
+                    }
+
+                    val roomId = combatant.roomId
+                    val playersInRoom = playersByRoom[roomId] ?: continue
+                    val visiblePlayers = playersInRoom.filter { !it.isHidden && !it.godMode && (it.player?.currentHp ?: 0) > 0 }
+                    val targetSession = visiblePlayers.randomOrNull() ?: continue
+                    val targetPlayer = targetSession.player ?: continue
+
+                    val effStats = CombatUtils.effectiveStats(targetPlayer.stats, targetSession.activeEffects.toList())
+                    val playerBonuses = equipmentService.getCombatBonuses(targetPlayer.name)
+                    val playerThresholds = ThresholdBonuses.compute(effStats)
+
+                    val npcAccuracy = CombatUtils.computeNpcAccuracy(npc)
+                    val playerDefense = CombatUtils.computePlayerDefense(effStats, playerBonuses, targetPlayer.level)
+
+                    if (!CombatUtils.rollToHit(npcAccuracy, playerDefense)) {
+                        events.add(CombatEvent.Hit(
+                            attackerName = npc.name,
+                            defenderName = targetPlayer.name,
+                            damage = 0,
+                            defenderHp = targetPlayer.currentHp,
+                            defenderMaxHp = targetPlayer.maxHp,
+                            isPlayerDefender = true,
+                            roomId = roomId,
+                            isMiss = true,
+                            defenderId = targetPlayer.name
+                        ))
+                        continue
+                    }
+
+                    val playerEvasion = CombatUtils.playerEvasion(playerThresholds, targetSession.activeEffects.toList())
+                    if (playerEvasion > 0 && CombatUtils.rollEvasion(playerEvasion)) {
+                        events.add(CombatEvent.Hit(
+                            attackerName = npc.name,
+                            defenderName = targetPlayer.name,
+                            damage = 0,
+                            defenderHp = targetPlayer.currentHp,
+                            defenderMaxHp = targetPlayer.maxHp,
+                            isPlayerDefender = true,
+                            roomId = roomId,
+                            isDodge = true,
+                            defenderId = targetPlayer.name
+                        ))
+                        continue
+                    }
+
+                    val variance = maxOf(npc.damage / 3, 1)
+                    val rawDamage = npc.damage + (1..variance).random()
+                    val damage = (rawDamage - playerBonuses.totalArmorValue).coerceAtLeast(1)
+                    val newHp = (targetPlayer.currentHp - damage).coerceAtLeast(0)
+                    targetSession.player = targetPlayer.copy(currentHp = newHp)
+
                     events.add(CombatEvent.Hit(
                         attackerName = npc.name,
                         defenderName = targetPlayer.name,
-                        damage = 0,
-                        defenderHp = targetPlayer.currentHp,
+                        damage = damage,
+                        defenderHp = newHp,
                         defenderMaxHp = targetPlayer.maxHp,
                         isPlayerDefender = true,
                         roomId = roomId,
-                        isMiss = true,
                         defenderId = targetPlayer.name
                     ))
-                    continue
-                }
 
-                // Evasion roll: player dodge chance
-                val playerEvasion = CombatUtils.playerEvasion(playerThresholds, targetSession.activeEffects.toList())
-                if (playerEvasion > 0 && CombatUtils.rollEvasion(playerEvasion)) {
-                    events.add(CombatEvent.Hit(
-                        attackerName = npc.name,
-                        defenderName = targetPlayer.name,
-                        damage = 0,
-                        defenderHp = targetPlayer.currentHp,
-                        defenderMaxHp = targetPlayer.maxHp,
-                        isPlayerDefender = true,
-                        roomId = roomId,
-                        isDodge = true,
-                        defenderId = targetPlayer.name
-                    ))
-                    continue
-                }
-
-                // NPC damage with variance, reduced by player's armor, minimum 1
-                val variance = maxOf(npc.damage / 3, 1)
-                val rawDamage = npc.damage + (1..variance).random()
-                val damage = (rawDamage - playerBonuses.totalArmorValue).coerceAtLeast(1)
-                val newHp = (targetPlayer.currentHp - damage).coerceAtLeast(0)
-                targetSession.player = targetPlayer.copy(currentHp = newHp)
-
-                events.add(CombatEvent.Hit(
-                    attackerName = npc.name,
-                    defenderName = targetPlayer.name,
-                    damage = damage,
-                    defenderHp = newHp,
-                    defenderMaxHp = targetPlayer.maxHp,
-                    isPlayerDefender = true,
-                    roomId = roomId,
-                    defenderId = targetPlayer.name
-                ))
-
-                if (newHp <= 0) {
-                    events.add(CombatEvent.PlayerKilled(
-                        playerSession = targetSession,
-                        killerName = npc.name,
-                        respawnRoomId = worldGraph.defaultSpawnRoom,
-                        respawnHp = targetPlayer.maxHp,
-                        respawnMp = targetPlayer.maxMp
-                    ))
-                    logger.info("${npc.name} killed ${targetPlayer.name} in $roomId")
+                    if (newHp <= 0) {
+                        events.add(CombatEvent.PlayerKilled(
+                            playerSession = targetSession,
+                            killerName = npc.name,
+                            respawnRoomId = worldGraph.defaultSpawnRoom,
+                            respawnHp = targetPlayer.maxHp,
+                            respawnMp = targetPlayer.maxMp
+                        ))
+                        logger.info("${npc.name} killed ${targetPlayer.name} in $roomId")
+                    }
                 }
             }
         }

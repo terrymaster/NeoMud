@@ -447,7 +447,7 @@ class AdminCommandTest {
             send(sendMsg(ClientMessage.Say("/grantcp 50")))
             val resync = drainUntil<ServerMessage.LoginOk>()
             assertEquals(50, resync.player.unspentCp)
-            assertEquals(50, resync.player.totalCpEarned)
+            assertEquals(60 + 50, resync.player.totalCpEarned)
         }
     }
 

@@ -297,7 +297,7 @@ private fun GameScreenPortrait(
     showTrainerButton: Boolean,
     showVendorButton: Boolean,
     sayText: String,
-    onSayTextChange: (String) -> Unit
+    onSayTextChange: (String) -> Unit,
 ) {
     val roomInfo by gameViewModel.roomInfo.collectAsState()
     val mapData by gameViewModel.mapData.collectAsState()
@@ -361,6 +361,33 @@ private fun GameScreenPortrait(
                         .padding(end = 4.dp, top = 4.dp)
                 )
             }
+
+            // Layer 3: Trainer/Vendor overlays (bottom-left of room view)
+            if (showTrainerButton || showVendorButton) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 8.dp, bottom = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (showTrainerButton) {
+                        RoomOverlayButton(
+                            icon = "\u2B50",
+                            label = "Train",
+                            color = Color(0xFFFFD700),
+                            onClick = { gameViewModel.interactTrainer() }
+                        )
+                    }
+                    if (showVendorButton) {
+                        RoomOverlayButton(
+                            icon = "\uD83D\uDEE0\uFE0F",
+                            label = "Shop",
+                            color = Color(0xFFCC8833),
+                            onClick = { gameViewModel.interactVendor() }
+                        )
+                    }
+                }
+            }
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp)
@@ -405,12 +432,13 @@ private fun GameScreenPortrait(
                     spellSlots = spellSlots,
                     spellCatalog = spellCatalogState,
                     readiedSpellId = readiedSpellId,
-                    classCatalog = classCatalog
+                    classCatalog = classCatalog,
+                    skillCatalog = gameViewModel.skillCatalog.collectAsState().value
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Say bar + gear/trainer in bottom row
+                // Say bar + contextual icons (inventory, equipment, settings)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -423,12 +451,14 @@ private fun GameScreenPortrait(
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    if (showVendorButton) {
-                        VendorShopButton(onClick = { gameViewModel.interactVendor() })
-                    }
-                    if (showTrainerButton) {
-                        TrainerStarButton(onClick = { gameViewModel.interactTrainer() })
-                    }
+                    InventoryIconButton(
+                        active = showInventory,
+                        onClick = { gameViewModel.toggleInventory() }
+                    )
+                    EquipmentIconButton(
+                        active = showEquipmentState,
+                        onClick = { gameViewModel.toggleEquipment() }
+                    )
                     SettingsGearButton(onClick = { gameViewModel.toggleSettings() })
                 }
             }
@@ -514,6 +544,33 @@ private fun GameScreenLandscape(
                             .padding(end = 4.dp, top = 4.dp)
                     )
                 }
+
+                // Layer 3: Trainer/Vendor overlays (bottom-left of room view)
+                if (showTrainerButton || showVendorButton) {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 8.dp, bottom = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (showTrainerButton) {
+                            RoomOverlayButton(
+                                icon = "\u2B50",
+                                label = "Train",
+                                color = Color(0xFFFFD700),
+                                onClick = { gameViewModel.interactTrainer() }
+                            )
+                        }
+                        if (showVendorButton) {
+                            RoomOverlayButton(
+                                icon = "\uD83D\uDEE0\uFE0F",
+                                label = "Shop",
+                                color = Color(0xFFCC8833),
+                                onClick = { gameViewModel.interactVendor() }
+                            )
+                        }
+                    }
+                }
             }
 
             VerticalDivider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp)
@@ -570,16 +627,19 @@ private fun GameScreenLandscape(
                             readiedSpellId = readiedSpellId,
                             classCatalog = classCatalog,
                             playerCharacterClass = player?.characterClass,
-                            currentMp = player?.currentMp ?: 0
+                            currentMp = player?.currentMp ?: 0,
+                            skillCatalog = gameViewModel.skillCatalog.collectAsState().value
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (showVendorButton) {
-                                VendorShopButton(onClick = { gameViewModel.interactVendor() })
-                            }
-                            if (showTrainerButton) {
-                                TrainerStarButton(onClick = { gameViewModel.interactTrainer() })
-                            }
+                            InventoryIconButton(
+                                active = showInventory,
+                                onClick = { gameViewModel.toggleInventory() }
+                            )
+                            EquipmentIconButton(
+                                active = showEquipmentState,
+                                onClick = { gameViewModel.toggleEquipment() }
+                            )
                             SettingsGearButton(onClick = { gameViewModel.toggleSettings() })
                         }
                     }
@@ -614,6 +674,45 @@ private fun GameScreenLandscape(
     }
 }
 
+/** Skill icon/color mapping for action buttons */
+private data class SkillButtonInfo(
+    val icon: String,
+    val activeColor: Color
+)
+
+private val SKILL_BUTTON_MAP = mapOf(
+    "BASH" to SkillButtonInfo("\uD83D\uDCA5", Color(0xFFFF8833)),        // 💥 Orange
+    "KICK" to SkillButtonInfo("\uD83E\uDDB6", Color(0xFFFF5533)),        // 🦶 Red-orange
+    "HIDE" to SkillButtonInfo("\uD83E\uDDE5", Color(0xFF888888)),        // 🧥 Gray
+    "BACKSTAB" to SkillButtonInfo("\uD83D\uDDE1\uFE0F", Color(0xFFCC3333)), // 🗡️ Dark red
+    "MEDITATE" to SkillButtonInfo("\uD83E\uDDD8", Color(0xFF7755CC)),    // 🧘 Blue-purple
+    "TRACK" to SkillButtonInfo("\uD83D\uDC3E", Color(0xFF55AA55)),       // 🐾 Green
+    "PICK_LOCK" to SkillButtonInfo("\uD83D\uDD13", Color(0xFFCCAA33))    // 🔓 Gold
+)
+
+@Composable
+private fun ActionButton(
+    icon: String,
+    color: Color,
+    isActive: Boolean = false,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    val bgColor = if (isActive) color.copy(alpha = 0.25f) else Color.Transparent
+    val displayColor = if (enabled) color else Color.Gray
+    Surface(
+        modifier = Modifier
+            .size(36.dp)
+            .clickable(enabled = enabled, onClick = onClick),
+        shape = RoundedCornerShape(6.dp),
+        color = bgColor
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Text(text = icon, fontSize = 18.sp, color = displayColor)
+        }
+    }
+}
+
 @Composable
 private fun ActionButtonRow(
     gameViewModel: GameViewModel,
@@ -629,128 +728,79 @@ private fun ActionButtonRow(
     readiedSpellId: String? = null,
     classCatalog: Map<String, com.neomud.shared.model.CharacterClassDef> = emptyMap(),
     playerCharacterClass: String? = player?.characterClass,
-    currentMp: Int = player?.currentMp ?: 0
+    currentMp: Int = player?.currentMp ?: 0,
+    skillCatalog: Map<String, com.neomud.shared.model.SkillDef> = emptyMap()
 ) {
+    val classDef = playerCharacterClass?.let { classCatalog[it] }
+    val hasMagic = classDef?.magicSchools?.isNotEmpty() == true
+
     Column {
+    // Row 1: Action skill buttons (class-driven)
     Row(
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Attack button
-        val attackBorderColor = when {
+        // Attack button (always shown)
+        val attackColor = when {
             attackMode -> Color(0xFFFF3333)
             hasHostiles -> MaterialTheme.colorScheme.primary
             else -> Color.Gray
         }
-        val attackBgColor = when {
-            attackMode -> Color(0x44FF3333)
-            else -> Color.Transparent
-        }
-        OutlinedButton(
-            onClick = { gameViewModel.toggleAttackMode(!attackMode) },
+        ActionButton(
+            icon = "\u2694\uFE0F",
+            color = attackColor,
+            isActive = attackMode,
             enabled = hasHostiles || attackMode,
-            modifier = Modifier.size(48.dp),
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(
-                width = if (attackMode) 2.dp else 1.dp,
-                color = attackBorderColor
-            ),
-            contentPadding = PaddingValues(0.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = attackBgColor,
-                disabledContainerColor = Color.Transparent
-            )
-        ) {
-            Text(
-                text = "\u2694",
-                fontSize = 22.sp,
-                color = attackBorderColor,
-                fontWeight = FontWeight.Bold
+            onClick = { gameViewModel.toggleAttackMode(!attackMode) }
+        )
+
+        // Class skill buttons (filtered: non-passive, non-HIDE)
+        val classSkills = classDef?.skills ?: emptyList()
+        for (skillId in classSkills) {
+            val skillDef = skillCatalog[skillId]
+            if (skillDef?.isPassive == true) continue
+
+            val btnInfo = SKILL_BUTTON_MAP[skillId] ?: continue
+
+            // HIDE is a special toggle
+            if (skillId == "HIDE") {
+                val hideEnabled = !attackMode || isHidden
+                ActionButton(
+                    icon = btnInfo.icon,
+                    color = if (isHidden) MudColors.stealth else btnInfo.activeColor,
+                    isActive = isHidden,
+                    enabled = hideEnabled,
+                    onClick = { gameViewModel.toggleHideMode(!isHidden) }
+                )
+            } else {
+                ActionButton(
+                    icon = btnInfo.icon,
+                    color = btnInfo.activeColor,
+                    onClick = { gameViewModel.useSkill(skillId) }
+                )
+            }
+        }
+
+        // Spells button (magic classes only)
+        if (hasMagic) {
+            val primarySchool = classDef?.magicSchools?.keys?.firstOrNull() ?: ""
+            val spellColor = when (primarySchool) {
+                "mage" -> Color(0xFF5599FF)
+                "priest" -> Color(0xFFFFDD44)
+                "druid" -> Color(0xFF55CC55)
+                "kai" -> Color(0xFFFF7744)
+                "bard" -> Color(0xFFCC77FF)
+                else -> Color(0xFF9B59FF)
+            }
+            ActionButton(
+                icon = "\u2728",
+                color = spellColor,
+                onClick = { gameViewModel.openSpellPicker(0) }
             )
         }
 
         Spacer(modifier = Modifier.width(4.dp))
-
-        // Hide/Stealth button (available to all classes)
-        val hideEnabled = !attackMode || isHidden
-        val hideBorderColor = when {
-            isHidden -> MudColors.stealth
-            else -> MaterialTheme.colorScheme.primary
-        }
-        val hideBgColor = if (isHidden) Color(0x44888888) else Color.Transparent
-        OutlinedButton(
-            onClick = { gameViewModel.toggleHideMode(!isHidden) },
-            enabled = hideEnabled,
-            modifier = Modifier.size(48.dp),
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(
-                width = if (isHidden) 2.dp else 1.dp,
-                color = hideBorderColor
-            ),
-            contentPadding = PaddingValues(0.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = hideBgColor,
-                disabledContainerColor = Color.Transparent
-            )
-        ) {
-            // Dark cloak icon
-            Text(
-                text = "\uD83E\uDDE5",
-                fontSize = 20.sp,
-                color = hideBorderColor
-            )
-        }
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        // Equipment button
-        val equipBorderColor = if (showEquipment) Color(0xFFFFD700) else MaterialTheme.colorScheme.primary
-        val equipBgColor = if (showEquipment) Color(0x44FFD700) else Color.Transparent
-        OutlinedButton(
-            onClick = { gameViewModel.toggleEquipment() },
-            modifier = Modifier.size(48.dp),
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(
-                width = if (showEquipment) 2.dp else 1.dp,
-                color = equipBorderColor
-            ),
-            contentPadding = PaddingValues(0.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = equipBgColor
-            )
-        ) {
-            Text(
-                text = "\uD83D\uDEE1\uFE0F",
-                fontSize = 20.sp,
-                color = equipBorderColor
-            )
-        }
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        // Bag button
-        val bagBorderColor = if (showInventory) Color(0xFFFFD700) else MaterialTheme.colorScheme.primary
-        OutlinedButton(
-            onClick = { gameViewModel.toggleInventory() },
-            modifier = Modifier.size(48.dp),
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(
-                width = if (showInventory) 2.dp else 1.dp,
-                color = bagBorderColor
-            ),
-            contentPadding = PaddingValues(0.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = if (showInventory) Color(0x44FFD700) else Color.Transparent
-            )
-        ) {
-            Text(
-                text = "\uD83C\uDF92",
-                fontSize = 20.sp,
-                color = bagBorderColor
-            )
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
 
         // Player status panel (only in portrait — landscape puts it above)
         if (player != null && player.maxHp > 0) {
@@ -764,8 +814,7 @@ private fun ActionButtonRow(
         }
     }
 
-    // Spell bar on its own row (only if class has magic schools)
-    val hasMagic = playerCharacterClass != null && classCatalog[playerCharacterClass]?.magicSchools?.isNotEmpty() == true
+    // Row 2: Spell bar (magic classes only)
     if (hasMagic) {
         Spacer(modifier = Modifier.height(4.dp))
         SpellBar(
@@ -781,29 +830,59 @@ private fun ActionButtonRow(
 }
 
 @Composable
-private fun VendorShopButton(onClick: () -> Unit) {
+private fun RoomOverlayButton(
+    icon: String,
+    label: String,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xCC1a1a2e.toInt()),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.6f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(text = icon, fontSize = 14.sp, color = color)
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        }
+    }
+}
+
+@Composable
+private fun InventoryIconButton(active: Boolean, onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
         modifier = Modifier.size(28.dp)
     ) {
         Text(
-            text = "\uD83D\uDEE0\uFE0F",
+            text = "\uD83C\uDF92",
             fontSize = 16.sp,
-            color = Color(0xFFCC8833)
+            color = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8)
         )
     }
 }
 
 @Composable
-private fun TrainerStarButton(onClick: () -> Unit) {
+private fun EquipmentIconButton(active: Boolean, onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
         modifier = Modifier.size(28.dp)
     ) {
         Text(
-            text = "\u2B50",
+            text = "\uD83D\uDEE1\uFE0F",
             fontSize = 16.sp,
-            color = Color(0xFFFFD700)
+            color = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8)
         )
     }
 }

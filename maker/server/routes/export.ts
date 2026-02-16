@@ -51,6 +51,7 @@ exportRouter.get('/json', async (_req, res) => {
         for (const exit of room.exits) {
           exits[exit.direction] = exit.toRoomId
         }
+        const lockedExits = parseJsonField(room.lockedExits, {})
         roomsOut[room.id] = {
           name: room.name,
           description: room.description,
@@ -59,6 +60,7 @@ exportRouter.get('/json', async (_req, res) => {
           departSound: room.departSound,
           healPerTick: room.healPerTick,
           exits,
+          ...(Object.keys(lockedExits).length > 0 ? { lockedExits } : {}),
         }
       }
 
@@ -278,6 +280,7 @@ exportRouter.get('/nmd', async (_req, res) => {
           for (const exit of room.exits) {
             exits[exit.direction] = exit.toRoomId
           }
+          const lockedExits = parseJsonField(room.lockedExits, {})
           return {
             id: room.id,
             name: room.name,
@@ -289,6 +292,7 @@ exportRouter.get('/nmd', async (_req, res) => {
             bgm: room.bgm,
             departSound: room.departSound,
             exits,
+            ...(Object.keys(lockedExits).length > 0 ? { lockedExits } : {}),
           }
         }),
         npcs: zoneNpcs.map((npc) => ({

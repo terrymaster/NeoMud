@@ -35,7 +35,8 @@ data class RoomData(
     val backgroundImage: String = "",
     val healPerTick: Int = 0,
     val bgm: String = "",
-    val departSound: String = ""
+    val departSound: String = "",
+    val lockedExits: Map<Direction, Int> = emptyMap()
 )
 
 @Serializable
@@ -56,6 +57,7 @@ data class NpcData(
     val accuracy: Int = 0,
     val defense: Int = 0,
     val evasion: Int = 0,
+    val agility: Int = 10,
     val attackSound: String = "",
     val missSound: String = "",
     val deathSound: String = ""

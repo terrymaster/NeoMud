@@ -242,6 +242,7 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           healPerTick: room.healPerTick ?? 0,
           bgm: room.bgm ?? '',
           departSound: room.departSound ?? '',
+          lockedExits: JSON.stringify(room.lockedExits ?? {}),
         },
       })
     }

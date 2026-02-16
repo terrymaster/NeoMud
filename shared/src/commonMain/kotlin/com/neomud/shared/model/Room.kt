@@ -16,7 +16,8 @@ data class Room(
     val backgroundImage: String = "",
     val healPerTick: Int = 0,
     val bgm: String = "",
-    val departSound: String = ""
+    val departSound: String = "",
+    val lockedExits: Map<Direction, Int> = emptyMap()
 )
 
 @Serializable

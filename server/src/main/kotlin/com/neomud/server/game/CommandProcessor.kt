@@ -3,13 +3,19 @@ package com.neomud.server.game
 import com.neomud.server.game.commands.AdminCommand
 import com.neomud.server.game.commands.AttackCommand
 import com.neomud.server.game.commands.BackstabCommand
+import com.neomud.server.game.commands.BashCommand
 import com.neomud.server.game.commands.HideCommand
 import com.neomud.server.game.commands.InventoryCommand
+import com.neomud.server.game.commands.KickCommand
 import com.neomud.server.game.commands.LookCommand
+import com.neomud.server.game.commands.MeditateCommand
 import com.neomud.server.game.commands.MoveCommand
+import com.neomud.server.game.commands.PickLockCommand
 import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.commands.SayCommand
+import com.neomud.server.game.commands.SkillKillHandler
 import com.neomud.server.game.commands.SpellCommand
+import com.neomud.server.game.commands.TrackCommand
 import com.neomud.server.game.commands.TrainerCommand
 import com.neomud.server.game.commands.VendorCommand
 import com.neomud.server.game.inventory.LootService
@@ -25,6 +31,7 @@ import com.neomud.server.world.LootTableCatalog
 import com.neomud.server.world.RaceCatalog
 import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.SpellCatalog
+import com.neomud.server.world.LockStateManager
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
@@ -50,6 +57,7 @@ class CommandProcessor(
     private val lootService: LootService,
     private val lootTableCatalog: LootTableCatalog,
     private val inventoryRepository: InventoryRepository,
+    private val lockStateManager: LockStateManager,
     private val adminUsernames: Set<String> = emptySet()
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
@@ -57,12 +65,18 @@ class CommandProcessor(
         sessionManager, playerRepository, npcManager, worldGraph,
         inventoryCommand, inventoryRepository, itemCatalog, classCatalog, raceCatalog, roomItemManager
     )
-    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager)
+    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, lockStateManager)
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager)
     private val sayCommand = SayCommand(sessionManager, adminCommand)
     private val attackCommand = AttackCommand(npcManager)
     private val hideCommand = HideCommand(sessionManager, npcManager)
-    private val backstabCommand = BackstabCommand(npcManager, sessionManager, playerRepository, lootService, lootTableCatalog, roomItemManager)
+    private val skillKillHandler = SkillKillHandler(npcManager, sessionManager, playerRepository, lootService, lootTableCatalog, roomItemManager)
+    private val backstabCommand = BackstabCommand(npcManager, sessionManager, skillKillHandler)
+    private val bashCommand = BashCommand(npcManager, sessionManager, skillKillHandler)
+    private val kickCommand = KickCommand(npcManager, sessionManager, skillKillHandler)
+    private val meditateCommand = MeditateCommand(playerRepository)
+    private val trackCommand = TrackCommand(npcManager, worldGraph)
+    private val pickLockCommand = PickLockCommand(worldGraph, lockStateManager)
 
     suspend fun sendCatalogSync(session: PlayerSession) {
         session.send(ServerMessage.ClassCatalogSync(classCatalog.getAllClasses()))
@@ -125,6 +139,11 @@ class CommandProcessor(
                 requireAuth(session) {
                     when (message.skillId.uppercase()) {
                         "BACKSTAB" -> backstabCommand.execute(session, message.targetId)
+                        "BASH" -> bashCommand.execute(session, message.targetId)
+                        "KICK" -> kickCommand.execute(session, message.targetId)
+                        "MEDITATE" -> meditateCommand.execute(session)
+                        "TRACK" -> trackCommand.execute(session)
+                        "PICK_LOCK" -> pickLockCommand.execute(session)
                         else -> session.send(ServerMessage.SystemMessage("Unknown skill: ${message.skillId}"))
                     }
                 }

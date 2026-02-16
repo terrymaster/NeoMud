@@ -70,7 +70,8 @@ object WorldLoader {
                     backgroundImage = roomData.backgroundImage,
                     healPerTick = roomData.healPerTick,
                     bgm = roomData.bgm.ifEmpty { zone.bgm },
-                    departSound = roomData.departSound
+                    departSound = roomData.departSound,
+                    lockedExits = roomData.lockedExits
                 )
                 worldGraph.addRoom(room)
             }

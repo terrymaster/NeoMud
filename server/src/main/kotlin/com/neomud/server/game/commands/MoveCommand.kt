@@ -5,6 +5,7 @@ import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
+import com.neomud.server.world.LockStateManager
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
 import com.neomud.shared.protocol.ServerMessage
@@ -17,7 +18,8 @@ class MoveCommand(
     private val sessionManager: SessionManager,
     private val npcManager: NpcManager,
     private val playerRepository: PlayerRepository,
-    private val roomItemManager: RoomItemManager
+    private val roomItemManager: RoomItemManager,
+    private val lockStateManager: LockStateManager
 ) {
     suspend fun execute(session: PlayerSession, direction: Direction) {
         val currentRoomId = session.currentRoomId ?: return
@@ -31,6 +33,13 @@ class MoveCommand(
         val targetRoomId = currentRoom.exits[direction]
         if (targetRoomId == null) {
             session.send(ServerMessage.MoveError("You cannot go ${direction.name.lowercase()}."))
+            return
+        }
+
+        // Check if exit is locked
+        val lockDifficulty = currentRoom.lockedExits[direction]
+        if (lockDifficulty != null && !lockStateManager.isUnlocked(currentRoomId, direction)) {
+            session.send(ServerMessage.MoveError("The door to the ${direction.name} is locked."))
             return
         }
 

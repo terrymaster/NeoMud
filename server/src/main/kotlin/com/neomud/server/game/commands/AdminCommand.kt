@@ -104,11 +104,24 @@ class AdminCommand(
         val classDef = classCatalog.getClass(player.characterClass)
         val raceDef = raceCatalog.getRace(player.race)
 
-        // Reset stats back to base values
-        val baseStats = playerRepository.getBaseStats(player.name) ?: player.stats
+        // Recompute true base stats (class minimums + race modifiers)
+        val classMinStats = classDef?.minimumStats ?: player.stats
+        val baseStats = if (raceDef != null) {
+            com.neomud.shared.model.Stats(
+                strength = classMinStats.strength + raceDef.statModifiers.strength,
+                agility = classMinStats.agility + raceDef.statModifiers.agility,
+                intellect = classMinStats.intellect + raceDef.statModifiers.intellect,
+                willpower = classMinStats.willpower + raceDef.statModifiers.willpower,
+                health = classMinStats.health + raceDef.statModifiers.health,
+                charm = classMinStats.charm + raceDef.statModifiers.charm
+            )
+        } else {
+            classMinStats
+        }
+        playerRepository.saveBaseStats(player.name, baseStats)
 
-        // Calculate cumulative CP for this level
-        var totalCp = 0
+        // Calculate cumulative CP for this level (creation pool + leveling CP)
+        var totalCp = com.neomud.shared.model.StatAllocator.CP_POOL
         for (l in 2..level) {
             totalCp += XpCalculator.cpForLevel(l)
         }

@@ -71,7 +71,7 @@ fun SpellBar(
 
             Surface(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(36.dp)
                     .combinedClickable(
                         onClick = {
                             if (spell != null) {
@@ -100,12 +100,12 @@ fun SpellBar(
                         ) {
                             Text(
                                 text = schoolIcon(spell.school),
-                                fontSize = 16.sp,
+                                fontSize = 13.sp,
                                 color = if (hasEnoughMp) borderColor else Color.Gray
                             )
                             Text(
                                 text = "${spell.manaCost}",
-                                fontSize = 9.sp,
+                                fontSize = 8.sp,
                                 color = if (hasEnoughMp) Color(0xFF88BBFF) else Color.Gray,
                                 fontWeight = FontWeight.Bold
                             )
