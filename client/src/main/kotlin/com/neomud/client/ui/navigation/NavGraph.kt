@@ -66,7 +66,10 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
                 connectionError = connectionError,
                 onConnect = { host, port -> authViewModel.connect(host, port) },
                 onLogin = { username, password -> authViewModel.login(username, password) },
-                onNavigateToRegister = { navController.navigate("register") },
+                onNavigateToRegister = {
+                    authViewModel.clearError()
+                    navController.navigate("register")
+                },
                 onClearError = { authViewModel.clearError() }
             )
         }

@@ -117,85 +117,95 @@ fun TrainerPanel(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // CP display
-                    Text(
-                        text = "CP: $cpUsed / ${trainerInfo.totalCpEarned}  ($cpRemaining remaining)",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MudColors.xp
-                    )
+                    if (trainerInfo.totalCpEarned > 0) {
+                        Text(
+                            text = "CP: $cpUsed / ${trainerInfo.totalCpEarned}  ($cpRemaining remaining)",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MudColors.xp
+                        )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    // Stat training grid
-                    Text(
-                        text = "Train Stats",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFCCCCCC)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Cost: 1 CP (0-9 above base), 2 CP (10-19), 3 CP (20+)",
-                        fontSize = 11.sp,
-                        color = Color(0xFF777777)
-                    )
+                        // Stat training grid
+                        Text(
+                            text = "Train Stats",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFCCCCCC)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Cost: 1 CP (0-9 above base), 2 CP (10-19), 3 CP (20+)",
+                            fontSize = 11.sp,
+                            color = Color(0xFF777777)
+                        )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    val statEntries = listOf(
-                        StatEntry("Strength", tentativeStats.strength, baseStats.strength) { v -> tentativeStats = tentativeStats.copy(strength = v) },
-                        StatEntry("Agility", tentativeStats.agility, baseStats.agility) { v -> tentativeStats = tentativeStats.copy(agility = v) },
-                        StatEntry("Intellect", tentativeStats.intellect, baseStats.intellect) { v -> tentativeStats = tentativeStats.copy(intellect = v) },
-                        StatEntry("Willpower", tentativeStats.willpower, baseStats.willpower) { v -> tentativeStats = tentativeStats.copy(willpower = v) },
-                        StatEntry("Health", tentativeStats.health, baseStats.health) { v -> tentativeStats = tentativeStats.copy(health = v) },
-                        StatEntry("Charm", tentativeStats.charm, baseStats.charm) { v -> tentativeStats = tentativeStats.copy(charm = v) }
-                    )
+                        val statEntries = listOf(
+                            StatEntry("Strength", tentativeStats.strength, baseStats.strength) { v -> tentativeStats = tentativeStats.copy(strength = v) },
+                            StatEntry("Agility", tentativeStats.agility, baseStats.agility) { v -> tentativeStats = tentativeStats.copy(agility = v) },
+                            StatEntry("Intellect", tentativeStats.intellect, baseStats.intellect) { v -> tentativeStats = tentativeStats.copy(intellect = v) },
+                            StatEntry("Willpower", tentativeStats.willpower, baseStats.willpower) { v -> tentativeStats = tentativeStats.copy(willpower = v) },
+                            StatEntry("Health", tentativeStats.health, baseStats.health) { v -> tentativeStats = tentativeStats.copy(health = v) },
+                            StatEntry("Charm", tentativeStats.charm, baseStats.charm) { v -> tentativeStats = tentativeStats.copy(charm = v) }
+                        )
 
-                    for (entry in statEntries) {
-                        val costToAdd = costToRaise(entry.current, entry.base)
-                        val canAdd = cpRemaining >= costToAdd
-                        val canRemove = entry.current > entry.base
+                        for (entry in statEntries) {
+                            val costToAdd = costToRaise(entry.current, entry.base)
+                            val canAdd = cpRemaining >= costToAdd
+                            val canRemove = entry.current > entry.base
 
-                        StatAllocRow(
-                            statName = entry.name,
-                            currentValue = entry.current,
-                            baseValue = entry.base,
-                            costToAdd = costToAdd,
-                            canAdd = canAdd,
-                            canRemove = canRemove,
-                            onAdd = { entry.onSet(entry.current + 1) },
-                            onRemove = { entry.onSet(entry.current - 1) }
+                            StatAllocRow(
+                                statName = entry.name,
+                                currentValue = entry.current,
+                                baseValue = entry.base,
+                                costToAdd = costToAdd,
+                                canAdd = canAdd,
+                                canRemove = canRemove,
+                                onAdd = { entry.onSet(entry.current + 1) },
+                                onRemove = { entry.onSet(entry.current - 1) }
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "Level up to earn CP for stat training!",
+                            fontSize = 14.sp,
+                            color = Color(0xFF888888)
                         )
                     }
                 }
 
-                // Bottom buttons
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { tentativeStats = trainerInfo.currentStats },
-                        enabled = hasChanged,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFAAAAAA),
-                            disabledContentColor = Color(0xFF555555)
-                        )
+                // Bottom buttons (only show when there's CP to train with)
+                if (trainerInfo.totalCpEarned > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Reset")
-                    }
-                    Button(
-                        onClick = { onAllocateStats(tentativeStats) },
-                        enabled = hasChanged && cpUsed <= trainerInfo.totalCpEarned,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF1565C0),
-                            disabledContainerColor = Color(0xFF333333)
-                        )
-                    ) {
-                        Text("Apply")
+                        OutlinedButton(
+                            onClick = { tentativeStats = trainerInfo.currentStats },
+                            enabled = hasChanged,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color(0xFFAAAAAA),
+                                disabledContentColor = Color(0xFF555555)
+                            )
+                        ) {
+                            Text("Reset")
+                        }
+                        Button(
+                            onClick = { onAllocateStats(tentativeStats) },
+                            enabled = hasChanged && cpUsed <= trainerInfo.totalCpEarned,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF1565C0),
+                                disabledContainerColor = Color(0xFF333333)
+                            )
+                        ) {
+                            Text("Apply")
+                        }
                     }
                 }
             }

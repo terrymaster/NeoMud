@@ -109,7 +109,8 @@ class TrainerCommand(
             mpRoll = mpRoll,
             newMaxMp = newMaxMp,
             cpGained = cpGained,
-            totalUnspentCp = newUnspentCp
+            totalUnspentCp = newUnspentCp,
+            xpToNextLevel = newXpToNext
         ))
 
         // Broadcast to room

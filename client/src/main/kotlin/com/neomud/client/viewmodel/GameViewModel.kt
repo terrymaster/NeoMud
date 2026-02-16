@@ -464,7 +464,8 @@ class GameViewModel(
                     currentHp = message.newMaxHp,
                     maxMp = message.newMaxMp,
                     currentMp = message.newMaxMp,
-                    unspentCp = message.totalUnspentCp
+                    unspentCp = message.totalUnspentCp,
+                    xpToNextLevel = message.xpToNextLevel
                 )
                 // Refresh trainer info if trainer panel is open
                 if (_showTrainer.value) interactTrainer()
@@ -472,6 +473,10 @@ class GameViewModel(
             is ServerMessage.TrainerInfo -> {
                 _trainerInfo.value = message
                 _showTrainer.value = true
+                _player.value = _player.value?.copy(
+                    stats = message.currentStats,
+                    unspentCp = message.unspentCp
+                )
             }
             is ServerMessage.StatTrained -> {
                 addLog("Trained ${message.stat} to ${message.newValue} (${message.cpSpent} CP spent, ${message.remainingCp} remaining)", MudColors.system)

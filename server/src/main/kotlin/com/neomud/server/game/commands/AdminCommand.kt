@@ -2,6 +2,7 @@ package com.neomud.server.game.commands
 
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
+import com.neomud.server.game.progression.ThresholdBonuses
 import com.neomud.server.game.progression.XpCalculator
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.persistence.repository.PlayerRepository
@@ -101,6 +102,10 @@ class AdminCommand(
         }
         val player = target.player ?: return
         val classDef = classCatalog.getClass(player.characterClass)
+        val raceDef = raceCatalog.getRace(player.race)
+
+        // Reset stats back to base values
+        val baseStats = playerRepository.getBaseStats(player.name) ?: player.stats
 
         // Calculate cumulative CP for this level
         var totalCp = 0
@@ -108,18 +113,23 @@ class AdminCommand(
             totalCp += XpCalculator.cpForLevel(l)
         }
 
-        // Calculate HP/MP for this level (use max rolls for admin set)
-        var maxHp = (classDef?.hpPerLevelMax ?: 10) + (player.stats.health / 10) * 4
-        var maxMp = if ((classDef?.mpPerLevelMax ?: 0) > 0) (classDef?.mpPerLevelMax ?: 0) + (player.stats.willpower / 10) * 2 else 0
+        // Calculate HP/MP using base stats for threshold bonuses (matches createPlayer)
+        val thresholds = ThresholdBonuses.compute(baseStats)
+        var maxHp = (classDef?.hpPerLevelMax ?: 10) + thresholds.hpBonus
+        var maxMp = if ((classDef?.mpPerLevelMax ?: 0) > 0) (classDef?.mpPerLevelMax ?: 0) + thresholds.mpBonus else 0
         for (l in 2..level) {
             maxHp += classDef?.hpPerLevelMax ?: 10
             maxMp += classDef?.mpPerLevelMax ?: 0
         }
 
-        val xpToNext = XpCalculator.xpForLevel(level)
+        // Use race/class-adjusted XP threshold
+        val raceXpMod = raceDef?.xpModifier ?: 1.0
+        val classXpMod = classDef?.xpModifier ?: 1.0
+        val xpToNext = XpCalculator.adjustedXpForLevel(level, raceXpMod, classXpMod)
 
         target.player = player.copy(
             level = level,
+            stats = baseStats,
             currentHp = maxHp,
             maxHp = maxHp,
             currentMp = maxMp,

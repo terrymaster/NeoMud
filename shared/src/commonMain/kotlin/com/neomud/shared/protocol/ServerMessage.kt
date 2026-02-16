@@ -239,7 +239,8 @@ sealed class ServerMessage {
         val mpRoll: Int,
         val newMaxMp: Int,
         val cpGained: Int,
-        val totalUnspentCp: Int
+        val totalUnspentCp: Int,
+        val xpToNextLevel: Long = 0
     ) : ServerMessage()
 
     @Serializable
