@@ -879,7 +879,7 @@ private fun SayBar(
             singleLine = true,
             textStyle = TextStyle(
                 fontSize = 13.sp,
-                color = if (isAdmin && tfv.text.startsWith("/")) Color(0xFFFFD700) else Color(0xFFCCCCCC)
+                color = if (isAdmin && tfv.text.startsWith("/")) Color(0xFF1565C0) else Color(0xFFCCCCCC)
             ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             modifier = Modifier
