@@ -183,6 +183,67 @@ object WorldLoader {
             if (room.departSound.isBlank()) logger.info("Room '${room.id}' missing departSound")
         }
 
+        // Asset file existence validation
+        fun assetExists(path: String): Boolean = source.openStream(path)?.use { true } ?: false
+        fun spritePathFor(entityId: String) = "assets/images/rooms/${entityId.replace(':', '_')}.webp"
+        fun sfxPathFor(soundId: String) = "assets/audio/sfx/$soundId.ogg"
+        fun bgmPathFor(trackId: String) = "assets/audio/bgm/$trackId.ogg"
+
+        // Item sprites
+        for (item in itemCatalog.getAllItems()) {
+            val path = spritePathFor(item.id)
+            if (!assetExists(path)) logger.warn("Item '${item.id}' missing sprite asset: $path")
+        }
+        // NPC sprites
+        for ((npcData, _) in allNpcData) {
+            val path = spritePathFor(npcData.id)
+            if (!assetExists(path)) logger.warn("NPC '${npcData.id}' missing sprite asset: $path")
+        }
+        // Room background images
+        for (room in worldGraph.getAllRooms()) {
+            if (room.backgroundImage.isNotBlank()) {
+                val path = "assets/images/rooms/${room.backgroundImage}.webp"
+                if (!assetExists(path)) logger.warn("Room '${room.id}' missing background asset: $path")
+            }
+        }
+        // SFX files
+        val checkedSfx = mutableSetOf<String>()
+        for (item in itemCatalog.getAllItems()) {
+            for (sound in listOf(item.attackSound, item.missSound, item.useSound)) {
+                if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
+                    logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by item '${item.id}')")
+                }
+            }
+        }
+        for ((npcData, _) in allNpcData) {
+            for (sound in listOf(npcData.attackSound, npcData.missSound, npcData.deathSound)) {
+                if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
+                    logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by NPC '${npcData.id}')")
+                }
+            }
+        }
+        for (spell in spellCatalog.getAllSpells()) {
+            for (sound in listOf(spell.castSound, spell.impactSound, spell.missSound)) {
+                if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
+                    logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by spell '${spell.id}')")
+                }
+            }
+        }
+        for (room in worldGraph.getAllRooms()) {
+            val sound = room.departSound
+            if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
+                logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by room '${room.id}')")
+            }
+        }
+        // BGM files
+        val checkedBgm = mutableSetOf<String>()
+        for (room in worldGraph.getAllRooms()) {
+            val bgm = room.bgm
+            if (bgm.isNotBlank() && checkedBgm.add(bgm) && !assetExists(bgmPathFor(bgm))) {
+                logger.warn("Missing BGM asset: ${bgmPathFor(bgm)} (referenced by room '${room.id}')")
+            }
+        }
+
         return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, promptTemplateCatalog, skillCatalog, raceCatalog, spellCatalog, zoneSpawnConfigs, manifest)
     }
 }
