@@ -6,7 +6,7 @@ import { projectsRouter } from './routes/projects.js'
 import { zonesRouter } from './routes/zones.js'
 import { entitiesRouter } from './routes/entities.js'
 import { exportRouter } from './routes/export.js'
-import { getProjectsDir } from './db.js'
+import { getProjectsDir, getActiveProject } from './db.js'
 import { importNmd } from './import.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -18,6 +18,17 @@ app.use('/api/projects', projectsRouter)
 app.use('/api', zonesRouter)
 app.use('/api', entitiesRouter)
 app.use('/api/export', exportRouter)
+
+// Serve assets from the active project's assets directory
+app.use('/api/assets', (req, res, next) => {
+  const active = getActiveProject()
+  if (!active) {
+    res.status(404).json({ error: 'No project is open' })
+    return
+  }
+  const assetsDir = path.join(getProjectsDir(), `${active}_assets`, 'assets')
+  express.static(assetsDir)(req, res, next)
+})
 
 const port = parseInt(process.env.MAKER_PORT || '3001', 10)
 

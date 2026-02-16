@@ -11,6 +11,7 @@ application {
 
 tasks.named<JavaExec>("run") {
     workingDir = project.projectDir
+    dependsOn("packageWorld")
 }
 
 dependencies {

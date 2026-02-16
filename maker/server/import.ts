@@ -1,5 +1,7 @@
 import AdmZip from 'adm-zip'
-import { createProject, db } from './db.js'
+import fs from 'fs'
+import path from 'path'
+import { createProject, db, getProjectsDir } from './db.js'
 
 /**
  * Import an .nmd bundle (ZIP) into a new maker project.
@@ -10,6 +12,23 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
   // Create the project DB
   await createProject(projectName, readOnly)
   const prisma = db()
+
+  // ─── Extract assets ──────────────────────────────────────
+  const assetsDir = path.join(getProjectsDir(), `${projectName}_assets`)
+  const assetEntries = zip.getEntries().filter(
+    (e) => e.entryName.startsWith('assets/') && !e.isDirectory
+  )
+  for (const entry of assetEntries) {
+    const destPath = path.join(assetsDir, entry.entryName)
+    const destDir = path.dirname(destPath)
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true })
+    }
+    fs.writeFileSync(destPath, entry.getData())
+  }
+  if (assetEntries.length > 0) {
+    console.log(`[import] Extracted ${assetEntries.length} asset files to ${assetsDir}`)
+  }
 
   // ─── Manifest ──────────────────────────────────────────
   const manifestEntry = zip.getEntry('manifest.json')

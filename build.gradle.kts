@@ -41,7 +41,9 @@ tasks.register<Exec>("runMaker") {
     group = "application"
     description = "Start the NeoMUD Maker web server (Vite + Express)"
     workingDir = file("maker")
-    commandLine("npm", "run", "dev")
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+    val npm = if (isWindows) "npm.cmd" else "npm"
+    commandLine(npm, "run", "dev")
 }
 
 tasks.register<UpdateVersionTask>("updateVersion") {

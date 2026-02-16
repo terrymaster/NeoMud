@@ -126,6 +126,10 @@ export async function deleteProject(name: string): Promise<void> {
   if (fs.existsSync(dbPath)) {
     fs.unlinkSync(dbPath)
   }
+  const assetsPath = path.join(projectsDir, `${name}_assets`)
+  if (fs.existsSync(assetsPath)) {
+    fs.rmSync(assetsPath, { recursive: true, force: true })
+  }
 }
 
 export async function forkProject(source: string, newName: string): Promise<void> {
@@ -141,6 +145,13 @@ export async function forkProject(source: string, newName: string): Promise<void
 
   // Copy the DB file
   fs.copyFileSync(srcPath, destPath)
+
+  // Copy assets directory if it exists
+  const srcAssets = path.join(projectsDir, `${source}_assets`)
+  const destAssets = path.join(projectsDir, `${newName}_assets`)
+  if (fs.existsSync(srcAssets)) {
+    fs.cpSync(srcAssets, destAssets, { recursive: true })
+  }
 
   // Open the copy and remove the read-only flag
   const tmpClient = new PrismaClient({

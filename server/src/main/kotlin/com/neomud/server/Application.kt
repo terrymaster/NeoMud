@@ -55,6 +55,7 @@ fun main() {
     }
 
     val worldFile = System.getenv("NEOMUD_WORLD")
+        ?: "build/worlds/default-world.nmd"
 
     embeddedServer(Netty, port = PORT, host = "0.0.0.0") {
         module(worldFile = worldFile)
@@ -68,9 +69,13 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     // Select world data source
     val dataSource: WorldDataSource = if (worldFile != null) {
         val file = File(worldFile)
-        require(file.exists()) { "World file not found: $worldFile" }
-        logger.info("Loading world from bundle: $worldFile")
-        NmdBundleDataSource(ZipFile(file))
+        if (file.exists()) {
+            logger.info("Loading world from bundle: $worldFile")
+            NmdBundleDataSource(ZipFile(file))
+        } else {
+            logger.warn("World bundle not found at $worldFile, falling back to classpath resources")
+            ClasspathDataSource()
+        }
     } else {
         ClasspathDataSource()
     }
