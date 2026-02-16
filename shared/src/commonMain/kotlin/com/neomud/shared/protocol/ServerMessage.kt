@@ -67,7 +67,8 @@ sealed class ServerMessage {
         val hostile: Boolean = false,
         val currentHp: Int = 0,
         val maxHp: Int = 0,
-        val spawned: Boolean = false
+        val spawned: Boolean = false,
+        val templateId: String = ""
     ) : ServerMessage()
 
     @Serializable
@@ -95,7 +96,8 @@ sealed class ServerMessage {
         val isPlayerDefender: Boolean = false,
         val isBackstab: Boolean = false,
         val isMiss: Boolean = false,
-        val isDodge: Boolean = false
+        val isDodge: Boolean = false,
+        val defenderId: String = ""
     ) : ServerMessage()
 
     @Serializable
@@ -281,7 +283,8 @@ sealed class ServerMessage {
         val effectAmount: Int,
         val targetNewHp: Int,
         val targetMaxHp: Int,
-        val isPlayerTarget: Boolean = false
+        val isPlayerTarget: Boolean = false,
+        val targetId: String = ""
     ) : ServerMessage()
 
     @Serializable

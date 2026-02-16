@@ -260,7 +260,7 @@ class GameViewModel(
                     _player.value = _player.value?.copy(currentHp = message.defenderHp)
                 } else {
                     _roomEntities.value = _roomEntities.value.map { npc ->
-                        if (npc.name == message.defenderName) {
+                        if (npc.id == message.defenderId) {
                             npc.copy(currentHp = message.defenderHp)
                         } else npc
                     }
@@ -415,7 +415,8 @@ class GameViewModel(
                 sfx(impactSpell?.impactSound ?: "")
                 if (!message.isPlayerTarget) {
                     _roomEntities.value = _roomEntities.value.map { npc ->
-                        if (npc.name == message.targetName) {
+                        if (message.targetId.isNotEmpty() && npc.id == message.targetId ||
+                            message.targetId.isEmpty() && npc.name == message.targetName) {
                             npc.copy(currentHp = message.targetNewHp)
                         } else npc
                     }

@@ -24,7 +24,8 @@ import com.neomud.shared.model.Npc
 private val SelectedGlow = Color(0xFFFF3333)
 
 fun spriteUrl(serverBaseUrl: String, entityId: String): String {
-    val filename = "${entityId.replace(':', '_')}.webp"
+    val baseId = entityId.substringBefore('#').replace(':', '_')
+    val filename = "$baseId.webp"
     return "$serverBaseUrl/assets/images/rooms/$filename"
 }
 

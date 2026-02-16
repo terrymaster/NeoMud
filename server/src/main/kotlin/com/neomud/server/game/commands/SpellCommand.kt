@@ -111,7 +111,8 @@ class SpellCommand(
                 spellName = spell.name,
                 effectAmount = power,
                 targetNewHp = target.currentHp.coerceAtLeast(0),
-                targetMaxHp = target.maxHp
+                targetMaxHp = target.maxHp,
+                targetId = target.id
             )
         )
 
@@ -145,7 +146,8 @@ class SpellCommand(
                 spellName = spell.name,
                 effectAmount = initialDmg,
                 targetNewHp = target.currentHp.coerceAtLeast(0),
-                targetMaxHp = target.maxHp
+                targetMaxHp = target.maxHp,
+                targetId = target.id
             )
         )
 

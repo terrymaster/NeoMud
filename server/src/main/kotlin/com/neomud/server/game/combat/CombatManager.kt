@@ -21,7 +21,8 @@ sealed class CombatEvent {
         val roomId: RoomId,
         val isBackstab: Boolean = false,
         val isMiss: Boolean = false,
-        val isDodge: Boolean = false
+        val isDodge: Boolean = false,
+        val defenderId: String = ""
     ) : CombatEvent()
 
     data class NpcKilled(
@@ -96,7 +97,8 @@ class CombatManager(
                     defenderMaxHp = target.maxHp,
                     isPlayerDefender = false,
                     roomId = roomId,
-                    isMiss = true
+                    isMiss = true,
+                    defenderId = target.id
                 ))
                 continue
             }
@@ -112,7 +114,8 @@ class CombatManager(
                     defenderMaxHp = target.maxHp,
                     isPlayerDefender = false,
                     roomId = roomId,
-                    isDodge = true
+                    isDodge = true,
+                    defenderId = target.id
                 ))
                 continue
             }
@@ -146,7 +149,8 @@ class CombatManager(
                 defenderMaxHp = target.maxHp,
                 isPlayerDefender = false,
                 roomId = roomId,
-                isBackstab = isBackstab
+                isBackstab = isBackstab,
+                defenderId = target.id
             ))
 
             if (target.currentHp <= 0) {
@@ -197,7 +201,8 @@ class CombatManager(
                         defenderMaxHp = targetPlayer.maxHp,
                         isPlayerDefender = true,
                         roomId = roomId,
-                        isMiss = true
+                        isMiss = true,
+                        defenderId = targetPlayer.name
                     ))
                     continue
                 }
@@ -213,7 +218,8 @@ class CombatManager(
                         defenderMaxHp = targetPlayer.maxHp,
                         isPlayerDefender = true,
                         roomId = roomId,
-                        isDodge = true
+                        isDodge = true,
+                        defenderId = targetPlayer.name
                     ))
                     continue
                 }
@@ -232,7 +238,8 @@ class CombatManager(
                     defenderHp = newHp,
                     defenderMaxHp = targetPlayer.maxHp,
                     isPlayerDefender = true,
-                    roomId = roomId
+                    roomId = roomId,
+                    defenderId = targetPlayer.name
                 ))
 
                 if (newHp <= 0) {

@@ -106,7 +106,8 @@ class GameLoop(
                     ServerMessage.NpcEntered(
                         event.npcName, event.toRoomId,
                         event.npcId, event.hostile, event.currentHp, event.maxHp,
-                        spawned = isSpawn
+                        spawned = isSpawn,
+                        templateId = event.templateId
                     )
                 )
 
@@ -143,7 +144,8 @@ class GameLoop(
                         ServerMessage.CombatHit(
                             event.attackerName, event.defenderName, event.damage,
                             event.defenderHp, event.defenderMaxHp, event.isPlayerDefender,
-                            event.isBackstab, event.isMiss, event.isDodge
+                            event.isBackstab, event.isMiss, event.isDodge,
+                            event.defenderId
                         )
                     )
                 }
