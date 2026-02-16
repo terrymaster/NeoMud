@@ -51,10 +51,24 @@ fun RegistrationScreen(
     val selectedClass = availableClasses.find { it.id == selectedClassId }
     val selectedRace = availableRaces.find { it.id == selectedRaceId }
 
-    // Initialize allocated stats when class changes
-    LaunchedEffect(selectedClassId, availableClasses) {
+    // Compute effective minimums: class mins + race mods, floored at 1
+    fun effectiveMin(classDef: CharacterClassDef?, raceDef: RaceDef?): Stats {
+        val base = classDef?.minimumStats ?: return Stats()
+        val mods = raceDef?.statModifiers ?: return base
+        return Stats(
+            strength = maxOf(1, base.strength + mods.strength),
+            agility = maxOf(1, base.agility + mods.agility),
+            intellect = maxOf(1, base.intellect + mods.intellect),
+            willpower = maxOf(1, base.willpower + mods.willpower),
+            health = maxOf(1, base.health + mods.health),
+            charm = maxOf(1, base.charm + mods.charm)
+        )
+    }
+
+    // Initialize allocated stats when class or race changes
+    LaunchedEffect(selectedClassId, selectedRaceId, availableClasses, availableRaces) {
         if (selectedClass != null) {
-            allocatedStats = selectedClass.minimumStats
+            allocatedStats = effectiveMin(selectedClass, selectedRace)
         }
     }
 
@@ -101,15 +115,17 @@ fun RegistrationScreen(
                         selectedClassId = it
                         // Reset allocation when class changes
                         val cls = availableClasses.find { c -> c.id == it }
-                        if (cls != null) allocatedStats = cls.minimumStats
+                        if (cls != null) allocatedStats = effectiveMin(cls, selectedRace)
                     }
                 )
-                3 -> StatAllocationStep(
-                    selectedClass = selectedClass,
-                    selectedRace = selectedRace,
-                    allocatedStats = allocatedStats ?: selectedClass?.minimumStats ?: Stats(),
-                    onStatsChanged = { allocatedStats = it }
-                )
+                3 -> {
+                    val effMin = effectiveMin(selectedClass, selectedRace)
+                    StatAllocationStep(
+                        effectiveMinimum = effMin,
+                        allocatedStats = allocatedStats ?: effMin,
+                        onStatsChanged = { allocatedStats = it }
+                    )
+                }
             }
         }
 
@@ -151,9 +167,9 @@ fun RegistrationScreen(
                     Text("Next")
                 }
             } else {
-                val stats = allocatedStats ?: selectedClass?.minimumStats ?: Stats()
-                val minimum = selectedClass?.minimumStats ?: Stats()
-                val cpUsed = StatAllocator.totalCpUsed(stats, minimum)
+                val effMin = effectiveMin(selectedClass, selectedRace)
+                val stats = allocatedStats ?: effMin
+                val cpUsed = StatAllocator.totalCpUsed(stats, effMin)
                 Button(
                     onClick = {
                         onRegister(username, password, characterName, selectedClassId, selectedRaceId, stats)
@@ -439,18 +455,11 @@ private fun ClassSelectionStep(
 
 @Composable
 private fun StatAllocationStep(
-    selectedClass: CharacterClassDef?,
-    selectedRace: RaceDef?,
+    effectiveMinimum: Stats,
     allocatedStats: Stats,
     onStatsChanged: (Stats) -> Unit
 ) {
-    if (selectedClass == null) {
-        Text("No class selected")
-        return
-    }
-
-    val minimum = selectedClass.minimumStats
-    val cpUsed = StatAllocator.totalCpUsed(allocatedStats, minimum)
+    val cpUsed = StatAllocator.totalCpUsed(allocatedStats, effectiveMinimum)
     val cpRemaining = StatAllocator.CP_POOL - cpUsed
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -480,19 +489,17 @@ private fun StatAllocationStep(
             Text("Value", modifier = Modifier.width(40.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
             Spacer(modifier = Modifier.width(72.dp)) // buttons space
             Text("Cost", modifier = Modifier.width(36.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            Text("Final", modifier = Modifier.width(40.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         }
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        val raceMods = selectedRace?.statModifiers ?: Stats(0, 0, 0, 0, 0, 0)
         val statEntries = listOf(
-            StatEntry("Strength", allocatedStats.strength, minimum.strength, raceMods.strength) { v -> allocatedStats.copy(strength = v) },
-            StatEntry("Agility", allocatedStats.agility, minimum.agility, raceMods.agility) { v -> allocatedStats.copy(agility = v) },
-            StatEntry("Intellect", allocatedStats.intellect, minimum.intellect, raceMods.intellect) { v -> allocatedStats.copy(intellect = v) },
-            StatEntry("Willpower", allocatedStats.willpower, minimum.willpower, raceMods.willpower) { v -> allocatedStats.copy(willpower = v) },
-            StatEntry("Health", allocatedStats.health, minimum.health, raceMods.health) { v -> allocatedStats.copy(health = v) },
-            StatEntry("Charm", allocatedStats.charm, minimum.charm, raceMods.charm) { v -> allocatedStats.copy(charm = v) }
+            StatEntry("Strength", allocatedStats.strength, effectiveMinimum.strength) { v -> allocatedStats.copy(strength = v) },
+            StatEntry("Agility", allocatedStats.agility, effectiveMinimum.agility) { v -> allocatedStats.copy(agility = v) },
+            StatEntry("Intellect", allocatedStats.intellect, effectiveMinimum.intellect) { v -> allocatedStats.copy(intellect = v) },
+            StatEntry("Willpower", allocatedStats.willpower, effectiveMinimum.willpower) { v -> allocatedStats.copy(willpower = v) },
+            StatEntry("Health", allocatedStats.health, effectiveMinimum.health) { v -> allocatedStats.copy(health = v) },
+            StatEntry("Charm", allocatedStats.charm, effectiveMinimum.charm) { v -> allocatedStats.copy(charm = v) }
         )
 
         LazyColumn(modifier = Modifier.weight(1f)) {
@@ -508,7 +515,7 @@ private fun StatAllocationStep(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedButton(
-            onClick = { onStatsChanged(minimum) },
+            onClick = { onStatsChanged(effectiveMinimum) },
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("Reset Stats")
@@ -520,7 +527,6 @@ private data class StatEntry(
     val name: String,
     val current: Int,
     val minimum: Int,
-    val raceMod: Int,
     val withValue: (Int) -> Stats
 )
 
@@ -539,8 +545,6 @@ private fun StatAllocationRow(
         costToAdd == 2 -> Color(0xFFFFFF55)  // yellow
         else -> Color(0xFFFF5555)            // red
     }
-
-    val finalValue = entry.current + entry.raceMod
 
     Row(
         modifier = Modifier
@@ -598,15 +602,6 @@ private fun StatAllocationRow(
             modifier = Modifier.width(36.dp),
             fontSize = 12.sp,
             color = costColor,
-            textAlign = TextAlign.Center
-        )
-
-        // Final value with race mod
-        Text(
-            text = "$finalValue",
-            modifier = Modifier.width(40.dp),
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             textAlign = TextAlign.Center
         )
     }

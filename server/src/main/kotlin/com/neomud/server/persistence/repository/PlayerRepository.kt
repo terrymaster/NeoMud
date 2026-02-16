@@ -42,24 +42,27 @@ class PlayerRepository {
                 ?: error("Unknown character class: $characterClass")
             val raceDef = raceCatalog?.getRace(race)
 
-            // Validate CP allocation against class minimums
-            if (!StatAllocator.isValidAllocation(allocatedStats, classDef.minimumStats)) {
+            // Effective minimums: class mins + race mods (already baked into client allocation)
+            val baseStats = if (raceDef != null) {
+                Stats(
+                    strength = maxOf(1, classDef.minimumStats.strength + raceDef.statModifiers.strength),
+                    agility = maxOf(1, classDef.minimumStats.agility + raceDef.statModifiers.agility),
+                    intellect = maxOf(1, classDef.minimumStats.intellect + raceDef.statModifiers.intellect),
+                    willpower = maxOf(1, classDef.minimumStats.willpower + raceDef.statModifiers.willpower),
+                    health = maxOf(1, classDef.minimumStats.health + raceDef.statModifiers.health),
+                    charm = maxOf(1, classDef.minimumStats.charm + raceDef.statModifiers.charm)
+                )
+            } else {
+                classDef.minimumStats
+            }
+
+            // Validate CP allocation against effective minimums
+            if (!StatAllocator.isValidAllocation(allocatedStats, baseStats)) {
                 error("Invalid stat allocation")
             }
 
-            // Apply race stat modifiers to allocated stats
-            val stats = if (raceDef != null) {
-                Stats(
-                    strength = allocatedStats.strength + raceDef.statModifiers.strength,
-                    agility = allocatedStats.agility + raceDef.statModifiers.agility,
-                    intellect = allocatedStats.intellect + raceDef.statModifiers.intellect,
-                    willpower = allocatedStats.willpower + raceDef.statModifiers.willpower,
-                    health = allocatedStats.health + raceDef.statModifiers.health,
-                    charm = allocatedStats.charm + raceDef.statModifiers.charm
-                )
-            } else {
-                allocatedStats
-            }
+            // Stats already include race mods from client allocation
+            val stats = allocatedStats
 
             // Level 1 gets max HP roll for fairness
             val maxHp = classDef.hpPerLevelMax + (stats.health / 10) * 4
@@ -78,12 +81,12 @@ class PlayerRepository {
                 it[willpower] = stats.willpower
                 it[health] = stats.health
                 it[charm] = stats.charm
-                it[baseStrength] = stats.strength
-                it[baseAgility] = stats.agility
-                it[baseIntellect] = stats.intellect
-                it[baseWillpower] = stats.willpower
-                it[baseHealth] = stats.health
-                it[baseCharm] = stats.charm
+                it[baseStrength] = baseStats.strength
+                it[baseAgility] = baseStats.agility
+                it[baseIntellect] = baseStats.intellect
+                it[baseWillpower] = baseStats.willpower
+                it[baseHealth] = baseStats.health
+                it[baseCharm] = baseStats.charm
                 it[currentHp] = maxHp
                 it[PlayersTable.maxHp] = maxHp
                 it[currentMp] = maxMp
@@ -93,7 +96,7 @@ class PlayerRepository {
                 it[currentXp] = 0
                 it[xpToNextLevel] = initialXpToNext
                 it[unspentCp] = 0
-                it[totalCpEarned] = 0
+                it[totalCpEarned] = StatAllocator.CP_POOL
             }
 
             Player(
@@ -110,7 +113,7 @@ class PlayerRepository {
                 currentXp = 0,
                 xpToNextLevel = initialXpToNext,
                 unspentCp = 0,
-                totalCpEarned = 0
+                totalCpEarned = StatAllocator.CP_POOL
             )
         }
     }
@@ -167,6 +170,19 @@ class PlayerRepository {
                 health = row[PlayersTable.baseHealth],
                 charm = row[PlayersTable.baseCharm]
             )
+        }
+    }
+
+    fun saveBaseStats(characterName: String, baseStats: Stats) {
+        transaction {
+            PlayersTable.update({ PlayersTable.characterName eq characterName }) {
+                it[baseStrength] = baseStats.strength
+                it[baseAgility] = baseStats.agility
+                it[baseIntellect] = baseStats.intellect
+                it[baseWillpower] = baseStats.willpower
+                it[baseHealth] = baseStats.health
+                it[baseCharm] = baseStats.charm
+            }
         }
     }
 
