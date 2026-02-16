@@ -76,6 +76,7 @@ NeoMud/
 - Tick-based (1.5s) — no button mashing, just tactical decisions
 - Weapon damage = Strength + bonus + random roll; armor reduces incoming damage
 - NPCs attack on sight if hostile; perception checks reveal hidden players
+- Per-NPC HP tracking — multiple spawned copies of the same NPC update independently via unique IDs
 - Backstab from stealth for bonus damage
 - Death respawns you at the Temple of the Dawn with a "YOU DIED" overlay
 
@@ -83,6 +84,7 @@ NeoMud/
 - 4 behavior types: idle, patrol, wander, trainer
 - Continuous spawn system — hostile NPCs respawn over time to maintain zone population
 - Per-zone spawn config: max entities, max per room, spawn rate in ticks
+- Spawned copies share template sprites — `shadow_wolf#3` resolves to `shadow_wolf.webp` automatically
 - NPC perception vs player stealth rolls each tick
 
 ### Items & Economy
