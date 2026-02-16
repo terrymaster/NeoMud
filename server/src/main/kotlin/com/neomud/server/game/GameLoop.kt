@@ -2,6 +2,7 @@ package com.neomud.server.game
 
 import com.neomud.server.game.combat.CombatEvent
 import com.neomud.server.game.combat.CombatManager
+import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
@@ -142,7 +143,7 @@ class GameLoop(
                         ServerMessage.CombatHit(
                             event.attackerName, event.defenderName, event.damage,
                             event.defenderHp, event.defenderMaxHp, event.isPlayerDefender,
-                            event.isBackstab
+                            event.isBackstab, event.isMiss, event.isDodge
                         )
                     )
                 }
@@ -415,7 +416,8 @@ class GameLoop(
         val playerName = session.playerName ?: return
 
         val npcRoll = npc.perception + npc.level + (1..20).random()
-        val stealthDc = player.stats.agility + player.stats.intellect / 2 + player.level / 2 + 10
+        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val stealthDc = effStats.agility + effStats.intellect / 2 + player.level / 2 + 10
 
         if (npcRoll >= stealthDc) {
             // Detected!

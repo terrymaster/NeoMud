@@ -29,7 +29,13 @@ data class NpcState(
     val zoneId: String = "",
     val startRoomId: RoomId = "",
     val templateId: String = "",
-    val vendorItems: List<String> = emptyList()
+    val vendorItems: List<String> = emptyList(),
+    val accuracy: Int = 0,
+    val defense: Int = 0,
+    val evasion: Int = 0,
+    val attackSound: String = "",
+    val missSound: String = "",
+    val deathSound: String = ""
 ) {
     /** Set by [NpcManager.markDead] to prevent double-processing kills. */
     var deathProcessed: Boolean = false
@@ -95,7 +101,13 @@ class NpcManager(
             zoneId = zoneId,
             startRoomId = data.startRoomId,
             templateId = data.id,
-            vendorItems = data.vendorItems
+            vendorItems = data.vendorItems,
+            accuracy = data.accuracy,
+            defense = data.defense,
+            evasion = data.evasion,
+            attackSound = data.attackSound,
+            missSound = data.missSound,
+            deathSound = data.deathSound
         )
     }
 
@@ -207,7 +219,10 @@ class NpcManager(
                 behaviorType = npcState.behaviorType,
                 hostile = npcState.hostile,
                 currentHp = npcState.currentHp,
-                maxHp = npcState.maxHp
+                maxHp = npcState.maxHp,
+                attackSound = npcState.attackSound,
+                missSound = npcState.missSound,
+                deathSound = npcState.deathSound
             )
         }
     }

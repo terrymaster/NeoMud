@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
@@ -59,8 +60,9 @@ class BackstabCommand(
             exclude = playerName
         )
 
-        // Calculate backstab damage: weapon base * 3 multiplier
-        val baseDamage = player.stats.strength + player.stats.agility / 2 + (1..6).random()
+        // Calculate backstab damage: weapon base * 3 multiplier (using buffed stats)
+        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val baseDamage = effStats.strength + effStats.agility / 2 + (1..6).random()
         val damage = baseDamage * 3
         target.currentHp -= damage
 

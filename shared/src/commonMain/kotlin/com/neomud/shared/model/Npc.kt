@@ -11,5 +11,8 @@ data class Npc(
     val behaviorType: String,
     val hostile: Boolean = false,
     val currentHp: Int = 0,
-    val maxHp: Int = 0
+    val maxHp: Int = 0,
+    val attackSound: String = "",
+    val missSound: String = "",
+    val deathSound: String = ""
 )

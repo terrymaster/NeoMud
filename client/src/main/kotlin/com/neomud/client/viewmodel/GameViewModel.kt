@@ -2,6 +2,7 @@ package com.neomud.client.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.neomud.client.audio.AudioManager
 import com.neomud.client.network.WebSocketClient
 import com.neomud.client.ui.theme.MudColors
 import com.neomud.shared.model.*
@@ -11,7 +12,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: String = "") : ViewModel() {
+class GameViewModel(
+    private val wsClient: WebSocketClient,
+    var serverBaseUrl: String = "",
+    private val audioManager: AudioManager? = null
+) : ViewModel() {
 
     private val _roomInfo = MutableStateFlow<ServerMessage.RoomInfo?>(null)
     val roomInfo: StateFlow<ServerMessage.RoomInfo?> = _roomInfo
@@ -121,6 +126,20 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
     private val _classCatalog = MutableStateFlow<Map<String, CharacterClassDef>>(emptyMap())
     val classCatalog: StateFlow<Map<String, CharacterClassDef>> = _classCatalog
 
+    private fun sfx(soundId: String) {
+        if (soundId.isNotBlank()) audioManager?.playSfx(serverBaseUrl, soundId)
+    }
+
+    private fun bgm(trackId: String) {
+        audioManager?.playBgm(serverBaseUrl, trackId)
+    }
+
+    private fun findSpellByName(name: String): SpellDef? =
+        _spellCatalog.value.values.find { it.name == name }
+
+    private fun findItemByName(name: String): Item? =
+        _itemCatalog.value.values.find { it.name == name }
+
     fun setInitialPlayer(player: Player) {
         _player.value = player
     }
@@ -151,8 +170,12 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 _roomInfo.value = message
                 _roomEntities.value = message.npcs
                 logRoomInfo(message.room, message.players, message.npcs)
+                bgm(message.room.bgm)
             }
             is ServerMessage.MoveOk -> {
+                // Play departure sound from the room we're leaving
+                val previousRoom = _roomInfo.value?.room
+                if (previousRoom != null) sfx(previousRoom.departSound)
                 _roomInfo.value = ServerMessage.RoomInfo(message.room, message.players, message.npcs)
                 _roomEntities.value = message.npcs
                 // Clear ground items on move (will be refreshed by RoomItemsUpdate)
@@ -160,6 +183,7 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 _roomGroundCoins.value = Coins()
                 addLog("You move ${message.direction.name.lowercase()}.", MudColors.selfAction)
                 logRoomInfo(message.room, message.players, message.npcs)
+                bgm(message.room.bgm)
             }
             is ServerMessage.MoveError -> addLog("Cannot move: ${message.reason}", MudColors.error)
             is ServerMessage.MapData -> _mapData.value = message
@@ -197,11 +221,40 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 }
             }
             is ServerMessage.CombatHit -> {
-                if (message.damage > 0) {
-                    val verb = if (message.isBackstab) "backstabs" else "hits"
-                    val color = if (message.isPlayerDefender) MudColors.combatEnemy
-                        else if (message.isBackstab) MudColors.stealth else MudColors.combatYou
-                    addLog("${message.attackerName} $verb ${message.defenderName} for ${message.damage} damage! (${message.defenderHp}/${message.defenderMaxHp} HP)", color)
+                when {
+                    message.isMiss -> {
+                        addLog("${message.attackerName} misses ${message.defenderName}!", MudColors.combatYou)
+                        if (!message.isPlayerDefender) {
+                            // Player missed NPC — play weapon miss sound
+                            val weaponId = _equipment.value["weapon"]
+                            val missSound = weaponId?.let { _itemCatalog.value[it]?.missSound } ?: ""
+                            sfx(missSound.ifEmpty { "miss" })
+                        } else {
+                            // NPC missed player — play NPC miss sound
+                            val npc = _roomEntities.value.find { it.name == message.attackerName }
+                            sfx(npc?.missSound?.ifEmpty { "miss" } ?: "miss")
+                        }
+                    }
+                    message.isDodge -> {
+                        addLog("${message.defenderName} dodges ${message.attackerName}'s attack!", MudColors.combatYou)
+                        sfx("dodge")
+                    }
+                    message.damage > 0 -> {
+                        val verb = if (message.isBackstab) "backstabs" else "hits"
+                        val color = if (message.isPlayerDefender) MudColors.combatEnemy
+                            else if (message.isBackstab) MudColors.stealth else MudColors.combatYou
+                        addLog("${message.attackerName} $verb ${message.defenderName} for ${message.damage} damage! (${message.defenderHp}/${message.defenderMaxHp} HP)", color)
+                        if (message.isBackstab) {
+                            sfx("backstab")
+                        } else if (!message.isPlayerDefender) {
+                            val weaponId = _equipment.value["weapon"]
+                            val weaponSound = weaponId?.let { _itemCatalog.value[it]?.attackSound } ?: ""
+                            sfx(weaponSound)
+                        } else {
+                            val npc = _roomEntities.value.find { it.name == message.attackerName }
+                            sfx(npc?.attackSound ?: "")
+                        }
+                    }
                 }
                 if (message.isPlayerDefender) {
                     _player.value = _player.value?.copy(currentHp = message.defenderHp)
@@ -214,6 +267,8 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 }
             }
             is ServerMessage.NpcDied -> {
+                val dyingNpc = _roomEntities.value.find { it.id == message.npcId }
+                sfx(dyingNpc?.deathSound ?: "enemy_death")
                 addLog("${message.npcName} has been slain by ${message.killerName}!", MudColors.kill)
                 _roomEntities.value = _roomEntities.value.filter { it.id != message.npcId }
                 if (_selectedTargetId.value == message.npcId) {
@@ -280,6 +335,8 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 }
             }
             is ServerMessage.ItemUsed -> {
+                val usedItem = findItemByName(message.itemName)
+                sfx(usedItem?.useSound ?: "potion_drink")
                 addLog(message.message, MudColors.effect)
                 _player.value = _player.value?.copy(
                     currentHp = message.newHp,
@@ -298,6 +355,7 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 _roomGroundCoins.value = message.coins
             }
             is ServerMessage.LootDropped -> {
+                sfx("loot_drop")
                 val catalog = _itemCatalog.value
                 for (item in message.items) {
                     val name = catalog[item.itemId]?.name ?: item.itemName
@@ -314,6 +372,7 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 }
             }
             is ServerMessage.PickupResult -> {
+                sfx(if (message.isCoin) "coin_pickup" else "item_pickup")
                 if (message.isCoin) {
                     addLog("You pick up ${message.quantity} ${message.itemName}.", MudColors.loot)
                 } else {
@@ -342,6 +401,8 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 val color = if (message.success) MudColors.spell else MudColors.error
                 addLog(message.message, color)
                 if (message.success) {
+                    val spell = findSpellByName(message.spellName)
+                    sfx(spell?.castSound ?: "")
                     _player.value = _player.value?.let { p ->
                         val newHp = message.newHp ?: p.currentHp
                         p.copy(currentMp = message.newMp, currentHp = newHp)
@@ -350,6 +411,8 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
                 _readiedSpellId.value = null
             }
             is ServerMessage.SpellEffect -> {
+                val impactSpell = findSpellByName(message.spellName)
+                sfx(impactSpell?.impactSound ?: "")
                 if (!message.isPlayerTarget) {
                     _roomEntities.value = _roomEntities.value.map { npc ->
                         if (npc.name == message.targetName) {

@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.progression.XpCalculator
 import com.neomud.server.persistence.repository.PlayerRepository
@@ -63,14 +64,15 @@ class SpellCommand(
             session.skillCooldowns[spellId] = spell.cooldownTicks
         }
 
-        // Calculate spell power
+        // Calculate spell power using buffed stats
+        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
         val statValue = when (spell.primaryStat) {
-            "intellect" -> player.stats.intellect
-            "willpower" -> player.stats.willpower
-            "charm" -> player.stats.charm
-            "strength" -> player.stats.strength
-            "agility" -> player.stats.agility
-            else -> player.stats.intellect
+            "intellect" -> effStats.intellect
+            "willpower" -> effStats.willpower
+            "charm" -> effStats.charm
+            "strength" -> effStats.strength
+            "agility" -> effStats.agility
+            else -> effStats.intellect
         }
         val power = spell.basePower + statValue / 3 + player.level / 2 + (1..6).random()
 

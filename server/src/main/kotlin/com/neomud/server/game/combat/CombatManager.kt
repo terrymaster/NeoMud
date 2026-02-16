@@ -19,7 +19,9 @@ sealed class CombatEvent {
         val defenderMaxHp: Int,
         val isPlayerDefender: Boolean,
         val roomId: RoomId,
-        val isBackstab: Boolean = false
+        val isBackstab: Boolean = false,
+        val isMiss: Boolean = false,
+        val isDodge: Boolean = false
     ) : CombatEvent()
 
     data class NpcKilled(
@@ -75,13 +77,51 @@ class CombatManager(
                 session.isHidden = false
             }
 
-            // Calculate damage with equipment bonuses + stat thresholds
+            // Calculate effective stats with active buffs
+            val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
             val bonuses = equipmentService.getCombatBonuses(player.name)
-            val thresholds = ThresholdBonuses.compute(player.stats)
+            val thresholds = ThresholdBonuses.compute(effStats)
+
+            // To-hit roll: player accuracy vs NPC defense
+            val accuracy = CombatUtils.computePlayerAccuracy(effStats, thresholds, player.level, bonuses)
+            val npcDefense = CombatUtils.computeNpcDefense(target)
+
+            if (!CombatUtils.rollToHit(accuracy, npcDefense)) {
+                // Miss
+                events.add(CombatEvent.Hit(
+                    attackerName = player.name,
+                    defenderName = target.name,
+                    damage = 0,
+                    defenderHp = target.currentHp,
+                    defenderMaxHp = target.maxHp,
+                    isPlayerDefender = false,
+                    roomId = roomId,
+                    isMiss = true
+                ))
+                continue
+            }
+
+            // Evasion roll: NPC dodge chance
+            val npcEvasion = CombatUtils.npcEvasion(target)
+            if (npcEvasion > 0 && CombatUtils.rollEvasion(npcEvasion)) {
+                events.add(CombatEvent.Hit(
+                    attackerName = player.name,
+                    defenderName = target.name,
+                    damage = 0,
+                    defenderHp = target.currentHp,
+                    defenderMaxHp = target.maxHp,
+                    isPlayerDefender = false,
+                    roomId = roomId,
+                    isDodge = true
+                ))
+                continue
+            }
+
+            // Calculate damage with equipment bonuses + stat thresholds
             var damage = if (bonuses.weaponDamageRange > 0) {
-                player.stats.strength + bonuses.totalDamageBonus + thresholds.meleeDamageBonus + (1..bonuses.weaponDamageRange).random()
+                effStats.strength + bonuses.totalDamageBonus + thresholds.meleeDamageBonus + (1..bonuses.weaponDamageRange).random()
             } else {
-                player.stats.strength + thresholds.meleeDamageBonus + (1..3).random()
+                effStats.strength + thresholds.meleeDamageBonus + (1..3).random()
             }
 
             // Crit check
@@ -138,15 +178,50 @@ class CombatManager(
                 val targetSession = visiblePlayers.randomOrNull() ?: continue
                 val targetPlayer = targetSession.player ?: continue
 
-                // Dodge check
-                val playerThresholds = ThresholdBonuses.compute(targetPlayer.stats)
-                if (playerThresholds.dodgeChance > 0 && Math.random() < playerThresholds.dodgeChance) {
-                    continue // Dodged!
+                // Effective stats with buffs
+                val effStats = CombatUtils.effectiveStats(targetPlayer.stats, targetSession.activeEffects.toList())
+                val playerBonuses = equipmentService.getCombatBonuses(targetPlayer.name)
+                val playerThresholds = ThresholdBonuses.compute(effStats)
+
+                // To-hit roll: NPC accuracy vs player defense
+                val npcAccuracy = CombatUtils.computeNpcAccuracy(npc)
+                val playerDefense = CombatUtils.computePlayerDefense(effStats, playerBonuses, targetPlayer.level)
+
+                if (!CombatUtils.rollToHit(npcAccuracy, playerDefense)) {
+                    // NPC misses
+                    events.add(CombatEvent.Hit(
+                        attackerName = npc.name,
+                        defenderName = targetPlayer.name,
+                        damage = 0,
+                        defenderHp = targetPlayer.currentHp,
+                        defenderMaxHp = targetPlayer.maxHp,
+                        isPlayerDefender = true,
+                        roomId = roomId,
+                        isMiss = true
+                    ))
+                    continue
                 }
 
-                // NPC damage reduced by player's armor, minimum 1
-                val playerBonuses = equipmentService.getCombatBonuses(targetPlayer.name)
-                val damage = (npc.damage - playerBonuses.totalArmorValue).coerceAtLeast(1)
+                // Evasion roll: player dodge chance
+                val playerEvasion = CombatUtils.playerEvasion(playerThresholds, targetSession.activeEffects.toList())
+                if (playerEvasion > 0 && CombatUtils.rollEvasion(playerEvasion)) {
+                    events.add(CombatEvent.Hit(
+                        attackerName = npc.name,
+                        defenderName = targetPlayer.name,
+                        damage = 0,
+                        defenderHp = targetPlayer.currentHp,
+                        defenderMaxHp = targetPlayer.maxHp,
+                        isPlayerDefender = true,
+                        roomId = roomId,
+                        isDodge = true
+                    ))
+                    continue
+                }
+
+                // NPC damage with variance, reduced by player's armor, minimum 1
+                val variance = maxOf(npc.damage / 3, 1)
+                val rawDamage = npc.damage + (1..variance).random()
+                val damage = (rawDamage - playerBonuses.totalArmorValue).coerceAtLeast(1)
                 val newHp = (targetPlayer.currentHp - damage).coerceAtLeast(0)
                 targetSession.player = targetPlayer.copy(currentHp = newHp)
 

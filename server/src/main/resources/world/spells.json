@@ -12,7 +12,10 @@
       "primaryStat": "intellect",
       "basePower": 8,
       "targetType": "ENEMY",
-      "castMessage": "hurls a magic missile at"
+      "castMessage": "hurls a magic missile at",
+      "castSound": "magic_missile_cast",
+      "impactSound": "magic_missile_hit",
+      "missSound": "spell_fizzle"
     },
     {
       "id": "FROST_BOLT",
@@ -26,7 +29,10 @@
       "primaryStat": "intellect",
       "basePower": 14,
       "targetType": "ENEMY",
-      "castMessage": "launches a frost bolt at"
+      "castMessage": "launches a frost bolt at",
+      "castSound": "frost_bolt_cast",
+      "impactSound": "frost_bolt_hit",
+      "missSound": "spell_fizzle"
     },
     {
       "id": "ARCANE_SHIELD",
@@ -42,7 +48,8 @@
       "targetType": "SELF",
       "effectType": "BUFF_AGILITY",
       "effectDuration": 8,
-      "castMessage": "conjures an arcane shield"
+      "castMessage": "conjures an arcane shield",
+      "castSound": "arcane_shield_cast"
     },
     {
       "id": "FIREBALL",
@@ -56,7 +63,10 @@
       "primaryStat": "intellect",
       "basePower": 22,
       "targetType": "ENEMY",
-      "castMessage": "hurls a fireball at"
+      "castMessage": "hurls a fireball at",
+      "castSound": "fireball_cast",
+      "impactSound": "fireball_hit",
+      "missSound": "spell_fizzle"
     },
     {
       "id": "MINOR_HEAL",
@@ -70,7 +80,8 @@
       "primaryStat": "willpower",
       "basePower": 10,
       "targetType": "SELF",
-      "castMessage": "channels a minor heal"
+      "castMessage": "channels a minor heal",
+      "castSound": "heal_cast"
     },
     {
       "id": "BLESSING",
@@ -86,7 +97,8 @@
       "targetType": "SELF",
       "effectType": "BUFF_STRENGTH",
       "effectDuration": 8,
-      "castMessage": "invokes a blessing"
+      "castMessage": "invokes a blessing",
+      "castSound": "blessing_cast"
     },
     {
       "id": "CURE_WOUNDS",
@@ -100,7 +112,8 @@
       "primaryStat": "willpower",
       "basePower": 18,
       "targetType": "SELF",
-      "castMessage": "channels cure wounds"
+      "castMessage": "channels cure wounds",
+      "castSound": "heal_cast"
     },
     {
       "id": "DIVINE_LIGHT",
@@ -114,7 +127,8 @@
       "primaryStat": "willpower",
       "basePower": 30,
       "targetType": "SELF",
-      "castMessage": "calls upon divine light"
+      "castMessage": "calls upon divine light",
+      "castSound": "divine_light_cast"
     },
     {
       "id": "THORN_STRIKE",
@@ -128,7 +142,10 @@
       "primaryStat": "willpower",
       "basePower": 9,
       "targetType": "ENEMY",
-      "castMessage": "sends thorny vines at"
+      "castMessage": "sends thorny vines at",
+      "castSound": "thorn_strike_cast",
+      "impactSound": "thorn_strike_hit",
+      "missSound": "spell_fizzle"
     },
     {
       "id": "HEALING_TOUCH",
@@ -142,7 +159,8 @@
       "primaryStat": "willpower",
       "basePower": 14,
       "targetType": "SELF",
-      "castMessage": "channels healing touch"
+      "castMessage": "channels healing touch",
+      "castSound": "heal_cast"
     },
     {
       "id": "POISON_CLOUD",
@@ -158,7 +176,10 @@
       "targetType": "ENEMY",
       "effectType": "POISON",
       "effectDuration": 4,
-      "castMessage": "conjures a poison cloud around"
+      "castMessage": "conjures a poison cloud around",
+      "castSound": "poison_cloud_cast",
+      "impactSound": "poison_cloud_hit",
+      "missSound": "spell_fizzle"
     },
     {
       "id": "NATURES_WRATH",
@@ -172,7 +193,10 @@
       "primaryStat": "willpower",
       "basePower": 20,
       "targetType": "ENEMY",
-      "castMessage": "unleashes nature's wrath upon"
+      "castMessage": "unleashes nature's wrath upon",
+      "castSound": "natures_wrath_cast",
+      "impactSound": "natures_wrath_hit",
+      "missSound": "spell_fizzle"
     },
     {
       "id": "INNER_FIRE",
@@ -188,7 +212,8 @@
       "targetType": "SELF",
       "effectType": "BUFF_STRENGTH",
       "effectDuration": 8,
-      "castMessage": "ignites inner fire"
+      "castMessage": "ignites inner fire",
+      "castSound": "inner_fire_cast"
     },
     {
       "id": "CHI_STRIKE",
@@ -202,7 +227,10 @@
       "primaryStat": "willpower",
       "basePower": 12,
       "targetType": "ENEMY",
-      "castMessage": "delivers a chi strike to"
+      "castMessage": "delivers a chi strike to",
+      "castSound": "chi_strike_cast",
+      "impactSound": "chi_strike_hit",
+      "missSound": "spell_fizzle"
     },
     {
       "id": "KI_BLAST",
@@ -216,7 +244,10 @@
       "primaryStat": "willpower",
       "basePower": 16,
       "targetType": "ENEMY",
-      "castMessage": "unleashes a ki blast at"
+      "castMessage": "unleashes a ki blast at",
+      "castSound": "ki_blast_cast",
+      "impactSound": "ki_blast_hit",
+      "missSound": "spell_fizzle"
     },
     {
       "id": "DIAMOND_BODY",
@@ -232,7 +263,8 @@
       "targetType": "SELF",
       "effectType": "BUFF_AGILITY",
       "effectDuration": 10,
-      "castMessage": "hardens into diamond body"
+      "castMessage": "hardens into diamond body",
+      "castSound": "diamond_body_cast"
     },
     {
       "id": "INSPIRE",
@@ -248,7 +280,8 @@
       "targetType": "SELF",
       "effectType": "BUFF_STRENGTH",
       "effectDuration": 8,
-      "castMessage": "sings an inspiring tune"
+      "castMessage": "sings an inspiring tune",
+      "castSound": "inspire_cast"
     },
     {
       "id": "SOOTHING_SONG",
@@ -264,7 +297,8 @@
       "targetType": "SELF",
       "effectType": "HEAL_OVER_TIME",
       "effectDuration": 6,
-      "castMessage": "sings a soothing song"
+      "castMessage": "sings a soothing song",
+      "castSound": "soothing_song_cast"
     },
     {
       "id": "DISCORD",
@@ -278,7 +312,10 @@
       "primaryStat": "charm",
       "basePower": 14,
       "targetType": "ENEMY",
-      "castMessage": "unleashes a discordant blast at"
+      "castMessage": "unleashes a discordant blast at",
+      "castSound": "discord_cast",
+      "impactSound": "discord_hit",
+      "missSound": "spell_fizzle"
     },
     {
       "id": "RALLYING_CRY",
@@ -294,7 +331,8 @@
       "targetType": "SELF",
       "effectType": "BUFF_WILLPOWER",
       "effectDuration": 10,
-      "castMessage": "lets out a rallying cry"
+      "castMessage": "lets out a rallying cry",
+      "castSound": "rallying_cry_cast"
     }
   ]
 }

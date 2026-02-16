@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
@@ -48,8 +49,8 @@ class HideCommand(
             return
         }
 
-        // Skill check: DEX + INT/2 + d20 vs 15
-        val stats = player.stats
+        // Skill check: DEX + INT/2 + d20 vs 15 (using buffed stats)
+        val stats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
         val roll = (1..20).random()
         val check = stats.agility + stats.intellect / 2 + roll
         val difficulty = 15

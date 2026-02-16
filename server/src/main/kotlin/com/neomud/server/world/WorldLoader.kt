@@ -59,7 +59,9 @@ object WorldLoader {
                     x = roomData.x,
                     y = roomData.y,
                     backgroundImage = roomData.backgroundImage,
-                    healPerTick = roomData.healPerTick
+                    healPerTick = roomData.healPerTick,
+                    bgm = roomData.bgm.ifEmpty { zone.bgm },
+                    departSound = roomData.departSound
                 )
                 worldGraph.addRoom(room)
             }
@@ -74,6 +76,34 @@ object WorldLoader {
 
         worldGraph.setDefaultSpawn(dataDefinedSpawn ?: "town:square")
         logger.info("World loaded: ${worldGraph.roomCount} rooms, ${allNpcData.size} NPCs")
+
+        // Sound field validation
+        for (item in itemCatalog.getAllItems()) {
+            if (item.type == "weapon") {
+                if (item.attackSound.isBlank()) logger.warn("Weapon '${item.id}' missing attackSound")
+                if (item.missSound.isBlank()) logger.warn("Weapon '${item.id}' missing missSound")
+            }
+            if (item.type == "consumable" && item.useSound.isBlank()) {
+                logger.warn("Consumable '${item.id}' missing useSound")
+            }
+        }
+        for ((npcData, _) in allNpcData) {
+            if (npcData.hostile) {
+                if (npcData.attackSound.isBlank()) logger.warn("Hostile NPC '${npcData.id}' missing attackSound")
+                if (npcData.missSound.isBlank()) logger.warn("Hostile NPC '${npcData.id}' missing missSound")
+                if (npcData.deathSound.isBlank()) logger.warn("Hostile NPC '${npcData.id}' missing deathSound")
+            }
+        }
+        for (spell in spellCatalog.getAllSpells()) {
+            if (spell.castSound.isBlank()) logger.warn("Spell '${spell.id}' missing castSound")
+            if ((spell.spellType == com.neomud.shared.model.SpellType.DAMAGE || spell.spellType == com.neomud.shared.model.SpellType.DOT)) {
+                if (spell.impactSound.isBlank()) logger.warn("Damage spell '${spell.id}' missing impactSound")
+                if (spell.missSound.isBlank()) logger.warn("Damage spell '${spell.id}' missing missSound")
+            }
+        }
+        for (room in worldGraph.getAllRooms()) {
+            if (room.departSound.isBlank()) logger.info("Room '${room.id}' missing departSound")
+        }
 
         return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, promptTemplateCatalog, skillCatalog, raceCatalog, spellCatalog, zoneSpawnConfigs)
     }

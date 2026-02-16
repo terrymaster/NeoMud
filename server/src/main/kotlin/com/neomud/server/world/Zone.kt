@@ -20,7 +20,8 @@ data class ZoneData(
     val rooms: List<RoomData>,
     val npcs: List<NpcData> = emptyList(),
     val spawnConfig: SpawnConfig = SpawnConfig(),
-    val spawnRoom: String? = null
+    val spawnRoom: String? = null,
+    val bgm: String = ""
 )
 
 @Serializable
@@ -32,7 +33,9 @@ data class RoomData(
     val y: Int,
     val exits: Map<Direction, RoomId>,
     val backgroundImage: String = "",
-    val healPerTick: Int = 0
+    val healPerTick: Int = 0,
+    val bgm: String = "",
+    val departSound: String = ""
 )
 
 @Serializable
@@ -49,5 +52,11 @@ data class NpcData(
     val level: Int = 1,
     val perception: Int = 0,
     val xpReward: Long = 0,
-    val vendorItems: List<String> = emptyList()
+    val vendorItems: List<String> = emptyList(),
+    val accuracy: Int = 0,
+    val defense: Int = 0,
+    val evasion: Int = 0,
+    val attackSound: String = "",
+    val missSound: String = "",
+    val deathSound: String = ""
 )

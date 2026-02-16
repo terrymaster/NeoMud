@@ -93,7 +93,9 @@ sealed class ServerMessage {
         val defenderHp: Int,
         val defenderMaxHp: Int,
         val isPlayerDefender: Boolean = false,
-        val isBackstab: Boolean = false
+        val isBackstab: Boolean = false,
+        val isMiss: Boolean = false,
+        val isDodge: Boolean = false
     ) : ServerMessage()
 
     @Serializable

@@ -3,6 +3,7 @@
   "name": "Whispering Forest",
   "description": "An ancient forest where the trees seem to murmur secrets to one another.",
   "safe": false,
+  "bgm": "forest_danger",
   "spawnConfig": { "maxEntities": 4, "maxPerRoom": 2, "rateTicks": 40 },
   "rooms": [
     {
@@ -15,7 +16,8 @@
         "SOUTH": "town:gate",
         "NORTH": "forest:path"
       },
-      "backgroundImage": "/assets/images/rooms/forest_edge.webp"
+      "backgroundImage": "/assets/images/rooms/forest_edge.webp",
+      "departSound": "footstep_dirt"
     },
     {
       "id": "forest:path",
@@ -28,7 +30,8 @@
         "EAST": "forest:clearing",
         "NORTH": "forest:deep"
       },
-      "backgroundImage": "/assets/images/rooms/forest_path.webp"
+      "backgroundImage": "/assets/images/rooms/forest_path.webp",
+      "departSound": "footstep_dirt"
     },
     {
       "id": "forest:clearing",
@@ -39,7 +42,8 @@
       "exits": {
         "WEST": "forest:path"
       },
-      "backgroundImage": "/assets/images/rooms/forest_clearing.webp"
+      "backgroundImage": "/assets/images/rooms/forest_clearing.webp",
+      "departSound": "footstep_grass"
     },
     {
       "id": "forest:deep",
@@ -51,7 +55,8 @@
         "SOUTH": "forest:path",
         "EAST": "forest:stream"
       },
-      "backgroundImage": "/assets/images/rooms/forest_deep.webp"
+      "backgroundImage": "/assets/images/rooms/forest_deep.webp",
+      "departSound": "footstep_dirt"
     },
     {
       "id": "forest:stream",
@@ -62,7 +67,8 @@
       "exits": {
         "WEST": "forest:deep"
       },
-      "backgroundImage": "/assets/images/rooms/forest_stream.webp"
+      "backgroundImage": "/assets/images/rooms/forest_stream.webp",
+      "departSound": "footstep_splash"
     }
   ],
   "npcs": [
@@ -76,7 +82,13 @@
       "maxHp": 30,
       "damage": 5,
       "level": 2,
-      "xpReward": 25
+      "xpReward": 25,
+      "accuracy": 10,
+      "defense": 5,
+      "evasion": 15,
+      "attackSound": "wolf_bite",
+      "missSound": "wolf_miss",
+      "deathSound": "wolf_death"
     },
     {
       "id": "npc:forest_spider",
@@ -88,7 +100,13 @@
       "maxHp": 20,
       "damage": 8,
       "level": 3,
-      "xpReward": 40
+      "xpReward": 40,
+      "accuracy": 15,
+      "defense": 10,
+      "evasion": 5,
+      "attackSound": "spider_bite",
+      "missSound": "spider_miss",
+      "deathSound": "spider_death"
     }
   ]
 }
