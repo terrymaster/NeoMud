@@ -73,6 +73,10 @@ fun Application.configureRouting(
                         val text = frame.readText()
                         try {
                             val message = MessageSerializer.decodeClientMessage(text)
+                            if (!session.tryConsumeMessage()) {
+                                session.send(ServerMessage.Error("Too many commands, slow down."))
+                                continue
+                            }
                             commandProcessor.process(session, message)
                         } catch (e: Exception) {
                             logger.error("Failed to process message: $text", e)

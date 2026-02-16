@@ -26,6 +26,7 @@ import com.neomud.server.world.SpellCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
+
 import org.slf4j.LoggerFactory
 
 class CommandProcessor(
@@ -65,8 +66,17 @@ class CommandProcessor(
 
     suspend fun process(session: PlayerSession, message: ClientMessage) {
         when (message) {
+            // Auth and read-only commands don't need the game state lock
             is ClientMessage.Register -> handleRegister(session, message)
             is ClientMessage.Login -> handleLogin(session, message)
+            is ClientMessage.Ping -> session.send(ServerMessage.Pong)
+            // All state-mutating commands acquire the global mutex
+            else -> GameStateLock.withLock { processLocked(session, message) }
+        }
+    }
+
+    private suspend fun processLocked(session: PlayerSession, message: ClientMessage) {
+        when (message) {
             is ClientMessage.Move -> {
                 requireAuth(session) { moveCommand.execute(session, message.direction) }
             }
@@ -81,9 +91,6 @@ class CommandProcessor(
             }
             is ClientMessage.SelectTarget -> {
                 requireAuth(session) { attackCommand.handleSelectTarget(session, message.npcId) }
-            }
-            is ClientMessage.Ping -> {
-                session.send(ServerMessage.Pong)
             }
             is ClientMessage.ViewInventory -> {
                 requireAuth(session) { inventoryCommand.handleViewInventory(session) }
@@ -135,6 +142,7 @@ class CommandProcessor(
             is ClientMessage.SellItem -> {
                 requireAuth(session) { vendorCommand.handleSell(session, message.itemId, message.quantity) }
             }
+            else -> {} // Register, Login, Ping already handled in process()
         }
     }
 

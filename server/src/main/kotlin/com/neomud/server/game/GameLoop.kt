@@ -19,6 +19,7 @@ import com.neomud.shared.model.GroundItem
 import com.neomud.shared.model.RoomId
 import com.neomud.shared.protocol.ServerMessage
 import kotlinx.coroutines.delay
+
 import org.slf4j.LoggerFactory
 
 class GameLoop(
@@ -41,7 +42,7 @@ class GameLoop(
         }
     }
 
-    private suspend fun tick() {
+    private suspend fun tick() = GameStateLock.withLock {
         // 0. Safety net: force-respawn any player stuck at 0 HP
         for (session in sessionManager.getAllAuthenticatedSessions()) {
             val player = session.player ?: continue

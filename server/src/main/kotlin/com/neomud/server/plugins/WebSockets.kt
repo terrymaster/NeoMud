@@ -8,7 +8,7 @@ fun Application.configureWebSockets() {
     install(WebSockets) {
         pingPeriodMillis = 15_000
         timeoutMillis = 30_000
-        maxFrameSize = Long.MAX_VALUE
+        maxFrameSize = 65536 // 64KB — largest valid client message is ~200 bytes
         masking = false
     }
 }
