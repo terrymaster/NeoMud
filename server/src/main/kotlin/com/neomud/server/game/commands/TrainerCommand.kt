@@ -35,6 +35,7 @@ class TrainerCommand(
         session.send(ServerMessage.TrainerInfo(
             canLevelUp = canLevelUp,
             unspentCp = player.unspentCp,
+            totalCpEarned = player.totalCpEarned,
             baseStats = baseStats,
             currentStats = player.stats
         ))
@@ -186,6 +187,67 @@ class TrainerCommand(
             newValue = result.newValue,
             cpSpent = result.totalCpSpent,
             remainingCp = result.remainingCp
+        ))
+    }
+
+    suspend fun handleAllocateTrainedStats(session: PlayerSession, newStats: Stats) {
+        val roomId = session.currentRoomId ?: return
+        val player = session.player ?: return
+
+        val trainer = npcManager.getTrainerInRoom(roomId)
+        if (trainer == null) {
+            session.send(ServerMessage.SystemMessage("There is no trainer here."))
+            return
+        }
+
+        val baseStats = playerRepository.getBaseStats(player.name) ?: return
+
+        // Validate no stat goes below base
+        if (newStats.strength < baseStats.strength ||
+            newStats.agility < baseStats.agility ||
+            newStats.intellect < baseStats.intellect ||
+            newStats.willpower < baseStats.willpower ||
+            newStats.health < baseStats.health ||
+            newStats.charm < baseStats.charm
+        ) {
+            session.send(ServerMessage.SystemMessage("Stats cannot go below base values."))
+            return
+        }
+
+        val cpUsed = CpAllocator.totalCpUsed(newStats, baseStats)
+        if (cpUsed > player.totalCpEarned) {
+            session.send(ServerMessage.SystemMessage("Not enough CP for that allocation."))
+            return
+        }
+
+        // Compute threshold bonus deltas
+        val oldThresholds = ThresholdBonuses.compute(player.stats)
+        val newThresholds = ThresholdBonuses.compute(newStats)
+        val hpDelta = newThresholds.hpBonus - oldThresholds.hpBonus
+        val mpDelta = newThresholds.mpBonus - oldThresholds.mpBonus
+
+        val updatedPlayer = player.copy(
+            stats = newStats,
+            unspentCp = player.totalCpEarned - cpUsed,
+            maxHp = player.maxHp + hpDelta,
+            currentHp = (player.currentHp + hpDelta).coerceAtMost(player.maxHp + hpDelta),
+            maxMp = player.maxMp + mpDelta,
+            currentMp = (player.currentMp + mpDelta).coerceAtMost(player.maxMp + mpDelta)
+        )
+        session.player = updatedPlayer
+
+        try {
+            playerRepository.savePlayerState(updatedPlayer)
+        } catch (_: Exception) { }
+
+        // Send fresh trainer info
+        val canLevelUp = XpCalculator.isReadyToLevel(updatedPlayer.currentXp, updatedPlayer.xpToNextLevel, updatedPlayer.level)
+        session.send(ServerMessage.TrainerInfo(
+            canLevelUp = canLevelUp,
+            unspentCp = updatedPlayer.unspentCp,
+            totalCpEarned = updatedPlayer.totalCpEarned,
+            baseStats = baseStats,
+            currentStats = updatedPlayer.stats
         ))
     }
 }

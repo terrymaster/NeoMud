@@ -8,8 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,15 +16,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neomud.client.ui.theme.MudColors
+import com.neomud.shared.model.Stats
 import com.neomud.shared.protocol.ServerMessage
 
 @Composable
 fun TrainerPanel(
     trainerInfo: ServerMessage.TrainerInfo,
     onLevelUp: () -> Unit,
-    onTrainStat: (String, Int) -> Unit,
+    onAllocateStats: (Stats) -> Unit,
     onClose: () -> Unit
 ) {
+    var tentativeStats by remember(trainerInfo) { mutableStateOf(trainerInfo.currentStats) }
+    val baseStats = trainerInfo.baseStats
+
+    // Calculate CP used by tentative allocation
+    val cpUsed = remember(tentativeStats, baseStats) {
+        cpForStatRange(tentativeStats.strength, baseStats.strength) +
+                cpForStatRange(tentativeStats.agility, baseStats.agility) +
+                cpForStatRange(tentativeStats.intellect, baseStats.intellect) +
+                cpForStatRange(tentativeStats.willpower, baseStats.willpower) +
+                cpForStatRange(tentativeStats.health, baseStats.health) +
+                cpForStatRange(tentativeStats.charm, baseStats.charm)
+    }
+    val cpRemaining = trainerInfo.totalCpEarned - cpUsed
+    val hasChanged = tentativeStats != trainerInfo.currentStats
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -103,7 +118,7 @@ fun TrainerPanel(
 
                     // CP display
                     Text(
-                        text = "Character Points: ${trainerInfo.unspentCp}",
+                        text = "CP: $cpUsed / ${trainerInfo.totalCpEarned}  ($cpRemaining remaining)",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MudColors.xp
@@ -127,33 +142,60 @@ fun TrainerPanel(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    val stats = listOf(
-                        "Strength" to (trainerInfo.currentStats.strength to trainerInfo.baseStats.strength),
-                        "Agility" to (trainerInfo.currentStats.agility to trainerInfo.baseStats.agility),
-                        "Intellect" to (trainerInfo.currentStats.intellect to trainerInfo.baseStats.intellect),
-                        "Willpower" to (trainerInfo.currentStats.willpower to trainerInfo.baseStats.willpower),
-                        "Health" to (trainerInfo.currentStats.health to trainerInfo.baseStats.health),
-                        "Charm" to (trainerInfo.currentStats.charm to trainerInfo.baseStats.charm)
+                    val statEntries = listOf(
+                        StatEntry("Strength", tentativeStats.strength, baseStats.strength) { v -> tentativeStats = tentativeStats.copy(strength = v) },
+                        StatEntry("Agility", tentativeStats.agility, baseStats.agility) { v -> tentativeStats = tentativeStats.copy(agility = v) },
+                        StatEntry("Intellect", tentativeStats.intellect, baseStats.intellect) { v -> tentativeStats = tentativeStats.copy(intellect = v) },
+                        StatEntry("Willpower", tentativeStats.willpower, baseStats.willpower) { v -> tentativeStats = tentativeStats.copy(willpower = v) },
+                        StatEntry("Health", tentativeStats.health, baseStats.health) { v -> tentativeStats = tentativeStats.copy(health = v) },
+                        StatEntry("Charm", tentativeStats.charm, baseStats.charm) { v -> tentativeStats = tentativeStats.copy(charm = v) }
                     )
 
-                    for ((statName, values) in stats) {
-                        val (current, base) = values
-                        val above = current - base
-                        val cost = when {
-                            above < 10 -> 1
-                            above < 20 -> 2
-                            else -> 3
-                        }
-                        val canTrain = trainerInfo.unspentCp >= cost
+                    for (entry in statEntries) {
+                        val costToAdd = costToRaise(entry.current, entry.base)
+                        val canAdd = cpRemaining >= costToAdd
+                        val canRemove = entry.current > entry.base
 
-                        StatTrainRow(
-                            statName = statName,
-                            currentValue = current,
-                            baseValue = base,
-                            cost = cost,
-                            canTrain = canTrain,
-                            onTrain = { onTrainStat(statName.lowercase(), 1) }
+                        StatAllocRow(
+                            statName = entry.name,
+                            currentValue = entry.current,
+                            baseValue = entry.base,
+                            costToAdd = costToAdd,
+                            canAdd = canAdd,
+                            canRemove = canRemove,
+                            onAdd = { entry.onSet(entry.current + 1) },
+                            onRemove = { entry.onSet(entry.current - 1) }
                         )
+                    }
+                }
+
+                // Bottom buttons
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { tentativeStats = trainerInfo.currentStats },
+                        enabled = hasChanged,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFFAAAAAA),
+                            disabledContentColor = Color(0xFF555555)
+                        )
+                    ) {
+                        Text("Reset")
+                    }
+                    Button(
+                        onClick = { onAllocateStats(tentativeStats) },
+                        enabled = hasChanged && cpUsed <= trainerInfo.totalCpEarned,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1565C0),
+                            disabledContainerColor = Color(0xFF333333)
+                        )
+                    ) {
+                        Text("Apply")
                     }
                 }
             }
@@ -161,21 +203,61 @@ fun TrainerPanel(
     }
 }
 
+private data class StatEntry(
+    val name: String,
+    val current: Int,
+    val base: Int,
+    val onSet: (Int) -> Unit
+)
+
+private fun costToRaise(currentValue: Int, baseValue: Int): Int {
+    val above = currentValue - baseValue
+    return when {
+        above < 10 -> 1
+        above < 20 -> 2
+        else -> 3
+    }
+}
+
+private fun costToLower(currentValue: Int, baseValue: Int): Int {
+    val above = currentValue - baseValue - 1
+    return when {
+        above < 10 -> 1
+        above < 20 -> 2
+        else -> 3
+    }
+}
+
+/** Total CP cost from base to current for a single stat. */
+private fun cpForStatRange(current: Int, base: Int): Int {
+    var cost = 0
+    for (i in 0 until (current - base)) {
+        cost += when {
+            i < 10 -> 1
+            i < 20 -> 2
+            else -> 3
+        }
+    }
+    return cost
+}
+
 @Composable
-private fun StatTrainRow(
+private fun StatAllocRow(
     statName: String,
     currentValue: Int,
     baseValue: Int,
-    cost: Int,
-    canTrain: Boolean,
-    onTrain: () -> Unit
+    costToAdd: Int,
+    canAdd: Boolean,
+    canRemove: Boolean,
+    onAdd: () -> Unit,
+    onRemove: () -> Unit
 ) {
     val above = currentValue - baseValue
     val statColor = when {
-        above >= 20 -> Color(0xFFFFD700) // Gold for high training
-        above >= 10 -> Color(0xFF66BB6A) // Green for moderate
-        above > 0 -> Color(0xFF42A5F5)   // Blue for some training
-        else -> Color(0xFFCCCCCC)         // Default
+        above >= 20 -> Color(0xFFFFD700)
+        above >= 10 -> Color(0xFF66BB6A)
+        above > 0 -> Color(0xFF42A5F5)
+        else -> Color(0xFFCCCCCC)
     }
 
     Row(
@@ -210,24 +292,40 @@ private fun StatTrainRow(
 
         // Cost indicator
         Text(
-            text = "${cost} CP",
+            text = "${costToAdd} CP",
             fontSize = 12.sp,
-            color = if (canTrain) MudColors.xp else Color(0xFF555555),
+            color = if (canAdd) MudColors.xp else Color(0xFF555555),
             modifier = Modifier.width(35.dp)
         )
 
-        // Train button
+        // Minus button
         Button(
-            onClick = onTrain,
-            enabled = canTrain,
-            modifier = Modifier.height(32.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+            onClick = onRemove,
+            enabled = canRemove,
+            modifier = Modifier.size(32.dp),
+            contentPadding = PaddingValues(0.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF8B0000),
+                disabledContainerColor = Color(0xFF333333)
+            )
+        ) {
+            Text("-", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        // Plus button
+        Button(
+            onClick = onAdd,
+            enabled = canAdd,
+            modifier = Modifier.size(32.dp),
+            contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF1565C0),
                 disabledContainerColor = Color(0xFF333333)
             )
         ) {
-            Text("+1", fontSize = 12.sp)
+            Text("+", fontSize = 14.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

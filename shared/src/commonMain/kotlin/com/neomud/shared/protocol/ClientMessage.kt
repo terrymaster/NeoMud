@@ -100,6 +100,10 @@ sealed class ClientMessage {
     data class TrainStat(val stat: String, val points: Int = 1) : ClientMessage()
 
     @Serializable
+    @SerialName("allocate_trained_stats")
+    data class AllocateTrainedStats(val stats: Stats) : ClientMessage()
+
+    @Serializable
     @SerialName("cast_spell")
     data class CastSpell(val spellId: String, val targetId: String? = null) : ClientMessage()
 

@@ -247,6 +247,7 @@ sealed class ServerMessage {
     data class TrainerInfo(
         val canLevelUp: Boolean,
         val unspentCp: Int,
+        val totalCpEarned: Int,
         val baseStats: Stats,
         val currentStats: Stats
     ) : ServerMessage()

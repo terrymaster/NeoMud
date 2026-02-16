@@ -646,6 +646,12 @@ class GameViewModel(
         }
     }
 
+    fun allocateTrainedStats(stats: com.neomud.shared.model.Stats) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.AllocateTrainedStats(stats))
+        }
+    }
+
     fun dismissTrainer() {
         _showTrainer.value = false
         _trainerInfo.value = null
