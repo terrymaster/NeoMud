@@ -3,6 +3,7 @@
   "name": "Millhaven",
   "description": "A bustling frontier town at the edge of the Whispering Forest.",
   "safe": true,
+  "bgm": "town_peaceful",
   "spawnRoom": "town:temple",
   "spawnConfig": { "maxEntities": 0, "maxPerRoom": 0, "rateTicks": 0 },
   "rooms": [
@@ -18,7 +19,8 @@
         "EAST": "town:market",
         "WEST": "town:tavern"
       },
-      "backgroundImage": "/assets/images/rooms/town_square.webp"
+      "backgroundImage": "/assets/images/rooms/town_square.webp",
+      "departSound": "footstep_cobblestone"
     },
     {
       "id": "town:tavern",
@@ -29,7 +31,8 @@
       "exits": {
         "EAST": "town:square"
       },
-      "backgroundImage": "/assets/images/rooms/town_tavern.webp"
+      "backgroundImage": "/assets/images/rooms/town_tavern.webp",
+      "departSound": "footstep_wood"
     },
     {
       "id": "town:market",
@@ -40,7 +43,8 @@
       "exits": {
         "WEST": "town:square"
       },
-      "backgroundImage": "/assets/images/rooms/town_market.webp"
+      "backgroundImage": "/assets/images/rooms/town_market.webp",
+      "departSound": "footstep_cobblestone"
     },
     {
       "id": "town:gate",
@@ -52,7 +56,8 @@
         "SOUTH": "town:square",
         "NORTH": "forest:edge"
       },
-      "backgroundImage": "/assets/images/rooms/town_gate.webp"
+      "backgroundImage": "/assets/images/rooms/town_gate.webp",
+      "departSound": "footstep_cobblestone"
     },
     {
       "id": "town:temple",
@@ -64,7 +69,8 @@
         "NORTH": "town:square"
       },
       "backgroundImage": "/assets/images/rooms/town_temple.webp",
-      "healPerTick": 5
+      "healPerTick": 5,
+      "departSound": "footstep_marble"
     }
   ],
   "npcs": [

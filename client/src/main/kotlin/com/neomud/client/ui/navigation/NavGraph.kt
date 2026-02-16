@@ -1,9 +1,11 @@
 package com.neomud.client.ui.navigation
 
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.neomud.client.audio.AudioManager
 import com.neomud.client.ui.screens.GameScreen
 import com.neomud.client.ui.screens.LoginScreen
 import com.neomud.client.ui.screens.RegistrationScreen
@@ -14,6 +16,12 @@ import com.neomud.client.viewmodel.GameViewModel
 @Composable
 fun NeoMudNavGraph(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val audioManager = remember { AudioManager(context) }
+
+    DisposableEffect(Unit) {
+        onDispose { audioManager.release() }
+    }
     val authState by authViewModel.authState.collectAsState()
     val connectionState by authViewModel.connectionState.collectAsState()
     val connectionError by authViewModel.connectionError.collectAsState()
@@ -45,6 +53,13 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
+            // Play intro BGM while on login screen
+            val loginServerBaseUrl = authViewModel.serverBaseUrl
+            LaunchedEffect(Unit) {
+                if (loginServerBaseUrl.isNotBlank()) {
+                    audioManager.playBgm(loginServerBaseUrl, "intro_theme")
+                }
+            }
             LoginScreen(
                 connectionState = connectionState,
                 authState = authState,
@@ -76,7 +91,7 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
             val initialItems = authViewModel.availableItems.value
             val initialSpells = authViewModel.availableSpells.value
             val gameViewModel = remember {
-                GameViewModel(authViewModel.wsClient, serverBaseUrl).also {
+                GameViewModel(authViewModel.wsClient, serverBaseUrl, audioManager).also {
                     if (initialPlayer != null) it.setInitialPlayer(initialPlayer)
                     it.setInitialCatalogs(classes = initialClasses, items = initialItems, spells = initialSpells)
                     it.startCollecting()
@@ -84,7 +99,8 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
             }
             GameScreen(
                 gameViewModel = gameViewModel,
-                onLogout = { authViewModel.logout() }
+                onLogout = { authViewModel.logout() },
+                audioManager = audioManager
             )
         }
     }

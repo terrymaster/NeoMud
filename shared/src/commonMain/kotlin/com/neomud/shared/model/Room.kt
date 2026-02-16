@@ -14,7 +14,9 @@ data class Room(
     val x: Int,
     val y: Int,
     val backgroundImage: String = "",
-    val healPerTick: Int = 0
+    val healPerTick: Int = 0,
+    val bgm: String = "",
+    val departSound: String = ""
 )
 
 @Serializable

@@ -17,5 +17,8 @@ data class Item(
     val stackable: Boolean = false,
     val maxStack: Int = 1,
     val useEffect: String = "",
-    val levelRequirement: Int = 0
+    val levelRequirement: Int = 0,
+    val attackSound: String = "",
+    val missSound: String = "",
+    val useSound: String = ""
 )

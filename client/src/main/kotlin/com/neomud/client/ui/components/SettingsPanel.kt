@@ -7,14 +7,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.neomud.client.audio.AudioManager
 
 private val CyanAccent = Color(0xFF55FFFF)
 private val YellowAccent = Color(0xFFFFFF55)
@@ -25,8 +25,13 @@ fun SettingsPanel(
     isLandscape: Boolean,
     onSetLayoutPreference: (Boolean) -> Unit,
     onLogout: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    audioManager: AudioManager? = null
 ) {
+    var masterVolume by remember { mutableFloatStateOf(audioManager?.masterVolume ?: 1f) }
+    var sfxVolume by remember { mutableFloatStateOf(audioManager?.sfxVolume ?: 1f) }
+    var bgmVolume by remember { mutableFloatStateOf(audioManager?.bgmVolume ?: 0.5f) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -115,6 +120,31 @@ fun SettingsPanel(
                 }
             }
 
+            // Audio section
+            if (audioManager != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    "Audio",
+                    color = YellowAccent,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                VolumeSlider("Master", masterVolume) { value ->
+                    masterVolume = value
+                    audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume)
+                }
+                VolumeSlider("SFX", sfxVolume) { value ->
+                    sfxVolume = value
+                    audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume)
+                }
+                VolumeSlider("Music", bgmVolume) { value ->
+                    bgmVolume = value
+                    audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume)
+                }
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             // Divider before logout
@@ -138,5 +168,40 @@ fun SettingsPanel(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun VolumeSlider(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            label,
+            color = DimText,
+            fontSize = 13.sp,
+            modifier = Modifier.width(52.dp)
+        )
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.weight(1f),
+            colors = SliderDefaults.colors(
+                thumbColor = CyanAccent,
+                activeTrackColor = CyanAccent,
+                inactiveTrackColor = Color(0xFF333333)
+            )
+        )
+        Text(
+            "${(value * 100).toInt()}",
+            color = DimText,
+            fontSize = 13.sp,
+            modifier = Modifier.width(32.dp)
+        )
     }
 }
