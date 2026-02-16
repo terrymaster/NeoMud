@@ -198,7 +198,8 @@ sealed class ServerMessage {
     data class ItemUsed(
         val itemName: String,
         val message: String,
-        val newHp: Int
+        val newHp: Int,
+        val newMp: Int
     ) : ServerMessage()
 
     @Serializable

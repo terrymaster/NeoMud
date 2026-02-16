@@ -110,7 +110,9 @@
         "item:iron_boots",
         "item:iron_gauntlets",
         "item:iron_shield",
-        "item:steel_longsword"
+        "item:steel_longsword",
+        "item:health_potion",
+        "item:mana_potion"
       ]
     }
   ]

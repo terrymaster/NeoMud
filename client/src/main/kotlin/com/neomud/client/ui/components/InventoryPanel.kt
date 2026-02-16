@@ -219,6 +219,19 @@ private fun BagItemCell(
                         .padding(horizontal = 3.dp, vertical = 1.dp)
                 )
             }
+            // "Use" badge on consumables
+            if (isConsumable) {
+                Text(
+                    text = "Use",
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .background(Color(0xCC00AAAA), RoundedCornerShape(3.dp))
+                        .padding(horizontal = 3.dp, vertical = 1.dp)
+                )
+            }
         }
         Text(
             text = displayName(item, invItem.itemId),

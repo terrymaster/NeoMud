@@ -3,7 +3,8 @@
     "npc:shadow_wolf": {
       "items": [
         { "itemId": "item:wolf_pelt", "chance": 0.8, "minQuantity": 1, "maxQuantity": 1 },
-        { "itemId": "item:health_potion", "chance": 0.15, "minQuantity": 1, "maxQuantity": 1 }
+        { "itemId": "item:health_potion", "chance": 0.15, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:mana_potion", "chance": 0.10, "minQuantity": 1, "maxQuantity": 1 }
       ],
       "coinDrop": { "minCopper": 5, "maxCopper": 20, "minSilver": 0, "maxSilver": 1 }
     },

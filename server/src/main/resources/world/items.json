@@ -90,6 +90,17 @@
       "maxStack": 10
     },
     {
+      "id": "item:mana_potion",
+      "name": "Mana Potion",
+      "description": "A small vial of blue liquid that restores mana.",
+      "type": "consumable",
+      "useEffect": "mana:20",
+      "value": 25,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 10
+    },
+    {
       "id": "item:chain_coif",
       "name": "Chain Coif",
       "description": "A hood of interlocking iron rings that protects the head.",

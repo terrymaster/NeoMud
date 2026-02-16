@@ -31,7 +31,9 @@ data class NpcState(
     val templateId: String = "",
     val vendorItems: List<String> = emptyList()
 ) {
-    val isAlive: Boolean get() = maxHp == 0 || currentHp > 0
+    /** Set by [NpcManager.markDead] to prevent double-processing kills. */
+    var deathProcessed: Boolean = false
+    val isAlive: Boolean get() = !deathProcessed && (maxHp == 0 || currentHp > 0)
 }
 
 data class NpcEvent(
@@ -222,7 +224,8 @@ class NpcManager(
     @Synchronized
     fun markDead(npcId: String): Boolean {
         val npc = npcs.find { it.id == npcId } ?: return false
-        if (npc.currentHp <= 0) return false
+        if (npc.deathProcessed) return false
+        npc.deathProcessed = true
         npc.currentHp = 0
         return true
     }

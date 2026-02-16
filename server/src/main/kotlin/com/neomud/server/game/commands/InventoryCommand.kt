@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.UseEffectProcessor
 import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.session.PlayerSession
@@ -84,24 +85,34 @@ class InventoryCommand(
             return
         }
 
-        // Parse effect
-        val effect = item.useEffect
-        if (effect.startsWith("heal:")) {
-            val removed = inventoryRepository.removeItem(playerName, itemId, 1)
-            if (!removed) {
-                session.send(ServerMessage.Error("You don't have that item."))
-                return
-            }
-
-            val amount = effect.removePrefix("heal:").toIntOrNull() ?: 0
-            val newHp = (player.currentHp + amount).coerceAtMost(player.maxHp)
-            session.player = player.copy(currentHp = newHp)
-
-            session.send(ServerMessage.ItemUsed(item.name, "You drink the ${item.name} and recover $amount HP.", newHp))
-            sendInventoryUpdate(session)
-        } else {
-            session.send(ServerMessage.Error("Unknown effect for ${item.name}."))
+        val result = UseEffectProcessor.process(item.useEffect, player, item.name)
+        if (result == null) {
+            session.send(ServerMessage.Error("${item.name} has no usable effect."))
+            return
         }
+
+        val removed = inventoryRepository.removeItem(playerName, itemId, 1)
+        if (!removed) {
+            session.send(ServerMessage.Error("You don't have that item."))
+            return
+        }
+
+        session.player = result.updatedPlayer
+        for (effect in result.newEffects) {
+            session.activeEffects.add(effect)
+        }
+
+        val message = result.messages.joinToString(" ")
+        session.send(ServerMessage.ItemUsed(
+            itemName = item.name,
+            message = message,
+            newHp = result.updatedPlayer.currentHp,
+            newMp = result.updatedPlayer.currentMp
+        ))
+        if (result.newEffects.isNotEmpty()) {
+            session.send(ServerMessage.ActiveEffectsUpdate(session.activeEffects.toList()))
+        }
+        sendInventoryUpdate(session)
     }
 
     suspend fun sendInventoryUpdate(session: PlayerSession) {

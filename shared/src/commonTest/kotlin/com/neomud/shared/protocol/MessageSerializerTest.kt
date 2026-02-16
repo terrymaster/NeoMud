@@ -413,7 +413,7 @@ class MessageSerializerTest {
 
     @Test
     fun testItemUsedRoundTrip() {
-        val original = ServerMessage.ItemUsed("Health Potion", "You drink the potion.", 95)
+        val original = ServerMessage.ItemUsed("Health Potion", "You drink the potion.", 95, 50)
         val json = MessageSerializer.encodeServerMessage(original)
         val decoded = MessageSerializer.decodeServerMessage(json)
         assertEquals(original, decoded)

@@ -281,7 +281,10 @@ class GameViewModel(private val wsClient: WebSocketClient, var serverBaseUrl: St
             }
             is ServerMessage.ItemUsed -> {
                 addLog(message.message, MudColors.effect)
-                _player.value = _player.value?.copy(currentHp = message.newHp)
+                _player.value = _player.value?.copy(
+                    currentHp = message.newHp,
+                    currentMp = message.newMp
+                )
             }
             is ServerMessage.EquipUpdate -> {
                 if (message.itemName != null) {
