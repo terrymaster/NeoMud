@@ -4,12 +4,11 @@ import com.neomud.server.game.CommandProcessor
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
-import com.neomud.shared.protocol.ClientMessage
+import com.neomud.server.world.WorldDataSource
 import com.neomud.shared.protocol.MessageSerializer
 import com.neomud.shared.protocol.ServerMessage
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.http.content.staticResources
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
@@ -18,13 +17,44 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("Routing")
 
+private val extensionToContentType = mapOf(
+    "webp" to ContentType.Image.Any,
+    "png" to ContentType.Image.PNG,
+    "jpg" to ContentType.Image.JPEG,
+    "jpeg" to ContentType.Image.JPEG,
+    "ogg" to ContentType.parse("audio/ogg"),
+    "mp3" to ContentType.parse("audio/mpeg"),
+    "wav" to ContentType.parse("audio/wav"),
+    "json" to ContentType.Application.Json
+)
+
 fun Application.configureRouting(
     sessionManager: SessionManager,
     commandProcessor: CommandProcessor,
-    playerRepository: PlayerRepository
+    playerRepository: PlayerRepository,
+    dataSource: WorldDataSource
 ) {
     routing {
-        staticResources("/assets", "assets")
+        get("/assets/{path...}") {
+            val path = call.parameters.getAll("path")?.joinToString("/") ?: ""
+            val fullPath = "assets/$path"
+
+            // Reject path traversal attempts
+            if (".." in path) {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+
+            val bytes = dataSource.readBytes(fullPath)
+            if (bytes == null) {
+                call.respond(HttpStatusCode.NotFound)
+                return@get
+            }
+
+            val ext = path.substringAfterLast('.', "").lowercase()
+            val contentType = extensionToContentType[ext] ?: ContentType.Application.OctetStream
+            call.respondBytes(bytes, contentType)
+        }
 
         get("/health") {
             call.respondText("OK", ContentType.Text.Plain)

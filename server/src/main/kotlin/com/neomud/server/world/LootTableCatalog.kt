@@ -29,13 +29,14 @@ class LootTableCatalog(private val tables: Map<String, LootTableEntry>) {
         private val logger = LoggerFactory.getLogger(LootTableCatalog::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun load(): LootTableCatalog {
-            val resource = LootTableCatalog::class.java.classLoader.getResourceAsStream("world/loot_tables.json")
-                ?: error("loot_tables.json not found in resources")
-            val content = resource.bufferedReader().use { it.readText() }
+        fun load(source: WorldDataSource): LootTableCatalog {
+            val content = source.readText("world/loot_tables.json")
+                ?: error("loot_tables.json not found")
             val data = json.decodeFromString<LootTableData>(content)
             logger.info("Loaded ${data.tables.size} loot tables")
             return LootTableCatalog(data.tables)
         }
+
+        fun load(): LootTableCatalog = load(ClasspathDataSource())
     }
 }

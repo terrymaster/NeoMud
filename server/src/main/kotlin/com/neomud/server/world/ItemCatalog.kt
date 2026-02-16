@@ -21,13 +21,14 @@ class ItemCatalog(items: List<Item>) {
         private val logger = LoggerFactory.getLogger(ItemCatalog::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun load(): ItemCatalog {
-            val resource = ItemCatalog::class.java.classLoader.getResourceAsStream("world/items.json")
-                ?: error("items.json not found in resources")
-            val content = resource.bufferedReader().use { it.readText() }
+        fun load(source: WorldDataSource): ItemCatalog {
+            val content = source.readText("world/items.json")
+                ?: error("items.json not found")
             val data = json.decodeFromString<ItemCatalogData>(content)
             logger.info("Loaded ${data.items.size} items")
             return ItemCatalog(data.items)
         }
+
+        fun load(): ItemCatalog = load(ClasspathDataSource())
     }
 }

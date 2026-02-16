@@ -19,6 +19,9 @@ import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.plugins.configureRouting
 import com.neomud.server.plugins.configureWebSockets
 import com.neomud.server.session.SessionManager
+import com.neomud.server.world.ClasspathDataSource
+import com.neomud.server.world.NmdBundleDataSource
+import com.neomud.server.world.WorldDataSource
 import com.neomud.server.world.WorldLoader
 import io.ktor.server.application.*
 import com.neomud.shared.NeoMudVersion
@@ -26,8 +29,10 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.net.BindException
 import java.net.ServerSocket
+import java.util.zip.ZipFile
 import kotlin.system.exitProcess
 
 private val logger = LoggerFactory.getLogger("NeoMud")
@@ -49,17 +54,29 @@ fun main() {
         exitProcess(1)
     }
 
+    val worldFile = System.getenv("NEOMUD_WORLD")
+
     embeddedServer(Netty, port = PORT, host = "0.0.0.0") {
-        module()
+        module(worldFile = worldFile)
     }.start(wait = true)
 }
 
-fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
+fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: String? = null) {
     // Initialize database
     DatabaseFactory.init(jdbcUrl)
 
+    // Select world data source
+    val dataSource: WorldDataSource = if (worldFile != null) {
+        val file = File(worldFile)
+        require(file.exists()) { "World file not found: $worldFile" }
+        logger.info("Loading world from bundle: $worldFile")
+        NmdBundleDataSource(ZipFile(file))
+    } else {
+        ClasspathDataSource()
+    }
+
     // Load world
-    val loadResult = WorldLoader.load()
+    val loadResult = WorldLoader.load(dataSource)
     val worldGraph = loadResult.worldGraph
     val classCatalog = loadResult.classCatalog
     val itemCatalog = loadResult.itemCatalog
@@ -94,7 +111,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
 
     // Install plugins
     configureWebSockets()
-    configureRouting(sessionManager, commandProcessor, playerRepository)
+    configureRouting(sessionManager, commandProcessor, playerRepository, dataSource)
 
     // Launch game loop
     launch {

@@ -31,15 +31,15 @@ class PromptTemplateCatalog(private val templates: Map<String, PromptTemplate>) 
         private val logger = LoggerFactory.getLogger(PromptTemplateCatalog::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun load(): PromptTemplateCatalog {
-            val resource = PromptTemplateCatalog::class.java.classLoader
-                .getResourceAsStream("world/prompt_templates.json")
-                ?: error("prompt_templates.json not found in resources")
-            val content = resource.bufferedReader().use { it.readText() }
+        fun load(source: WorldDataSource): PromptTemplateCatalog {
+            val content = source.readText("world/prompt_templates.json")
+                ?: error("prompt_templates.json not found")
             val data = json.decodeFromString<PromptTemplateData>(content)
             val map = data.templates.associateBy { "${it.entityType}:${it.entityId}" }
             logger.info("Loaded ${map.size} prompt templates")
             return PromptTemplateCatalog(map)
         }
+
+        fun load(): PromptTemplateCatalog = load(ClasspathDataSource())
     }
 }

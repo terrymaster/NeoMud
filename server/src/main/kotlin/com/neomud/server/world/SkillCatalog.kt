@@ -24,13 +24,14 @@ class SkillCatalog(skills: List<SkillDef>) {
         private val logger = LoggerFactory.getLogger(SkillCatalog::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun load(): SkillCatalog {
-            val resource = SkillCatalog::class.java.classLoader.getResourceAsStream("world/skills.json")
-                ?: error("skills.json not found in resources")
-            val content = resource.bufferedReader().use { it.readText() }
+        fun load(source: WorldDataSource): SkillCatalog {
+            val content = source.readText("world/skills.json")
+                ?: error("skills.json not found")
             val data = json.decodeFromString<SkillCatalogData>(content)
             logger.info("Loaded ${data.skills.size} skills")
             return SkillCatalog(data.skills)
         }
+
+        fun load(): SkillCatalog = load(ClasspathDataSource())
     }
 }

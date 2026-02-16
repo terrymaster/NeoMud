@@ -21,13 +21,14 @@ class RaceCatalog(races: List<RaceDef>) {
         private val logger = LoggerFactory.getLogger(RaceCatalog::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun load(): RaceCatalog {
-            val resource = RaceCatalog::class.java.classLoader.getResourceAsStream("world/races.json")
-                ?: error("races.json not found in resources")
-            val content = resource.bufferedReader().use { it.readText() }
+        fun load(source: WorldDataSource): RaceCatalog {
+            val content = source.readText("world/races.json")
+                ?: error("races.json not found")
             val data = json.decodeFromString<RaceCatalogData>(content)
             logger.info("Loaded ${data.races.size} races")
             return RaceCatalog(data.races)
         }
+
+        fun load(): RaceCatalog = load(ClasspathDataSource())
     }
 }

@@ -21,13 +21,14 @@ class ClassCatalog(classes: List<CharacterClassDef>) {
         private val logger = LoggerFactory.getLogger(ClassCatalog::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun load(): ClassCatalog {
-            val resource = ClassCatalog::class.java.classLoader.getResourceAsStream("world/classes.json")
-                ?: error("classes.json not found in resources")
-            val content = resource.bufferedReader().use { it.readText() }
+        fun load(source: WorldDataSource): ClassCatalog {
+            val content = source.readText("world/classes.json")
+                ?: error("classes.json not found")
             val data = json.decodeFromString<ClassCatalogData>(content)
             logger.info("Loaded ${data.classes.size} character classes")
             return ClassCatalog(data.classes)
         }
+
+        fun load(): ClassCatalog = load(ClasspathDataSource())
     }
 }

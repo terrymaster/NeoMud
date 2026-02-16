@@ -1,6 +1,5 @@
 package com.neomud.server.world
 
-import com.neomud.shared.model.Npc
 import com.neomud.shared.model.Room
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -20,31 +19,41 @@ object WorldLoader {
         val skillCatalog: SkillCatalog,
         val raceCatalog: RaceCatalog,
         val spellCatalog: SpellCatalog,
-        val zoneSpawnConfigs: Map<String, SpawnConfig>
+        val zoneSpawnConfigs: Map<String, SpawnConfig>,
+        val manifest: WorldManifest? = null
     )
 
-    fun load(): LoadResult {
-        val classCatalog = ClassCatalog.load()
-        val itemCatalog = ItemCatalog.load()
-        val lootTableCatalog = LootTableCatalog.load()
-        val promptTemplateCatalog = PromptTemplateCatalog.load()
-        val skillCatalog = SkillCatalog.load()
-        val raceCatalog = RaceCatalog.load()
-        val spellCatalog = SpellCatalog.load()
+    fun load(source: WorldDataSource = ClasspathDataSource()): LoadResult {
+        // Load manifest if present
+        val manifest = source.readText("manifest.json")?.let {
+            val m = json.decodeFromString<WorldManifest>(it)
+            if (m.formatVersion > 1) {
+                error("Unsupported world format version ${m.formatVersion} (max supported: 1)")
+            }
+            logger.info("World bundle: ${m.name} v${m.version} by ${m.author}")
+            m
+        }
+
+        val classCatalog = ClassCatalog.load(source)
+        val itemCatalog = ItemCatalog.load(source)
+        val lootTableCatalog = LootTableCatalog.load(source)
+        val promptTemplateCatalog = PromptTemplateCatalog.load(source)
+        val skillCatalog = SkillCatalog.load(source)
+        val raceCatalog = RaceCatalog.load(source)
+        val spellCatalog = SpellCatalog.load(source)
         val worldGraph = WorldGraph()
         val allNpcData = mutableListOf<Pair<NpcData, String>>()
         val zoneSpawnConfigs = mutableMapOf<String, SpawnConfig>()
-        val zoneFiles = listOf("world/town.zone.json", "world/forest.zone.json")
+        val zoneFiles = source.list("world/", ".zone.json")
         var dataDefinedSpawn: String? = null
 
         for (file in zoneFiles) {
-            val resource = WorldLoader::class.java.classLoader.getResourceAsStream(file)
-            if (resource == null) {
+            val content = source.readText(file)
+            if (content == null) {
                 logger.warn("Zone file not found: $file")
                 continue
             }
 
-            val content = resource.bufferedReader().use { it.readText() }
             val zone = json.decodeFromString<ZoneData>(content)
 
             logger.info("Loading zone: ${zone.name} (${zone.rooms.size} rooms, ${zone.npcs.size} NPCs)")
@@ -174,6 +183,6 @@ object WorldLoader {
             if (room.departSound.isBlank()) logger.info("Room '${room.id}' missing departSound")
         }
 
-        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, promptTemplateCatalog, skillCatalog, raceCatalog, spellCatalog, zoneSpawnConfigs)
+        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, promptTemplateCatalog, skillCatalog, raceCatalog, spellCatalog, zoneSpawnConfigs, manifest)
     }
 }

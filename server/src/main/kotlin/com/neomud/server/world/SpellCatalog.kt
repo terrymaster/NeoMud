@@ -24,13 +24,14 @@ class SpellCatalog(spells: List<SpellDef>) {
         private val logger = LoggerFactory.getLogger(SpellCatalog::class.java)
         private val json = Json { ignoreUnknownKeys = true }
 
-        fun load(): SpellCatalog {
-            val resource = SpellCatalog::class.java.classLoader.getResourceAsStream("world/spells.json")
-                ?: error("spells.json not found in resources")
-            val content = resource.bufferedReader().use { it.readText() }
+        fun load(source: WorldDataSource): SpellCatalog {
+            val content = source.readText("world/spells.json")
+                ?: error("spells.json not found")
             val data = json.decodeFromString<SpellCatalogData>(content)
             logger.info("Loaded ${data.spells.size} spells")
             return SpellCatalog(data.spells)
         }
+
+        fun load(): SpellCatalog = load(ClasspathDataSource())
     }
 }
