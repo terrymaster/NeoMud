@@ -30,7 +30,8 @@ This project is vibe-coded — built iteratively with AI assistance, following i
 NeoMud/
 ├── shared/     Kotlin Multiplatform — models and protocol shared between client and server
 ├── server/     Ktor + Netty — WebSocket game server with SQLite persistence
-└── client/     Jetpack Compose — Android client with sprite rendering
+├── client/     Jetpack Compose — Android client with sprite rendering
+└── maker/      React + Express — web-based world editor and GM toolkit
 ```
 
 **Server** runs a 1.5-second tick-based game loop. NPCs wander, patrol, and attack. Combat resolves each tick. Loot drops. Spells cool down. The world turns.
@@ -38,6 +39,8 @@ NeoMud/
 **Client** connects over WebSocket and renders the game as a layered scene: room background, NPC and item sprites, floating minimap, game log, and controls.
 
 **Shared** module contains the protocol (sealed classes with `kotlinx.serialization`) and all data models. Client and server speak the same language at compile time.
+
+**Maker** is a web-based world editor (React frontend, Express API, SQLite per-project databases) for building zones, rooms, NPCs, items, and more — with visual map editing and export to the server's `.nmd` bundle format.
 
 ## Features
 
@@ -47,6 +50,8 @@ NeoMud/
 - JSON-driven room definitions with coordinates, exits, and background images
 - BFS-based minimap showing nearby rooms with player/NPC presence indicators
 - Temple of the Dawn healing aura — passively restores HP each tick while you rest
+- `.nmd` world bundles — self-contained ZIP archives with all zone data, catalogs, and assets
+- Asset validation at world load time — missing images or audio flagged on startup
 
 ### Characters
 - 6 races: Human, Dwarf, Elf, Halfling, Gnome, Half-Orc — each with stat modifiers and XP scaling
@@ -93,6 +98,36 @@ NeoMud/
 - One session per account
 - Player state persisted on disconnect — log back in where you left off
 
+### Audio
+- Per-zone background music with crossfade on zone transitions
+- Sound effects for combat, movement, spells, and item interactions
+- Configurable volume controls for BGM and SFX independently
+
+### Client Navigation
+- 10-direction pad: N, S, E, W, NE, NW, SE, SW, Up, Down
+- Minimap with clickable room navigation
+
+## NeoMUD Maker
+
+A web-based world editor for building and managing game worlds without touching JSON files.
+
+### What's Working
+- **Project management** — create, open, delete, and switch between world projects (each backed by its own SQLite database)
+- **Default world import** — auto-imports the server's `default-world.nmd` bundle as a read-only reference project on first startup
+- **Read-only projects** — the default world can be browsed but not modified; fork it to create an editable copy
+- **Visual zone editor** — drag-and-drop room placement on a grid canvas, click-to-connect exits with automatic bidirectional linking
+- **Zone/room/exit CRUD** — full create, update, delete for zones, rooms, and exits via REST API
+- **Export** — export any project as NeoMUD-compatible JSON for the game server
+- **Prisma schema** — 11 entity types: Zone, Room, Exit, Item, NPC, CharacterClass, Race, Skill, Spell, LootTable, PromptTemplate
+
+### Running the Maker
+```bash
+cd maker
+npm install
+npm run dev
+```
+Opens on `http://localhost:5173` (Vite frontend) with the API server on port 3001.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -102,9 +137,11 @@ NeoMud/
 | Database | SQLite + Exposed ORM |
 | Client | Jetpack Compose + Material 3 |
 | Images | Coil 2.7 (WebP with transparency) |
+| Audio | Android MediaPlayer + SoundPool |
 | Protocol | kotlinx.serialization over WebSocket |
 | Shared Code | Kotlin Multiplatform |
 | Build | Gradle 8.11 with configuration cache |
+| Maker | React 18 + Express + Prisma (SQLite) |
 
 ## Running It
 
@@ -112,6 +149,7 @@ NeoMud/
 - JDK 21 (e.g., Amazon Corretto)
 - Android SDK with platform 34
 - Android emulator or device (min SDK 26)
+- Node.js 18+ (for the Maker)
 
 ### Server
 ```bash
@@ -125,6 +163,14 @@ The server starts on port 8080 with WebSocket at `/game` and health check at `/h
 ./gradlew :client:installDebug
 ```
 Connect to `10.0.2.2:8080` from the emulator (or your server's IP from a device).
+
+### Maker
+```bash
+cd maker
+npm install
+npm run dev
+```
+Opens the world editor at `http://localhost:5173`. On first run, it auto-imports the default world if `server/build/worlds/default-world.nmd` exists.
 
 ## Roadmap
 
@@ -152,16 +198,30 @@ This is an active project. Here's what exists, what's in progress, and where it'
 - [x] Death/respawn with XP penalty and temple spawn point
 - [x] Room healing aura (Temple of the Dawn)
 - [x] Player state persistence across sessions
+- [x] 10-direction navigation (cardinal, diagonal, vertical)
+- [x] Audio system with BGM, SFX, and volume controls
+- [x] `.nmd` world bundle format with asset validation
+- [x] NeoMUD Maker — web-based zone editor with visual map canvas
+- [x] Default world import with read-only projects and fork workflow
 
 ### Up Next
 - [ ] **Game Balance Pass** — rebalance combat, XP curves, item stats, and NPC difficulty across all content
 - [ ] **Missing Item Art** — add icons for items without sprites (e.g., leather chest piece)
-- [ ] **Consumable Items from Inventory** — tap-to-use single-use items (potions, scrolls) directly from the bag grid
 - [ ] **Player Status Condensing** — compact the HP/MP/XP status panel, explore horizontal orientation
 - [ ] **Action Panel Reorganization** — separate permanent class actions (attack, hide, spells) from contextual actions (level up, shop, train)
 - [ ] **Equipment Upgrades** — tiered gear, enchantments, item rarity system
 - [ ] **NPC Dialogue** — conversation trees, quest givers, lore NPCs
 - [ ] **Quest System** — kill quests, fetch quests, quest log, rewards
+
+### NeoMUD Maker — Next Steps
+- [ ] **Item Editor** — create and edit items with stat previews
+- [ ] **NPC Designer** — create NPCs with stats, behaviors, and loot tables
+- [ ] **Class/Race/Skill/Spell Editors** — full CRUD for all catalog types
+- [ ] **Loot Table Editor** — visual drop rate configuration
+- [ ] **AI Art Pipeline** — generate room backgrounds, NPC sprites, and item icons from prompt templates
+- [ ] **AI Sound Design** — generate ambient audio, combat sounds, and zone music from descriptions
+- [ ] **Live Preview** — test your world in-client without restarting the server
+- [ ] **Publish & Share** — export complete `.nmd` bundles for other NeoMud servers
 
 ### Future Vision
 - [ ] **More Zones** — dungeons, caves, swamps, castles — each with unique NPCs and loot
@@ -173,20 +233,8 @@ This is an active project. Here's what exists, what's in progress, and where it'
 - [ ] **Status Effects Expansion** — poison, stun, bleed, buffs/debuffs with tactical depth
 - [ ] **Emotes & Social** — /wave, /bow, roleplay support
 - [ ] **World Events** — timed spawns, invasions, seasonal content
-- [ ] **Admin/GM Tools** — in-game world editing, spawn commands, player management
 - [ ] **iOS Client** — Compose Multiplatform or SwiftUI
-- [ ] **Sound Effects & Music** — ambient room audio, combat sounds, UI feedback, background music per zone
 - [ ] **Web Client** — browser-based alternative using the same WebSocket protocol
-
-### NeoMUDMaker — The GM Toolkit
-- [ ] **Visual Zone Builder** — drag-and-drop room editor with connection mapping
-- [ ] **AI Art Pipeline** — generate room backgrounds, NPC sprites, and item icons from prompt templates using AI image generation — no artist required
-- [ ] **NPC Designer** — create NPCs with stats, behaviors, dialogue trees, and loot tables in a visual editor
-- [ ] **Item Forge** — design weapons, armor, and consumables with stat previews and auto-generated art
-- [ ] **Quest Scripting** — visual quest builder with triggers, conditions, and branching outcomes
-- [ ] **Live Preview** — test your world in-client without restarting the server
-- [ ] **AI Sound Design** — generate ambient audio, combat sounds, and zone music from descriptions — full audioscape without a sound studio
-- [ ] **Publish & Share** — export zone packs for other NeoMud servers
 
 ### Someday/Maybe
 - [ ] Procedural zone generation
