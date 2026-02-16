@@ -1,5 +1,6 @@
 package com.neomud.server.game
 
+import com.neomud.server.game.commands.AdminCommand
 import com.neomud.server.game.commands.AttackCommand
 import com.neomud.server.game.commands.BackstabCommand
 import com.neomud.server.game.commands.HideCommand
@@ -14,6 +15,7 @@ import com.neomud.server.game.commands.VendorCommand
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
+import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
@@ -46,12 +48,18 @@ class CommandProcessor(
     private val spellCatalog: SpellCatalog,
     private val vendorCommand: VendorCommand,
     private val lootService: LootService,
-    private val lootTableCatalog: LootTableCatalog
+    private val lootTableCatalog: LootTableCatalog,
+    private val inventoryRepository: InventoryRepository,
+    private val adminUsernames: Set<String> = emptySet()
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
+    private val adminCommand = AdminCommand(
+        sessionManager, playerRepository, npcManager, worldGraph,
+        inventoryCommand, inventoryRepository, itemCatalog, classCatalog, raceCatalog, roomItemManager
+    )
     private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager)
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager)
-    private val sayCommand = SayCommand(sessionManager)
+    private val sayCommand = SayCommand(sessionManager, adminCommand)
     private val attackCommand = AttackCommand(npcManager)
     private val hideCommand = HideCommand(sessionManager, npcManager)
     private val backstabCommand = BackstabCommand(npcManager, sessionManager, playerRepository, lootService, lootTableCatalog, roomItemManager)
@@ -130,6 +138,9 @@ class CommandProcessor(
             is ClientMessage.TrainStat -> {
                 requireAuth(session) { trainerCommand.handleTrainStat(session, message.stat, message.points) }
             }
+            is ClientMessage.AllocateTrainedStats -> {
+                requireAuth(session) { trainerCommand.handleAllocateTrainedStats(session, message.stats) }
+            }
             is ClientMessage.CastSpell -> {
                 requireAuth(session) { spellCommand.execute(session, message.spellId, message.targetId) }
             }
@@ -204,34 +215,42 @@ class CommandProcessor(
 
         result.fold(
             onSuccess = { player ->
-                session.player = player
-                session.playerName = player.name
-                session.currentRoomId = player.currentRoomId
-                sessionManager.addSession(player.name, session)
+                // Auto-promote admin from env var
+                val effectivePlayer = if (msg.username.lowercase() in adminUsernames && !player.isAdmin) {
+                    playerRepository.promoteAdmin(msg.username)
+                    player.copy(isAdmin = true)
+                } else {
+                    player
+                }
 
-                session.send(ServerMessage.LoginOk(player))
+                session.player = effectivePlayer
+                session.playerName = effectivePlayer.name
+                session.currentRoomId = effectivePlayer.currentRoomId
+                sessionManager.addSession(effectivePlayer.name, session)
+
+                session.send(ServerMessage.LoginOk(effectivePlayer))
 
                 // Send initial room info
-                val room = worldGraph.getRoom(player.currentRoomId)
+                val room = worldGraph.getRoom(effectivePlayer.currentRoomId)
                 if (room != null) {
-                    val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(player.currentRoomId)
-                        .filter { it != player.name }
-                    val npcsInRoom = npcManager.getNpcsInRoom(player.currentRoomId)
+                    val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(effectivePlayer.currentRoomId)
+                        .filter { it != effectivePlayer.name }
+                    val npcsInRoom = npcManager.getNpcsInRoom(effectivePlayer.currentRoomId)
                     session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
 
-                    val mapRooms = worldGraph.getRoomsNear(player.currentRoomId).map { mapRoom ->
+                    val mapRooms = worldGraph.getRoomsNear(effectivePlayer.currentRoomId).map { mapRoom ->
                         mapRoom.copy(
                             hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
                             hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
                         )
                     }
-                    session.send(ServerMessage.MapData(mapRooms, player.currentRoomId))
+                    session.send(ServerMessage.MapData(mapRooms, effectivePlayer.currentRoomId))
 
                     // Broadcast to others in room
                     sessionManager.broadcastToRoom(
-                        player.currentRoomId,
-                        ServerMessage.PlayerEntered(player.name, player.currentRoomId),
-                        exclude = player.name
+                        effectivePlayer.currentRoomId,
+                        ServerMessage.PlayerEntered(effectivePlayer.name, effectivePlayer.currentRoomId),
+                        exclude = effectivePlayer.name
                     )
                 }
 
@@ -239,11 +258,11 @@ class CommandProcessor(
                 inventoryCommand.sendInventoryUpdate(session)
 
                 // Send ground items for current room
-                val groundItems = roomItemManager.getGroundItems(player.currentRoomId)
-                val groundCoins = roomItemManager.getGroundCoins(player.currentRoomId)
+                val groundItems = roomItemManager.getGroundItems(effectivePlayer.currentRoomId)
+                val groundCoins = roomItemManager.getGroundCoins(effectivePlayer.currentRoomId)
                 session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
 
-                logger.info("Player logged in: ${player.name}")
+                logger.info("Player logged in: ${effectivePlayer.name}${if (effectivePlayer.isAdmin) " [ADMIN]" else ""}")
             },
             onFailure = {
                 session.send(ServerMessage.AuthError(it.message ?: "Login failed"))

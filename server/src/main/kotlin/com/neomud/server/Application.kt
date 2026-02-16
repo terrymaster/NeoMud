@@ -62,7 +62,7 @@ fun main() {
     }.start(wait = true)
 }
 
-fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: String? = null) {
+fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: String? = null, adminUsernamesOverride: Set<String>? = null) {
     // Initialize database
     DatabaseFactory.init(jdbcUrl)
 
@@ -107,10 +107,21 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     val trainerCommand = TrainerCommand(classCatalog, raceCatalog, playerRepository, sessionManager, npcManager)
     val spellCommand = SpellCommand(spellCatalog, classCatalog, npcManager, sessionManager, playerRepository)
     val vendorCommand = VendorCommand(npcManager, itemCatalog, inventoryRepository, coinRepository, inventoryCommand)
+    val adminUsernames = adminUsernamesOverride ?: (System.getenv("NEOMUD_ADMINS")
+        ?.split(",")
+        ?.map { it.trim().lowercase() }
+        ?.filter { it.isNotEmpty() }
+        ?.toSet()
+        ?: emptySet())
+    if (adminUsernames.isNotEmpty()) {
+        logger.info("Admin usernames: $adminUsernames")
+    }
+
     val commandProcessor = CommandProcessor(
         worldGraph, sessionManager, npcManager, playerRepository,
         classCatalog, itemCatalog, skillCatalog, raceCatalog, inventoryCommand, pickupCommand, roomItemManager,
-        trainerCommand, spellCommand, spellCatalog, vendorCommand, lootService, lootTableCatalog
+        trainerCommand, spellCommand, spellCatalog, vendorCommand, lootService, lootTableCatalog,
+        inventoryRepository, adminUsernames
     )
     val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository)
 

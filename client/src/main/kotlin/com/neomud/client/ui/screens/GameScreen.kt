@@ -18,8 +18,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neomud.client.ui.theme.MudColors
@@ -198,7 +200,7 @@ fun GameScreen(
                 TrainerPanel(
                     trainerInfo = info,
                     onLevelUp = { gameViewModel.trainLevelUp() },
-                    onTrainStat = { stat, points -> gameViewModel.trainStat(stat, points) },
+                    onAllocateStats = { stats -> gameViewModel.allocateTrainedStats(stats) },
                     onClose = { gameViewModel.dismissTrainer() }
                 )
             }
@@ -417,6 +419,7 @@ private fun GameScreenPortrait(
                         sayText = sayText,
                         onSayTextChange = onSayTextChange,
                         onSay = { gameViewModel.say(it) },
+                        isAdmin = player?.isAdmin == true,
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -604,6 +607,7 @@ private fun GameScreenLandscape(
                 sayText = sayText,
                 onSayTextChange = onSayTextChange,
                 onSay = { gameViewModel.say(it) },
+                isAdmin = player?.isAdmin == true,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
             )
         }
@@ -818,24 +822,64 @@ private fun SettingsGearButton(onClick: () -> Unit) {
     }
 }
 
+private val ADMIN_COMMANDS = listOf(
+    "/broadcast", "/godmode", "/grantcp", "/grantitem", "/grantxp",
+    "/heal", "/help", "/kill", "/setlevel", "/setstat", "/spawn", "/teleport"
+)
+
 @Composable
 private fun SayBar(
     sayText: String,
     onSayTextChange: (String) -> Unit,
     onSay: (String) -> Unit,
+    isAdmin: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    // Internal TextFieldValue for selection control
+    var tfv by remember { mutableStateOf(TextFieldValue(sayText)) }
+
+    // Sync external sayText changes (e.g. cleared after send) into our TextFieldValue
+    LaunchedEffect(sayText) {
+        if (sayText != tfv.text) {
+            tfv = TextFieldValue(sayText, TextRange(sayText.length))
+        }
+    }
+
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
         BasicTextField(
-            value = sayText,
-            onValueChange = onSayTextChange,
+            value = tfv,
+            onValueChange = { newTfv ->
+                val newText = newTfv.text
+                val cursorPos = newTfv.selection.start
+
+                // Determine if the user is typing forward (not deleting/navigating)
+                val isTypingForward = newText.length > tfv.text.length ||
+                    (newText.length == tfv.text.length && newTfv.selection.collapsed && !tfv.selection.collapsed)
+
+                if (isAdmin && newText.startsWith("/") && !newText.contains(" ") && isTypingForward && newTfv.selection.collapsed) {
+                    val prefix = newText.lowercase()
+                    val match = ADMIN_COMMANDS.firstOrNull { it.startsWith(prefix) && it != prefix }
+                    if (match != null) {
+                        // Fill in the completion with the suffix selected
+                        tfv = TextFieldValue(
+                            text = match,
+                            selection = TextRange(cursorPos, match.length)
+                        )
+                        onSayTextChange(match)
+                        return@BasicTextField
+                    }
+                }
+
+                tfv = newTfv
+                onSayTextChange(newText)
+            },
             singleLine = true,
             textStyle = TextStyle(
                 fontSize = 13.sp,
-                color = Color(0xFFCCCCCC)
+                color = if (isAdmin && tfv.text.startsWith("/")) Color(0xFFFFD700) else Color(0xFFCCCCCC)
             ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             modifier = Modifier
@@ -848,7 +892,7 @@ private fun SayBar(
                     contentAlignment = Alignment.CenterStart,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    if (sayText.isEmpty()) {
+                    if (tfv.text.isEmpty()) {
                         Text("Say...", fontSize = 13.sp, color = Color(0xFF777777))
                     }
                     innerTextField()
@@ -858,12 +902,13 @@ private fun SayBar(
         Spacer(modifier = Modifier.width(4.dp))
         Button(
             onClick = {
-                if (sayText.isNotBlank()) {
-                    onSay(sayText)
+                val text = tfv.text
+                if (text.isNotBlank()) {
+                    onSay(text)
                     onSayTextChange("")
                 }
             },
-            enabled = sayText.isNotBlank(),
+            enabled = tfv.text.isNotBlank(),
             modifier = Modifier.height(32.dp),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
         ) {

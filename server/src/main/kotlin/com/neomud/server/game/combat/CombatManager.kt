@@ -178,7 +178,7 @@ class CombatManager(
         for ((roomId, playersInRoom) in playersByRoom) {
             val hostiles = npcManager.getLivingHostileNpcsInRoom(roomId)
             for (npc in hostiles) {
-                val visiblePlayers = playersInRoom.filter { !it.isHidden && (it.player?.currentHp ?: 0) > 0 }
+                val visiblePlayers = playersInRoom.filter { !it.isHidden && !it.godMode && (it.player?.currentHp ?: 0) > 0 }
                 val targetSession = visiblePlayers.randomOrNull() ?: continue
                 val targetPlayer = targetSession.player ?: continue
 

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("DatabaseFactory")
 
-private const val SCHEMA_VERSION = 3 // Bumped for base stat columns (CP allocation at registration)
+private const val SCHEMA_VERSION = 4 // Added is_admin column
 
 object DatabaseFactory {
     fun init(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
@@ -35,6 +35,14 @@ object DatabaseFactory {
             }
 
             SchemaUtils.create(PlayersTable, InventoryTable, PlayerCoinsTable)
+
+            // Incremental migration: add is_admin if missing
+            try {
+                exec("SELECT is_admin FROM players LIMIT 1") { true }
+            } catch (_: Exception) {
+                logger.info("Migrating schema: adding is_admin column")
+                exec("ALTER TABLE players ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0")
+            }
         }
 
         logger.info("Database initialized (schema v$SCHEMA_VERSION)")

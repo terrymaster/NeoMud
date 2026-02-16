@@ -12,6 +12,7 @@ application {
 tasks.named<JavaExec>("run") {
     workingDir = project.projectDir
     dependsOn("packageWorld")
+    environment("NEOMUD_ADMINS", System.getenv("NEOMUD_ADMINS") ?: "bob")
 }
 
 dependencies {

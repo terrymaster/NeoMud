@@ -35,6 +35,16 @@ class SessionManager {
     fun getAllAuthenticatedSessions(): List<PlayerSession> =
         sessions.values.filter { it.isAuthenticated }
 
+    suspend fun broadcastToAll(message: ServerMessage) {
+        sessions.values.forEach { session ->
+            try {
+                session.send(message)
+            } catch (_: Exception) {
+                // Session might be closing
+            }
+        }
+    }
+
     suspend fun broadcastToRoom(roomId: RoomId, message: ServerMessage, exclude: String? = null) {
         sessions.values
             .filter { it.currentRoomId == roomId && it.playerName != exclude }

@@ -149,7 +149,8 @@ class PlayerRepository {
                 currentXp = row[PlayersTable.currentXp],
                 xpToNextLevel = row[PlayersTable.xpToNextLevel],
                 unspentCp = row[PlayersTable.unspentCp],
-                totalCpEarned = row[PlayersTable.totalCpEarned]
+                totalCpEarned = row[PlayersTable.totalCpEarned],
+                isAdmin = row[PlayersTable.isAdmin]
             )
         }
     }
@@ -188,6 +189,14 @@ class PlayerRepository {
                 it[xpToNextLevel] = player.xpToNextLevel
                 it[unspentCp] = player.unspentCp
                 it[totalCpEarned] = player.totalCpEarned
+            }
+        }
+    }
+
+    fun promoteAdmin(username: String) {
+        transaction {
+            PlayersTable.update({ PlayersTable.username eq username }) {
+                it[isAdmin] = true
             }
         }
     }

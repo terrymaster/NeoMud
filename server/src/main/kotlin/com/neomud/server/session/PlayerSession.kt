@@ -15,6 +15,7 @@ class PlayerSession(
     var attackMode: Boolean = false
     var selectedTargetId: String? = null
     var isHidden: Boolean = false
+    var godMode: Boolean = false
     val skillCooldowns: MutableMap<String, Int> = mutableMapOf()
 
     // Rate limiting (token bucket)

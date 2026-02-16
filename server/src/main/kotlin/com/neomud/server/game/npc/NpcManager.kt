@@ -61,6 +61,7 @@ class NpcManager(
     private val logger = org.slf4j.LoggerFactory.getLogger(NpcManager::class.java)
     private val npcs = mutableListOf<NpcState>()
     private val zoneTemplates = mutableMapOf<String, List<Pair<NpcData, String>>>()
+    private val allTemplates = mutableMapOf<String, Pair<NpcData, String>>()
     private val zoneSpawnTimers = mutableMapOf<String, Int>()
     private var nextSpawnIndex = 1
 
@@ -71,6 +72,11 @@ class NpcManager(
                 .filter { it.first.hostile }
                 .groupBy { it.second }
         )
+
+        // Store all templates by ID for admin spawn
+        for ((data, zoneId) in npcDataList) {
+            allTemplates[data.id] = Pair(data, zoneId)
+        }
 
         for ((data, zoneId) in npcDataList) {
             npcs.add(createNpcState(data, zoneId, data.id))
@@ -250,4 +256,14 @@ class NpcManager(
 
     fun getVendorInRoom(roomId: RoomId): NpcState? =
         npcs.find { it.currentRoomId == roomId && it.behaviorType == "vendor" && it.isAlive }
+
+    fun spawnAdminNpc(templateId: String, roomId: RoomId): NpcState? {
+        val (data, zoneId) = allTemplates[templateId] ?: return null
+        val instanceId = "${data.id}#${nextSpawnIndex++}"
+        val spawned = createNpcState(data, zoneId, instanceId)
+        spawned.currentRoomId = roomId
+        npcs.add(spawned)
+        logger.info("Admin spawned ${spawned.name} ($instanceId) at $roomId")
+        return spawned
+    }
 }

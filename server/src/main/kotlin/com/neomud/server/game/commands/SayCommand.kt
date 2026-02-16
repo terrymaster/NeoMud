@@ -5,11 +5,22 @@ import com.neomud.server.session.SessionManager
 import com.neomud.shared.protocol.ServerMessage
 
 class SayCommand(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val adminCommand: AdminCommand
 ) {
     suspend fun execute(session: PlayerSession, message: String) {
         val roomId = session.currentRoomId ?: return
         val playerName = session.playerName ?: return
+
+        // Intercept slash commands
+        if (message.startsWith("/")) {
+            if (session.player?.isAdmin == true) {
+                adminCommand.execute(session, message)
+            } else {
+                session.send(ServerMessage.SystemMessage("Unknown command."))
+            }
+            return
+        }
 
         // Break stealth on say
         if (session.isHidden) {
