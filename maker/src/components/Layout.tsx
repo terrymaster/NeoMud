@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useParams } from 'react-router-dom';
 import api from '../api';
+import MenuBar from './MenuBar';
 import type { CSSProperties } from 'react';
 
 const navItems = [
@@ -15,9 +16,15 @@ const navItems = [
 ];
 
 const styles: Record<string, CSSProperties> = {
+  wrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden',
+  },
   container: {
     display: 'flex',
-    height: '100vh',
+    flex: 1,
     overflow: 'hidden',
   },
   sidebar: {
@@ -91,7 +98,9 @@ function Layout() {
   }, [name]);
 
   return (
-    <div style={styles.container}>
+    <div style={styles.wrapper}>
+      <MenuBar />
+      <div style={styles.container}>
       <div style={styles.sidebar}>
         <div style={styles.projectName}>
           {name}
@@ -114,6 +123,7 @@ function Layout() {
       </div>
       <div style={styles.content}>
         <Outlet />
+      </div>
       </div>
     </div>
   );

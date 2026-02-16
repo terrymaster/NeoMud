@@ -158,6 +158,18 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
+const ALL_DIRECTIONS = [
+  'NORTH', 'SOUTH', 'EAST', 'WEST',
+  'NORTHEAST', 'NORTHWEST', 'SOUTHEAST', 'SOUTHWEST',
+  'UP', 'DOWN',
+];
+
+interface AllRoomsGroup {
+  zoneId: string;
+  zoneName: string;
+  rooms: { id: string; name: string }[];
+}
+
 let zoneCounter = 0;
 
 function ZoneEditor() {
@@ -169,9 +181,25 @@ function ZoneEditor() {
   const [zoneForm, setZoneForm] = useState<Partial<Zone>>({});
   const [roomForm, setRoomForm] = useState<Partial<Room>>({});
 
-  // Load zones list
+  // Manual exit creation state
+  const [newExitDir, setNewExitDir] = useState('');
+  const [newExitTarget, setNewExitTarget] = useState('');
+  const [allRooms, setAllRooms] = useState<AllRoomsGroup[]>([]);
+
+  // Load zones list + all rooms for exit picker
   useEffect(() => {
-    api.get<Zone[]>('/zones').then(setZones).catch(() => {});
+    api.get<Zone[]>('/zones').then((zoneList) => {
+      setZones(zoneList);
+      // Load all rooms across all zones for the manual exit dropdown
+      const promises = zoneList.map((z) =>
+        api.get<Room[]>(`/zones/${z.id}/rooms`).then((zoneRooms) => ({
+          zoneId: z.id,
+          zoneName: z.name,
+          rooms: zoneRooms.map((r) => ({ id: r.id, name: r.name })),
+        }))
+      );
+      Promise.all(promises).then(setAllRooms).catch(() => {});
+    }).catch(() => {});
   }, []);
 
   // Load zone detail when selected
@@ -331,6 +359,33 @@ function ZoneEditor() {
       await api.del(`/rooms/${roomId}/exits/${direction}`);
       const data = await api.get<ZoneWithRooms>(`/zones/${selectedZoneId}`);
       setRooms(data.rooms || []);
+    } catch {}
+  };
+
+  const handleAddExitManual = async () => {
+    if (!selectedRoomId || !newExitDir || !newExitTarget) return;
+    try {
+      await api.post(`/rooms/${selectedRoomId}/exits`, {
+        direction: newExitDir,
+        toRoomId: newExitTarget,
+      });
+      // Reload zone data to get updated exits
+      if (selectedZoneId) {
+        const data = await api.get<ZoneWithRooms>(`/zones/${selectedZoneId}`);
+        setRooms(data.rooms || []);
+      }
+      setNewExitDir('');
+      setNewExitTarget('');
+      // Refresh all rooms list too
+      const zoneList = await api.get<Zone[]>('/zones');
+      const promises = zoneList.map((z) =>
+        api.get<Room[]>(`/zones/${z.id}/rooms`).then((zoneRooms) => ({
+          zoneId: z.id,
+          zoneName: z.name,
+          rooms: zoneRooms.map((r) => ({ id: r.id, name: r.name })),
+        }))
+      );
+      Promise.all(promises).then(setAllRooms).catch(() => {});
     } catch {}
   };
 
@@ -562,9 +617,47 @@ function ZoneEditor() {
               </div>
             ) : (
               <div style={{ fontSize: 12, color: '#999' }}>
-                No exits. Drag from this room to another to connect them.
+                No exits. Drag on the map or use the form below to add one.
               </div>
             )}
+
+            {/* Add Exit form */}
+            <div style={{ marginTop: 12, padding: '10px', backgroundColor: '#f9f9f9', borderRadius: 4, border: '1px solid #eee' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#444' }}>Add Exit</div>
+              <label style={{ ...styles.label, marginTop: 0 }}>Direction</label>
+              <select
+                style={styles.input}
+                value={newExitDir}
+                onChange={(e) => setNewExitDir(e.target.value)}
+              >
+                <option value="">-- Direction --</option>
+                {ALL_DIRECTIONS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <label style={styles.label}>Target Room</label>
+              <select
+                style={styles.input}
+                value={newExitTarget}
+                onChange={(e) => setNewExitTarget(e.target.value)}
+              >
+                <option value="">-- Target Room --</option>
+                {allRooms.map((group) => (
+                  <optgroup key={group.zoneId} label={group.zoneName}>
+                    {group.rooms.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name} ({r.id})</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <button
+                style={{ ...styles.btnSmall, marginTop: 8, width: '100%', opacity: newExitDir && newExitTarget ? 1 : 0.5 }}
+                disabled={!newExitDir || !newExitTarget}
+                onClick={handleAddExitManual}
+              >
+                Create Exit
+              </button>
+            </div>
           </>
         ) : (
           <div style={{ color: '#999', fontSize: 13, textAlign: 'center', marginTop: 40 }}>

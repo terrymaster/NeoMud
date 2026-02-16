@@ -4,6 +4,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { projectsRouter } from './routes/projects.js'
 import { zonesRouter } from './routes/zones.js'
+import { entitiesRouter } from './routes/entities.js'
 import { exportRouter } from './routes/export.js'
 import { getProjectsDir } from './db.js'
 import { importNmd } from './import.js'
@@ -15,6 +16,7 @@ app.use(express.json())
 
 app.use('/api/projects', projectsRouter)
 app.use('/api', zonesRouter)
+app.use('/api', entitiesRouter)
 app.use('/api/export', exportRouter)
 
 const port = parseInt(process.env.MAKER_PORT || '3001', 10)

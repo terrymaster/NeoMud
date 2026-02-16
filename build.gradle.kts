@@ -37,6 +37,13 @@ abstract class UpdateVersionTask : DefaultTask() {
     }
 }
 
+tasks.register<Exec>("runMaker") {
+    group = "application"
+    description = "Start the NeoMUD Maker web server (Vite + Express)"
+    workingDir = file("maker")
+    commandLine("npm", "run", "dev")
+}
+
 tasks.register<UpdateVersionTask>("updateVersion") {
     group = "versioning"
     description = "Update NeoMudVersion.kt from git tags (tag format: v0.0.0)"
