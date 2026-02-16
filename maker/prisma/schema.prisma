@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Zone {
+  id                String  @id
+  name              String
+  description       String
+  safe              Boolean @default(true)
+  bgm               String  @default("")
+  spawnRoom         String?
+  spawnMaxEntities  Int     @default(0)
+  spawnMaxPerRoom   Int     @default(0)
+  spawnRateTicks    Int     @default(0)
+  rooms             Room[]
+  npcs              Npc[]
+}
+
+model Room {
+  id              String @id
+  zoneId          String
+  zone            Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  name            String
+  description     String
+  x               Int
+  y               Int
+  backgroundImage String @default("")
+  healPerTick     Int    @default(0)
+  bgm             String @default("")
+  departSound     String @default("")
+  exits           Exit[] @relation("fromRoom")
+  incomingExits   Exit[] @relation("toRoom")
+}
+
+model Exit {
+  id         Int    @id @default(autoincrement())
+  fromRoomId String
+  fromRoom   Room   @relation("fromRoom", fields: [fromRoomId], references: [id], onDelete: Cascade)
+  direction  String
+  toRoomId   String
+  toRoom     Room   @relation("toRoom", fields: [toRoomId], references: [id], onDelete: Cascade)
+
+  @@unique([fromRoomId, direction])
+}
+
+model Item {
+  id               String  @id
+  name             String
+  description      String
+  type             String
+  slot             String  @default("")
+  damageBonus      Int     @default(0)
+  damageRange      Int     @default(0)
+  armorValue       Int     @default(0)
+  value            Int     @default(0)
+  weight           Int     @default(0)
+  stackable        Boolean @default(false)
+  maxStack         Int     @default(1)
+  useEffect        String  @default("")
+  levelRequirement Int     @default(0)
+  attackSound      String  @default("")
+  missSound        String  @default("")
+  useSound         String  @default("")
+}
+
+model Npc {
+  id           String  @id
+  zoneId       String
+  zone         Zone    @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  name         String
+  description  String
+  startRoomId  String
+  behaviorType String
+  patrolRoute  String  @default("")
+  hostile      Boolean @default(false)
+  maxHp        Int     @default(0)
+  damage       Int     @default(0)
+  level        Int     @default(1)
+  perception   Int     @default(0)
+  xpReward     Int     @default(0)
+  accuracy     Int     @default(0)
+  defense      Int     @default(0)
+  evasion      Int     @default(0)
+  vendorItems  String  @default("")
+  attackSound  String  @default("")
+  missSound    String  @default("")
+  deathSound   String  @default("")
+}
+
+model CharacterClass {
+  id            String @id
+  name          String
+  description   String
+  minimumStats  String
+  skills        String @default("[]")
+  properties    String @default("{}")
+  hpPerLevelMin Int    @default(4)
+  hpPerLevelMax Int    @default(8)
+  mpPerLevelMin Int    @default(0)
+  mpPerLevelMax Int    @default(0)
+  xpModifier    Float  @default(1.0)
+  magicSchools  String @default("{}")
+}
+
+model Race {
+  id            String @id
+  name          String
+  description   String
+  statModifiers String
+  xpModifier    Float  @default(1.0)
+}
+
+model Skill {
+  id                String  @id
+  name              String
+  description       String
+  category          String
+  primaryStat       String
+  secondaryStat     String
+  cooldownTicks     Int     @default(0)
+  manaCost          Int     @default(0)
+  difficulty        Int     @default(15)
+  isPassive         Boolean @default(false)
+  classRestrictions String  @default("[]")
+  properties        String  @default("{}")
+}
+
+model Spell {
+  id             String @id
+  name           String
+  description    String
+  school         String
+  spellType      String
+  manaCost       Int
+  cooldownTicks  Int    @default(0)
+  levelRequired  Int    @default(1)
+  primaryStat    String @default("intellect")
+  basePower      Int    @default(0)
+  targetType     String @default("ENEMY")
+  effectType     String @default("")
+  effectDuration Int    @default(0)
+  castMessage    String @default("")
+  castSound      String @default("")
+  impactSound    String @default("")
+  missSound      String @default("")
+}
+
+model LootTable {
+  id       String @id
+  items    String
+  coinDrop String @default("")
+}
+
+model PromptTemplate {
+  id             Int    @id @default(autoincrement())
+  entityType     String
+  entityId       String
+  prompt         String
+  style          String @default("")
+  negativePrompt String @default("")
+  width          Int    @default(1024)
+  height         Int    @default(576)
+
+  @@unique([entityType, entityId])
+}
+
+model ProjectMeta {
+  key   String @id
+  value String
+}
