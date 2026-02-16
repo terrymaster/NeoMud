@@ -12,12 +12,14 @@
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "adm-zip": "^0.5.16",
     "express": "^4.21.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.2.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/express": "^5.0.0",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

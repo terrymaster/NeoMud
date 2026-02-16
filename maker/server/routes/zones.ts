@@ -1,5 +1,5 @@
-import { Router } from 'express'
-import { db } from '../db.js'
+import { Router, Request, Response, NextFunction } from 'express'
+import { db, isReadOnly } from '../db.js'
 
 export const zonesRouter = Router()
 
@@ -14,6 +14,14 @@ const DIRECTION_OPPOSITES: Record<string, string> = {
   SOUTHEAST: 'NORTHWEST',
   UP: 'DOWN',
   DOWN: 'UP',
+}
+
+function rejectIfReadOnly(_req: Request, res: Response, next: NextFunction) {
+  if (isReadOnly()) {
+    res.status(403).json({ error: 'Project is read-only. Fork it to make changes.' })
+    return
+  }
+  next()
 }
 
 // ─── Zone routes ───────────────────────────────────────────────
@@ -31,7 +39,7 @@ zonesRouter.get('/zones', async (_req, res) => {
 })
 
 // POST /zones — create zone
-zonesRouter.post('/zones', async (req, res) => {
+zonesRouter.post('/zones', rejectIfReadOnly, async (req, res) => {
   try {
     const {
       id, name, description,
@@ -73,7 +81,7 @@ zonesRouter.get('/zones/:id', async (req, res) => {
 })
 
 // PUT /zones/:id — update zone
-zonesRouter.put('/zones/:id', async (req, res) => {
+zonesRouter.put('/zones/:id', rejectIfReadOnly, async (req, res) => {
   try {
     const zone = await db().zone.update({
       where: { id: req.params.id },
@@ -86,7 +94,7 @@ zonesRouter.put('/zones/:id', async (req, res) => {
 })
 
 // DELETE /zones/:id — delete zone (cascades rooms/exits)
-zonesRouter.delete('/zones/:id', async (req, res) => {
+zonesRouter.delete('/zones/:id', rejectIfReadOnly, async (req, res) => {
   try {
     await db().zone.delete({ where: { id: req.params.id } })
     res.json({ ok: true })
@@ -111,7 +119,7 @@ zonesRouter.get('/zones/:zoneId/rooms', async (req, res) => {
 })
 
 // POST /zones/:zoneId/rooms — create room
-zonesRouter.post('/zones/:zoneId/rooms', async (req, res) => {
+zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
   try {
     const { zoneId } = req.params
     const {
@@ -158,7 +166,7 @@ zonesRouter.get('/zones/:zoneId/rooms/:id', async (req, res) => {
 })
 
 // PUT /zones/:zoneId/rooms/:id — update room
-zonesRouter.put('/zones/:zoneId/rooms/:id', async (req, res) => {
+zonesRouter.put('/zones/:zoneId/rooms/:id', rejectIfReadOnly, async (req, res) => {
   try {
     const fullId = `${req.params.zoneId}:${req.params.id}`
     const room = await db().room.update({
@@ -172,7 +180,7 @@ zonesRouter.put('/zones/:zoneId/rooms/:id', async (req, res) => {
 })
 
 // DELETE /zones/:zoneId/rooms/:id — delete room
-zonesRouter.delete('/zones/:zoneId/rooms/:id', async (req, res) => {
+zonesRouter.delete('/zones/:zoneId/rooms/:id', rejectIfReadOnly, async (req, res) => {
   try {
     const fullId = `${req.params.zoneId}:${req.params.id}`
     await db().room.delete({ where: { id: fullId } })
@@ -185,7 +193,7 @@ zonesRouter.delete('/zones/:zoneId/rooms/:id', async (req, res) => {
 // ─── Exit routes ───────────────────────────────────────────────
 
 // POST /rooms/:id/exits — create exit + reverse exit
-zonesRouter.post('/rooms/:id/exits', async (req, res) => {
+zonesRouter.post('/rooms/:id/exits', rejectIfReadOnly, async (req, res) => {
   try {
     const fromRoomId = req.params.id
     const { direction, toRoomId } = req.body
@@ -209,7 +217,7 @@ zonesRouter.post('/rooms/:id/exits', async (req, res) => {
 })
 
 // DELETE /rooms/:id/exits/:dir — delete exit + reverse exit
-zonesRouter.delete('/rooms/:id/exits/:dir', async (req, res) => {
+zonesRouter.delete('/rooms/:id/exits/:dir', rejectIfReadOnly, async (req, res) => {
   try {
     const fromRoomId = req.params.id
     const direction = req.params.dir

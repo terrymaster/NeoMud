@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useParams } from 'react-router-dom';
+import api from '../api';
 import type { CSSProperties } from 'react';
 
 const navItems = [
@@ -35,6 +37,17 @@ const styles: Record<string, CSSProperties> = {
     borderBottom: '1px solid #2a2a4a',
     marginBottom: 8,
   },
+  readOnlyBadge: {
+    display: 'inline-block',
+    fontSize: 10,
+    fontWeight: 600,
+    padding: '2px 6px',
+    borderRadius: 3,
+    backgroundColor: '#3949ab',
+    color: '#fff',
+    marginLeft: 8,
+    verticalAlign: 'middle',
+  },
   nav: {
     display: 'flex',
     flexDirection: 'column',
@@ -64,11 +77,26 @@ const styles: Record<string, CSSProperties> = {
 
 function Layout() {
   const { name } = useParams<{ name: string }>();
+  const [readOnly, setReadOnly] = useState(false);
+
+  useEffect(() => {
+    api
+      .get<{ active: string | null; activeReadOnly: boolean }>('/projects')
+      .then((data) => {
+        if (data.active === name) {
+          setReadOnly(data.activeReadOnly);
+        }
+      })
+      .catch(() => {});
+  }, [name]);
 
   return (
     <div style={styles.container}>
       <div style={styles.sidebar}>
-        <div style={styles.projectName}>{name}</div>
+        <div style={styles.projectName}>
+          {name}
+          {readOnly && <span style={styles.readOnlyBadge}>Read Only</span>}
+        </div>
         <nav style={styles.nav}>
           {navItems.map((item) => (
             <NavLink

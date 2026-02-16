@@ -3,8 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import type { CSSProperties } from 'react';
 
+interface ProjectInfo {
+  name: string;
+  readOnly: boolean;
+}
+
 interface ProjectsResponse {
-  projects: string[];
+  projects: ProjectInfo[];
   active: string | null;
 }
 
@@ -58,12 +63,14 @@ const styles: Record<string, CSSProperties> = {
     backgroundColor: '#fff',
     borderRadius: 6,
     marginBottom: 8,
-    cursor: 'pointer',
     fontSize: 15,
     fontWeight: 500,
     color: '#1a1a2e',
     border: '1px solid #e0e0e0',
     transition: 'background 0.15s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
   },
   empty: {
     color: '#888',
@@ -76,19 +83,47 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 13,
     marginBottom: 12,
   },
+  badge: {
+    fontSize: 11,
+    fontWeight: 600,
+    padding: '2px 8px',
+    borderRadius: 4,
+    backgroundColor: '#e8eaf6',
+    color: '#3949ab',
+    whiteSpace: 'nowrap',
+  },
+  projectName: {
+    flex: 1,
+    cursor: 'pointer',
+  },
+  forkBtn: {
+    padding: '6px 12px',
+    fontSize: 12,
+    fontWeight: 600,
+    backgroundColor: '#3949ab',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 4,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
 };
 
 function ProjectList() {
-  const [projects, setProjects] = useState<string[]>([]);
+  const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const loadProjects = () => {
     api
       .get<ProjectsResponse>('/projects')
       .then((data) => setProjects(data.projects))
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadProjects();
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -114,6 +149,20 @@ function ProjectList() {
     }
   };
 
+  const handleFork = async (sourceName: string) => {
+    const forkName = prompt(`Fork "${sourceName}" as:`, `${sourceName}_copy`);
+    if (!forkName || !forkName.trim()) return;
+    setError('');
+    try {
+      await api.post(`/projects/${encodeURIComponent(sourceName)}/fork`, {
+        newName: forkName.trim(),
+      });
+      loadProjects();
+    } catch (err: any) {
+      setError(err.message || 'Failed to fork project');
+    }
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.container}>
@@ -135,11 +184,10 @@ function ProjectList() {
           <p style={styles.empty}>No projects yet. Create one above.</p>
         ) : (
           <ul style={styles.list}>
-            {projects.map((name) => (
+            {projects.map((proj) => (
               <li
-                key={name}
+                key={proj.name}
                 style={styles.listItem}
-                onClick={() => handleOpen(name)}
                 onMouseEnter={(e) =>
                   ((e.currentTarget as HTMLElement).style.backgroundColor = '#f0f0ff')
                 }
@@ -147,7 +195,26 @@ function ProjectList() {
                   ((e.currentTarget as HTMLElement).style.backgroundColor = '#fff')
                 }
               >
-                {name}
+                <span
+                  style={styles.projectName}
+                  onClick={() => handleOpen(proj.name)}
+                >
+                  {proj.name}
+                </span>
+                {proj.readOnly && (
+                  <>
+                    <span style={styles.badge}>Read Only</span>
+                    <button
+                      style={styles.forkBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFork(proj.name);
+                      }}
+                    >
+                      Fork
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>

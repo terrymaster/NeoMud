@@ -87,7 +87,7 @@ function MapCanvas({
     (gx: number, gy: number) => {
       return {
         px: offset.x + gx * STRIDE + STRIDE / 2,
-        py: offset.y + gy * STRIDE + STRIDE / 2,
+        py: offset.y + -gy * STRIDE + STRIDE / 2,
       };
     },
     [offset]
@@ -97,7 +97,7 @@ function MapCanvas({
   const pixelToGrid = useCallback(
     (px: number, py: number) => {
       const gx = Math.floor((px - offset.x) / STRIDE);
-      const gy = Math.floor((py - offset.y) / STRIDE);
+      const gy = -Math.floor((py - offset.y) / STRIDE);
       return { gx, gy };
     },
     [offset]
