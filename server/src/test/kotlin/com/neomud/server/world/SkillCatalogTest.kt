@@ -1,5 +1,6 @@
 package com.neomud.server.world
 
+import com.neomud.server.defaultWorldSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -8,15 +9,17 @@ import kotlin.test.assertTrue
 
 class SkillCatalogTest {
 
+    private fun load() = SkillCatalog.load(defaultWorldSource())
+
     @Test
     fun testLoadSkillCatalog() {
-        val catalog = SkillCatalog.load()
+        val catalog = load()
         assertTrue(catalog.skillCount > 0, "Should load at least one skill")
     }
 
     @Test
     fun testGetSkillById() {
-        val catalog = SkillCatalog.load()
+        val catalog = load()
         val hide = catalog.getSkill("HIDE")
         assertNotNull(hide)
         assertEquals("Hide", hide.name)
@@ -26,13 +29,13 @@ class SkillCatalogTest {
 
     @Test
     fun testGetNonexistentSkill() {
-        val catalog = SkillCatalog.load()
+        val catalog = load()
         assertNull(catalog.getSkill("NONEXISTENT"))
     }
 
     @Test
     fun testGetAllSkills() {
-        val catalog = SkillCatalog.load()
+        val catalog = load()
         val all = catalog.getAllSkills()
         assertEquals(catalog.skillCount, all.size)
         assertTrue(all.any { it.id == "BACKSTAB" })
@@ -41,7 +44,7 @@ class SkillCatalogTest {
 
     @Test
     fun testGetSkillsForClass() {
-        val catalog = SkillCatalog.load()
+        val catalog = load()
         val thiefSkills = catalog.getSkillsForClass("THIEF")
         assertTrue(thiefSkills.any { it.id == "HIDE" })
         assertTrue(thiefSkills.any { it.id == "BACKSTAB" })
@@ -49,7 +52,7 @@ class SkillCatalogTest {
 
     @Test
     fun testBackstabProperties() {
-        val catalog = SkillCatalog.load()
+        val catalog = load()
         val backstab = catalog.getSkill("BACKSTAB")
         assertNotNull(backstab)
         assertEquals("3", backstab.properties["damageMultiplier"])

@@ -37,7 +37,8 @@ class TrainerCommand(
             unspentCp = player.unspentCp,
             totalCpEarned = player.totalCpEarned,
             baseStats = baseStats,
-            currentStats = player.stats
+            currentStats = player.stats,
+            interactSound = trainer.interactSound
         ))
     }
 
@@ -248,7 +249,8 @@ class TrainerCommand(
             unspentCp = updatedPlayer.unspentCp,
             totalCpEarned = updatedPlayer.totalCpEarned,
             baseStats = baseStats,
-            currentStats = updatedPlayer.stats
+            currentStats = updatedPlayer.stats,
+            interactSound = trainer.interactSound
         ))
     }
 }

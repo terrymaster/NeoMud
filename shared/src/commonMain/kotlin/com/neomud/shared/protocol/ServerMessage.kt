@@ -250,7 +250,8 @@ sealed class ServerMessage {
         val unspentCp: Int,
         val totalCpEarned: Int,
         val baseStats: Stats,
-        val currentStats: Stats
+        val currentStats: Stats,
+        val interactSound: String = ""
     ) : ServerMessage()
 
     @Serializable
@@ -296,7 +297,8 @@ sealed class ServerMessage {
         val items: List<VendorItem>,
         val playerCoins: Coins,
         val playerInventory: List<InventoryItem>,
-        val playerCharm: Int = 0
+        val playerCharm: Int = 0,
+        val interactSound: String = ""
     ) : ServerMessage()
 
     @Serializable

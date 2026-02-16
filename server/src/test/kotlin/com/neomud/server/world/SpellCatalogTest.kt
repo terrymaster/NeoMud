@@ -1,5 +1,6 @@
 package com.neomud.server.world
 
+import com.neomud.server.defaultWorldSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -8,15 +9,17 @@ import kotlin.test.assertTrue
 
 class SpellCatalogTest {
 
+    private fun load() = SpellCatalog.load(defaultWorldSource())
+
     @Test
     fun testLoadSpellCatalog() {
-        val catalog = SpellCatalog.load()
+        val catalog = load()
         assertTrue(catalog.spellCount >= 20, "Should load at least 20 spells, got ${catalog.spellCount}")
     }
 
     @Test
     fun testGetSpellById() {
-        val catalog = SpellCatalog.load()
+        val catalog = load()
         val spell = catalog.getSpell("MAGIC_MISSILE")
         assertNotNull(spell)
         assertEquals("Magic Missile", spell.name)
@@ -26,13 +29,13 @@ class SpellCatalogTest {
 
     @Test
     fun testGetNonexistentSpell() {
-        val catalog = SpellCatalog.load()
+        val catalog = load()
         assertNull(catalog.getSpell("NONEXISTENT"))
     }
 
     @Test
     fun testGetAllSpells() {
-        val catalog = SpellCatalog.load()
+        val catalog = load()
         val all = catalog.getAllSpells()
         assertEquals(catalog.spellCount, all.size)
         assertTrue(all.any { it.id == "FIREBALL" })
@@ -41,7 +44,7 @@ class SpellCatalogTest {
 
     @Test
     fun testGetSpellsForSchool() {
-        val catalog = SpellCatalog.load()
+        val catalog = load()
         val mageSpells = catalog.getSpellsForSchool("mage")
         assertEquals(4, mageSpells.size)
         assertTrue(mageSpells.all { it.school == "mage" })
@@ -61,7 +64,7 @@ class SpellCatalogTest {
 
     @Test
     fun testSpellProperties() {
-        val catalog = SpellCatalog.load()
+        val catalog = load()
         val fireball = catalog.getSpell("FIREBALL")
         assertNotNull(fireball)
         assertEquals(18, fireball.manaCost)

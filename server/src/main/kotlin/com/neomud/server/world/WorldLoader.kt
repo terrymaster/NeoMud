@@ -23,7 +23,7 @@ object WorldLoader {
         val manifest: WorldManifest? = null
     )
 
-    fun load(source: WorldDataSource = ClasspathDataSource()): LoadResult {
+    fun load(source: WorldDataSource): LoadResult {
         // Load manifest if present
         val manifest = source.readText("manifest.json")?.let {
             val m = json.decodeFromString<WorldManifest>(it)

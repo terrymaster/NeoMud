@@ -31,7 +31,5 @@ class SkillCatalog(skills: List<SkillDef>) {
             logger.info("Loaded ${data.skills.size} skills")
             return SkillCatalog(data.skills)
         }
-
-        fun load(): SkillCatalog = load(ClasspathDataSource())
     }
 }

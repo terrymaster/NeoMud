@@ -1,5 +1,6 @@
 package com.neomud.server.world
 
+import com.neomud.server.defaultWorldSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -7,9 +8,11 @@ import kotlin.test.assertTrue
 
 class WorldLoaderTest {
 
+    private fun load() = WorldLoader.load(defaultWorldSource())
+
     @Test
     fun testLoadWorldFromResources() {
-        val result = WorldLoader.load()
+        val result = load()
         val world = result.worldGraph
 
         assertTrue(world.roomCount >= 10, "Should load at least 10 rooms (5 town + 5 forest)")
@@ -17,7 +20,7 @@ class WorldLoaderTest {
 
     @Test
     fun testTownRoomsLoaded() {
-        val result = WorldLoader.load()
+        val result = load()
         val world = result.worldGraph
 
         assertNotNull(world.getRoom("town:square"), "town:square should exist")
@@ -29,7 +32,7 @@ class WorldLoaderTest {
 
     @Test
     fun testForestRoomsLoaded() {
-        val result = WorldLoader.load()
+        val result = load()
         val world = result.worldGraph
 
         assertNotNull(world.getRoom("forest:edge"), "forest:edge should exist")
@@ -41,7 +44,7 @@ class WorldLoaderTest {
 
     @Test
     fun testCrossZoneExits() {
-        val result = WorldLoader.load()
+        val result = load()
         val world = result.worldGraph
 
         val gate = world.getRoom("town:gate")
@@ -57,7 +60,7 @@ class WorldLoaderTest {
 
     @Test
     fun testNpcsLoaded() {
-        val result = WorldLoader.load()
+        val result = load()
         assertTrue(result.npcDataList.isNotEmpty(), "Should load NPCs")
         assertTrue(result.npcDataList.size >= 4, "Should load at least 4 NPCs (2 town + 2 forest)")
 
@@ -74,7 +77,7 @@ class WorldLoaderTest {
 
     @Test
     fun testMonsterNpcsLoaded() {
-        val result = WorldLoader.load()
+        val result = load()
 
         val wolf = result.npcDataList.find { it.first.id == "npc:shadow_wolf" }
         assertNotNull(wolf, "Shadow Wolf should be loaded")
@@ -97,25 +100,25 @@ class WorldLoaderTest {
 
     @Test
     fun testDefaultSpawnRoom() {
-        val result = WorldLoader.load()
+        val result = load()
         assertEquals("town:temple", result.worldGraph.defaultSpawnRoom)
     }
 
     @Test
     fun testClassCatalogLoaded() {
-        val result = WorldLoader.load()
+        val result = load()
         assertEquals(15, result.classCatalog.classCount)
     }
 
     @Test
     fun testItemCatalogLoaded() {
-        val result = WorldLoader.load()
+        val result = load()
         assertTrue(result.itemCatalog.itemCount >= 10, "Should load at least 10 items")
     }
 
     @Test
     fun testLootTableCatalogLoaded() {
-        val result = WorldLoader.load()
+        val result = load()
         assertTrue(result.lootTableCatalog.tableCount >= 2, "Should load at least 2 loot tables")
     }
 }

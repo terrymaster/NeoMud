@@ -55,6 +55,7 @@ function NpcEditor() {
     { key: 'accuracy', label: 'Accuracy', type: 'number' },
     { key: 'defense', label: 'Defense', type: 'number' },
     { key: 'evasion', label: 'Evasion', type: 'number' },
+    { key: 'agility', label: 'Agility', type: 'number' },
     { key: 'perception', label: 'Perception', type: 'number' },
     { key: 'xpReward', label: 'XP Reward', type: 'number' },
     { key: 'patrolRoute', label: 'Patrol Route (JSON)', type: 'json', rows: 3, help: 'Array of room IDs, e.g. ["zone:room1","zone:room2"]' },
@@ -62,6 +63,7 @@ function NpcEditor() {
     { key: 'attackSound', label: 'Attack Sound', type: 'text' },
     { key: 'missSound', label: 'Miss Sound', type: 'text' },
     { key: 'deathSound', label: 'Death Sound', type: 'text' },
+    { key: 'interactSound', label: 'Interact Sound', type: 'text' },
   ];
 
   return <GenericCrudEditor entityName="NPC" apiPath="/npcs" fields={fields} imagePreview={{ entityType: 'npc' }} />;

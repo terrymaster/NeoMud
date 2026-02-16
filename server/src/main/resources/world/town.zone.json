@@ -94,7 +94,8 @@
       "name": "Guildmaster Aldric",
       "description": "A weathered veteran in ornate armor, bearing the scars of countless battles. His keen eyes assess you with the practiced gaze of someone who has trained hundreds of warriors. He serves as the guild trainer for all adventurers.",
       "startRoomId": "town:square",
-      "behaviorType": "trainer"
+      "behaviorType": "trainer",
+      "interactSound": "trainer_greet"
     },
     {
       "id": "npc:blacksmith",
@@ -102,6 +103,7 @@
       "description": "A brawny human blacksmith with arms like oak branches and a soot-stained leather apron. He works the forge with practiced ease, hammer ringing against glowing steel. Racks of weapons and armor line the walls of his shop.",
       "startRoomId": "town:market",
       "behaviorType": "vendor",
+      "interactSound": "vendor_greet",
       "vendorItems": [
         "item:iron_sword",
         "item:wooden_shield",

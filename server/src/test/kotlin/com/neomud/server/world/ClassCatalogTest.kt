@@ -1,5 +1,6 @@
 package com.neomud.server.world
 
+import com.neomud.server.defaultWorldSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -8,15 +9,17 @@ import kotlin.test.assertTrue
 
 class ClassCatalogTest {
 
+    private fun load() = ClassCatalog.load(defaultWorldSource())
+
     @Test
     fun testLoadClassesFromJson() {
-        val catalog = ClassCatalog.load()
+        val catalog = load()
         assertEquals(15, catalog.classCount)
     }
 
     @Test
     fun testLookupWarrior() {
-        val catalog = ClassCatalog.load()
+        val catalog = load()
         val warrior = catalog.getClass("WARRIOR")
         assertNotNull(warrior)
         assertEquals("Warrior", warrior.name)
@@ -28,7 +31,7 @@ class ClassCatalogTest {
 
     @Test
     fun testLookupMage() {
-        val catalog = ClassCatalog.load()
+        val catalog = load()
         val mage = catalog.getClass("MAGE")
         assertNotNull(mage)
         assertEquals("Mage", mage.name)
@@ -39,13 +42,13 @@ class ClassCatalogTest {
 
     @Test
     fun testUnknownClassReturnsNull() {
-        val catalog = ClassCatalog.load()
+        val catalog = load()
         assertNull(catalog.getClass("UNKNOWN"))
     }
 
     @Test
     fun testGetAllClasses() {
-        val catalog = ClassCatalog.load()
+        val catalog = load()
         val all = catalog.getAllClasses()
         assertEquals(15, all.size)
         val ids = all.map { it.id }.toSet()
@@ -58,7 +61,7 @@ class ClassCatalogTest {
 
     @Test
     fun testAllClassesHaveHpRanges() {
-        val catalog = ClassCatalog.load()
+        val catalog = load()
         for (cls in catalog.getAllClasses()) {
             assertTrue(cls.hpPerLevelMax >= cls.hpPerLevelMin, "${cls.id} hpPerLevelMax < hpPerLevelMin")
             assertTrue(cls.hpPerLevelMin >= 3, "${cls.id} hpPerLevelMin too low")

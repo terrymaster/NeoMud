@@ -1,5 +1,6 @@
 package com.neomud.server.world
 
+import com.neomud.server.defaultWorldSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -8,15 +9,17 @@ import kotlin.test.assertTrue
 
 class PromptTemplateCatalogTest {
 
+    private fun load() = PromptTemplateCatalog.load(defaultWorldSource())
+
     @Test
     fun testLoadPromptTemplates() {
-        val catalog = PromptTemplateCatalog.load()
+        val catalog = load()
         assertEquals(29, catalog.templateCount, "Should load 29 prompt templates")
     }
 
     @Test
     fun testGetRoomTemplate() {
-        val catalog = PromptTemplateCatalog.load()
+        val catalog = load()
         val template = catalog.getTemplate("room:town:square")
         assertNotNull(template)
         assertEquals("room", template.entityType)
@@ -28,7 +31,7 @@ class PromptTemplateCatalogTest {
 
     @Test
     fun testGetNpcTemplate() {
-        val catalog = PromptTemplateCatalog.load()
+        val catalog = load()
         val template = catalog.getTemplate("npc:npc:shadow_wolf")
         assertNotNull(template)
         assertEquals("npc", template.entityType)
@@ -37,7 +40,7 @@ class PromptTemplateCatalogTest {
 
     @Test
     fun testGetItemTemplate() {
-        val catalog = PromptTemplateCatalog.load()
+        val catalog = load()
         val template = catalog.getTemplate("item:item:iron_sword")
         assertNotNull(template)
         assertEquals("item", template.entityType)
@@ -46,7 +49,7 @@ class PromptTemplateCatalogTest {
 
     @Test
     fun testGetTemplatesByType() {
-        val catalog = PromptTemplateCatalog.load()
+        val catalog = load()
         val rooms = catalog.getTemplatesByType("room")
         assertEquals(10, rooms.size, "Should have 10 room templates")
         val npcs = catalog.getTemplatesByType("npc")
@@ -57,7 +60,7 @@ class PromptTemplateCatalogTest {
 
     @Test
     fun testUnknownKeyReturnsNull() {
-        val catalog = PromptTemplateCatalog.load()
+        val catalog = load()
         assertNull(catalog.getTemplate("room:nonexistent"))
     }
 }

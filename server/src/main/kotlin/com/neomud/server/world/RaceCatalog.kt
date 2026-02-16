@@ -28,7 +28,5 @@ class RaceCatalog(races: List<RaceDef>) {
             logger.info("Loaded ${data.races.size} races")
             return RaceCatalog(data.races)
         }
-
-        fun load(): RaceCatalog = load(ClasspathDataSource())
     }
 }

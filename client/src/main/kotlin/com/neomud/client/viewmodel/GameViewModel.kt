@@ -144,6 +144,12 @@ class GameViewModel(
         _player.value = player
     }
 
+    fun setInitialRoomInfo(roomInfo: ServerMessage.RoomInfo) {
+        _roomInfo.value = roomInfo
+        _roomEntities.value = roomInfo.npcs
+        bgm(roomInfo.room.bgm)
+    }
+
     fun setInitialCatalogs(
         classes: List<CharacterClassDef> = emptyList(),
         items: List<Item> = emptyList(),
@@ -423,6 +429,7 @@ class GameViewModel(
                 }
             }
             is ServerMessage.VendorInfo -> {
+                sfx(message.interactSound)
                 _vendorInfo.value = message
                 _showVendor.value = true
             }
@@ -471,6 +478,7 @@ class GameViewModel(
                 if (_showTrainer.value) interactTrainer()
             }
             is ServerMessage.TrainerInfo -> {
+                sfx(message.interactSound)
                 _trainerInfo.value = message
                 _showTrainer.value = true
                 _player.value = _player.value?.copy(

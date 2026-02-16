@@ -1,5 +1,6 @@
 package com.neomud.server.game.npc
 
+import com.neomud.server.defaultWorldSource
 import com.neomud.server.world.WorldLoader
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -7,9 +8,11 @@ import kotlin.test.assertNotNull
 
 class NpcManagerTest {
 
+    private fun load() = WorldLoader.load(defaultWorldSource())
+
     @Test
     fun testNpcsAliveAfterLoad() {
-        val result = WorldLoader.load()
+        val result = load()
         val npcManager = NpcManager(result.worldGraph)
         npcManager.loadNpcs(result.npcDataList)
 
@@ -26,7 +29,7 @@ class NpcManagerTest {
 
     @Test
     fun testHostileNpcsAliveAfterLoad() {
-        val result = WorldLoader.load()
+        val result = load()
         val npcManager = NpcManager(result.worldGraph)
         npcManager.loadNpcs(result.npcDataList)
 
@@ -46,7 +49,7 @@ class NpcManagerTest {
 
     @Test
     fun testMarkDeadFiltersNpc() {
-        val result = WorldLoader.load()
+        val result = load()
         val npcManager = NpcManager(result.worldGraph)
         npcManager.loadNpcs(result.npcDataList)
 

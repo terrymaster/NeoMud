@@ -60,5 +60,6 @@ data class NpcData(
     val agility: Int = 10,
     val attackSound: String = "",
     val missSound: String = "",
-    val deathSound: String = ""
+    val deathSound: String = "",
+    val interactSound: String = ""
 )

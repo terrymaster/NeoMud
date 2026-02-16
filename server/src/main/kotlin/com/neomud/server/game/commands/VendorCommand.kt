@@ -43,7 +43,8 @@ class VendorCommand(
             items = vendorItems,
             playerCoins = playerCoins,
             playerInventory = playerInventory,
-            playerCharm = player.stats.charm
+            playerCharm = player.stats.charm,
+            interactSound = vendor.interactSound
         ))
     }
 

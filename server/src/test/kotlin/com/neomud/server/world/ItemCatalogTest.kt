@@ -1,5 +1,6 @@
 package com.neomud.server.world
 
+import com.neomud.server.defaultWorldSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -8,15 +9,17 @@ import kotlin.test.assertTrue
 
 class ItemCatalogTest {
 
+    private fun load() = ItemCatalog.load(defaultWorldSource())
+
     @Test
     fun testLoadItemsFromJson() {
-        val catalog = ItemCatalog.load()
+        val catalog = load()
         assertTrue(catalog.itemCount >= 10, "Should load at least 10 items")
     }
 
     @Test
     fun testLookupWeapon() {
-        val catalog = ItemCatalog.load()
+        val catalog = load()
         val sword = catalog.getItem("item:iron_sword")
         assertNotNull(sword)
         assertEquals("Iron Sword", sword.name)
@@ -28,7 +31,7 @@ class ItemCatalogTest {
 
     @Test
     fun testLookupArmor() {
-        val catalog = ItemCatalog.load()
+        val catalog = load()
         val chest = catalog.getItem("item:leather_chest")
         assertNotNull(chest)
         assertEquals("Leather Vest", chest.name)
@@ -39,7 +42,7 @@ class ItemCatalogTest {
 
     @Test
     fun testLookupConsumable() {
-        val catalog = ItemCatalog.load()
+        val catalog = load()
         val potion = catalog.getItem("item:health_potion")
         assertNotNull(potion)
         assertEquals("Health Potion", potion.name)
@@ -50,13 +53,13 @@ class ItemCatalogTest {
 
     @Test
     fun testUnknownItemReturnsNull() {
-        val catalog = ItemCatalog.load()
+        val catalog = load()
         assertNull(catalog.getItem("item:nonexistent"))
     }
 
     @Test
     fun testGetAllItems() {
-        val catalog = ItemCatalog.load()
+        val catalog = load()
         val all = catalog.getAllItems()
         assertTrue(all.size >= 10)
         val ids = all.map { it.id }.toSet()

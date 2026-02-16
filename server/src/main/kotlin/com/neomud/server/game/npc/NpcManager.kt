@@ -36,7 +36,8 @@ data class NpcState(
     val agility: Int = 10,
     val attackSound: String = "",
     val missSound: String = "",
-    val deathSound: String = ""
+    val deathSound: String = "",
+    val interactSound: String = ""
 ) {
     /** Set by [NpcManager.markDead] to prevent double-processing kills. */
     var deathProcessed: Boolean = false
@@ -117,7 +118,8 @@ class NpcManager(
             agility = data.agility,
             attackSound = data.attackSound,
             missSound = data.missSound,
-            deathSound = data.deathSound
+            deathSound = data.deathSound,
+            interactSound = data.interactSound
         )
     }
 
@@ -232,7 +234,8 @@ class NpcManager(
                 maxHp = npcState.maxHp,
                 attackSound = npcState.attackSound,
                 missSound = npcState.missSound,
-                deathSound = npcState.deathSound
+                deathSound = npcState.deathSound,
+                interactSound = npcState.interactSound
             )
         }
     }

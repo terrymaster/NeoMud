@@ -267,10 +267,12 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           accuracy: npc.accuracy ?? 0,
           defense: npc.defense ?? 0,
           evasion: npc.evasion ?? 0,
+          agility: npc.agility ?? 10,
           vendorItems: JSON.stringify(npc.vendorItems ?? []),
           attackSound: npc.attackSound ?? '',
           missSound: npc.missSound ?? '',
           deathSound: npc.deathSound ?? '',
+          interactSound: npc.interactSound ?? '',
         },
       })
     }

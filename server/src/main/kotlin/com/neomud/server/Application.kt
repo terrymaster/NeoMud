@@ -19,7 +19,6 @@ import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.plugins.configureRouting
 import com.neomud.server.plugins.configureWebSockets
 import com.neomud.server.session.SessionManager
-import com.neomud.server.world.ClasspathDataSource
 import com.neomud.server.world.NmdBundleDataSource
 import com.neomud.server.world.WorldDataSource
 import com.neomud.server.world.WorldLoader
@@ -62,23 +61,17 @@ fun main() {
     }.start(wait = true)
 }
 
-fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: String? = null, adminUsernamesOverride: Set<String>? = null) {
+fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: String = "build/worlds/default-world.nmd", adminUsernamesOverride: Set<String>? = null) {
     // Initialize database
     DatabaseFactory.init(jdbcUrl)
 
-    // Select world data source
-    val dataSource: WorldDataSource = if (worldFile != null) {
-        val file = File(worldFile)
-        if (file.exists()) {
-            logger.info("Loading world from bundle: $worldFile")
-            NmdBundleDataSource(ZipFile(file))
-        } else {
-            logger.warn("World bundle not found at $worldFile, falling back to classpath resources")
-            ClasspathDataSource()
-        }
-    } else {
-        ClasspathDataSource()
+    // Load world from .nmd bundle
+    val file = File(worldFile)
+    if (!file.exists()) {
+        error("World bundle not found at $worldFile. Run './gradlew packageWorld' or set NEOMUD_WORLD to a valid .nmd file.")
     }
+    logger.info("Loading world from bundle: $worldFile")
+    val dataSource: WorldDataSource = NmdBundleDataSource(ZipFile(file))
 
     // Load world
     val loadResult = WorldLoader.load(dataSource)

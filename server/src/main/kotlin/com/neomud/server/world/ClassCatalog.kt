@@ -28,7 +28,5 @@ class ClassCatalog(classes: List<CharacterClassDef>) {
             logger.info("Loaded ${data.classes.size} character classes")
             return ClassCatalog(data.classes)
         }
-
-        fun load(): ClassCatalog = load(ClasspathDataSource())
     }
 }

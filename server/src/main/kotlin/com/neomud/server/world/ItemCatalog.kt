@@ -28,7 +28,5 @@ class ItemCatalog(items: List<Item>) {
             logger.info("Loaded ${data.items.size} items")
             return ItemCatalog(data.items)
         }
-
-        fun load(): ItemCatalog = load(ClasspathDataSource())
     }
 }

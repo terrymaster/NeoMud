@@ -36,7 +36,5 @@ class LootTableCatalog(private val tables: Map<String, LootTableEntry>) {
             logger.info("Loaded ${data.tables.size} loot tables")
             return LootTableCatalog(data.tables)
         }
-
-        fun load(): LootTableCatalog = load(ClasspathDataSource())
     }
 }

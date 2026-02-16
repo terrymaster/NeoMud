@@ -39,7 +39,5 @@ class PromptTemplateCatalog(private val templates: Map<String, PromptTemplate>) 
             logger.info("Loaded ${map.size} prompt templates")
             return PromptTemplateCatalog(map)
         }
-
-        fun load(): PromptTemplateCatalog = load(ClasspathDataSource())
     }
 }

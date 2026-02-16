@@ -38,6 +38,11 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 }
 
+tasks.named<Test>("test") {
+    dependsOn("packageWorld")
+    workingDir = project.projectDir
+}
+
 kotlin {
     jvmToolchain(21)
 }

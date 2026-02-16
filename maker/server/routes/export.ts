@@ -83,10 +83,12 @@ exportRouter.get('/json', async (_req, res) => {
           accuracy: npc.accuracy,
           defense: npc.defense,
           evasion: npc.evasion,
+          agility: npc.agility,
           vendorItems: parseJsonField(npc.vendorItems, []),
           attackSound: npc.attackSound,
           missSound: npc.missSound,
           deathSound: npc.deathSound,
+          interactSound: npc.interactSound,
         }
       }
 
@@ -311,10 +313,12 @@ exportRouter.get('/nmd', async (_req, res) => {
           accuracy: npc.accuracy,
           defense: npc.defense,
           evasion: npc.evasion,
+          agility: npc.agility,
           vendorItems: parseJsonField(npc.vendorItems, []),
           attackSound: npc.attackSound,
           missSound: npc.missSound,
           deathSound: npc.deathSound,
+          interactSound: npc.interactSound,
         })),
       }
       zip.addFile(`world/${zone.id}.zone.json`, Buffer.from(JSON.stringify(zoneOut, null, 2)))

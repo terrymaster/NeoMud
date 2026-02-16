@@ -87,10 +87,12 @@ model Npc {
   accuracy     Int     @default(0)
   defense      Int     @default(0)
   evasion      Int     @default(0)
+  agility      Int     @default(10)
   vendorItems  String  @default("")
   attackSound  String  @default("")
   missSound    String  @default("")
   deathSound   String  @default("")
+  interactSound String @default("")
 }
 
 model CharacterClass {

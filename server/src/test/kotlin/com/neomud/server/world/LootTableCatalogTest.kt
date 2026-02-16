@@ -1,5 +1,6 @@
 package com.neomud.server.world
 
+import com.neomud.server.defaultWorldSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -8,15 +9,17 @@ import kotlin.test.assertTrue
 
 class LootTableCatalogTest {
 
+    private fun load() = LootTableCatalog.load(defaultWorldSource())
+
     @Test
     fun testLoadLootTablesFromJson() {
-        val catalog = LootTableCatalog.load()
+        val catalog = load()
         assertTrue(catalog.tableCount >= 2, "Should load at least 2 loot tables")
     }
 
     @Test
     fun testShadowWolfLootTable() {
-        val catalog = LootTableCatalog.load()
+        val catalog = load()
         val loot = catalog.getLootTable("npc:shadow_wolf")
         assertTrue(loot.isNotEmpty(), "Shadow wolf should have loot entries")
         val wolfPelt = loot.find { it.itemId == "item:wolf_pelt" }
@@ -26,7 +29,7 @@ class LootTableCatalogTest {
 
     @Test
     fun testForestSpiderLootTable() {
-        val catalog = LootTableCatalog.load()
+        val catalog = load()
         val loot = catalog.getLootTable("npc:forest_spider")
         assertTrue(loot.isNotEmpty(), "Forest spider should have loot entries")
         val fang = loot.find { it.itemId == "item:spider_fang" }
@@ -38,14 +41,14 @@ class LootTableCatalogTest {
 
     @Test
     fun testUnknownNpcReturnsEmptyList() {
-        val catalog = LootTableCatalog.load()
+        val catalog = load()
         val loot = catalog.getLootTable("npc:nonexistent")
         assertTrue(loot.isEmpty())
     }
 
     @Test
     fun testShadowWolfCoinDrop() {
-        val catalog = LootTableCatalog.load()
+        val catalog = load()
         val coinDrop = catalog.getCoinDrop("npc:shadow_wolf")
         assertNotNull(coinDrop)
         assertEquals(5, coinDrop.minCopper)
@@ -56,7 +59,7 @@ class LootTableCatalogTest {
 
     @Test
     fun testForestSpiderCoinDrop() {
-        val catalog = LootTableCatalog.load()
+        val catalog = load()
         val coinDrop = catalog.getCoinDrop("npc:forest_spider")
         assertNotNull(coinDrop)
         assertEquals(2, coinDrop.minCopper)
@@ -67,7 +70,7 @@ class LootTableCatalogTest {
 
     @Test
     fun testUnknownNpcCoinDropReturnsNull() {
-        val catalog = LootTableCatalog.load()
+        val catalog = load()
         assertNull(catalog.getCoinDrop("npc:nonexistent"))
     }
 }

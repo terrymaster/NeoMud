@@ -40,6 +40,9 @@ class AuthViewModel : ViewModel() {
     private var pendingLoginUsername: String? = null
     private var pendingLoginPassword: String? = null
 
+    private val _initialRoomInfo = MutableStateFlow<ServerMessage.RoomInfo?>(null)
+    val initialRoomInfo: StateFlow<ServerMessage.RoomInfo?> = _initialRoomInfo
+
     private var _serverHost: String = ""
     private var _serverPort: Int = 0
     val serverBaseUrl: String get() = "http://$_serverHost:$_serverPort"
@@ -51,7 +54,15 @@ class AuthViewModel : ViewModel() {
                     is ServerMessage.LoginOk -> {
                         pendingLoginUsername = null
                         pendingLoginPassword = null
+                        _initialRoomInfo.value = null
                         _authState.value = AuthState.LoggedIn(message.player)
+                    }
+                    is ServerMessage.RoomInfo -> {
+                        // Capture the initial RoomInfo sent right after LoginOk
+                        // so GameViewModel can use it before its collector subscribes
+                        if (_authState.value is AuthState.LoggedIn) {
+                            _initialRoomInfo.value = message
+                        }
                     }
                     is ServerMessage.RegisterOk -> {
                         // Auto-login after successful registration

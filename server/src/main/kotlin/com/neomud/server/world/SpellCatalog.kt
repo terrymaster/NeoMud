@@ -31,7 +31,5 @@ class SpellCatalog(spells: List<SpellDef>) {
             logger.info("Loaded ${data.spells.size} spells")
             return SpellCatalog(data.spells)
         }
-
-        fun load(): SpellCatalog = load(ClasspathDataSource())
     }
 }
