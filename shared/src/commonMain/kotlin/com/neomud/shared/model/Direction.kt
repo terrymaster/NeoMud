@@ -10,7 +10,11 @@ enum class Direction {
     @SerialName("EAST") EAST,
     @SerialName("WEST") WEST,
     @SerialName("UP") UP,
-    @SerialName("DOWN") DOWN;
+    @SerialName("DOWN") DOWN,
+    @SerialName("NORTHEAST") NORTHEAST,
+    @SerialName("NORTHWEST") NORTHWEST,
+    @SerialName("SOUTHEAST") SOUTHEAST,
+    @SerialName("SOUTHWEST") SOUTHWEST;
 
     fun opposite(): Direction = when (this) {
         NORTH -> SOUTH
@@ -19,5 +23,9 @@ enum class Direction {
         WEST -> EAST
         UP -> DOWN
         DOWN -> UP
+        NORTHEAST -> SOUTHWEST
+        SOUTHWEST -> NORTHEAST
+        NORTHWEST -> SOUTHEAST
+        SOUTHEAST -> NORTHWEST
     }
 }

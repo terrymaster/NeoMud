@@ -255,6 +255,10 @@ class MessageSerializerTest {
         assertEquals(Direction.EAST, Direction.WEST.opposite())
         assertEquals(Direction.DOWN, Direction.UP.opposite())
         assertEquals(Direction.UP, Direction.DOWN.opposite())
+        assertEquals(Direction.SOUTHWEST, Direction.NORTHEAST.opposite())
+        assertEquals(Direction.NORTHEAST, Direction.SOUTHWEST.opposite())
+        assertEquals(Direction.SOUTHEAST, Direction.NORTHWEST.opposite())
+        assertEquals(Direction.NORTHWEST, Direction.SOUTHEAST.opposite())
     }
 
     @Test
