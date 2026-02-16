@@ -81,7 +81,7 @@ NeoMud/
 - Death respawns you at the Temple of the Dawn with a "YOU DIED" overlay
 
 ### NPCs & Spawning
-- 4 behavior types: idle, patrol, wander, trainer
+- 5 behavior types: idle, patrol, wander, trainer, vendor
 - Continuous spawn system — hostile NPCs respawn over time to maintain zone population
 - Per-zone spawn config: max entities, max per room, spawn rate in ticks
 - Spawned copies share template sprites — `shadow_wolf#3` resolves to `shadow_wolf.webp` automatically
@@ -98,12 +98,19 @@ NeoMud/
 - Room-based chat
 - See other players enter and leave
 - One session per account
-- Player state persisted on disconnect — log back in where you left off
+- Player state persisted on disconnect — log back in where you left off with full room state restored
+- Game state mutex and rate limiter for server-side hardening
 
 ### Audio
 - Per-zone background music with crossfade on zone transitions
 - Sound effects for combat, movement, spells, and item interactions
+- NPC interact sounds — audio feedback when opening trainer or vendor panels
 - Configurable volume controls for BGM and SFX independently
+
+### Active Skills
+- Class-based skill activation (Bash, Kick, Backstab, Hide, etc.) via action panel
+- Locked exits requiring keys or items to pass
+- Contextual action buttons — permanent class actions separated from situational ones (shop, train, level up)
 
 ### Client Navigation
 - 10-direction pad: N, S, E, W, NE, NW, SE, SW, Up, Down
@@ -119,8 +126,12 @@ A web-based world editor for building and managing game worlds without touching 
 - **Read-only projects** — the default world can be browsed but not modified; fork it to create an editable copy
 - **Visual zone editor** — drag-and-drop room placement on a grid canvas, click-to-connect exits with automatic bidirectional linking
 - **Zone/room/exit CRUD** — full create, update, delete for zones, rooms, and exits via REST API
-- **Export** — export any project as NeoMUD-compatible JSON for the game server
-- **Prisma schema** — 11 entity types: Zone, Room, Exit, Item, NPC, CharacterClass, Race, Skill, Spell, LootTable, PromptTemplate
+- **Entity editors** — full CRUD for all catalog types: Items, NPCs, Classes, Races, Skills, Spells, Loot Tables
+- **Image previews** — room backgrounds and NPC sprites shown inline in editors
+- **Prompt template editor** — configure AI art generation prompts per entity
+- **Export** — export any project as `.nmd` bundle or raw JSON for the game server
+- **Import** — import existing `.nmd` bundles into new maker projects
+- **Prisma schema** — 12 entity types: Zone, Room, Exit, Item, NPC, CharacterClass, Race, Skill, Spell, LootTable, PromptTemplate, ProjectMeta
 
 ### Running the Maker
 ```bash
@@ -201,25 +212,24 @@ This is an active project. Here's what exists, what's in progress, and where it'
 - [x] Room healing aura (Temple of the Dawn)
 - [x] Player state persistence across sessions
 - [x] 10-direction navigation (cardinal, diagonal, vertical)
-- [x] Audio system with BGM, SFX, and volume controls
-- [x] `.nmd` world bundle format with asset validation
-- [x] NeoMUD Maker — web-based zone editor with visual map canvas
+- [x] Audio system with BGM, SFX, NPC interact sounds, and volume controls
+- [x] `.nmd` world bundle format with asset validation — server loads exclusively from bundles
+- [x] Active skills with class-based activation and locked exits
+- [x] Action panel with permanent class actions separated from contextual buttons
+- [x] Admin system with slash commands and inline autocomplete
+- [x] Multiplayer hardening — game state mutex, rate limiter, frame size cap
+- [x] NeoMUD Maker — web-based world editor with all entity editors, visual map canvas, import/export
 - [x] Default world import with read-only projects and fork workflow
 
 ### Up Next
 - [ ] **Game Balance Pass** — rebalance combat, XP curves, item stats, and NPC difficulty across all content
 - [ ] **Missing Item Art** — add icons for items without sprites (e.g., leather chest piece)
 - [ ] **Player Status Condensing** — compact the HP/MP/XP status panel, explore horizontal orientation
-- [ ] **Action Panel Reorganization** — separate permanent class actions (attack, hide, spells) from contextual actions (level up, shop, train)
 - [ ] **Equipment Upgrades** — tiered gear, enchantments, item rarity system
 - [ ] **NPC Dialogue** — conversation trees, quest givers, lore NPCs
 - [ ] **Quest System** — kill quests, fetch quests, quest log, rewards
 
 ### NeoMUD Maker — Next Steps
-- [ ] **Item Editor** — create and edit items with stat previews
-- [ ] **NPC Designer** — create NPCs with stats, behaviors, and loot tables
-- [ ] **Class/Race/Skill/Spell Editors** — full CRUD for all catalog types
-- [ ] **Loot Table Editor** — visual drop rate configuration
 - [ ] **AI Art Pipeline** — generate room backgrounds, NPC sprites, and item icons from prompt templates
 - [ ] **AI Sound Design** — generate ambient audio, combat sounds, and zone music from descriptions
 - [ ] **Live Preview** — test your world in-client without restarting the server
