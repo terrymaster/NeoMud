@@ -23,6 +23,8 @@ class LootTableCatalog(private val tables: Map<String, LootTableEntry>) {
 
     fun getCoinDrop(npcId: String): CoinDrop? = tables[npcId]?.coinDrop
 
+    fun getAllEntries(): Map<String, LootTableEntry> = tables
+
     companion object {
         private val logger = LoggerFactory.getLogger(LootTableCatalog::class.java)
         private val json = Json { ignoreUnknownKeys = true }

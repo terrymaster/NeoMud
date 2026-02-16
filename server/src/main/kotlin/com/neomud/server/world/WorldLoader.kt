@@ -77,6 +77,75 @@ object WorldLoader {
         worldGraph.setDefaultSpawn(dataDefinedSpawn ?: "town:square")
         logger.info("World loaded: ${worldGraph.roomCount} rooms, ${allNpcData.size} NPCs")
 
+        // Item data validation
+        val validSlots = setOf("weapon", "head", "chest", "legs", "feet", "shield", "hands")
+        for (item in itemCatalog.getAllItems()) {
+            if (item.type == "weapon") {
+                if (item.slot.isBlank()) logger.warn("Weapon '${item.id}' missing slot (should be \"weapon\")")
+                if (item.damageBonus == 0 && item.damageRange == 0) logger.warn("Weapon '${item.id}' has zero damageBonus and zero damageRange")
+            }
+            if (item.type == "armor" && item.armorValue == 0) {
+                logger.warn("Armor '${item.id}' has zero armorValue")
+            }
+            if (item.type == "consumable" && item.useEffect.isBlank()) {
+                logger.warn("Consumable '${item.id}' missing useEffect")
+            }
+            if (item.stackable && item.maxStack <= 1) {
+                logger.warn("Item '${item.id}' is stackable but maxStack=${item.maxStack}")
+            }
+            if (item.slot.isNotBlank() && item.slot !in validSlots) {
+                logger.warn("Item '${item.id}' has unknown slot '${item.slot}'")
+            }
+        }
+
+        // NPC data validation
+        for ((npcData, _) in allNpcData) {
+            if (npcData.hostile) {
+                if (npcData.maxHp == 0) logger.warn("Hostile NPC '${npcData.id}' has maxHp=0")
+                if (npcData.damage == 0) logger.warn("Hostile NPC '${npcData.id}' has damage=0")
+                if (npcData.xpReward == 0L) logger.warn("Hostile NPC '${npcData.id}' has xpReward=0")
+                if (lootTableCatalog.getLootTable(npcData.id).isEmpty()) {
+                    logger.warn("Hostile NPC '${npcData.id}' has no loot table entry")
+                }
+            }
+            if (npcData.vendorItems.isNotEmpty()) {
+                for (itemId in npcData.vendorItems) {
+                    if (itemCatalog.getItem(itemId) == null) {
+                        logger.warn("Vendor NPC '${npcData.id}' references unknown item '$itemId'")
+                    }
+                }
+            }
+            if (npcData.behaviorType == "vendor" && npcData.vendorItems.isEmpty()) {
+                logger.warn("Vendor NPC '${npcData.id}' has empty vendorItems")
+            }
+            if (npcData.behaviorType == "patrol" && npcData.patrolRoute.isEmpty()) {
+                logger.warn("Patrol NPC '${npcData.id}' has empty patrolRoute")
+            }
+            if (worldGraph.getRoom(npcData.startRoomId) == null) {
+                logger.warn("NPC '${npcData.id}' startRoomId '${npcData.startRoomId}' not found in loaded rooms")
+            }
+        }
+
+        // Room data validation
+        for (room in worldGraph.getAllRooms()) {
+            if (room.exits.isEmpty()) logger.warn("Room '${room.id}' has zero exits (isolated)")
+            if (room.backgroundImage.isBlank()) logger.warn("Room '${room.id}' missing backgroundImage")
+            for ((direction, targetId) in room.exits) {
+                if (worldGraph.getRoom(targetId) == null) {
+                    logger.warn("Room '${room.id}' exit $direction points to unknown room '$targetId'")
+                }
+            }
+        }
+
+        // Loot table cross-reference validation
+        for ((npcId, entry) in lootTableCatalog.getAllEntries()) {
+            for (lootEntry in entry.items) {
+                if (itemCatalog.getItem(lootEntry.itemId) == null) {
+                    logger.warn("Loot table '$npcId' references unknown item '${lootEntry.itemId}'")
+                }
+            }
+        }
+
         // Sound field validation
         for (item in itemCatalog.getAllItems()) {
             if (item.type == "weapon") {
