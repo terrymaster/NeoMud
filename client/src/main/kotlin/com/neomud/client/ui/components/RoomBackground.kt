@@ -7,8 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.crossfade
 
 private val FallbackColor = Color(0xFF0D1117)
 
@@ -22,7 +23,7 @@ fun RoomBackground(
     Box(modifier = modifier.background(FallbackColor)) {
         if (imageUrl.isNotEmpty()) {
             AsyncImage(
-                model = coil.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                model = coil3.request.ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
                     .data("$serverBaseUrl$imageUrl")
                     .crossfade(300)
                     .memoryCachePolicy(CachePolicy.ENABLED)

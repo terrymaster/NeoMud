@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.neomud.client.ui.theme.StoneTheme
 
 @Composable

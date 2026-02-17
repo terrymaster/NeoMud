@@ -4,6 +4,13 @@ Active work items and known issues, ordered roughly by priority.
 
 ## High Priority
 
+### Client UI Testing Framework
+- No UI tests exist for the Android client — dependency upgrades like Coil 2→3 can only be verified manually
+- Set up Compose UI testing with `androidx.compose.ui:ui-test-junit4` and test rule infrastructure
+- Add screenshot / snapshot tests for key components (InventoryPanel, EquipmentPanel, VendorPanel, SpriteOverlay, RoomBackground)
+- Add integration tests that verify image loading (AsyncImage renders with Coil) using a mock server or local test assets
+- Consider Paparazzi or Roborazzi for snapshot regression testing without an emulator
+
 ### Room Effects — Future Work
 - ~~HEAL, POISON, DAMAGE, MANA_REGEN, MANA_DRAIN, SANCTUARY implemented~~ ✓
 - Effects should respect immunities or resistances if added later
@@ -37,7 +44,7 @@ Active work items and known issues, ordered roughly by priority.
 - Volume controls in settings panel
 
 ### Dependency Upgrades
-- **Coil 2 → 3**: Package rename `coil` → `coil3`, maven coords change, ~6 files. 25-40% Compose perf gain.
+- ~~**Coil 2 → 3**: Package rename `coil` → `coil3`, maven coords change, ~6 files. 25-40% Compose perf gain.~~ ✓
 - **AGP 8.9 → 9.0**: May need Gradle wrapper update. Built-in Kotlin support in AGP 9.
 - **Exposed 0.57 → 1.0**: Full package rename + API changes. Do separately, high effort.
 - **React 18 → 19**: Coordinated bump of react, react-dom, @types/react, @types/react-dom. Breaking changes in hooks and legacy APIs.

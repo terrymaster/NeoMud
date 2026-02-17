@@ -14,8 +14,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.crossfade
 import com.neomud.shared.model.Coins
 import com.neomud.shared.model.GroundItem
 import com.neomud.shared.model.Item
@@ -87,7 +88,7 @@ fun SpriteOverlay(
                         contentAlignment = Alignment.BottomCenter
                     ) {
                         AsyncImage(
-                            model = coil.request.ImageRequest.Builder(context)
+                            model = coil3.request.ImageRequest.Builder(context)
                                 .data(spriteUrl(serverBaseUrl, npc.id))
                                 .crossfade(200)
                                 .memoryCachePolicy(CachePolicy.ENABLED)
@@ -164,7 +165,7 @@ private fun LootSprite(
         modifier = Modifier.clickable { onClick() }
     ) {
         AsyncImage(
-            model = coil.request.ImageRequest.Builder(context)
+            model = coil3.request.ImageRequest.Builder(context)
                 .data(imageUrl)
                 .crossfade(200)
                 .memoryCachePolicy(CachePolicy.ENABLED)

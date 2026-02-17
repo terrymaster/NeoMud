@@ -21,9 +21,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.neomud.shared.model.EquipmentSlots
 import com.neomud.shared.model.InventoryItem
 import com.neomud.shared.model.Item

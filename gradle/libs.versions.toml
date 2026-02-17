@@ -12,7 +12,7 @@ navigation-compose = "2.8.5"
 lifecycle = "2.10.0"
 logback = "1.5.32"
 bcrypt = "0.10.2"
-coil = "2.7.0"
+coil = "3.3.0"
 
 [libraries]
 # Kotlin
@@ -54,7 +54,8 @@ lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel
 lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 
 # Image Loading
-coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 
 # Logging
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }

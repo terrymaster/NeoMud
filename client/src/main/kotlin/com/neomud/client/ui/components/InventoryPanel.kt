@@ -22,9 +22,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.CachePolicy
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.neomud.shared.model.Coins
 import com.neomud.shared.model.InventoryItem
 import com.neomud.shared.model.Item
@@ -137,14 +138,28 @@ private fun BagGrid(
     modifier: Modifier = Modifier
 ) {
     Text(
-        "Bag",
+        "Consumables & Items",
         color = Color(0xFFFFFF55),
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold
     )
     Spacer(modifier = Modifier.height(4.dp))
 
-    val bagItems = inventory.filter { !it.equipped }
+    val bagItems = inventory
+        .filter { invItem ->
+            if (invItem.equipped) return@filter false
+            val catalogItem = itemCatalog[invItem.itemId]
+            // Exclude items with equipment slots — they show in EquipmentPanel
+            val hasSlot = catalogItem?.slot?.isNotEmpty() ?: invItem.slot.isNotEmpty()
+            !hasSlot
+        }
+        .sortedWith(
+            compareBy<InventoryItem> {
+                if (itemCatalog[it.itemId]?.type == "consumable") 0 else 1
+            }.thenBy {
+                itemCatalog[it.itemId]?.name ?: it.itemId
+            }
+        )
     if (bagItems.isEmpty()) {
         Text("Your bag is empty.", color = Color(0xFF555555), fontSize = 12.sp)
     } else {
