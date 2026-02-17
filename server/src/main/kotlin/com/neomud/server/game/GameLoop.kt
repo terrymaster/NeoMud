@@ -358,18 +358,26 @@ class GameLoop(
             } catch (_: Exception) { /* session closing */ }
         }
 
-        // 6. Room healing aura
+        // 6. Room effects
         for (session in sessionManager.getAllAuthenticatedSessions()) {
             val player = session.player ?: continue
             val roomId = session.currentRoomId ?: continue
             val room = worldGraph.getRoom(roomId) ?: continue
-            if (room.healPerTick > 0 && player.currentHp < player.maxHp) {
-                val healed = minOf(room.healPerTick, player.maxHp - player.currentHp)
-                val newHp = player.currentHp + healed
-                session.player = player.copy(currentHp = newHp)
-                try {
-                    session.send(ServerMessage.EffectTick("Healing Aura", "The temple's aura soothes your wounds. (+$healed HP)", newHp))
-                } catch (_: Exception) { /* session closing */ }
+            for (effect in room.effects) {
+                val p = session.player ?: continue
+                when (effect.type) {
+                    "HEAL" -> {
+                        if (p.currentHp < p.maxHp) {
+                            val healed = minOf(effect.value, p.maxHp - p.currentHp)
+                            val newHp = p.currentHp + healed
+                            session.player = p.copy(currentHp = newHp)
+                            val msg = effect.message.ifEmpty { "A healing aura soothes your wounds. (+$healed HP)" }
+                            try {
+                                session.send(ServerMessage.EffectTick("Healing Aura", msg, newHp, effect.sound))
+                            } catch (_: Exception) { /* session closing */ }
+                        }
+                    }
+                }
             }
         }
     }

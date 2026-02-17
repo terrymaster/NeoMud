@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently --kill-others -n vite,api -c cyan,green \"vite\" \"tsx server/index.ts\"",
+    "dev": "vite",
     "build": "vite build",
     "server": "tsx server/index.ts",
     "db:generate": "prisma generate",

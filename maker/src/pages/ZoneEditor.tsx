@@ -33,7 +33,7 @@ interface Room {
   backgroundImage: string;
   bgm: string;
   departSound: string;
-  healPerTick: number;
+  effects: string;
   lockedExits: string;
   imagePrompt: string;
   imageStyle: string;
@@ -590,15 +590,62 @@ function ZoneEditor() {
               value={roomForm.departSound || ''}
               onChange={(e) => setRoomForm((f) => ({ ...f, departSound: e.target.value }))}
             />
-            <label style={styles.label}>Heal Per Tick</label>
-            <input
-              style={styles.input}
-              type="number"
-              value={roomForm.healPerTick ?? 0}
-              onChange={(e) =>
-                setRoomForm((f) => ({ ...f, healPerTick: parseInt(e.target.value) || 0 }))
-              }
-            />
+            {/* Effects */}
+            <div style={{ ...styles.sectionTitle, marginTop: 12 }}>Effects</div>
+            {(() => {
+              const effectsList: { type: string; value: number; message: string; sound: string }[] = (() => {
+                try { return JSON.parse(roomForm.effects || '[]'); } catch { return []; }
+              })();
+              const updateEffects = (updated: typeof effectsList) =>
+                setRoomForm((f) => ({ ...f, effects: JSON.stringify(updated) }));
+              return (
+                <>
+                  {effectsList.map((eff, i) => (
+                    <div key={i} style={{ padding: '6px 8px', backgroundColor: '#f9f9f9', borderRadius: 4, marginBottom: 4, border: '1px solid #eee' }}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 4 }}>
+                        <select
+                          style={{ ...styles.input, flex: 1 }}
+                          value={eff.type}
+                          onChange={(e) => { const u = [...effectsList]; u[i] = { ...u[i], type: e.target.value }; updateEffects(u); }}
+                        >
+                          <option value="HEAL">HEAL</option>
+                          <option value="POISON">POISON</option>
+                          <option value="MANA_REGEN">MANA_REGEN</option>
+                        </select>
+                        <input
+                          style={{ ...styles.input, width: 50 }}
+                          type="number"
+                          title="Value"
+                          value={eff.value}
+                          onChange={(e) => { const u = [...effectsList]; u[i] = { ...u[i], value: parseInt(e.target.value) || 0 }; updateEffects(u); }}
+                        />
+                        <button
+                          onClick={() => { const u = effectsList.filter((_, j) => j !== i); updateEffects(u); }}
+                          style={{ background: 'none', border: 'none', color: '#d32f2f', cursor: 'pointer', fontWeight: 700, fontSize: 14, padding: '0 4px' }}
+                          title="Remove effect"
+                        >x</button>
+                      </div>
+                      <input
+                        style={{ ...styles.input, marginBottom: 2 }}
+                        placeholder="Message (optional)"
+                        value={eff.message}
+                        onChange={(e) => { const u = [...effectsList]; u[i] = { ...u[i], message: e.target.value }; updateEffects(u); }}
+                      />
+                      <input
+                        style={styles.input}
+                        placeholder="Sound ID (optional)"
+                        value={eff.sound}
+                        onChange={(e) => { const u = [...effectsList]; u[i] = { ...u[i], sound: e.target.value }; updateEffects(u); }}
+                      />
+                    </div>
+                  ))}
+                  <button
+                    style={{ ...styles.btnSmall, width: '100%' }}
+                    onClick={() => updateEffects([...effectsList, { type: 'HEAL', value: 0, message: '', sound: '' }])}
+                  >+ Add Effect</button>
+                </>
+              );
+            })()}
             <div style={{ display: 'flex', gap: 8 }}>
               <button style={styles.btnSmall} onClick={handleSaveRoom}>
                 Save Room

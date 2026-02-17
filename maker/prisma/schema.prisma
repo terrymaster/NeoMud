@@ -32,7 +32,7 @@ model Room {
   x                   Int
   y                   Int
   backgroundImage     String @default("")
-  healPerTick         Int    @default(0)
+  effects             String @default("[]")
   bgm                 String @default("")
   departSound         String @default("")
   lockedExits         String @default("{}")

@@ -1,6 +1,7 @@
 package com.neomud.server.world
 
 import com.neomud.shared.model.Direction
+import com.neomud.shared.model.RoomEffect
 import com.neomud.shared.model.RoomId
 import kotlinx.serialization.Serializable
 
@@ -36,6 +37,7 @@ data class RoomData(
     val exits: Map<Direction, RoomId>,
     val backgroundImage: String = "",
     val healPerTick: Int = 0,
+    val effects: List<RoomEffect> = emptyList(),
     val bgm: String = "",
     val departSound: String = "",
     val lockedExits: Map<Direction, Int> = emptyMap(),

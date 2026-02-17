@@ -5,6 +5,14 @@ import kotlinx.serialization.Serializable
 typealias RoomId = String
 
 @Serializable
+data class RoomEffect(
+    val type: String,
+    val value: Int = 0,
+    val message: String = "",
+    val sound: String = ""
+)
+
+@Serializable
 data class Room(
     val id: RoomId,
     val name: String,
@@ -14,7 +22,7 @@ data class Room(
     val x: Int,
     val y: Int,
     val backgroundImage: String = "",
-    val healPerTick: Int = 0,
+    val effects: List<RoomEffect> = emptyList(),
     val bgm: String = "",
     val departSound: String = "",
     val lockedExits: Map<Direction, Int> = emptyMap()

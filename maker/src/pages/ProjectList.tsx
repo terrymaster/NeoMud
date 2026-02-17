@@ -107,6 +107,17 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     whiteSpace: 'nowrap',
   },
+  deleteBtn: {
+    padding: '6px 12px',
+    fontSize: 12,
+    fontWeight: 600,
+    backgroundColor: '#d32f2f',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 4,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
 };
 
 function ProjectList() {
@@ -162,6 +173,17 @@ function ProjectList() {
       loadProjects();
     } catch (err: any) {
       setError(err.message || 'Failed to fork project');
+    }
+  };
+
+  const handleDelete = async (name: string) => {
+    if (!confirm(`Delete project "${name}"? This cannot be undone.`)) return;
+    setError('');
+    try {
+      await api.del(`/projects/${encodeURIComponent(name)}`);
+      loadProjects();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete project');
     }
   };
 
@@ -252,6 +274,17 @@ function ProjectList() {
                       Fork
                     </button>
                   </>
+                )}
+                {proj.name !== '_default_world' && (
+                  <button
+                    style={styles.deleteBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(proj.name);
+                    }}
+                  >
+                    Delete
+                  </button>
                 )}
               </li>
             ))}

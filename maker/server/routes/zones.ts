@@ -124,7 +124,7 @@ zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
     const { zoneId } = req.params
     const {
       id, name, description, x, y,
-      backgroundImage, healPerTick, bgm, departSound,
+      backgroundImage, effects, bgm, departSound,
     } = req.body
     const fullId = `${zoneId}:${id}`
     const room = await db().room.create({
@@ -136,7 +136,7 @@ zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
         x,
         y,
         backgroundImage: backgroundImage ?? '',
-        healPerTick: healPerTick ?? 0,
+        effects: effects ?? '[]',
         bgm: bgm ?? '',
         departSound: departSound ?? '',
       },

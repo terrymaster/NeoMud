@@ -43,6 +43,10 @@ projectsRouter.post('/', async (req, res) => {
 // DELETE /:name — delete project
 projectsRouter.delete('/:name', async (req, res) => {
   try {
+    if (req.params.name === '_default_world') {
+      res.status(403).json({ error: 'Cannot delete the default world' })
+      return
+    }
     await deleteProject(req.params.name)
     res.json({ ok: true })
   } catch (err: any) {

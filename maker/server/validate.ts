@@ -113,6 +113,7 @@ export async function validateProject(
   }
 
   // ─── Room validation ─────────────────────────────────
+  const knownEffectTypes = new Set(['HEAL', 'POISON', 'MANA_REGEN'])
   for (const zone of zones) {
     for (const room of zone.rooms) {
       if (room.exits.length === 0) warnings.push(`Room '${room.id}' has zero exits (isolated)`)
@@ -120,6 +121,16 @@ export async function validateProject(
       for (const exit of room.exits) {
         if (!allRoomIds.has(exit.toRoomId)) {
           warnings.push(`Room '${room.id}' exit ${exit.direction} points to unknown room '${exit.toRoomId}'`)
+        }
+      }
+      // Validate room effects
+      const roomEffects = parseJsonField((room as any).effects, []) as { type: string; value: number; sound?: string }[]
+      for (const eff of roomEffects) {
+        if (!knownEffectTypes.has(eff.type)) {
+          warnings.push(`Room '${room.id}' has unknown effect type '${eff.type}'`)
+        }
+        if (eff.type === 'HEAL' && eff.value === 0) {
+          warnings.push(`Room '${room.id}' has HEAL effect with value 0`)
         }
       }
     }
@@ -220,6 +231,16 @@ export async function validateProject(
         checkedSfx.add(room.departSound)
         if (!assetExists(sfxPathFor(room.departSound))) {
           warnings.push(`Missing SFX asset: ${sfxPathFor(room.departSound)} (referenced by room '${room.id}')`)
+        }
+      }
+      // Effect sounds
+      const effs = parseJsonField((room as any).effects, []) as { sound?: string }[]
+      for (const eff of effs) {
+        if (eff.sound && !checkedSfx.has(eff.sound)) {
+          checkedSfx.add(eff.sound)
+          if (!assetExists(sfxPathFor(eff.sound))) {
+            warnings.push(`Missing SFX asset: ${sfxPathFor(eff.sound)} (referenced by room '${room.id}' effect)`)
+          }
         }
       }
     }

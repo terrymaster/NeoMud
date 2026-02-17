@@ -1,6 +1,7 @@
 package com.neomud.server.world
 
 import com.neomud.shared.model.Room
+import com.neomud.shared.model.RoomEffect
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
@@ -57,6 +58,12 @@ object WorldLoader {
             logger.info("Loading zone: ${zone.name} (${zone.rooms.size} rooms, ${zone.npcs.size} NPCs)")
 
             for (roomData in zone.rooms) {
+                // Migrate legacy healPerTick to effects list
+                val effects = roomData.effects.ifEmpty {
+                    if (roomData.healPerTick > 0) {
+                        listOf(RoomEffect(type = "HEAL", value = roomData.healPerTick))
+                    } else emptyList()
+                }
                 val room = Room(
                     id = roomData.id,
                     name = roomData.name,
@@ -66,7 +73,7 @@ object WorldLoader {
                     x = roomData.x,
                     y = roomData.y,
                     backgroundImage = roomData.backgroundImage,
-                    healPerTick = roomData.healPerTick,
+                    effects = effects,
                     bgm = roomData.bgm.ifEmpty { zone.bgm },
                     departSound = roomData.departSound,
                     lockedExits = roomData.lockedExits

@@ -132,7 +132,8 @@ sealed class ServerMessage {
     data class EffectTick(
         val effectName: String,
         val message: String,
-        val newHp: Int
+        val newHp: Int,
+        val sound: String = ""
     ) : ServerMessage()
 
     // System

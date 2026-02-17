@@ -83,7 +83,7 @@
         "NORTH": "town:square"
       },
       "backgroundImage": "/assets/images/rooms/town_temple.webp",
-      "healPerTick": 5,
+      "effects": [{"type": "HEAL", "value": 5, "message": "The temple's aura soothes your wounds.", "sound": "healing_aura"}],
       "departSound": "footstep_marble",
       "imagePrompt": "First-person view standing inside a serene stone temple. Flat polished marble floor filling the lower third. Tall stained glass windows on left and right casting rainbow light. A white-draped altar centered ahead at the far wall, incense smoke curling upward. Vaulted stone ceiling. No people or creatures.",
       "imageWidth": 1024,

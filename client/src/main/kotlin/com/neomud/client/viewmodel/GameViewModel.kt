@@ -314,6 +314,7 @@ class GameViewModel(
                 _activeEffects.value = message.effects
             }
             is ServerMessage.EffectTick -> {
+                sfx(message.sound)
                 addLog(message.message, MudColors.effect)
                 _player.value = _player.value?.copy(currentHp = message.newHp)
             }

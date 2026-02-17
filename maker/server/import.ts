@@ -242,7 +242,10 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           x: room.x ?? 0,
           y: room.y ?? 0,
           backgroundImage: room.backgroundImage ?? '',
-          healPerTick: room.healPerTick ?? 0,
+          effects: JSON.stringify(
+            room.effects ??
+            (room.healPerTick > 0 ? [{ type: 'HEAL', value: room.healPerTick }] : [])
+          ),
           bgm: room.bgm ?? '',
           departSound: room.departSound ?? '',
           lockedExits: JSON.stringify(room.lockedExits ?? {}),
