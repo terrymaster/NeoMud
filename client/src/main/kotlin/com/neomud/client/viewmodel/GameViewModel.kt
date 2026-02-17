@@ -316,7 +316,10 @@ class GameViewModel(
             is ServerMessage.EffectTick -> {
                 sfx(message.sound)
                 addLog(message.message, MudColors.effect)
-                _player.value = _player.value?.copy(currentHp = message.newHp)
+                _player.value = _player.value?.let { p ->
+                    val newMp = if (message.newMp >= 0) message.newMp else p.currentMp
+                    p.copy(currentHp = message.newHp, currentMp = newMp)
+                }
             }
             is ServerMessage.SystemMessage -> addLog("[System] ${message.message}", MudColors.system)
             is ServerMessage.Error -> addLog("[Error] ${message.message}", MudColors.error)

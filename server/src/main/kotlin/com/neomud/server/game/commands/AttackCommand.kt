@@ -2,15 +2,27 @@ package com.neomud.server.game.commands
 
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
+import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ServerMessage
 
 class AttackCommand(
-    private val npcManager: NpcManager
+    private val npcManager: NpcManager,
+    private val worldGraph: WorldGraph
 ) {
     suspend fun handleToggle(session: PlayerSession, enabled: Boolean) {
         val roomId = session.currentRoomId ?: return
 
         if (enabled) {
+            // Check for SANCTUARY room effect
+            val room = worldGraph.getRoom(roomId)
+            if (room != null && room.effects.any { it.type == "SANCTUARY" }) {
+                val sanctuaryEffect = room.effects.first { it.type == "SANCTUARY" }
+                val msg = sanctuaryEffect.message.ifEmpty { "A divine sanctuary protects this place. Combat is not allowed here." }
+                session.send(ServerMessage.AttackModeUpdate(false))
+                session.send(ServerMessage.SystemMessage(msg))
+                return
+            }
+
             val hostiles = npcManager.getLivingHostileNpcsInRoom(roomId)
             if (hostiles.isEmpty()) {
                 session.send(ServerMessage.AttackModeUpdate(false))

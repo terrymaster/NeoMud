@@ -11,7 +11,10 @@ enum class EffectType {
     @SerialName("BUFF_AGILITY") BUFF_AGILITY,
     @SerialName("HASTE") HASTE,
     @SerialName("BUFF_INTELLECT") BUFF_INTELLECT,
-    @SerialName("BUFF_WILLPOWER") BUFF_WILLPOWER
+    @SerialName("BUFF_WILLPOWER") BUFF_WILLPOWER,
+    @SerialName("DAMAGE") DAMAGE,
+    @SerialName("MANA_REGEN") MANA_REGEN,
+    @SerialName("MANA_DRAIN") MANA_DRAIN
 }
 
 @Serializable

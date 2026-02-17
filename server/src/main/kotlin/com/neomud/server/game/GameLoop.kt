@@ -14,7 +14,6 @@ import com.neomud.server.world.WorldGraph
 import com.neomud.server.game.npc.NpcState
 import com.neomud.server.session.PlayerSession
 import com.neomud.shared.model.ActiveEffect
-import com.neomud.shared.model.EffectType
 import com.neomud.shared.model.GroundItem
 import com.neomud.shared.model.RoomId
 import com.neomud.shared.protocol.ServerMessage
@@ -318,28 +317,20 @@ class GameLoop(
 
             for (effect in effects) {
                 val player = session.player ?: continue
-                var newHp = player.currentHp
-                val message: String
 
-                when (effect.type) {
-                    EffectType.POISON -> {
-                        newHp = (newHp - effect.magnitude).coerceAtLeast(1)
-                        message = "Poison courses through your veins! (-${effect.magnitude} HP)"
-                    }
-                    EffectType.HEAL_OVER_TIME -> {
-                        newHp = (newHp + effect.magnitude).coerceAtMost(player.maxHp)
-                        message = "You feel a warm healing glow. (+${effect.magnitude} HP)"
-                    }
-                    else -> {
-                        message = "${effect.name} continues to affect you."
-                    }
+                val result = EffectApplicator.applyEffect(effect.type.name, effect.magnitude, "", player)
+                if (result != null) {
+                    session.player = player.copy(currentHp = result.newHp, currentMp = result.newMp)
+                    try {
+                        session.send(ServerMessage.EffectTick(effect.name, result.message, result.newHp, newMp = result.newMp))
+                    } catch (_: Exception) { /* session closing */ }
+                } else {
+                    // Stat buff effects or no-op effects
+                    val message = "${effect.name} continues to affect you."
+                    try {
+                        session.send(ServerMessage.EffectTick(effect.name, message, player.currentHp))
+                    } catch (_: Exception) { /* session closing */ }
                 }
-
-                session.player = player.copy(currentHp = newHp)
-
-                try {
-                    session.send(ServerMessage.EffectTick(effect.name, message, newHp))
-                } catch (_: Exception) { /* session closing */ }
 
                 val updated = effect.copy(remainingTicks = effect.remainingTicks - 1)
                 if (updated.remainingTicks <= 0) {
@@ -365,19 +356,12 @@ class GameLoop(
             val room = worldGraph.getRoom(roomId) ?: continue
             for (effect in room.effects) {
                 val p = session.player ?: continue
-                when (effect.type) {
-                    "HEAL" -> {
-                        if (p.currentHp < p.maxHp) {
-                            val healed = minOf(effect.value, p.maxHp - p.currentHp)
-                            val newHp = p.currentHp + healed
-                            session.player = p.copy(currentHp = newHp)
-                            val msg = effect.message.ifEmpty { "A healing aura soothes your wounds. (+$healed HP)" }
-                            try {
-                                session.send(ServerMessage.EffectTick("Healing Aura", msg, newHp, effect.sound))
-                            } catch (_: Exception) { /* session closing */ }
-                        }
-                    }
-                }
+                val result = EffectApplicator.applyEffect(effect.type, effect.value, effect.message, p) ?: continue
+                session.player = p.copy(currentHp = result.newHp, currentMp = result.newMp)
+                val effectName = effect.type.lowercase().replaceFirstChar { it.uppercase() } + " Aura"
+                try {
+                    session.send(ServerMessage.EffectTick(effectName, result.message, result.newHp, effect.sound, result.newMp))
+                } catch (_: Exception) { /* session closing */ }
             }
         }
     }

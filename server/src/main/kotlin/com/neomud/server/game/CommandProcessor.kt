@@ -68,7 +68,7 @@ class CommandProcessor(
     private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, lockStateManager)
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager)
     private val sayCommand = SayCommand(sessionManager, adminCommand)
-    private val attackCommand = AttackCommand(npcManager)
+    private val attackCommand = AttackCommand(npcManager, worldGraph)
     private val hideCommand = HideCommand(sessionManager, npcManager)
     private val skillKillHandler = SkillKillHandler(npcManager, sessionManager, playerRepository, lootService, lootTableCatalog, roomItemManager)
     private val backstabCommand = BackstabCommand(npcManager, sessionManager, skillKillHandler)

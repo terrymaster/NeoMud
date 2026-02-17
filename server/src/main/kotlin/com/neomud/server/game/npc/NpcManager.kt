@@ -140,7 +140,9 @@ class NpcManager(
             val maxPerRoom = spawnConfig?.maxPerRoom ?: 0
 
             val canMoveTo: (RoomId) -> Boolean = { targetRoomId ->
-                maxPerRoom == 0 || aliveNpcsInRoom(targetRoomId) < maxPerRoom
+                val roomOk = maxPerRoom == 0 || aliveNpcsInRoom(targetRoomId) < maxPerRoom
+                val sanctuaryOk = !npc.hostile || worldGraph.getRoom(targetRoomId)?.effects?.none { it.type == "SANCTUARY" } != false
+                roomOk && sanctuaryOk
             }
 
             when (val action = npc.behavior.tick(npc, worldGraph, canMoveTo)) {

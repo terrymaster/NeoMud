@@ -610,7 +610,10 @@ function ZoneEditor() {
                         >
                           <option value="HEAL">HEAL</option>
                           <option value="POISON">POISON</option>
+                          <option value="DAMAGE">DAMAGE</option>
                           <option value="MANA_REGEN">MANA_REGEN</option>
+                          <option value="MANA_DRAIN">MANA_DRAIN</option>
+                          <option value="SANCTUARY">SANCTUARY</option>
                         </select>
                         <input
                           style={{ ...styles.input, width: 50 }}

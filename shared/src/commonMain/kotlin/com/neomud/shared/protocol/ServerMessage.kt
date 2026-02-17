@@ -133,7 +133,8 @@ sealed class ServerMessage {
         val effectName: String,
         val message: String,
         val newHp: Int,
-        val sound: String = ""
+        val sound: String = "",
+        val newMp: Int = -1
     ) : ServerMessage()
 
     // System

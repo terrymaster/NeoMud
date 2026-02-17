@@ -4,10 +4,10 @@ Active work items and known issues, ordered roughly by priority.
 
 ## High Priority
 
-### Room Effects Processing
-- GameLoop only handles HEAL effects — implement POISON and MANA_REGEN server-side
-- Future effect types: stat buffs/debuffs, damage-over-time, etc.
+### Room Effects — Future Work
+- ~~HEAL, POISON, DAMAGE, MANA_REGEN, MANA_DRAIN, SANCTUARY implemented~~ ✓
 - Effects should respect immunities or resistances if added later
+- Consider room-based stat buff/debuff effects
 
 ### Game Balance Pass
 - Rebalance combat damage, armor values, and HP pools across all NPC tiers

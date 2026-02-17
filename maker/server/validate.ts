@@ -113,7 +113,8 @@ export async function validateProject(
   }
 
   // ─── Room validation ─────────────────────────────────
-  const knownEffectTypes = new Set(['HEAL', 'POISON', 'MANA_REGEN'])
+  const knownEffectTypes = new Set(['HEAL', 'POISON', 'DAMAGE', 'MANA_REGEN', 'MANA_DRAIN', 'SANCTUARY'])
+  const valueRequiredTypes = new Set(['HEAL', 'POISON', 'DAMAGE', 'MANA_REGEN', 'MANA_DRAIN'])
   for (const zone of zones) {
     for (const room of zone.rooms) {
       if (room.exits.length === 0) warnings.push(`Room '${room.id}' has zero exits (isolated)`)
@@ -129,8 +130,8 @@ export async function validateProject(
         if (!knownEffectTypes.has(eff.type)) {
           warnings.push(`Room '${room.id}' has unknown effect type '${eff.type}'`)
         }
-        if (eff.type === 'HEAL' && eff.value === 0) {
-          warnings.push(`Room '${room.id}' has HEAL effect with value 0`)
+        if (valueRequiredTypes.has(eff.type) && eff.value === 0) {
+          warnings.push(`Room '${room.id}' has ${eff.type} effect with value 0`)
         }
       }
     }

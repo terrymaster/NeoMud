@@ -111,6 +111,9 @@ private fun EffectIcon(effect: ActiveEffect) {
         EffectType.BUFF_INTELLECT -> Color(0xFF2196F3) to "\uD83D\uDCA0"
         EffectType.BUFF_WILLPOWER -> Color(0xFF9C27B0) to "\uD83D\uDD2E"
         EffectType.HASTE -> Color(0xFF00BCD4) to "\u21BB"
+        EffectType.DAMAGE -> Color(0xFFFF5722) to "\uD83D\uDD25"
+        EffectType.MANA_REGEN -> Color(0xFF3F51B5) to "\u2728"
+        EffectType.MANA_DRAIN -> Color(0xFF7B1FA2) to "\uD83C\uDF00"
     }
     Box(
         contentAlignment = Alignment.Center,
