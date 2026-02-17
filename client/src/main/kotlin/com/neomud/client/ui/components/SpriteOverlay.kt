@@ -43,11 +43,11 @@ fun SpriteOverlay(
     onSelectTarget: (String?) -> Unit,
     onPickupItem: (String, Int) -> Unit,
     onPickupCoins: (String) -> Unit,
-    serverBaseUrl: String,
     readiedSpellId: String? = null,
     onCastSpell: ((String, String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val serverBaseUrl = LocalServerBaseUrl.current
     Box(modifier = modifier.fillMaxSize()) {
         // NPC sprites — spread along bottom third, horizontally centered
         if (npcs.isNotEmpty()) {

@@ -16,9 +16,9 @@ private val FallbackColor = Color(0xFF0D1117)
 fun RoomBackground(
     imageUrl: String,
     roomName: String,
-    serverBaseUrl: String,
     modifier: Modifier = Modifier
 ) {
+    val serverBaseUrl = LocalServerBaseUrl.current
     Box(modifier = modifier.background(FallbackColor)) {
         if (imageUrl.isNotEmpty()) {
             AsyncImage(

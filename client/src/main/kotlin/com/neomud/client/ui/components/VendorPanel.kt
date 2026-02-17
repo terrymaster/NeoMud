@@ -1,6 +1,7 @@
 package com.neomud.client.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -12,9 +13,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.neomud.shared.model.Coins
 import com.neomud.shared.model.InventoryItem
 import com.neomud.shared.model.Item
@@ -121,6 +127,7 @@ fun VendorPanel(
                                 playerCoins = vendorInfo.playerCoins,
                                 playerLevel = playerLevel,
                                 ownedCount = ownedQty,
+
                                 onBuy = { onBuy(vendorItem.item.id) }
                             )
                         }
@@ -141,6 +148,7 @@ fun VendorPanel(
                                 inventoryItem = invItem,
                                 item = item,
                                 playerCharm = vendorInfo.playerCharm,
+
                                 onSell = { onSell(invItem.itemId) }
                             )
                         }
@@ -163,6 +171,8 @@ private fun BuyItemRow(
     val canAfford = playerCoins.totalCopper() >= vendorItem.price.totalCopper()
     val meetsLevel = playerLevel >= item.levelRequirement
     val canBuy = canAfford && meetsLevel
+    val context = LocalContext.current
+    val serverBaseUrl = LocalServerBaseUrl.current
 
     val nameColor = when {
         !meetsLevel -> Color(0xFF666666)
@@ -176,6 +186,26 @@ private fun BuyItemRow(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(Color(0xFF16213E), RoundedCornerShape(6.dp))
+                .border(1.dp, Color(0xFF333355), RoundedCornerShape(6.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(spriteUrl(serverBaseUrl, item.id))
+                    .crossfade(200)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = item.name,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(32.dp).padding(2.dp)
+            )
+        }
+        Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -248,6 +278,8 @@ private fun SellItemRow(
     val sellPriceCopper = if (itemValue > 0) Coins.sellPriceCopper(itemValue, inventoryItem.quantity, playerCharm) else 0L
     val sellPrice = Coins.fromCopper(sellPriceCopper)
     val canSell = itemValue > 0
+    val context = LocalContext.current
+    val serverBaseUrl = LocalServerBaseUrl.current
 
     Row(
         modifier = Modifier
@@ -255,6 +287,26 @@ private fun SellItemRow(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(Color(0xFF16213E), RoundedCornerShape(6.dp))
+                .border(1.dp, Color(0xFF333355), RoundedCornerShape(6.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(spriteUrl(serverBaseUrl, inventoryItem.itemId))
+                    .crossfade(200)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = itemName,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(32.dp).padding(2.dp)
+            )
+        }
+        Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(

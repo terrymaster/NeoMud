@@ -32,6 +32,7 @@ import com.neomud.client.ui.components.FloatingMiniMap
 import com.neomud.client.ui.components.GameLog
 import com.neomud.client.ui.components.EquipmentPanel
 import com.neomud.client.ui.components.InventoryPanel
+import com.neomud.client.ui.components.LocalServerBaseUrl
 import com.neomud.client.ui.components.MiniMap
 import com.neomud.client.ui.components.PlayerStatusPanel
 import com.neomud.client.ui.components.RoomBackground
@@ -110,6 +111,7 @@ fun GameScreen(
         }
     }
 
+    CompositionLocalProvider(LocalServerBaseUrl provides gameViewModel.serverBaseUrl) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (isLandscape) {
             GameScreenLandscape(
@@ -160,7 +162,7 @@ fun GameScreen(
                 inventory = inventory,
                 itemCatalog = itemCatalog,
                 playerCoins = playerCoins,
-                serverBaseUrl = gameViewModel.serverBaseUrl,
+
                 onUseItem = { itemId -> gameViewModel.useItem(itemId) },
                 onClose = { gameViewModel.toggleInventory() }
             )
@@ -172,7 +174,7 @@ fun GameScreen(
                 inventory = inventory,
                 equipment = equipment,
                 itemCatalog = itemCatalog,
-                serverBaseUrl = gameViewModel.serverBaseUrl,
+
                 onEquipItem = { itemId, slot -> gameViewModel.equipItem(itemId, slot) },
                 onUnequipItem = { slot -> gameViewModel.unequipItem(slot) },
                 onClose = { gameViewModel.toggleEquipment() }
@@ -246,6 +248,7 @@ fun GameScreen(
             )
         }
     }
+    } // CompositionLocalProvider
 }
 
 @Composable
@@ -330,7 +333,7 @@ private fun GameScreenPortrait(
             RoomBackground(
                 imageUrl = currentRoom?.backgroundImage ?: "",
                 roomName = currentRoom?.name ?: "",
-                serverBaseUrl = gameViewModel.serverBaseUrl,
+
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -344,7 +347,7 @@ private fun GameScreenPortrait(
                 onSelectTarget = { gameViewModel.selectTarget(it) },
                 onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
                 onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) },
-                serverBaseUrl = gameViewModel.serverBaseUrl,
+
                 readiedSpellId = readiedSpellId,
                 onCastSpell = { spellId, targetId -> gameViewModel.castSpell(spellId, targetId) },
                 modifier = Modifier.fillMaxSize()
@@ -513,7 +516,7 @@ private fun GameScreenLandscape(
                 RoomBackground(
                     imageUrl = currentRoom?.backgroundImage ?: "",
                     roomName = currentRoom?.name ?: "",
-                    serverBaseUrl = gameViewModel.serverBaseUrl,
+    
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -527,7 +530,7 @@ private fun GameScreenLandscape(
                     onSelectTarget = { gameViewModel.selectTarget(it) },
                     onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
                     onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) },
-                    serverBaseUrl = gameViewModel.serverBaseUrl,
+    
                     readiedSpellId = readiedSpellId,
                     onCastSpell = { spellId, targetId -> gameViewModel.castSpell(spellId, targetId) },
                     modifier = Modifier.fillMaxSize()

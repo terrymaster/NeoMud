@@ -49,10 +49,10 @@ fun InventoryPanel(
     inventory: List<InventoryItem>,
     itemCatalog: Map<String, Item>,
     playerCoins: Coins,
-    serverBaseUrl: String,
     onUseItem: (String) -> Unit,
     onClose: () -> Unit
 ) {
+    val serverBaseUrl = LocalServerBaseUrl.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -97,7 +97,6 @@ fun InventoryPanel(
             BagGrid(
                 inventory = inventory,
                 itemCatalog = itemCatalog,
-                serverBaseUrl = serverBaseUrl,
                 onUseItem = onUseItem,
                 modifier = Modifier.weight(1f)
             )
@@ -134,7 +133,6 @@ private fun CoinsDisplay(playerCoins: Coins) {
 private fun BagGrid(
     inventory: List<InventoryItem>,
     itemCatalog: Map<String, Item>,
-    serverBaseUrl: String,
     onUseItem: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -161,7 +159,6 @@ private fun BagGrid(
                 BagItemCell(
                     invItem = invItem,
                     item = item,
-                    serverBaseUrl = serverBaseUrl,
                     onUseItem = onUseItem
                 )
             }
@@ -173,9 +170,9 @@ private fun BagGrid(
 private fun BagItemCell(
     invItem: InventoryItem,
     item: Item?,
-    serverBaseUrl: String,
     onUseItem: (String) -> Unit
 ) {
+    val serverBaseUrl = LocalServerBaseUrl.current
     val isConsumable = item?.type == "consumable"
     val borderColor = if (isConsumable) ConsumableBorder else DefaultBorder
     val context = LocalContext.current

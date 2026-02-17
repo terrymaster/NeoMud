@@ -37,11 +37,11 @@ fun EquipmentPanel(
     inventory: List<InventoryItem>,
     equipment: Map<String, String>,
     itemCatalog: Map<String, Item>,
-    serverBaseUrl: String,
     onEquipItem: (String, String) -> Unit,
     onUnequipItem: (String) -> Unit,
     onClose: () -> Unit
 ) {
+    val serverBaseUrl = LocalServerBaseUrl.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -95,7 +95,7 @@ fun EquipmentPanel(
                     slot = EquipmentSlots.HEAD,
                     equippedItemId = equipment[EquipmentSlots.HEAD],
                     itemCatalog = itemCatalog,
-                    serverBaseUrl = serverBaseUrl,
+
                     onUnequipItem = onUnequipItem
                 )
 
@@ -110,21 +110,21 @@ fun EquipmentPanel(
                         slot = EquipmentSlots.WEAPON,
                         equippedItemId = equipment[EquipmentSlots.WEAPON],
                         itemCatalog = itemCatalog,
-                        serverBaseUrl = serverBaseUrl,
+    
                         onUnequipItem = onUnequipItem
                     )
                     EquipmentSlotBox(
                         slot = EquipmentSlots.CHEST,
                         equippedItemId = equipment[EquipmentSlots.CHEST],
                         itemCatalog = itemCatalog,
-                        serverBaseUrl = serverBaseUrl,
+    
                         onUnequipItem = onUnequipItem
                     )
                     EquipmentSlotBox(
                         slot = EquipmentSlots.SHIELD,
                         equippedItemId = equipment[EquipmentSlots.SHIELD],
                         itemCatalog = itemCatalog,
-                        serverBaseUrl = serverBaseUrl,
+    
                         onUnequipItem = onUnequipItem
                     )
                 }
@@ -136,7 +136,7 @@ fun EquipmentPanel(
                     slot = EquipmentSlots.HANDS,
                     equippedItemId = equipment[EquipmentSlots.HANDS],
                     itemCatalog = itemCatalog,
-                    serverBaseUrl = serverBaseUrl,
+
                     onUnequipItem = onUnequipItem
                 )
 
@@ -147,7 +147,7 @@ fun EquipmentPanel(
                     slot = EquipmentSlots.LEGS,
                     equippedItemId = equipment[EquipmentSlots.LEGS],
                     itemCatalog = itemCatalog,
-                    serverBaseUrl = serverBaseUrl,
+
                     onUnequipItem = onUnequipItem
                 )
 
@@ -158,7 +158,7 @@ fun EquipmentPanel(
                     slot = EquipmentSlots.FEET,
                     equippedItemId = equipment[EquipmentSlots.FEET],
                     itemCatalog = itemCatalog,
-                    serverBaseUrl = serverBaseUrl,
+
                     onUnequipItem = onUnequipItem
                 )
 
@@ -209,7 +209,7 @@ fun EquipmentPanel(
                                     EquippableBagCell(
                                         invItem = invItem,
                                         item = item,
-                                        serverBaseUrl = serverBaseUrl,
+                    
                                         onEquip = {
                                             if (slot.isNotEmpty()) {
                                                 onEquipItem(invItem.itemId, slot)
@@ -236,9 +236,9 @@ private fun EquipmentSlotBox(
     slot: String,
     equippedItemId: String?,
     itemCatalog: Map<String, Item>,
-    serverBaseUrl: String,
     onUnequipItem: (String) -> Unit
 ) {
+    val serverBaseUrl = LocalServerBaseUrl.current
     val item = equippedItemId?.let { itemCatalog[it] }
     val borderColor = if (equippedItemId != null) SlotFilledBorder else SlotEmptyBorder
     val context = LocalContext.current
@@ -284,9 +284,9 @@ private fun EquipmentSlotBox(
 private fun EquippableBagCell(
     invItem: InventoryItem,
     item: Item?,
-    serverBaseUrl: String,
     onEquip: () -> Unit
 ) {
+    val serverBaseUrl = LocalServerBaseUrl.current
     val context = LocalContext.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
