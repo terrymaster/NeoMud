@@ -14,6 +14,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
@@ -25,6 +28,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neomud.client.ui.theme.MudColors
+import com.neomud.client.ui.theme.StoneTheme
+import com.neomud.client.ui.components.StoneButton
+import com.neomud.client.ui.components.StoneDivider
+import com.neomud.client.ui.components.ThemedFrame
 import com.neomud.client.ui.components.CharacterSheet
 import com.neomud.client.ui.components.DirectionPad
 import com.neomud.client.ui.components.EntitySidebar
@@ -321,12 +328,13 @@ private fun GameScreenPortrait(
     val spellSlots by gameViewModel.spellSlots.collectAsState()
     val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(StoneTheme.panelBg)) {
         // Top: Room background + sidebars + floating minimap (~35%)
-        Box(
+        ThemedFrame(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.35f)
+                .weight(0.35f),
+            cornerAccent = true
         ) {
             // Layer 1: Full-bleed background image
             val currentRoom = roomInfo?.room
@@ -393,24 +401,26 @@ private fun GameScreenPortrait(
             }
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp)
+        StoneDivider()
 
         // Middle: Game Log (~40%)
-        Box(
+        ThemedFrame(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.40f)
+                .weight(0.40f),
+            cornerAccent = false
         ) {
             GameLog(entries = gameLog)
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp)
+        StoneDivider()
 
         // Bottom: Controls (~25%)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(0.25f)
+                .background(StoneTheme.panelBg)
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.Top
         ) {
@@ -498,7 +508,7 @@ private fun GameScreenLandscape(
     val spellSlots by gameViewModel.spellSlots.collectAsState()
     val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(StoneTheme.panelBg)) {
         // Top row (~55%): Map area + Controls side-by-side
         Row(
             modifier = Modifier
@@ -506,10 +516,11 @@ private fun GameScreenLandscape(
                 .weight(0.55f)
         ) {
             // Left side: Room background + sidebars + floating minimap
-            Box(
+            ThemedFrame(
                 modifier = Modifier
                     .weight(0.55f)
-                    .fillMaxHeight()
+                    .fillMaxHeight(),
+                cornerAccent = true
             ) {
                 // Layer 1: Full-bleed background image
                 val currentRoom = roomInfo?.room
@@ -576,13 +587,27 @@ private fun GameScreenLandscape(
                 }
             }
 
-            VerticalDivider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(3.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                StoneTheme.frameLight,
+                                StoneTheme.frameMid,
+                                StoneTheme.innerShadow
+                            )
+                        )
+                    )
+            )
 
             // Right side: Status, D-pad, Action buttons
             Column(
                 modifier = Modifier
                     .weight(0.45f)
                     .fillMaxHeight()
+                    .background(StoneTheme.panelBg)
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 // Player status panel
@@ -650,7 +675,7 @@ private fun GameScreenLandscape(
             }
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.primary, thickness = 1.dp)
+        StoneDivider()
 
         // Bottom (~45%): Game log + say bar
         Column(
@@ -658,10 +683,11 @@ private fun GameScreenLandscape(
                 .fillMaxWidth()
                 .weight(0.45f)
         ) {
-            Box(
+            ThemedFrame(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .weight(1f),
+                cornerAccent = false
             ) {
                 GameLog(entries = gameLog)
             }
@@ -701,19 +727,13 @@ private fun ActionButton(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    val bgColor = if (isActive) color.copy(alpha = 0.25f) else Color.Transparent
-    val displayColor = if (enabled) color else Color.Gray
-    Surface(
-        modifier = Modifier
-            .size(36.dp)
-            .clickable(enabled = enabled, onClick = onClick),
-        shape = RoundedCornerShape(6.dp),
-        color = bgColor
-    ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            Text(text = icon, fontSize = 18.sp, color = displayColor)
-        }
-    }
+    StoneButton(
+        icon = icon,
+        color = color,
+        isActive = isActive,
+        enabled = enabled,
+        onClick = onClick
+    )
 }
 
 @Composable
@@ -864,9 +884,14 @@ private fun RoomOverlayButton(
 
 @Composable
 private fun InventoryIconButton(active: Boolean, onClick: () -> Unit) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(28.dp)
+    val stoneBg = Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark))
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .background(stoneBg, RoundedCornerShape(4.dp))
+            .border(1.dp, StoneTheme.frameMid, RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = "\uD83C\uDF92",
@@ -878,9 +903,14 @@ private fun InventoryIconButton(active: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun EquipmentIconButton(active: Boolean, onClick: () -> Unit) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(28.dp)
+    val stoneBg = Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark))
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .background(stoneBg, RoundedCornerShape(4.dp))
+            .border(1.dp, StoneTheme.frameMid, RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = "\uD83D\uDEE1\uFE0F",
@@ -892,9 +922,14 @@ private fun EquipmentIconButton(active: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun SettingsGearButton(onClick: () -> Unit) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(28.dp)
+    val stoneBg = Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark))
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .background(stoneBg, RoundedCornerShape(4.dp))
+            .border(1.dp, StoneTheme.frameMid, RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = "\u2699\uFE0F",
@@ -967,7 +1002,15 @@ private fun SayBar(
             modifier = Modifier
                 .weight(1f)
                 .height(32.dp)
-                .border(1.dp, Color(0xFF555555), RoundedCornerShape(6.dp))
+                .background(StoneTheme.textPanelBg, RoundedCornerShape(6.dp))
+                .drawBehind {
+                    // Beveled stone border
+                    val w = size.width; val h = size.height
+                    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), strokeWidth = 1f)
+                    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), strokeWidth = 1f)
+                    drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), strokeWidth = 1f)
+                    drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), strokeWidth = 1f)
+                }
                 .padding(horizontal = 8.dp),
             decorationBox = { innerTextField ->
                 Box(
@@ -982,19 +1025,34 @@ private fun SayBar(
             }
         )
         Spacer(modifier = Modifier.width(4.dp))
-        Button(
-            onClick = {
-                val text = tfv.text
-                if (text.isNotBlank()) {
-                    onSay(text)
-                    onSayTextChange("")
+        val sayEnabled = tfv.text.isNotBlank()
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .height(32.dp)
+                .drawBehind {
+                    val bgBrush = Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark))
+                    drawRect(bgBrush)
+                    val w = size.width; val h = size.height
+                    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), strokeWidth = 1f)
+                    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), strokeWidth = 1f)
+                    drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), strokeWidth = 1f)
+                    drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), strokeWidth = 1f)
                 }
-            },
-            enabled = tfv.text.isNotBlank(),
-            modifier = Modifier.height(32.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                .clickable(enabled = sayEnabled) {
+                    val text = tfv.text
+                    if (text.isNotBlank()) {
+                        onSay(text)
+                        onSayTextChange("")
+                    }
+                }
+                .padding(horizontal = 12.dp)
         ) {
-            Text("Say", fontSize = 12.sp)
+            Text(
+                "Say",
+                fontSize = 12.sp,
+                color = if (sayEnabled) Color(0xFFE0E0E0) else Color(0xFF666666)
+            )
         }
     }
 }

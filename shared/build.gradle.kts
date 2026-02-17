@@ -8,10 +8,8 @@ kotlin {
     jvm()
 
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-            }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
 
@@ -28,7 +26,7 @@ kotlin {
 
 android {
     namespace = "com.neomud.shared"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 26

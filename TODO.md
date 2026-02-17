@@ -36,6 +36,11 @@ Active work items and known issues, ordered roughly by priority.
 - UI feedback sounds: button taps, panel open/close, error buzzes
 - Volume controls in settings panel
 
+### Dependency Upgrades
+- **Coil 2 → 3**: Package rename `coil` → `coil3`, maven coords change, ~6 files. 25-40% Compose perf gain.
+- **AGP 8.7 → 9.0**: May need Gradle wrapper update. Built-in Kotlin support in AGP 9.
+- **Exposed 0.57 → 1.0**: Full package rename + API changes. Do separately, high effort.
+
 ## Medium Priority
 
 ### Skills System
