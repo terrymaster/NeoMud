@@ -4,6 +4,11 @@ Active work items and known issues, ordered roughly by priority.
 
 ## High Priority
 
+### Room Effects Processing
+- GameLoop only handles HEAL effects — implement POISON and MANA_REGEN server-side
+- Future effect types: stat buffs/debuffs, damage-over-time, etc.
+- Effects should respect immunities or resistances if added later
+
 ### Game Balance Pass
 - Rebalance combat damage, armor values, and HP pools across all NPC tiers
 - Review XP curves — leveling may be too fast or too slow in the forest zone
@@ -11,24 +16,51 @@ Active work items and known issues, ordered roughly by priority.
 - Tune NPC spawn rates and respawn timers
 - Validate spell damage/healing scaling vs. melee at equivalent levels
 
-### Missing Item Art
-- `item:leather_chest` (Leather Vest) has no sprite — needs `assets/images/rooms/item_leather_chest.webp`
+### Missing Assets in Default World
+- `item:leather_chest` (Leather Vest) has no sprite
 - Audit all items in `items.json` for missing icons and generate/add them
+- Audit sound effects — identify missing SFX referenced in zone data
+- Generate/source missing assets
 
-### Consumable Items from Inventory
-- Tap-to-use on consumables in the bag grid currently sends the server command but UX needs validation
-- Consider adding a confirmation or cooldown indicator for consumable use
+### Consumable Items UX
+- Healing potion works from inventory but UI is janky — polish the tap-to-use flow
+- Add confirmation or cooldown indicator for consumable use
 - Scrolls and other single-use items should work the same way
 
 ### Sound Effects System
-- Add audio feedback for core game actions: combat hits, item pickup, equip/unequip, spell casting, potion use
+- ~~Combat hits~~ ✓
+- ~~Item pickup~~ ✓
+- Equip/unequip sounds
+- Spell casting, potion use sounds
 - Death sound and respawn chime
-- Ambient room audio per zone (town bustle, forest ambiance)
 - UI feedback sounds: button taps, panel open/close, error buzzes
 - Volume controls in settings panel
-- Sound assets served from server alongside sprites, or bundled in client APK
 
 ## Medium Priority
+
+### Skills System
+- Expand active skills beyond current implementation
+- Skill cooldowns, resource costs, and scaling
+- Passive skills and skill trees
+- Class-specific skill unlocks at level thresholds
+
+### Hidden Content
+- Hidden items in rooms (discoverable via search/perception)
+- Hidden pathways / secret exits
+- Room-based interactive objects (levers, chests, altars, etc.)
+- Traps (room traps, trapped locked doors, trapped objects)
+- Detection mechanics (class abilities, item bonuses, skill checks)
+- Trap disarm mechanics (rogue/thief class abilities, items)
+
+### Maker Tool
+- **Custom world build**: verify end-to-end export → server load of a non-default world
+- **AI generation integrations**: verify 3rd party API connections (image gen, text gen)
+- **Generation UI**: incorporate buttons/workflows for AI-generated room art, descriptions, NPC dialogue
+- NPC editor improvements
+- Item editor improvements
+- Loot table editor improvements
+- Asset management UI (upload, preview, organize)
+- Validation coverage for all entity types
 
 ### Player Status Panel Condensing
 - The HP/MP/XP bars take up significant vertical space in portrait mode
