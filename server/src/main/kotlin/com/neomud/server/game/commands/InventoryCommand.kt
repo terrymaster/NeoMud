@@ -5,12 +5,14 @@ import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.world.ItemCatalog
+import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ServerMessage
 
 class InventoryCommand(
     private val inventoryRepository: InventoryRepository,
     private val itemCatalog: ItemCatalog,
-    private val coinRepository: CoinRepository
+    private val coinRepository: CoinRepository,
+    private val worldGraph: WorldGraph
 ) {
     companion object {
         private val VALID_SLOTS = setOf("weapon", "shield", "head", "chest", "legs", "feet", "hands")
@@ -85,6 +87,17 @@ class InventoryCommand(
             return
         }
 
+        if (isHostileEffect(item.useEffect)) {
+            val roomId = session.currentRoomId
+            if (roomId != null) {
+                val room = worldGraph.getRoom(roomId)
+                if (room != null && room.effects.any { it.type == "SANCTUARY" }) {
+                    session.send(ServerMessage.Error("The sanctuary's protection prevents you from using ${item.name} here."))
+                    return
+                }
+            }
+        }
+
         val result = UseEffectProcessor.process(item.useEffect, player, item.name)
         if (result == null) {
             session.send(ServerMessage.Error("${item.name} has no usable effect."))
@@ -121,5 +134,11 @@ class InventoryCommand(
         val equipment = inventoryRepository.getEquippedItems(playerName)
         val coins = coinRepository.getCoins(playerName)
         session.send(ServerMessage.InventoryUpdate(inventory, equipment, coins))
+    }
+
+    private fun isHostileEffect(effectString: String): Boolean {
+        return effectString.split(',').any { token ->
+            token.trim().split(':').firstOrNull() in setOf("damage", "poison")
+        }
     }
 }
