@@ -28,7 +28,14 @@ Thumbs.db
 *.class
 .kotlin/
 
+# Node
+node_modules/
+/package.json
+package-lock.json
+
 # Maker
+maker/dist/
+maker/projects/
 maker/settings.json
 
 # Claude
