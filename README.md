@@ -3,9 +3,12 @@
 A love letter to the MUDs of the '90s, built with modern tools and vibes. 100% vibe-coded with AI.
 
 <p align="center">
-  <img src="docs/screenshots/screenshot1.png" width="230" alt="Winding Forest Path" />
-  <img src="docs/screenshots/screenshot2.png" width="230" alt="Forest Edge" />
-  <img src="docs/screenshots/screenshot3.png" width="230" alt="Character Sheet" />
+  <img src="docs/screenshots/screenshot1.png" width="230" alt="Town Square with stone-framed room view and game log" />
+  <img src="docs/screenshots/screenshot2.png" width="230" alt="Forest combat with Shadow Wolf — loot drops and XP gain" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/screenshot3.png" width="230" alt="Character sheet — stats, equipment, skills, and coins" />
+  <img src="docs/screenshots/screenshot4.png" width="230" alt="Blacksmith vendor panel with buy and sell tabs" />
 </p>
 
 ## What Is This?
@@ -145,8 +148,8 @@ Opens on `http://localhost:5173` (Vite frontend) with the API server on port 300
 
 | Layer | Technology |
 |-------|-----------|
-| Language | Kotlin 2.1 (JVM 21) |
-| Server | Ktor 3.0 + Netty |
+| Language | Kotlin 2.3 (JVM 21) |
+| Server | Ktor 3.4 + Netty |
 | Database | SQLite + Exposed ORM |
 | Client | Jetpack Compose + Material 3 |
 | Images | Coil 2.7 (WebP with transparency) |
@@ -160,7 +163,7 @@ Opens on `http://localhost:5173` (Vite frontend) with the API server on port 300
 
 ### Prerequisites
 - JDK 21 (e.g., Amazon Corretto)
-- Android SDK with platform 34
+- Android SDK with platform 35
 - Android emulator or device (min SDK 26)
 - Node.js 18+ (for the Maker)
 
@@ -218,6 +221,7 @@ This is an active project. Here's what exists, what's in progress, and where it'
 - [x] Action panel with permanent class actions separated from contextual buttons
 - [x] Admin system with slash commands and inline autocomplete
 - [x] Multiplayer hardening — game state mutex, rate limiter, frame size cap
+- [x] Dark fantasy stone UI theme — beveled stone frames, gradient buttons, gold rivets
 - [x] NeoMUD Maker — web-based world editor with all entity editors, visual map canvas, import/export
 - [x] Default world import with read-only projects and fork workflow
 
