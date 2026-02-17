@@ -21,6 +21,15 @@ const styles: Record<string, CSSProperties> = {
     cursor: 'pointer',
     borderRadius: 3,
   },
+  separator: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#2a2a4a',
+    margin: '0 4px',
+  },
+  spacer: {
+    flex: 1,
+  },
 };
 
 function MenuBar() {
@@ -41,50 +50,97 @@ function MenuBar() {
     }
   };
 
-  const handleLoad = async () => {
-    try {
-      const data = await api.get<{ projects: { name: string }[] }>('/projects');
-      const names = data.projects.map((p) => p.name);
-      const choice = prompt(
-        `Load project:\n${names.map((n, i) => `${i + 1}. ${n}`).join('\n')}\n\nEnter project name:`
-      );
-      if (!choice || !choice.trim()) return;
-      await api.post(`/projects/${encodeURIComponent(choice.trim())}/open`);
-      navigate(`/project/${encodeURIComponent(choice.trim())}/zones`);
-    } catch (err: any) {
-      alert(err.message || 'Load failed');
-    }
-  };
-
-  const handleClose = () => {
+  const handleSwitchProject = () => {
     navigate('/');
   };
 
+  const handleQuit = async () => {
+    if (!confirm('Shut down the Maker server?')) return;
+    try {
+      await api.post('/shutdown');
+    } catch {
+      // server is already gone
+    }
+  };
+
+  const handleValidate = async () => {
+    try {
+      const result = await api.get<{ errors: string[]; warnings: string[] }>('/export/validate');
+      if (result.errors.length === 0 && result.warnings.length === 0) {
+        alert('Validation passed — no errors or warnings.');
+      } else {
+        const parts: string[] = [];
+        if (result.errors.length > 0) {
+          parts.push('Errors:\n' + result.errors.map((e) => `  • ${e}`).join('\n'));
+        }
+        if (result.warnings.length > 0) {
+          parts.push('Warnings:\n' + result.warnings.map((w) => `  • ${w}`).join('\n'));
+        }
+        alert(parts.join('\n\n'));
+      }
+    } catch (err: any) {
+      alert(err.message || 'Validation failed');
+    }
+  };
+
+  const handleExportNmd = () => {
+    const a = document.createElement('a');
+    a.href = '/api/export/nmd';
+    a.click();
+  };
+
+  const handlePackage = async () => {
+    try {
+      const result = await api.get<{ errors: string[]; warnings: string[] }>('/export/validate');
+      if (result.errors.length > 0) {
+        alert(
+          'Cannot package — validation errors:\n' +
+            result.errors.map((e) => `  • ${e}`).join('\n')
+        );
+        return;
+      }
+      if (result.warnings.length > 0) {
+        const proceed = confirm(
+          'Validation warnings:\n' +
+            result.warnings.map((w) => `  • ${w}`).join('\n') +
+            '\n\nContinue with packaging?'
+        );
+        if (!proceed) return;
+      }
+      const a = document.createElement('a');
+      a.href = '/api/export/package';
+      a.click();
+    } catch (err: any) {
+      alert(err.message || 'Package failed');
+    }
+  };
+
+  const hoverOn = (e: React.MouseEvent<HTMLButtonElement>) =>
+    (e.currentTarget.style.backgroundColor = '#2a2a4a');
+  const hoverOff = (e: React.MouseEvent<HTMLButtonElement>) =>
+    (e.currentTarget.style.backgroundColor = 'transparent');
+
   return (
     <div style={styles.bar}>
-      <button
-        style={styles.btn}
-        onClick={handleSaveAs}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2a2a4a')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-      >
+      <button style={styles.btn} onClick={handleSaveAs} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
         Save As
       </button>
-      <button
-        style={styles.btn}
-        onClick={handleLoad}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2a2a4a')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-      >
-        Load
+      <button style={styles.btn} onClick={handleSwitchProject} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+        Switch Project
       </button>
-      <button
-        style={styles.btn}
-        onClick={handleClose}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2a2a4a')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-      >
-        Close
+      <div style={styles.separator} />
+      <button style={styles.btn} onClick={handleValidate} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+        Validate
+      </button>
+      <button style={styles.btn} onClick={handleExportNmd} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+        Export .nmd
+      </button>
+      <button style={styles.btn} onClick={handlePackage} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+        Package .nmd
+      </button>
+      <div style={styles.spacer} />
+      <button style={{ ...styles.btn, color: '#ff6b6b' }} onClick={handleQuit} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+        Quit Server
       </button>
     </div>
   );

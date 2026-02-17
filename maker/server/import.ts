@@ -110,6 +110,11 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           attackSound: item.attackSound ?? '',
           missSound: item.missSound ?? '',
           useSound: item.useSound ?? '',
+          imagePrompt: item.imagePrompt ?? '',
+          imageStyle: item.imageStyle ?? '',
+          imageNegativePrompt: item.imageNegativePrompt ?? '',
+          imageWidth: item.imageWidth ?? 256,
+          imageHeight: item.imageHeight ?? 256,
         },
       })
     }
@@ -183,23 +188,17 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
     }
   }
 
-  // ─── Prompt Templates ──────────────────────────────────
+  // ─── Legacy prompt_templates.json migration ────────────
+  // If old bundle has prompt_templates.json, build a lookup to apply
+  // template data to entities after they are created.
   const promptEntry = zip.getEntry('world/prompt_templates.json')
+  const legacyTemplates: Map<string, any> = new Map()
   if (promptEntry) {
     const { templates } = JSON.parse(zip.readAsText(promptEntry))
     for (const tmpl of templates) {
-      await prisma.promptTemplate.create({
-        data: {
-          entityType: tmpl.entityType,
-          entityId: tmpl.entityId,
-          prompt: tmpl.prompt ?? '',
-          style: tmpl.style ?? '',
-          negativePrompt: tmpl.negativePrompt ?? '',
-          width: tmpl.width ?? 1024,
-          height: tmpl.height ?? 576,
-        },
-      })
+      legacyTemplates.set(`${tmpl.entityType}:${tmpl.entityId}`, tmpl)
     }
+    console.log(`[import] Found legacy prompt_templates.json with ${legacyTemplates.size} templates — will migrate to inline fields`)
   }
 
   // ─── Zone files ────────────────────────────────────────
@@ -225,11 +224,15 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
         spawnMaxEntities: spawnConfig.maxEntities ?? 0,
         spawnMaxPerRoom: spawnConfig.maxPerRoom ?? 0,
         spawnRateTicks: spawnConfig.rateTicks ?? 0,
+        imageStyle: zone.imageStyle ?? '',
+        imageNegativePrompt: zone.imageNegativePrompt ?? '',
       },
     })
 
     // Rooms
     for (const room of zone.rooms ?? []) {
+      // Check for legacy template data
+      const legacyRoom = legacyTemplates.get(`room:${room.id}`)
       await prisma.room.create({
         data: {
           id: room.id,
@@ -243,12 +246,18 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           bgm: room.bgm ?? '',
           departSound: room.departSound ?? '',
           lockedExits: JSON.stringify(room.lockedExits ?? {}),
+          imagePrompt: room.imagePrompt ?? legacyRoom?.prompt ?? '',
+          imageStyle: room.imageStyle ?? legacyRoom?.style ?? '',
+          imageNegativePrompt: room.imageNegativePrompt ?? legacyRoom?.negativePrompt ?? '',
+          imageWidth: room.imageWidth ?? legacyRoom?.width ?? 1024,
+          imageHeight: room.imageHeight ?? legacyRoom?.height ?? 576,
         },
       })
     }
 
     // NPCs
     for (const npc of zone.npcs ?? []) {
+      const legacyNpc = legacyTemplates.get(`npc:${npc.id}`)
       await prisma.npc.create({
         data: {
           id: npc.id,
@@ -273,8 +282,35 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           missSound: npc.missSound ?? '',
           deathSound: npc.deathSound ?? '',
           interactSound: npc.interactSound ?? '',
+          imagePrompt: npc.imagePrompt ?? legacyNpc?.prompt ?? '',
+          imageStyle: npc.imageStyle ?? legacyNpc?.style ?? '',
+          imageNegativePrompt: npc.imageNegativePrompt ?? legacyNpc?.negativePrompt ?? '',
+          imageWidth: npc.imageWidth ?? legacyNpc?.width ?? 384,
+          imageHeight: npc.imageHeight ?? legacyNpc?.height ?? 512,
         },
       })
+    }
+  }
+
+  // Migrate legacy item templates (update items already created above)
+  if (legacyTemplates.size > 0) {
+    for (const [key, tmpl] of legacyTemplates) {
+      if (!key.startsWith('item:')) continue
+      const itemId = key.substring(5) // strip "item:" prefix
+      try {
+        await prisma.item.update({
+          where: { id: itemId },
+          data: {
+            imagePrompt: tmpl.prompt ?? '',
+            imageStyle: tmpl.style ?? '',
+            imageNegativePrompt: tmpl.negativePrompt ?? '',
+            imageWidth: tmpl.width ?? 256,
+            imageHeight: tmpl.height ?? 256,
+          },
+        })
+      } catch {
+        // Item may not exist — skip silently
+      }
     }
   }
 

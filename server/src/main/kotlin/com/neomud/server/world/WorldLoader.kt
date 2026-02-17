@@ -15,7 +15,6 @@ object WorldLoader {
         val classCatalog: ClassCatalog,
         val itemCatalog: ItemCatalog,
         val lootTableCatalog: LootTableCatalog,
-        val promptTemplateCatalog: PromptTemplateCatalog,
         val skillCatalog: SkillCatalog,
         val raceCatalog: RaceCatalog,
         val spellCatalog: SpellCatalog,
@@ -37,7 +36,6 @@ object WorldLoader {
         val classCatalog = ClassCatalog.load(source)
         val itemCatalog = ItemCatalog.load(source)
         val lootTableCatalog = LootTableCatalog.load(source)
-        val promptTemplateCatalog = PromptTemplateCatalog.load(source)
         val skillCatalog = SkillCatalog.load(source)
         val raceCatalog = RaceCatalog.load(source)
         val spellCatalog = SpellCatalog.load(source)
@@ -84,7 +82,10 @@ object WorldLoader {
             }
         }
 
-        worldGraph.setDefaultSpawn(dataDefinedSpawn ?: "town:square")
+        if (dataDefinedSpawn == null) {
+            error("No zone defines a spawnRoom. At least one zone must specify a spawnRoom.")
+        }
+        worldGraph.setDefaultSpawn(dataDefinedSpawn)
         logger.info("World loaded: ${worldGraph.roomCount} rooms, ${allNpcData.size} NPCs")
 
         // Item data validation
@@ -172,6 +173,9 @@ object WorldLoader {
                 if (npcData.missSound.isBlank()) logger.warn("Hostile NPC '${npcData.id}' missing missSound")
                 if (npcData.deathSound.isBlank()) logger.warn("Hostile NPC '${npcData.id}' missing deathSound")
             }
+            if (npcData.interactSound.isBlank() && npcData.behaviorType in listOf("vendor", "trainer")) {
+                logger.warn("NPC '${npcData.id}' (${npcData.behaviorType}) missing interactSound")
+            }
         }
         for (spell in spellCatalog.getAllSpells()) {
             if (spell.castSound.isBlank()) logger.warn("Spell '${spell.id}' missing castSound")
@@ -203,7 +207,7 @@ object WorldLoader {
         // Room background images
         for (room in worldGraph.getAllRooms()) {
             if (room.backgroundImage.isNotBlank()) {
-                val path = "assets/images/rooms/${room.backgroundImage}.webp"
+                val path = room.backgroundImage.trimStart('/')
                 if (!assetExists(path)) logger.warn("Room '${room.id}' missing background asset: $path")
             }
         }
@@ -217,7 +221,7 @@ object WorldLoader {
             }
         }
         for ((npcData, _) in allNpcData) {
-            for (sound in listOf(npcData.attackSound, npcData.missSound, npcData.deathSound)) {
+            for (sound in listOf(npcData.attackSound, npcData.missSound, npcData.deathSound, npcData.interactSound)) {
                 if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
                     logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by NPC '${npcData.id}')")
                 }
@@ -245,6 +249,6 @@ object WorldLoader {
             }
         }
 
-        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, promptTemplateCatalog, skillCatalog, raceCatalog, spellCatalog, zoneSpawnConfigs, manifest)
+        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, skillCatalog, raceCatalog, spellCatalog, zoneSpawnConfigs, manifest)
     }
 }

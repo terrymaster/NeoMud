@@ -14,6 +14,8 @@ interface Zone {
   spawnMaxEntities: number;
   spawnMaxPerRoom: number;
   spawnRateTicks: number;
+  imageStyle: string;
+  imageNegativePrompt: string;
 }
 
 interface Exit {
@@ -33,6 +35,11 @@ interface Room {
   departSound: string;
   healPerTick: number;
   lockedExits: string;
+  imagePrompt: string;
+  imageStyle: string;
+  imageNegativePrompt: string;
+  imageWidth: number;
+  imageHeight: number;
   exits: Exit[];
 }
 
@@ -225,6 +232,8 @@ function ZoneEditor() {
           spawnMaxEntities: data.spawnMaxEntities,
           spawnMaxPerRoom: data.spawnMaxPerRoom,
           spawnRateTicks: data.spawnRateTicks,
+          imageStyle: data.imageStyle,
+          imageNegativePrompt: data.imageNegativePrompt,
         });
       })
       .catch(() => {});
@@ -479,6 +488,20 @@ function ZoneEditor() {
                 setZoneForm((f) => ({ ...f, spawnRateTicks: parseInt(e.target.value) || 0 }))
               }
             />
+            <label style={styles.label}>Image Style (zone default)</label>
+            <input
+              style={styles.input}
+              value={zoneForm.imageStyle || ''}
+              onChange={(e) => setZoneForm((f) => ({ ...f, imageStyle: e.target.value }))}
+              placeholder="e.g. pixel art, watercolor"
+            />
+            <label style={styles.label}>Image Negative Prompt (zone default)</label>
+            <input
+              style={styles.input}
+              value={zoneForm.imageNegativePrompt || ''}
+              onChange={(e) => setZoneForm((f) => ({ ...f, imageNegativePrompt: e.target.value }))}
+              placeholder="e.g. blurry, low quality"
+            />
             <div style={{ display: 'flex', gap: 8 }}>
               <button style={styles.btnSmall} onClick={handleSaveZone}>
                 Save Zone
@@ -527,6 +550,12 @@ function ZoneEditor() {
               entityId={selectedRoom.id}
               description={roomForm.description}
               assetPath={roomForm.backgroundImage}
+              imagePrompt={roomForm.imagePrompt}
+              imageStyle={roomForm.imageStyle}
+              imageNegativePrompt={roomForm.imageNegativePrompt}
+              imageWidth={roomForm.imageWidth}
+              imageHeight={roomForm.imageHeight}
+              onUpdate={(fields) => setRoomForm((f) => ({ ...f, ...fields }))}
             />
             <div style={styles.sectionTitle}>Room Properties</div>
             <label style={styles.label}>ID</label>

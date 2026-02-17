@@ -8,34 +8,41 @@ datasource db {
 }
 
 model Zone {
-  id                String  @id
-  name              String
-  description       String
-  safe              Boolean @default(true)
-  bgm               String  @default("")
-  spawnRoom         String?
-  spawnMaxEntities  Int     @default(0)
-  spawnMaxPerRoom   Int     @default(0)
-  spawnRateTicks    Int     @default(0)
-  rooms             Room[]
-  npcs              Npc[]
+  id                   String  @id
+  name                 String
+  description          String
+  safe                 Boolean @default(true)
+  bgm                  String  @default("")
+  spawnRoom            String?
+  spawnMaxEntities     Int     @default(0)
+  spawnMaxPerRoom      Int     @default(0)
+  spawnRateTicks       Int     @default(0)
+  imageStyle           String  @default("")
+  imageNegativePrompt  String  @default("")
+  rooms                Room[]
+  npcs                 Npc[]
 }
 
 model Room {
-  id              String @id
-  zoneId          String
-  zone            Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  name            String
-  description     String
-  x               Int
-  y               Int
-  backgroundImage String @default("")
-  healPerTick     Int    @default(0)
-  bgm             String @default("")
-  departSound     String @default("")
-  lockedExits     String @default("{}")
-  exits           Exit[] @relation("fromRoom")
-  incomingExits   Exit[] @relation("toRoom")
+  id                  String @id
+  zoneId              String
+  zone                Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  name                String
+  description         String
+  x                   Int
+  y                   Int
+  backgroundImage     String @default("")
+  healPerTick         Int    @default(0)
+  bgm                 String @default("")
+  departSound         String @default("")
+  lockedExits         String @default("{}")
+  imagePrompt         String @default("")
+  imageStyle          String @default("")
+  imageNegativePrompt String @default("")
+  imageWidth          Int    @default(1024)
+  imageHeight         Int    @default(576)
+  exits               Exit[] @relation("fromRoom")
+  incomingExits       Exit[] @relation("toRoom")
 }
 
 model Exit {
@@ -66,7 +73,12 @@ model Item {
   levelRequirement Int     @default(0)
   attackSound      String  @default("")
   missSound        String  @default("")
-  useSound         String  @default("")
+  useSound            String  @default("")
+  imagePrompt         String  @default("")
+  imageStyle          String  @default("")
+  imageNegativePrompt String  @default("")
+  imageWidth          Int     @default(256)
+  imageHeight         Int     @default(256)
 }
 
 model Npc {
@@ -92,7 +104,12 @@ model Npc {
   attackSound  String  @default("")
   missSound    String  @default("")
   deathSound   String  @default("")
-  interactSound String @default("")
+  interactSound       String @default("")
+  imagePrompt         String @default("")
+  imageStyle          String @default("")
+  imageNegativePrompt String @default("")
+  imageWidth          Int    @default(384)
+  imageHeight         Int    @default(512)
 }
 
 model CharacterClass {
@@ -157,19 +174,6 @@ model LootTable {
   id       String @id
   items    String
   coinDrop String @default("")
-}
-
-model PromptTemplate {
-  id             Int    @id @default(autoincrement())
-  entityType     String
-  entityId       String
-  prompt         String
-  style          String @default("")
-  negativePrompt String @default("")
-  width          Int    @default(1024)
-  height         Int    @default(576)
-
-  @@unique([entityType, entityId])
 }
 
 model ProjectMeta {

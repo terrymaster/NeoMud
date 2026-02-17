@@ -179,3 +179,12 @@ export function getActiveProject(): string | null {
 export function isReadOnly(): boolean {
   return activeReadOnly
 }
+
+export async function disconnectDb(): Promise<void> {
+  if (prisma) {
+    await prisma.$disconnect()
+    prisma = null
+    activeProject = null
+    activeReadOnly = false
+  }
+}

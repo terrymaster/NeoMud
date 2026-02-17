@@ -5,6 +5,8 @@
   "safe": false,
   "bgm": "forest_danger",
   "spawnConfig": { "maxEntities": 4, "maxPerRoom": 2, "rateTicks": 40 },
+  "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+  "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
   "rooms": [
     {
       "id": "forest:edge",
@@ -17,7 +19,10 @@
         "NORTH": "forest:path"
       },
       "backgroundImage": "/assets/images/rooms/forest_edge.webp",
-      "departSound": "footstep_dirt"
+      "departSound": "footstep_dirt",
+      "imagePrompt": "First-person view standing at the edge of an ancient forest. Flat grass and dirt ground plane filling the lower third, transitioning from open field to tree roots. Towering oaks ahead framing a path into darkness. Shafts of golden sunlight pierce the canopy. Town walls faintly visible behind. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     },
     {
       "id": "forest:path",
@@ -31,7 +36,10 @@
         "NORTH": "forest:deep"
       },
       "backgroundImage": "/assets/images/rooms/forest_path.webp",
-      "departSound": "footstep_dirt"
+      "departSound": "footstep_dirt",
+      "imagePrompt": "First-person view standing on a winding forest path. Flat dirt trail filling the lower third, flanked by exposed roots. Massive ancient tree trunks on both sides covered in luminescent moss, receding into the distance. Dappled light filters through the dense canopy. Path splits ahead. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     },
     {
       "id": "forest:clearing",
@@ -43,7 +51,10 @@
         "WEST": "forest:path"
       },
       "backgroundImage": "/assets/images/rooms/forest_clearing.webp",
-      "departSound": "footstep_grass"
+      "departSound": "footstep_grass",
+      "imagePrompt": "First-person view standing in a sunlit forest clearing. Flat grassy ground plane carpeted with wildflowers filling the lower third. A moss-covered fallen log in the mid-ground. Trees form a natural wall around the edges. Warm golden sunlight streaming down from above. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     },
     {
       "id": "forest:deep",
@@ -57,7 +68,10 @@
       },
       "lockedExits": { "EAST": 14 },
       "backgroundImage": "/assets/images/rooms/forest_deep.webp",
-      "departSound": "footstep_dirt"
+      "departSound": "footstep_dirt",
+      "imagePrompt": "First-person view standing in a deep primeval forest. Flat dark earth ground plane with gnarled roots breaking through, filling the lower third. Massive ancient trunks on both sides disappearing upward into dense canopy. Only dim green twilight reaches the floor. Ominous and ancient atmosphere. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     },
     {
       "id": "forest:stream",
@@ -69,7 +83,10 @@
         "WEST": "forest:deep"
       },
       "backgroundImage": "/assets/images/rooms/forest_stream.webp",
-      "departSound": "footstep_splash"
+      "departSound": "footstep_splash",
+      "imagePrompt": "First-person view standing at the bank of a forest stream. Flat mossy ground and smooth river stones filling the lower third. A crystal-clear stream cuts across the mid-ground from left to right. Ferns and water plants line the far bank. Trees frame both sides. Gentle dappled light filtering through canopy. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     }
   ],
   "npcs": [
@@ -90,7 +107,12 @@
       "agility": 18,
       "attackSound": "wolf_bite",
       "missSound": "wolf_miss",
-      "deathSound": "wolf_death"
+      "deathSound": "wolf_death",
+      "imagePrompt": "Full-body large wolf with midnight-black fur, amber glowing eyes, wisps of shadow clinging to its form, in an aggressive stalking pose facing the viewer. Single creature, isolated on solid transparent background, no ground, no scenery.",
+      "imageStyle": "fantasy creature sprite, full body, side-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",
+      "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
+      "imageWidth": 512,
+      "imageHeight": 384
     },
     {
       "id": "npc:forest_spider",
@@ -109,7 +131,12 @@
       "agility": 8,
       "attackSound": "spider_bite",
       "missSound": "spider_miss",
-      "deathSound": "spider_death"
+      "deathSound": "spider_death",
+      "imagePrompt": "Full-body massive spider the size of a large dog, chitinous body mottled green and brown, thick webs trailing from spinnerets, venom glistening on fangs, facing the viewer. Single creature, isolated on solid transparent background, no ground, no scenery.",
+      "imageStyle": "fantasy creature sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",
+      "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
+      "imageWidth": 512,
+      "imageHeight": 384
     }
   ]
 }

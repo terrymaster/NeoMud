@@ -37,14 +37,10 @@ abstract class UpdateVersionTask : DefaultTask() {
     }
 }
 
-tasks.register<Exec>("runMaker") {
-    group = "application"
-    description = "Start the NeoMUD Maker web server (Vite + Express)"
-    workingDir = file("maker")
-    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-    val npm = if (isWindows) "npm.cmd" else "npm"
-    commandLine(npm, "run", "dev")
-}
+// Run the maker via: cd maker && npm run dev
+// Use an IntelliJ "npm" run configuration pointed at maker/package.json → "dev" script.
+// This avoids wrapping Node processes in the Gradle daemon JVM, which causes
+// orphaned processes on Windows since the daemon doesn't propagate signals.
 
 tasks.register<UpdateVersionTask>("updateVersion") {
     group = "versioning"

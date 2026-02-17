@@ -1,23 +1,17 @@
 import { useEffect, useState } from 'react';
-import api from '../api';
 import type { CSSProperties } from 'react';
-
-interface PromptTemplate {
-  id: number;
-  entityType: string;
-  entityId: string;
-  prompt: string;
-  style: string;
-  negativePrompt: string;
-  width: number;
-  height: number;
-}
 
 interface ImagePreviewProps {
   entityType: string;     // "room" | "npc" | "item"
   entityId: string;       // e.g. "town:square", "npc:town_guard"
   description?: string;   // entity description for auto-filling new templates
   assetPath?: string;     // override filename (rooms store backgroundImage field)
+  imagePrompt?: string;
+  imageStyle?: string;
+  imageNegativePrompt?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  onUpdate?: (fields: { imagePrompt: string; imageStyle: string; imageNegativePrompt: string; imageWidth: number; imageHeight: number }) => void;
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -82,11 +76,6 @@ const styles: Record<string, CSSProperties> = {
     color: '#666',
     marginBottom: 4,
   },
-  noTemplate: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 6,
-  },
   input: {
     width: '100%',
     padding: '4px 6px',
@@ -123,16 +112,6 @@ const styles: Record<string, CSSProperties> = {
     gap: 6,
     marginTop: 6,
   },
-  btn: {
-    padding: '4px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    backgroundColor: '#1a1a2e',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 3,
-    cursor: 'pointer',
-  },
   btnOutline: {
     padding: '4px 10px',
     fontSize: 11,
@@ -143,109 +122,55 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 3,
     cursor: 'pointer',
   },
-  btnDanger: {
-    padding: '4px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    backgroundColor: '#d32f2f',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 3,
-    cursor: 'pointer',
-  },
 };
 
 function getImageUrl(entityType: string, entityId: string, assetPath?: string): string {
   if (entityType === 'room') {
     if (!assetPath) return '';
-    // Strip leading path segments (e.g. "images/rooms/foo" -> "foo")
     const filename = assetPath.split('/').pop() || assetPath;
-    // Add .webp if no extension present
     const withExt = filename.includes('.') ? filename : `${filename}.webp`;
     return `/api/assets/images/rooms/${withExt}`;
   }
-  // NPCs and Items: derive from entityId
   const filename = entityId.replace(':', '_');
   return `/api/assets/images/rooms/${filename}.webp`;
 }
 
-function ImagePreview({ entityType, entityId, description, assetPath }: ImagePreviewProps) {
+function ImagePreview({ entityType, entityId, description, assetPath, imagePrompt, imageStyle, imageNegativePrompt, imageWidth, imageHeight, onUpdate }: ImagePreviewProps) {
   const [imgError, setImgError] = useState(false);
-  const [template, setTemplate] = useState<PromptTemplate | null>(null);
-  const [templateLoaded, setTemplateLoaded] = useState(false);
-  const [form, setForm] = useState({ prompt: '', style: '', negativePrompt: '', width: 1024, height: 576 });
-  const [saving, setSaving] = useState(false);
+  const [localPrompt, setLocalPrompt] = useState(imagePrompt || '');
+  const [localStyle, setLocalStyle] = useState(imageStyle || '');
+  const [localNeg, setLocalNeg] = useState(imageNegativePrompt || '');
+  const [localW, setLocalW] = useState(imageWidth || 1024);
+  const [localH, setLocalH] = useState(imageHeight || 576);
 
   const imageUrl = getImageUrl(entityType, entityId, assetPath);
 
-  // Reset image error state when url changes
+  // Sync local state when props change (entity selection change)
+  useEffect(() => {
+    setLocalPrompt(imagePrompt || '');
+    setLocalStyle(imageStyle || '');
+    setLocalNeg(imageNegativePrompt || '');
+    setLocalW(imageWidth || 1024);
+    setLocalH(imageHeight || 576);
+  }, [entityId, imagePrompt, imageStyle, imageNegativePrompt, imageWidth, imageHeight]);
+
   useEffect(() => {
     setImgError(false);
   }, [imageUrl]);
 
-  // Load prompt template
-  useEffect(() => {
-    setTemplate(null);
-    setTemplateLoaded(false);
-    api
-      .get<PromptTemplate>(`/prompt-templates?entityType=${entityType}&entityId=${encodeURIComponent(entityId)}`)
-      .then((t) => {
-        setTemplate(t);
-        setForm({ prompt: t.prompt, style: t.style, negativePrompt: t.negativePrompt, width: t.width, height: t.height });
-        setTemplateLoaded(true);
-      })
-      .catch(() => {
-        setTemplateLoaded(true);
-      });
-  }, [entityType, entityId]);
-
-  const handleCreateTemplate = async () => {
-    setSaving(true);
-    try {
-      const data = {
-        entityType,
-        entityId,
-        prompt: description || '',
-        style: '',
-        negativePrompt: '',
-        width: 1024,
-        height: 576,
-      };
-      const created = await api.post<PromptTemplate>('/prompt-templates', data);
-      setTemplate(created);
-      setForm({ prompt: created.prompt, style: created.style, negativePrompt: created.negativePrompt, width: created.width, height: created.height });
-    } catch (err) {
-      console.error('Failed to create template:', err);
-    }
-    setSaving(false);
-  };
-
-  const handleSave = async () => {
-    if (!template) return;
-    setSaving(true);
-    try {
-      const updated = await api.put<PromptTemplate>(`/prompt-templates/${template.id}`, form);
-      setTemplate(updated);
-      setForm({ prompt: updated.prompt, style: updated.style, negativePrompt: updated.negativePrompt, width: updated.width, height: updated.height });
-    } catch (err) {
-      console.error('Failed to save template:', err);
-    }
-    setSaving(false);
-  };
-
-  const handleDelete = async () => {
-    if (!template) return;
-    try {
-      await api.del(`/prompt-templates/${template.id}`);
-      setTemplate(null);
-      setForm({ prompt: '', style: '', negativePrompt: '', width: 1024, height: 576 });
-    } catch (err) {
-      console.error('Failed to delete template:', err);
-    }
+  const fireUpdate = (overrides: Partial<{ imagePrompt: string; imageStyle: string; imageNegativePrompt: string; imageWidth: number; imageHeight: number }>) => {
+    if (!onUpdate) return;
+    onUpdate({
+      imagePrompt: overrides.imagePrompt ?? localPrompt,
+      imageStyle: overrides.imageStyle ?? localStyle,
+      imageNegativePrompt: overrides.imageNegativePrompt ?? localNeg,
+      imageWidth: overrides.imageWidth ?? localW,
+      imageHeight: overrides.imageHeight ?? localH,
+    });
   };
 
   const handleGenerate = () => {
-    const fullPrompt = [form.prompt, form.style && `Style: ${form.style}`, form.negativePrompt && `Negative: ${form.negativePrompt}`]
+    const fullPrompt = [localPrompt, localStyle && `Style: ${localStyle}`, localNeg && `Negative: ${localNeg}`]
       .filter(Boolean)
       .join('\n');
     navigator.clipboard.writeText(fullPrompt).then(() => {
@@ -279,74 +204,56 @@ function ImagePreview({ entityType, entityId, description, assetPath }: ImagePre
         )}
       </div>
 
-      {/* Prompt Template Section */}
+      {/* Prompt Fields Section */}
       <div style={styles.promptSection}>
-        <div style={styles.promptLabel}>Prompt Template</div>
-        {!templateLoaded ? (
-          <div style={styles.noTemplate}>Loading...</div>
-        ) : !template ? (
-          <>
-            <div style={styles.noTemplate}>No prompt template</div>
-            <button style={styles.btn} onClick={handleCreateTemplate} disabled={saving}>
-              {saving ? 'Creating...' : 'Create Template'}
-            </button>
-          </>
-        ) : (
-          <>
-            <div style={styles.fieldLabel}>Prompt</div>
-            <textarea
-              style={styles.textarea}
-              value={form.prompt}
-              onChange={(e) => setForm((f) => ({ ...f, prompt: e.target.value }))}
-              rows={3}
-            />
-            <div style={styles.fieldLabel}>Style</div>
+        <div style={styles.promptLabel}>Image Prompt</div>
+        <div style={styles.fieldLabel}>Prompt</div>
+        <textarea
+          style={styles.textarea}
+          value={localPrompt}
+          onChange={(e) => { setLocalPrompt(e.target.value); fireUpdate({ imagePrompt: e.target.value }); }}
+          rows={3}
+          placeholder={description || 'Describe the image to generate...'}
+        />
+        <div style={styles.fieldLabel}>Style</div>
+        <input
+          style={styles.input}
+          value={localStyle}
+          onChange={(e) => { setLocalStyle(e.target.value); fireUpdate({ imageStyle: e.target.value }); }}
+          placeholder="e.g. pixel art, watercolor"
+        />
+        <div style={styles.fieldLabel}>Negative Prompt</div>
+        <input
+          style={styles.input}
+          value={localNeg}
+          onChange={(e) => { setLocalNeg(e.target.value); fireUpdate({ imageNegativePrompt: e.target.value }); }}
+          placeholder="e.g. blurry, low quality"
+        />
+        <div style={styles.row}>
+          <div style={{ flex: 1 }}>
+            <div style={styles.fieldLabel}>Width</div>
             <input
               style={styles.input}
-              value={form.style}
-              onChange={(e) => setForm((f) => ({ ...f, style: e.target.value }))}
-              placeholder="e.g. pixel art, watercolor"
+              type="number"
+              value={localW}
+              onChange={(e) => { const v = parseInt(e.target.value) || 0; setLocalW(v); fireUpdate({ imageWidth: v }); }}
             />
-            <div style={styles.fieldLabel}>Negative Prompt</div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={styles.fieldLabel}>Height</div>
             <input
               style={styles.input}
-              value={form.negativePrompt}
-              onChange={(e) => setForm((f) => ({ ...f, negativePrompt: e.target.value }))}
-              placeholder="e.g. blurry, low quality"
+              type="number"
+              value={localH}
+              onChange={(e) => { const v = parseInt(e.target.value) || 0; setLocalH(v); fireUpdate({ imageHeight: v }); }}
             />
-            <div style={styles.row}>
-              <div style={{ flex: 1 }}>
-                <div style={styles.fieldLabel}>Width</div>
-                <input
-                  style={styles.input}
-                  type="number"
-                  value={form.width}
-                  onChange={(e) => setForm((f) => ({ ...f, width: parseInt(e.target.value) || 0 }))}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={styles.fieldLabel}>Height</div>
-                <input
-                  style={styles.input}
-                  type="number"
-                  value={form.height}
-                  onChange={(e) => setForm((f) => ({ ...f, height: parseInt(e.target.value) || 0 }))}
-                />
-              </div>
-            </div>
-            <div style={styles.btnRow}>
-              <button style={styles.btn} onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-              <button style={styles.btnOutline} onClick={handleGenerate}>
-                Generate
-              </button>
-              <button style={styles.btnDanger} onClick={handleDelete}>
-                Delete
-              </button>
-            </div>
-          </>
-        )}
+          </div>
+        </div>
+        <div style={styles.btnRow}>
+          <button style={styles.btnOutline} onClick={handleGenerate}>
+            Copy Prompt
+          </button>
+        </div>
       </div>
     </div>
   );

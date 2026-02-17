@@ -18,6 +18,7 @@ local.properties
 
 # Database
 *.db
+*.mtime
 
 # OS
 .DS_Store
@@ -26,6 +27,9 @@ Thumbs.db
 # Kotlin
 *.class
 .kotlin/
+
+# Maker
+maker/settings.json
 
 # Claude
 .claude/

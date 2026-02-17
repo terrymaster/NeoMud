@@ -64,6 +64,11 @@ function NpcEditor() {
     { key: 'missSound', label: 'Miss Sound', type: 'text' },
     { key: 'deathSound', label: 'Death Sound', type: 'text' },
     { key: 'interactSound', label: 'Interact Sound', type: 'text' },
+    { key: 'imagePrompt', label: 'Image Prompt', type: 'textarea', rows: 3 },
+    { key: 'imageStyle', label: 'Image Style', type: 'text' },
+    { key: 'imageNegativePrompt', label: 'Image Negative Prompt', type: 'text' },
+    { key: 'imageWidth', label: 'Image Width', type: 'number' },
+    { key: 'imageHeight', label: 'Image Height', type: 'number' },
   ];
 
   return <GenericCrudEditor entityName="NPC" apiPath="/npcs" fields={fields} imagePreview={{ entityType: 'npc' }} />;

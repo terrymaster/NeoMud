@@ -112,6 +112,8 @@ const styles: Record<string, CSSProperties> = {
 function ProjectList() {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [newName, setNewName] = useState('');
+  const [importPath, setImportPath] = useState('');
+  const [importName, setImportName] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -163,6 +165,23 @@ function ProjectList() {
     }
   };
 
+  const handleImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedPath = importPath.trim();
+    if (!trimmedPath) return;
+    setError('');
+    try {
+      const result = await api.post<{ name: string }>('/projects/import', {
+        path: trimmedPath,
+        name: importName.trim() || undefined,
+      });
+      await api.post(`/projects/${encodeURIComponent(result.name)}/open`);
+      navigate(`/project/${encodeURIComponent(result.name)}/zones`);
+    } catch (err: any) {
+      setError(err.message || 'Import failed');
+    }
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.container}>
@@ -177,6 +196,25 @@ function ProjectList() {
           />
           <button style={styles.button} type="submit">
             New Project
+          </button>
+        </form>
+        <form style={{ ...styles.form, marginBottom: 12 }} onSubmit={handleImport}>
+          <input
+            style={styles.input}
+            type="text"
+            placeholder="Path to .nmd file..."
+            value={importPath}
+            onChange={(e) => setImportPath(e.target.value)}
+          />
+          <input
+            style={{ ...styles.input, maxWidth: 140 }}
+            type="text"
+            placeholder="Name (optional)"
+            value={importName}
+            onChange={(e) => setImportName(e.target.value)}
+          />
+          <button style={styles.button} type="submit">
+            Import .nmd
           </button>
         </form>
         {error && <p style={styles.error}>{error}</p>}

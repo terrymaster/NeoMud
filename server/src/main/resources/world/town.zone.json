@@ -6,6 +6,8 @@
   "bgm": "town_peaceful",
   "spawnRoom": "town:temple",
   "spawnConfig": { "maxEntities": 0, "maxPerRoom": 0, "rateTicks": 0 },
+  "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+  "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
   "rooms": [
     {
       "id": "town:square",
@@ -20,7 +22,10 @@
         "WEST": "town:tavern"
       },
       "backgroundImage": "/assets/images/rooms/town_square.webp",
-      "departSound": "footstep_cobblestone"
+      "departSound": "footstep_cobblestone",
+      "imagePrompt": "First-person view standing in a medieval fantasy town square. Flat cobblestone ground plane filling the lower third. A weathered stone fountain ahead in the mid-ground. Colorful merchant stalls and timber-framed buildings line left and right edges receding to a vanishing point. Clear sky above. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     },
     {
       "id": "town:tavern",
@@ -32,7 +37,10 @@
         "EAST": "town:square"
       },
       "backgroundImage": "/assets/images/rooms/town_tavern.webp",
-      "departSound": "footstep_wood"
+      "departSound": "footstep_wood",
+      "imagePrompt": "First-person view standing inside a dim medieval tavern. Flat wooden plank floor filling the lower third. Low wooden beams overhead, a roaring fireplace on the back wall. A long bar counter ahead, scarred tables on either side. Warm candlelight and smoky atmosphere. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     },
     {
       "id": "town:market",
@@ -44,7 +52,10 @@
         "WEST": "town:square"
       },
       "backgroundImage": "/assets/images/rooms/town_market.webp",
-      "departSound": "footstep_cobblestone"
+      "departSound": "footstep_cobblestone",
+      "imagePrompt": "First-person view standing on a narrow medieval market street. Flat stone-paved ground plane filling the lower third. Merchant stalls with colorful awnings lining both sides, receding toward a glowing blacksmith's forge ahead. Weapons and armor on display. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     },
     {
       "id": "town:gate",
@@ -57,7 +68,10 @@
         "NORTH": "forest:edge"
       },
       "backgroundImage": "/assets/images/rooms/town_gate.webp",
-      "departSound": "footstep_cobblestone"
+      "departSound": "footstep_cobblestone",
+      "imagePrompt": "First-person view standing before a fortified medieval town gate. Flat dirt and cobblestone ground plane filling the lower third. Massive oak doors reinforced with iron bands ahead, flanked by stone watchtowers on each side. A dirt road visible beyond leading into a dark forest. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     },
     {
       "id": "town:temple",
@@ -70,7 +84,10 @@
       },
       "backgroundImage": "/assets/images/rooms/town_temple.webp",
       "healPerTick": 5,
-      "departSound": "footstep_marble"
+      "departSound": "footstep_marble",
+      "imagePrompt": "First-person view standing inside a serene stone temple. Flat polished marble floor filling the lower third. Tall stained glass windows on left and right casting rainbow light. A white-draped altar centered ahead at the far wall, incense smoke curling upward. Vaulted stone ceiling. No people or creatures.",
+      "imageWidth": 1024,
+      "imageHeight": 576
     }
   ],
   "npcs": [
@@ -80,14 +97,24 @@
       "description": "A stern-looking guard in chainmail, hand resting on the pommel of a well-worn sword. He watches the comings and goings with vigilant eyes.",
       "startRoomId": "town:gate",
       "behaviorType": "patrol",
-      "patrolRoute": ["town:gate", "town:square", "town:market", "town:square", "town:gate"]
+      "patrolRoute": ["town:gate", "town:square", "town:market", "town:square", "town:gate"],
+      "imagePrompt": "Full-body medieval town guard standing upright facing the viewer, chainmail armor over tabard, hand on sword pommel, stern expression. Single character, isolated on solid transparent background, no ground, no scenery.",
+      "imageStyle": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
+      "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
+      "imageWidth": 384,
+      "imageHeight": 512
     },
     {
       "id": "npc:barkeep",
       "name": "Barkeep Grom",
       "description": "A barrel-chested dwarf with a magnificent braided beard and arms like tree trunks. He moves behind the bar with surprising grace, simultaneously serving three customers and keeping an eye on the rowdy corner table.",
       "startRoomId": "town:tavern",
-      "behaviorType": "idle"
+      "behaviorType": "idle",
+      "imagePrompt": "Full-body stout dwarf barkeep standing upright facing the viewer, barrel chest, magnificent braided beard, leather apron, holding a tankard. Single character, isolated on solid transparent background, no ground, no scenery.",
+      "imageStyle": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
+      "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
+      "imageWidth": 384,
+      "imageHeight": 512
     },
     {
       "id": "npc:guildmaster",
@@ -121,7 +148,12 @@
         "item:steel_longsword",
         "item:health_potion",
         "item:mana_potion"
-      ]
+      ],
+      "imagePrompt": "Full-body brawny human blacksmith standing upright facing the viewer, muscular arms, soot-stained leather apron, holding a forge hammer in one hand and tongs in the other, short dark hair. Single character, isolated on solid transparent background, no ground, no scenery.",
+      "imageStyle": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
+      "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
+      "imageWidth": 384,
+      "imageHeight": 512
     }
   ]
 }

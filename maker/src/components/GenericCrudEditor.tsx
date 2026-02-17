@@ -342,6 +342,12 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                 entityType={imagePreview.entityType}
                 entityId={selectedId}
                 description={form.description}
+                imagePrompt={form.imagePrompt}
+                imageStyle={form.imageStyle}
+                imageNegativePrompt={form.imageNegativePrompt}
+                imageWidth={form.imageWidth}
+                imageHeight={form.imageHeight}
+                onUpdate={(fields) => setForm((f: any) => ({ ...f, ...fields }))}
               />
             )}
             {fields.map((field) => {

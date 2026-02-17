@@ -79,7 +79,6 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     val classCatalog = loadResult.classCatalog
     val itemCatalog = loadResult.itemCatalog
     val lootTableCatalog = loadResult.lootTableCatalog
-    val promptTemplateCatalog = loadResult.promptTemplateCatalog
     val skillCatalog = loadResult.skillCatalog
     val raceCatalog = loadResult.raceCatalog
     val spellCatalog = loadResult.spellCatalog

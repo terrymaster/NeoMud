@@ -300,55 +300,6 @@ entitiesRouter.delete('/spells/:id', rejectIfReadOnly, async (req, res) => {
   }
 })
 
-// ─── Prompt Templates ─────────────────────────────────────────
-
-entitiesRouter.get('/prompt-templates', async (req, res) => {
-  try {
-    const { entityType, entityId } = req.query
-    if (!entityType || !entityId) {
-      res.status(400).json({ error: 'entityType and entityId are required' })
-      return
-    }
-    const template = await db().promptTemplate.findUnique({
-      where: { entityType_entityId: { entityType: entityType as string, entityId: entityId as string } },
-    })
-    if (!template) { res.status(404).json({ error: 'Template not found' }); return }
-    res.json(template)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-entitiesRouter.post('/prompt-templates', rejectIfReadOnly, async (req, res) => {
-  try {
-    const template = await db().promptTemplate.create({ data: req.body })
-    res.json(template)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-entitiesRouter.put('/prompt-templates/:id', rejectIfReadOnly, async (req, res) => {
-  try {
-    const template = await db().promptTemplate.update({
-      where: { id: parseInt(req.params.id) },
-      data: req.body,
-    })
-    res.json(template)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-entitiesRouter.delete('/prompt-templates/:id', rejectIfReadOnly, async (req, res) => {
-  try {
-    await db().promptTemplate.delete({ where: { id: parseInt(req.params.id) } })
-    res.json({ ok: true })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
 // ─── Loot Tables ───────────────────────────────────────────────
 
 entitiesRouter.get('/loot-tables', async (_req, res) => {

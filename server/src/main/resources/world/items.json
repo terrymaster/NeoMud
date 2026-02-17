@@ -12,7 +12,10 @@
       "weight": 5,
       "levelRequirement": 1,
       "attackSound": "sword_swing",
-      "missSound": "sword_miss"
+      "missSound": "sword_miss",
+      "imagePrompt": "A single sturdy iron sword with well-balanced blade, leather-wrapped grip, simple crossguard. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:wooden_shield",
@@ -23,7 +26,10 @@
       "armorValue": 2,
       "value": 30,
       "weight": 4,
-      "levelRequirement": 1
+      "levelRequirement": 1,
+      "imagePrompt": "A single round shield made of hardened oak with iron rim and central boss, weathered but sturdy. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:leather_cap",
@@ -34,7 +40,10 @@
       "armorValue": 1,
       "value": 15,
       "weight": 1,
-      "levelRequirement": 1
+      "levelRequirement": 1,
+      "imagePrompt": "A single simple cap made of boiled brown leather, basic head protection. Isolated object centered, no surface, no head or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, head, mannequin, multiple items, modern, sci-fi"
     },
     {
       "id": "item:leather_chest",
@@ -45,7 +54,10 @@
       "armorValue": 3,
       "value": 40,
       "weight": 4,
-      "levelRequirement": 1
+      "levelRequirement": 1,
+      "imagePrompt": "A single vest of thick tanned brown leather with stitched seams, torso armor. Isolated object centered, no surface, no body or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, body, mannequin, multiple items, modern, sci-fi"
     },
     {
       "id": "item:leather_legs",
@@ -56,7 +68,10 @@
       "armorValue": 2,
       "value": 25,
       "weight": 3,
-      "levelRequirement": 1
+      "levelRequirement": 1,
+      "imagePrompt": "A single pair of tough leather leggings with reinforced knee patches. Isolated object centered, no surface, no legs or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, legs, mannequin, multiple items, modern, sci-fi"
     },
     {
       "id": "item:leather_boots",
@@ -67,7 +82,10 @@
       "armorValue": 1,
       "value": 15,
       "weight": 2,
-      "levelRequirement": 1
+      "levelRequirement": 1,
+      "imagePrompt": "A single pair of well-worn leather boots reaching mid-calf, thick soles and lacing. Isolated object centered, no surface, no feet.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, feet, multiple items, modern, sci-fi"
     },
     {
       "id": "item:leather_gloves",
@@ -78,7 +96,10 @@
       "armorValue": 1,
       "value": 10,
       "weight": 1,
-      "levelRequirement": 1
+      "levelRequirement": 1,
+      "imagePrompt": "A single pair of supple brown leather gloves with reinforced fingers. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:health_potion",
@@ -90,7 +111,10 @@
       "weight": 1,
       "stackable": true,
       "maxStack": 10,
-      "useSound": "potion_drink"
+      "useSound": "potion_drink",
+      "imagePrompt": "A single small glass vial filled with glowing red liquid, corked and sealed, magical healing potion with faint luminescence. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:mana_potion",
@@ -192,7 +216,10 @@
       "value": 5,
       "weight": 1,
       "stackable": true,
-      "maxStack": 20
+      "maxStack": 20,
+      "imagePrompt": "A single long curved venomous fang from a giant spider, sharp and translucent with green venom residue. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, spider, multiple items, modern, sci-fi"
     },
     {
       "id": "item:wolf_pelt",
@@ -202,7 +229,10 @@
       "value": 8,
       "weight": 2,
       "stackable": true,
-      "maxStack": 10
+      "maxStack": 10,
+      "imagePrompt": "A single dark luxurious fur pelt from a shadow wolf, midnight black with a slight shimmer. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, wolf, multiple items, modern, sci-fi"
     }
   ]
 }

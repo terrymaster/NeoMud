@@ -20,5 +20,10 @@ data class Item(
     val levelRequirement: Int = 0,
     val attackSound: String = "",
     val missSound: String = "",
-    val useSound: String = ""
+    val useSound: String = "",
+    val imagePrompt: String = "",
+    val imageStyle: String = "",
+    val imageNegativePrompt: String = "",
+    val imageWidth: Int = 256,
+    val imageHeight: Int = 256
 )

@@ -36,6 +36,18 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     padding: 0,
   },
+  navSpacer: {
+    flex: 1,
+  },
+  navBottom: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    padding: '0 8px 12px',
+    borderTop: '1px solid #2a2a4a',
+    marginTop: 8,
+    paddingTop: 8,
+  },
   projectName: {
     padding: '20px 16px 12px',
     fontSize: 18,
@@ -120,6 +132,18 @@ function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div style={styles.navSpacer} />
+        <div style={styles.navBottom}>
+          <NavLink
+            to="settings"
+            style={({ isActive }) => ({
+              ...styles.link,
+              ...(isActive ? styles.linkActive : {}),
+            })}
+          >
+            Settings
+          </NavLink>
+        </div>
       </div>
       <div style={styles.content}>
         <Outlet />
