@@ -87,16 +87,18 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
   }
 
   // ─── Items ─────────────────────────────────────────────
+  const legacyTypeMap: Record<string, string> = { junk: 'misc', material: 'crafting', key: 'misc' }
   const itemsEntry = zip.getEntry('world/items.json')
   if (itemsEntry) {
     const { items } = JSON.parse(zip.readAsText(itemsEntry))
     for (const item of items) {
+      const rawType = (item.type ?? '').toLowerCase()
       await prisma.item.create({
         data: {
           id: item.id,
           name: item.name,
           description: item.description ?? '',
-          type: item.type ?? '',
+          type: legacyTypeMap[rawType] ?? rawType,
           slot: item.slot ?? '',
           damageBonus: item.damageBonus ?? 0,
           damageRange: item.damageRange ?? 0,

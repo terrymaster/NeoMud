@@ -6,12 +6,13 @@ import type { CSSProperties } from 'react';
 export interface FieldConfig {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'checkbox' | 'select' | 'json';
+  type: 'text' | 'textarea' | 'number' | 'checkbox' | 'select' | 'json' | 'radio';
   options?: { value: string; label: string }[];
   placeholder?: string;
   disabled?: boolean;
   rows?: number;
   help?: string;
+  visibleWhen?: (form: Record<string, any>) => boolean;
 }
 
 interface GenericCrudEditorProps {
@@ -350,7 +351,7 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                 onUpdate={(fields) => setForm((f: any) => ({ ...f, ...fields }))}
               />
             )}
-            {fields.map((field) => {
+            {fields.filter((f) => !f.visibleWhen || f.visibleWhen(form)).map((field) => {
               const isIdDisabled = field.key === idField && !isNew;
               const disabled = field.disabled || isIdDisabled;
               return (
@@ -419,6 +420,21 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                         <div style={styles.error}>{jsonErrors[field.key]}</div>
                       )}
                     </>
+                  )}
+                  {field.type === 'radio' && (
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      {(field.options || []).map((opt) => (
+                        <label key={opt.value} style={{ fontSize: 13, cursor: 'pointer' }}>
+                          <input
+                            type="radio"
+                            name={field.key}
+                            value={opt.value}
+                            checked={form[field.key] === opt.value}
+                            onChange={() => handleChange(field.key, opt.value)}
+                          />{' '}{opt.label}
+                        </label>
+                      ))}
+                    </div>
                   )}
                   {field.help && <div style={styles.help}>{field.help}</div>}
                 </div>

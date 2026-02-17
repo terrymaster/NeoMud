@@ -71,6 +71,9 @@ export async function validateProject(
     if (item.type === 'consumable' && !item.useEffect) {
       warnings.push(`Consumable '${item.id}' missing useEffect`)
     }
+    if (item.type === 'crafting' && item.useEffect) {
+      warnings.push(`Crafting item '${item.id}' has useEffect — crafting materials shouldn't have use effects`)
+    }
     if (item.stackable && item.maxStack <= 1) {
       warnings.push(`Item '${item.id}' is stackable but maxStack=${item.maxStack}`)
     }
