@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.neomud.client"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.neomud.client"

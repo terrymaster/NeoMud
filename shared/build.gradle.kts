@@ -26,7 +26,7 @@ kotlin {
 
 android {
     namespace = "com.neomud.shared"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26

@@ -163,7 +163,7 @@ Opens on `http://localhost:5173` (Vite frontend) with the API server on port 300
 
 ### Prerequisites
 - JDK 21 (e.g., Amazon Corretto)
-- Android SDK with platform 35
+- Android SDK with platform 36
 - Android emulator or device (min SDK 26)
 - Node.js 18+ (for the Maker)
 
