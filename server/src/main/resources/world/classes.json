@@ -64,7 +64,7 @@
       "mpPerLevelMin": 2, "mpPerLevelMax": 5,
       "xpModifier": 1.15,
       "magicSchools": { "priest": 2 },
-      "skills": ["HIDE", "SNEAK", "PICK_LOCK", "MEDITATE"]
+      "skills": ["SNEAK", "PICK_LOCK", "MEDITATE"]
     },
     {
       "id": "MAGE",
@@ -108,7 +108,7 @@
       "mpPerLevelMin": 1, "mpPerLevelMax": 3,
       "xpModifier": 1.1,
       "magicSchools": { "druid": 1 },
-      "skills": ["HIDE", "SNEAK", "KICK", "DODGE", "PERCEPTION", "TRACK"]
+      "skills": ["SNEAK", "KICK", "DODGE", "PERCEPTION", "TRACK"]
     },
     {
       "id": "THIEF",
@@ -119,7 +119,7 @@
       "mpPerLevelMin": 0, "mpPerLevelMax": 0,
       "xpModifier": 1.0,
       "magicSchools": {},
-      "skills": ["HIDE", "SNEAK", "BACKSTAB", "PICK_LOCK", "DODGE", "PERCEPTION", "HAGGLE"]
+      "skills": ["SNEAK", "BACKSTAB", "PICK_LOCK", "DODGE", "PERCEPTION", "HAGGLE"]
     },
     {
       "id": "NINJA",
@@ -130,7 +130,7 @@
       "mpPerLevelMin": 0, "mpPerLevelMax": 0,
       "xpModifier": 1.1,
       "magicSchools": {},
-      "skills": ["HIDE", "SNEAK", "BACKSTAB", "KICK", "DODGE"]
+      "skills": ["SNEAK", "BACKSTAB", "KICK", "DODGE"]
     },
     {
       "id": "MYSTIC",
@@ -152,7 +152,7 @@
       "mpPerLevelMin": 2, "mpPerLevelMax": 5,
       "xpModifier": 1.1,
       "magicSchools": { "bard": 1 },
-      "skills": ["HIDE", "PICK_LOCK", "HAGGLE", "MEDITATE"]
+      "skills": ["SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE"]
     },
     {
       "id": "GYPSY",
@@ -163,7 +163,7 @@
       "mpPerLevelMin": 1, "mpPerLevelMax": 4,
       "xpModifier": 1.1,
       "magicSchools": { "mage": 1 },
-      "skills": ["HIDE", "SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE"]
+      "skills": ["SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE"]
     }
   ]
 }

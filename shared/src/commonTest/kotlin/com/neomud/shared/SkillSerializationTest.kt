@@ -49,7 +49,7 @@ class SkillSerializationTest {
     @Test
     fun testSkillDefListRoundTrip() {
         val skills = listOf(
-            SkillDef("HIDE", "Hide", "Slip into the shadows.", "stealth", "dexterity", "intelligence", cooldownTicks = 2, difficulty = 15),
+            SkillDef("SNEAK", "Sneak", "Enter stealth.", "stealth", "agility", "willpower", cooldownTicks = 2, difficulty = 15),
             SkillDef("BACKSTAB", "Backstab", "Strike from shadows.", "combat", "dexterity", "strength", cooldownTicks = 4)
         )
 

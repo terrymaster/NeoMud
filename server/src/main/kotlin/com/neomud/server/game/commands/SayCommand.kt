@@ -25,7 +25,7 @@ class SayCommand(
         // Break stealth on say
         if (session.isHidden) {
             session.isHidden = false
-            session.send(ServerMessage.HideModeUpdate(false, "Speaking reveals your presence!"))
+            session.send(ServerMessage.StealthUpdate(false, "Speaking reveals your presence!"))
             sessionManager.broadcastToRoom(
                 roomId,
                 ServerMessage.PlayerEntered(playerName, roomId, session.toPlayerInfo()),

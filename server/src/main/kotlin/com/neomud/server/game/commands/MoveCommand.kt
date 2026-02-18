@@ -1,11 +1,15 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.StealthUtils
+import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
+import com.neomud.server.world.ClassCatalog
 import com.neomud.server.world.LockStateManager
+import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
 import com.neomud.shared.protocol.ServerMessage
@@ -19,7 +23,9 @@ class MoveCommand(
     private val npcManager: NpcManager,
     private val playerRepository: PlayerRepository,
     private val roomItemManager: RoomItemManager,
-    private val lockStateManager: LockStateManager
+    private val lockStateManager: LockStateManager,
+    private val skillCatalog: SkillCatalog,
+    private val classCatalog: ClassCatalog
 ) {
     suspend fun execute(session: PlayerSession, direction: Direction) {
         val currentRoomId = session.currentRoomId ?: return
@@ -55,19 +61,19 @@ class MoveCommand(
         // Stealth check on room transition
         var sneaking = false
         if (session.isHidden && player != null) {
-            val stats = player.stats
+            val stats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
             val roll = (1..20).random()
-            val check = stats.agility + stats.intellect / 2 + player.level / 2 + roll
+            val check = stats.agility + stats.willpower / 2 + player.level / 2 + roll
             val difficulty = 15
 
             if (check >= difficulty) {
                 // Sneak successful - stay hidden, no broadcasts
                 sneaking = true
-                session.send(ServerMessage.HideModeUpdate(true, "Sneaking..."))
+                session.send(ServerMessage.StealthUpdate(true, "Sneaking..."))
             } else {
                 // Sneak failed - stealth breaks
                 session.isHidden = false
-                session.send(ServerMessage.HideModeUpdate(false, "Your movement gives you away!"))
+                session.send(ServerMessage.StealthUpdate(false, "Your movement gives you away!"))
             }
         }
 
@@ -100,23 +106,47 @@ class MoveCommand(
             )
         } else {
             // Even if the player's sneak check passed, NPCs in the new room get perception rolls
-            val npcsHere = npcManager.getLivingNpcsInRoom(targetRoomId)
-            if (npcsHere.isNotEmpty() && player != null) {
-                val stats = player.stats
-                val stealthDc = stats.agility + stats.intellect / 2 + player.level / 2 + 10
+            if (player != null) {
+                val stats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+                val stealthDc = stats.agility + stats.willpower / 2 + player.level / 2 + 10
+
+                val npcsHere = npcManager.getLivingNpcsInRoom(targetRoomId)
                 for (npc in npcsHere) {
-                    if (!session.isHidden) break // already detected by a prior NPC
+                    if (!session.isHidden) break
                     val npcRoll = npc.perception + npc.level + (1..20).random()
                     if (npcRoll >= stealthDc) {
                         session.isHidden = false
                         sneaking = false
-                        session.send(ServerMessage.HideModeUpdate(false, "${npc.name} notices you sneaking in!"))
+                        session.send(ServerMessage.StealthUpdate(false, "${npc.name} notices you sneaking in!"))
                         sessionManager.broadcastToRoom(
                             targetRoomId,
                             ServerMessage.PlayerEntered(playerName, targetRoomId, session.toPlayerInfo()),
                             exclude = playerName
                         )
                         break
+                    }
+                }
+
+                // Non-hidden players in new room get perception checks
+                if (session.isHidden) {
+                    for (otherSession in sessionManager.getSessionsInRoom(targetRoomId)) {
+                        if (otherSession == session || otherSession.isHidden) continue
+                        if (!session.isHidden) break
+                        val otherPlayer = otherSession.player ?: continue
+                        val otherStats = CombatUtils.effectiveStats(otherPlayer.stats, otherSession.activeEffects.toList())
+                        val bonus = StealthUtils.perceptionBonus(otherPlayer.characterClass, classCatalog)
+                        val observerRoll = otherStats.willpower + otherStats.intellect / 2 + otherPlayer.level / 2 + bonus + (1..20).random()
+                        if (observerRoll >= stealthDc) {
+                            session.isHidden = false
+                            sneaking = false
+                            session.send(ServerMessage.StealthUpdate(false, "${otherPlayer.name} notices you sneaking in!"))
+                            sessionManager.broadcastToRoom(
+                                targetRoomId,
+                                ServerMessage.PlayerEntered(playerName, targetRoomId, session.toPlayerInfo()),
+                                exclude = playerName
+                            )
+                            break
+                        }
                     }
                 }
             }

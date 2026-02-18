@@ -405,7 +405,7 @@ class GameViewModel(
                     addLog("You pick up ${message.itemName}$qtyStr.", MudColors.loot)
                 }
             }
-            is ServerMessage.HideModeUpdate -> {
+            is ServerMessage.StealthUpdate -> {
                 _isHidden.value = message.hidden
                 if (message.message.isNotEmpty()) {
                     addLog(message.message, MudColors.stealth)
@@ -640,9 +640,9 @@ class GameViewModel(
         }
     }
 
-    fun toggleHideMode(enabled: Boolean) {
+    fun toggleSneakMode(enabled: Boolean) {
         viewModelScope.launch {
-            wsClient.send(ClientMessage.HideToggle(enabled))
+            wsClient.send(ClientMessage.SneakToggle(enabled))
         }
     }
 

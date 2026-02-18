@@ -1,9 +1,11 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.UseEffectProcessor
 import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.session.PlayerSession
+import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ItemCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ServerMessage
@@ -12,7 +14,8 @@ class InventoryCommand(
     private val inventoryRepository: InventoryRepository,
     private val itemCatalog: ItemCatalog,
     private val coinRepository: CoinRepository,
-    private val worldGraph: WorldGraph
+    private val worldGraph: WorldGraph,
+    private val sessionManager: SessionManager
 ) {
     companion object {
         private val VALID_SLOTS = setOf("weapon", "shield", "head", "chest", "legs", "feet", "hands")
@@ -29,6 +32,8 @@ class InventoryCommand(
     suspend fun handleEquipItem(session: PlayerSession, itemId: String, slot: String) {
         val playerName = session.playerName ?: return
         val player = session.player ?: return
+
+        StealthUtils.breakStealth(session, sessionManager, "Equipping gear reveals your presence!")
 
         if (slot !in VALID_SLOTS) {
             session.send(ServerMessage.Error("Invalid equipment slot."))
@@ -63,6 +68,8 @@ class InventoryCommand(
     suspend fun handleUnequipItem(session: PlayerSession, slot: String) {
         val playerName = session.playerName ?: return
 
+        StealthUtils.breakStealth(session, sessionManager, "Unequipping gear reveals your presence!")
+
         val success = inventoryRepository.unequipItem(playerName, slot)
         if (success) {
             session.send(ServerMessage.EquipUpdate(slot, null, null))
@@ -75,6 +82,8 @@ class InventoryCommand(
     suspend fun handleUseItem(session: PlayerSession, itemId: String) {
         val playerName = session.playerName ?: return
         val player = session.player ?: return
+
+        StealthUtils.breakStealth(session, sessionManager, "Using an item reveals your presence!")
 
         val item = itemCatalog.getItem(itemId)
         if (item == null) {

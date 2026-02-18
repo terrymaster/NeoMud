@@ -1,9 +1,11 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.session.PlayerSession
+import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ItemCatalog
 import com.neomud.shared.model.Coins
 import com.neomud.shared.model.VendorItem
@@ -15,7 +17,8 @@ class VendorCommand(
     private val itemCatalog: ItemCatalog,
     private val inventoryRepository: InventoryRepository,
     private val coinRepository: CoinRepository,
-    private val inventoryCommand: InventoryCommand
+    private val inventoryCommand: InventoryCommand,
+    private val sessionManager: SessionManager
 ) {
     private val logger = LoggerFactory.getLogger(VendorCommand::class.java)
 
@@ -23,6 +26,8 @@ class VendorCommand(
         val roomId = session.currentRoomId ?: return
         val playerName = session.playerName ?: return
         val player = session.player ?: return
+
+        StealthUtils.breakStealth(session, sessionManager, "Interacting with a vendor reveals your presence!")
 
         val vendor = npcManager.getVendorInRoom(roomId)
         if (vendor == null) {

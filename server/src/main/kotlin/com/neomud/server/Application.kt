@@ -93,12 +93,12 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     val lootService = LootService(itemCatalog)
     val equipmentService = EquipmentService(inventoryRepository, itemCatalog)
     val roomItemManager = RoomItemManager()
-    val inventoryCommand = InventoryCommand(inventoryRepository, itemCatalog, coinRepository, worldGraph)
+    val inventoryCommand = InventoryCommand(inventoryRepository, itemCatalog, coinRepository, worldGraph, sessionManager)
     val pickupCommand = PickupCommand(roomItemManager, inventoryRepository, coinRepository, itemCatalog, sessionManager)
     val combatManager = CombatManager(npcManager, sessionManager, worldGraph, equipmentService)
     val trainerCommand = TrainerCommand(classCatalog, raceCatalog, playerRepository, sessionManager, npcManager)
     val spellCommand = SpellCommand(spellCatalog, classCatalog, npcManager, sessionManager, playerRepository)
-    val vendorCommand = VendorCommand(npcManager, itemCatalog, inventoryRepository, coinRepository, inventoryCommand)
+    val vendorCommand = VendorCommand(npcManager, itemCatalog, inventoryRepository, coinRepository, inventoryCommand, sessionManager)
     val lockStateManager = com.neomud.server.world.LockStateManager()
     val adminUsernames = adminUsernamesOverride ?: (System.getenv("NEOMUD_ADMINS")
         ?.split(",")
@@ -116,7 +116,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
         trainerCommand, spellCommand, spellCatalog, vendorCommand, lootService, lootTableCatalog,
         inventoryRepository, lockStateManager, adminUsernames
     )
-    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository)
+    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository, skillCatalog, classCatalog)
 
     // Install plugins
     configureWebSockets()

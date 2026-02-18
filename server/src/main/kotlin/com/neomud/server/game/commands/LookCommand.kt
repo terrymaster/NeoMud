@@ -1,9 +1,13 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.StealthUtils
+import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
+import com.neomud.server.world.ClassCatalog
+import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ServerMessage
 
@@ -11,7 +15,9 @@ class LookCommand(
     private val worldGraph: WorldGraph,
     private val sessionManager: SessionManager,
     private val npcManager: NpcManager,
-    private val roomItemManager: RoomItemManager
+    private val roomItemManager: RoomItemManager,
+    private val skillCatalog: SkillCatalog,
+    private val classCatalog: ClassCatalog
 ) {
     suspend fun execute(session: PlayerSession) {
         val currentRoomId = session.currentRoomId ?: return
@@ -23,6 +29,7 @@ class LookCommand(
         }
 
         val playerName = session.playerName!!
+        val player = session.player
         val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(currentRoomId)
             .filter { it.name != playerName }
         val npcsInRoom = npcManager.getNpcsInRoom(currentRoomId)
@@ -41,5 +48,28 @@ class LookCommand(
         val groundItems = roomItemManager.getGroundItems(currentRoomId)
         val groundCoins = roomItemManager.getGroundCoins(currentRoomId)
         session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
+
+        // Active perception check against hidden players in room
+        if (player != null && !session.isHidden) {
+            val hiddenSessions = sessionManager.getSessionsInRoom(currentRoomId)
+                .filter { it.isHidden && it != session }
+            if (hiddenSessions.isNotEmpty()) {
+                val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+                val bonus = StealthUtils.perceptionBonus(player.characterClass, classCatalog)
+                val observerRoll = effStats.willpower + effStats.intellect / 2 + player.level / 2 + bonus + (1..20).random()
+
+                for (hiddenSession in hiddenSessions) {
+                    if (!hiddenSession.isHidden) continue
+                    val hiddenPlayer = hiddenSession.player ?: continue
+                    val hiddenStats = CombatUtils.effectiveStats(hiddenPlayer.stats, hiddenSession.activeEffects.toList())
+                    val stealthDc = hiddenStats.agility + hiddenStats.willpower / 2 + hiddenPlayer.level / 2 + 10
+
+                    if (observerRoll >= stealthDc) {
+                        StealthUtils.breakStealth(hiddenSession, sessionManager, "${player.name}'s keen eyes spot you lurking in the shadows!")
+                        session.send(ServerMessage.SystemMessage("Your keen eyes spot ${hiddenPlayer.name} lurking in the shadows!"))
+                    }
+                }
+            }
+        }
     }
 }

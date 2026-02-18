@@ -217,8 +217,8 @@ sealed class ServerMessage {
     ) : ServerMessage()
 
     @Serializable
-    @SerialName("hide_mode_update")
-    data class HideModeUpdate(val hidden: Boolean, val message: String = "") : ServerMessage()
+    @SerialName("stealth_update")
+    data class StealthUpdate(val hidden: Boolean, val message: String = "") : ServerMessage()
 
     @Serializable
     @SerialName("skill_catalog_sync")

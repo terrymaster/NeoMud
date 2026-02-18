@@ -2,9 +2,7 @@ package com.neomud.server.game
 
 import com.neomud.server.game.commands.AdminCommand
 import com.neomud.server.game.commands.AttackCommand
-import com.neomud.server.game.commands.BackstabCommand
 import com.neomud.server.game.commands.BashCommand
-import com.neomud.server.game.commands.HideCommand
 import com.neomud.server.game.commands.InventoryCommand
 import com.neomud.server.game.commands.KickCommand
 import com.neomud.server.game.commands.LookCommand
@@ -14,6 +12,7 @@ import com.neomud.server.game.commands.PickLockCommand
 import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.commands.SayCommand
 import com.neomud.server.game.commands.SkillKillHandler
+import com.neomud.server.game.commands.SneakCommand
 import com.neomud.server.game.commands.SpellCommand
 import com.neomud.server.game.commands.TrackCommand
 import com.neomud.server.game.commands.TrainerCommand
@@ -65,18 +64,17 @@ class CommandProcessor(
         sessionManager, playerRepository, npcManager, worldGraph,
         inventoryCommand, inventoryRepository, itemCatalog, classCatalog, raceCatalog, roomItemManager
     )
-    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, lockStateManager)
-    private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager)
+    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, lockStateManager, skillCatalog, classCatalog)
+    private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager, skillCatalog, classCatalog)
     private val sayCommand = SayCommand(sessionManager, adminCommand)
     private val attackCommand = AttackCommand(npcManager, worldGraph)
-    private val hideCommand = HideCommand(sessionManager, npcManager)
+    private val sneakCommand = SneakCommand(sessionManager, npcManager, skillCatalog, classCatalog)
     private val skillKillHandler = SkillKillHandler(npcManager, sessionManager, playerRepository, lootService, lootTableCatalog, roomItemManager)
-    private val backstabCommand = BackstabCommand(npcManager, sessionManager, skillKillHandler)
     private val bashCommand = BashCommand(npcManager, sessionManager, skillKillHandler)
     private val kickCommand = KickCommand(npcManager, sessionManager, skillKillHandler)
     private val meditateCommand = MeditateCommand(playerRepository)
     private val trackCommand = TrackCommand(npcManager, worldGraph)
-    private val pickLockCommand = PickLockCommand(worldGraph, lockStateManager)
+    private val pickLockCommand = PickLockCommand(worldGraph, lockStateManager, sessionManager)
 
     suspend fun sendCatalogSync(session: PlayerSession) {
         session.send(ServerMessage.ClassCatalogSync(classCatalog.getAllClasses()))
@@ -132,13 +130,12 @@ class CommandProcessor(
             is ClientMessage.PickupCoins -> {
                 requireAuth(session) { pickupCommand.handlePickupCoins(session, message.coinType) }
             }
-            is ClientMessage.HideToggle -> {
-                requireAuth(session) { hideCommand.handleToggle(session, message.enabled) }
+            is ClientMessage.SneakToggle -> {
+                requireAuth(session) { sneakCommand.handleToggle(session, message.enabled) }
             }
             is ClientMessage.UseSkill -> {
                 requireAuth(session) {
                     when (message.skillId.uppercase()) {
-                        "BACKSTAB" -> backstabCommand.execute(session, message.targetId)
                         "BASH" -> bashCommand.execute(session, message.targetId)
                         "KICK" -> kickCommand.execute(session, message.targetId)
                         "MEDITATE" -> meditateCommand.execute(session)

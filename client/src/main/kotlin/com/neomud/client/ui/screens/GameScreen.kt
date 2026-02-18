@@ -741,8 +741,7 @@ private data class SkillButtonInfo(
 private val SKILL_BUTTON_MAP = mapOf(
     "BASH" to SkillButtonInfo("\uD83D\uDCA5", Color(0xFFFF8833)),        // 💥 Orange
     "KICK" to SkillButtonInfo("\uD83E\uDDB6", Color(0xFFFF5533)),        // 🦶 Red-orange
-    "HIDE" to SkillButtonInfo("\uD83E\uDDE5", Color(0xFF888888)),        // 🧥 Gray
-    "BACKSTAB" to SkillButtonInfo("\uD83D\uDDE1\uFE0F", Color(0xFFCC3333)), // 🗡️ Dark red
+    "SNEAK" to SkillButtonInfo("\uD83E\uDDE5", Color(0xFF888888)),       // 🧥 Gray
     "MEDITATE" to SkillButtonInfo("\uD83E\uDDD8", Color(0xFF7755CC)),    // 🧘 Blue-purple
     "TRACK" to SkillButtonInfo("\uD83D\uDC3E", Color(0xFF55AA55)),       // 🐾 Green
     "PICK_LOCK" to SkillButtonInfo("\uD83D\uDD13", Color(0xFFCCAA33))    // 🔓 Gold
@@ -793,21 +792,24 @@ private fun ActionButtonRow(
         horizontalArrangement = Arrangement.spacedBy(3.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Attack button (always shown)
+        // Attack button — shows as Backstab (dagger) when hidden + class has BACKSTAB
+        val hasBackstab = classDef?.skills?.contains("BACKSTAB") == true
+        val showBackstab = isHidden && hasBackstab
         val attackColor = when {
+            showBackstab -> Color(0xFFCC3333)  // Dark red for backstab
             attackMode -> Color(0xFFFF3333)
             hasHostiles -> MaterialTheme.colorScheme.primary
             else -> Color.Gray
         }
         ActionButton(
-            icon = "\u2694\uFE0F",
+            icon = if (showBackstab) "\uD83D\uDDE1\uFE0F" else "\u2694\uFE0F",
             color = attackColor,
             isActive = attackMode,
-            enabled = hasHostiles || attackMode,
+            enabled = hasHostiles || attackMode || showBackstab,
             onClick = { gameViewModel.toggleAttackMode(!attackMode) }
         )
 
-        // Class skill buttons (filtered: non-passive, non-HIDE)
+        // Class skill buttons (filtered: non-passive)
         val classSkills = classDef?.skills ?: emptyList()
         for (skillId in classSkills) {
             val skillDef = skillCatalog[skillId]
@@ -815,15 +817,15 @@ private fun ActionButtonRow(
 
             val btnInfo = SKILL_BUTTON_MAP[skillId] ?: continue
 
-            // HIDE is a special toggle
-            if (skillId == "HIDE") {
-                val hideEnabled = !attackMode || isHidden
+            // SNEAK is a special toggle
+            if (skillId == "SNEAK") {
+                val sneakEnabled = !attackMode || isHidden
                 ActionButton(
                     icon = btnInfo.icon,
                     color = if (isHidden) MudColors.stealth else btnInfo.activeColor,
                     isActive = isHidden,
-                    enabled = hideEnabled,
-                    onClick = { gameViewModel.toggleHideMode(!isHidden) }
+                    enabled = sneakEnabled,
+                    onClick = { gameViewModel.toggleSneakMode(!isHidden) }
                 )
             } else {
                 ActionButton(

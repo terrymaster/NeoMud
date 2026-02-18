@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.InventoryRepository
@@ -20,6 +21,8 @@ class PickupCommand(
         if (quantity < 1) return
         val playerName = session.playerName ?: return
         val roomId = session.currentRoomId ?: return
+
+        StealthUtils.breakStealth(session, sessionManager, "Picking up items reveals your presence!")
 
         val removed = roomItemManager.removeItem(roomId, itemId, quantity)
         if (removed == 0) {
@@ -42,6 +45,8 @@ class PickupCommand(
     suspend fun handlePickupCoins(session: PlayerSession, coinType: String) {
         val playerName = session.playerName ?: return
         val roomId = session.currentRoomId ?: return
+
+        StealthUtils.breakStealth(session, sessionManager, "Picking up coins reveals your presence!")
 
         val amount = roomItemManager.removeCoins(roomId, coinType)
         if (amount == 0) {

@@ -68,7 +68,7 @@ fun DirectionPad(
                 onClick = { onMove(Direction.WEST) }
             )
             DPadButton(
-                text = "\u25CE",
+                text = "\uD83D\uDC41",
                 enabled = true,
                 onClick = onLook,
                 isLook = true

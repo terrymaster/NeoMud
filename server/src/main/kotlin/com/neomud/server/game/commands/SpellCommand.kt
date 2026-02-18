@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.progression.XpCalculator
@@ -22,6 +23,9 @@ class SpellCommand(
         val roomId = session.currentRoomId ?: return
         val playerName = session.playerName ?: return
         val player = session.player ?: return
+
+        // Casting a spell breaks stealth
+        StealthUtils.breakStealth(session, sessionManager, "Casting a spell reveals your presence!")
 
         val spell = spellCatalog.getSpell(spellId)
         if (spell == null) {

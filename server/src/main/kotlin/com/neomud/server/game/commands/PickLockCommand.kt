@@ -1,18 +1,24 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.session.PlayerSession
+import com.neomud.server.session.SessionManager
 import com.neomud.server.world.LockStateManager
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ServerMessage
 
 class PickLockCommand(
     private val worldGraph: WorldGraph,
-    private val lockStateManager: LockStateManager
+    private val lockStateManager: LockStateManager,
+    private val sessionManager: SessionManager
 ) {
     suspend fun execute(session: PlayerSession) {
         val roomId = session.currentRoomId ?: return
         val player = session.player ?: return
+
+        // Picking a lock breaks stealth
+        StealthUtils.breakStealth(session, sessionManager, "Picking a lock reveals your presence!")
 
         val cooldown = session.skillCooldowns["PICK_LOCK"]
         if (cooldown != null && cooldown > 0) {
