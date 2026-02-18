@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -224,9 +225,9 @@ fun RegistrationScreen(
 
 @Composable
 private fun StepIndicator(currentStep: Int, totalSteps: Int) {
-    val stepLabels = listOf("Account", "Gender", "Race", "Class", "Stats", "Review")
+    val stepLabels = listOf("Acct", "Gender", "Race", "Class", "Stats", "Review")
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         for (i in 0 until totalSteps) {
@@ -235,7 +236,7 @@ private fun StepIndicator(currentStep: Int, totalSteps: Int) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(22.dp)
                         .clip(CircleShape)
                         .background(
                             when {
@@ -250,13 +251,13 @@ private fun StepIndicator(currentStep: Int, totalSteps: Int) {
                         text = "${i + 1}",
                         color = if (isActive || isDone) MaterialTheme.colorScheme.onPrimary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 Text(
                     text = stepLabels[i],
-                    fontSize = 10.sp,
+                    fontSize = 9.sp,
                     color = if (isActive) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -264,7 +265,7 @@ private fun StepIndicator(currentStep: Int, totalSteps: Int) {
             if (i < totalSteps - 1) {
                 Box(
                     modifier = Modifier
-                        .width(24.dp)
+                        .weight(1f)
                         .height(2.dp)
                         .background(
                             if (i < currentStep) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
@@ -506,6 +507,25 @@ private fun ClassSelectionStep(
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
+                            // Skills
+                            if (cls.skills.isNotEmpty()) {
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                                    modifier = Modifier.padding(top = 2.dp)
+                                ) {
+                                    cls.skills.forEach { skill ->
+                                        Text(
+                                            text = skill.lowercase().replace("_", " ").replaceFirstChar { it.uppercase() },
+                                            fontSize = 10.sp,
+                                            color = Color(0xFFFF9800),
+                                            modifier = Modifier
+                                                .background(Color(0xFFFF9800).copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
+                            }
                             // Min stats
                             val s = cls.minimumStats
                             Text(
@@ -783,8 +803,9 @@ private fun CharacterPreviewStep(
                         if (cls.skills.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text("Skills", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
-                            Row(
+                            FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
                                 modifier = Modifier.padding(top = 2.dp)
                             ) {
                                 cls.skills.forEach { skill ->
