@@ -15,10 +15,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.crossfade
 import com.neomud.shared.model.*
 
 private val CopperColor = Color(0xFFCD7F32)
@@ -199,18 +204,49 @@ private fun ColumnScope.CharacterSheetLandscape(
 @Composable
 private fun NameAndVitals(player: Player, classCatalog: Map<String, CharacterClassDef>) {
     val className = classCatalog[player.characterClass]?.name ?: player.characterClass
-    Text(
-        text = player.name,
-        color = Color.White,
-        fontSize = 16.sp,
-        fontWeight = FontWeight.Bold
-    )
-    val raceLabel = if (player.race.isNotEmpty()) "${player.race}  \u2022  " else ""
-    Text(
-        text = "$raceLabel$className  \u2022  Level ${player.level}",
-        color = DimText,
-        fontSize = 13.sp
-    )
+    val serverBaseUrl = LocalServerBaseUrl.current
+
+    // Sprite + name row
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (serverBaseUrl.isNotBlank() && player.race.isNotEmpty()) {
+            val raceId = player.race.lowercase()
+            val classId = player.characterClass.lowercase()
+            val gender = player.gender
+            val spriteUrl = "$serverBaseUrl/assets/images/players/${raceId}_${gender}_${classId}.webp"
+            val context = LocalContext.current
+            AsyncImage(
+                model = coil3.request.ImageRequest.Builder(context)
+                    .data(spriteUrl)
+                    .crossfade(200)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = "${player.name} portrait",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .height(72.dp)
+                    .widthIn(max = 54.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Column {
+            Text(
+                text = player.name,
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            val raceLabel = if (player.race.isNotEmpty()) {
+                val formattedRace = player.race.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")
+                "$formattedRace  \u2022  "
+            } else ""
+            Text(
+                text = "$raceLabel$className  \u2022  Level ${player.level}",
+                color = DimText,
+                fontSize = 13.sp
+            )
+        }
+    }
 
     Spacer(modifier = Modifier.height(12.dp))
 

@@ -609,103 +609,233 @@ private fun CharacterPreviewStep(
     val classId = (selectedClass?.id ?: "WARRIOR").lowercase()
     val spriteUrl = "$serverBaseUrl/assets/images/players/${raceId}_${selectedGender}_${classId}.webp"
 
-    Column(
+    val dimText = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+    val accentColor = MaterialTheme.colorScheme.primary
+
+    LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Step 6: Review Character", style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Sprite preview
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 280.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val context = androidx.compose.ui.platform.LocalContext.current
-                AsyncImage(
-                    model = coil3.request.ImageRequest.Builder(context)
-                        .data(spriteUrl)
-                        .crossfade(200)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.ENABLED)
-                        .build(),
-                    contentDescription = "$characterName sprite preview",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .height(180.dp)
-                        .widthIn(max = 140.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = characterName,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "$genderLabel $raceName $className",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-            }
+        item {
+            Text("Step 6: Review Character", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Stats summary
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text("Stats", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(4.dp))
-                val stats = listOf(
-                    "Strength" to allocatedStats.strength,
-                    "Agility" to allocatedStats.agility,
-                    "Intellect" to allocatedStats.intellect,
-                    "Willpower" to allocatedStats.willpower,
-                    "Health" to allocatedStats.health,
-                    "Charm" to allocatedStats.charm
-                )
+        // Sprite + identity header
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    stats.forEach { (name, value) ->
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    AsyncImage(
+                        model = coil3.request.ImageRequest.Builder(context)
+                            .data(spriteUrl)
+                            .crossfade(200)
+                            .memoryCachePolicy(CachePolicy.ENABLED)
+                            .diskCachePolicy(CachePolicy.ENABLED)
+                            .build(),
+                        contentDescription = "$characterName sprite preview",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .height(120.dp)
+                            .widthIn(max = 90.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = characterName,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "$genderLabel $raceName $className",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = dimText
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        // HP/MP per level
+                        selectedClass?.let { cls ->
                             Text(
-                                text = name.take(3).uppercase(),
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                text = "HP/lvl: ${cls.hpPerLevelMin}-${cls.hpPerLevelMax}",
+                                fontSize = 12.sp,
+                                color = Color(0xFF4CAF50)
                             )
+                            if (cls.mpPerLevelMax > 0) {
+                                Text(
+                                    text = "MP/lvl: ${cls.mpPerLevelMin}-${cls.mpPerLevelMax}",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF448AFF)
+                                )
+                            }
+                        }
+                        // XP modifier
+                        val combinedXpMod = (selectedRace?.xpModifier ?: 1.0) * (selectedClass?.xpModifier ?: 1.0)
+                        if (combinedXpMod != 1.0) {
                             Text(
-                                text = "$value",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
+                                text = "XP rate: ${(combinedXpMod * 100).toInt()}%",
+                                fontSize = 12.sp,
+                                color = if (combinedXpMod > 1.0) Color(0xFFFF5555) else Color(0xFF55FF55)
                             )
                         }
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        // Stats
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Stats", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = accentColor)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val stats = listOf(
+                        "STR" to allocatedStats.strength,
+                        "AGI" to allocatedStats.agility,
+                        "INT" to allocatedStats.intellect,
+                        "WIL" to allocatedStats.willpower,
+                        "HLT" to allocatedStats.health,
+                        "CHM" to allocatedStats.charm
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        stats.forEach { (name, value) ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(text = name, fontSize = 11.sp, color = dimText)
+                                Text(text = "$value", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    // Race stat modifiers
+                    selectedRace?.let { race ->
+                        val m = race.statModifiers
+                        val mods = listOf(
+                            "STR" to m.strength, "AGI" to m.agility, "INT" to m.intellect,
+                            "WIL" to m.willpower, "HLT" to m.health, "CHM" to m.charm
+                        ).filter { it.second != 0 }
+                        if (mods.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(text = "Race:", fontSize = 11.sp, color = dimText)
+                                mods.forEach { (name, value) ->
+                                    val color = if (value > 0) Color(0xFF55FF55) else Color(0xFFFF5555)
+                                    Text(
+                                        text = "${name}:${if (value > 0) "+" else ""}$value",
+                                        fontSize = 11.sp,
+                                        color = color,
+                                        modifier = Modifier
+                                            .background(color.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // Class details: description, skills, magic
+        item {
+            selectedClass?.let { cls ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Class: ${cls.name}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = accentColor)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = cls.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+
+                        // Magic schools
+                        if (cls.magicSchools.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Magic Schools", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9B59FF))
+                            cls.magicSchools.forEach { (school, level) ->
+                                Text(
+                                    text = "${school.replaceFirstChar { it.uppercase() }} (tier $level)",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF9B59FF).copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                        }
+
+                        // Skills
+                        if (cls.skills.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Skills", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                cls.skills.forEach { skill ->
+                                    Text(
+                                        text = skill.lowercase().replace("_", " ").replaceFirstChar { it.uppercase() },
+                                        fontSize = 11.sp,
+                                        color = Color(0xFFFF9800),
+                                        modifier = Modifier
+                                            .background(Color(0xFFFF9800).copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // Race details
+        item {
+            selectedRace?.let { race ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Race: ${race.name}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = accentColor)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = race.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         // Future AI generation placeholder
-        OutlinedButton(
-            onClick = { /* Future: trigger on-device AI sprite generation */ },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Generate Custom Sprite (Coming Soon)")
+        item {
+            OutlinedButton(
+                onClick = { /* Future: trigger on-device AI sprite generation */ },
+                enabled = false,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Generate Custom Sprite (Coming Soon)")
+            }
         }
     }
 }
