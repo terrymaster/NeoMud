@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import GenericCrudEditor from '../components/GenericCrudEditor';
 import type { FieldConfig } from '../components/GenericCrudEditor';
 import api from '../api';
@@ -16,6 +17,7 @@ interface Room {
 function NpcEditor() {
   const [zoneOptions, setZoneOptions] = useState<{ value: string; label: string }[]>([]);
   const [roomOptions, setRoomOptions] = useState<{ value: string; label: string }[]>([]);
+  const location = useLocation();
 
   useEffect(() => {
     api.get<Zone[]>('/zones').then((zones) => {
@@ -30,13 +32,13 @@ function NpcEditor() {
         setRoomOptions(results.flat());
       });
     }).catch(() => {});
-  }, []);
+  }, [location.pathname]);
 
   const fields: FieldConfig[] = [
     { key: 'id', label: 'ID', type: 'text', placeholder: 'e.g. goblin_guard' },
     { key: 'name', label: 'Name', type: 'text', placeholder: 'Goblin Guard' },
     { key: 'description', label: 'Description', type: 'textarea', rows: 3 },
-    { key: 'zoneId', label: 'Zone', type: 'select', options: zoneOptions },
+    { key: 'zoneId', label: 'Zone', type: 'select', options: zoneOptions, required: true },
     { key: 'startRoomId', label: 'Start Room', type: 'select', options: roomOptions },
     {
       key: 'behaviorType', label: 'Behavior Type', type: 'select',
@@ -71,7 +73,16 @@ function NpcEditor() {
     { key: 'imageHeight', label: 'Image Height', type: 'number' },
   ];
 
-  return <GenericCrudEditor entityName="NPC" apiPath="/npcs" fields={fields} imagePreview={{ entityType: 'npc' }} />;
+  return (
+    <GenericCrudEditor
+      entityName="NPC"
+      apiPath="/npcs"
+      fields={fields}
+      imagePreview={{ entityType: 'npc' }}
+      disableCreate={zoneOptions.length === 0}
+      disableCreateMessage="Create a zone first before adding NPCs."
+    />
+  );
 }
 
 export default NpcEditor;

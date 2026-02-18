@@ -112,6 +112,24 @@ describe('NPCs CRUD', () => {
     level: 3,
   }
 
+  it('POST /api/npcs rejects missing id', async () => {
+    const res = await request(app).post('/api/npcs').send({ ...npcData, id: '' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/id is required/i)
+  })
+
+  it('POST /api/npcs rejects missing zoneId', async () => {
+    const res = await request(app).post('/api/npcs').send({ ...npcData, zoneId: '' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/zoneId is required/i)
+  })
+
+  it('POST /api/npcs rejects nonexistent zone', async () => {
+    const res = await request(app).post('/api/npcs').send({ ...npcData, zoneId: 'no_such_zone' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/does not exist/i)
+  })
+
   it('POST /api/npcs creates an NPC', async () => {
     const res = await request(app).post('/api/npcs').send(npcData)
     expect(res.status).toBe(200)

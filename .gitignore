@@ -32,11 +32,13 @@ Thumbs.db
 node_modules/
 /package.json
 package-lock.json
+!maker/package-lock.json
 
 # Maker
 maker/dist/
 maker/projects/
 maker/settings.json
+maker/test-results/
 
 # Claude
 .claude/

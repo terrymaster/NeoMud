@@ -10,6 +10,7 @@ export interface FieldConfig {
   options?: { value: string; label: string }[];
   placeholder?: string;
   disabled?: boolean;
+  required?: boolean;
   rows?: number;
   help?: string;
   visibleWhen?: (form: Record<string, any>) => boolean;
@@ -21,6 +22,8 @@ interface GenericCrudEditorProps {
   fields: FieldConfig[];
   idField?: string;
   imagePreview?: { entityType: string };
+  disableCreate?: boolean;
+  disableCreateMessage?: string;
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -179,7 +182,7 @@ function prettyJson(value: string): string {
   }
 }
 
-function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imagePreview }: GenericCrudEditorProps) {
+function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imagePreview, disableCreate, disableCreateMessage }: GenericCrudEditorProps) {
   const [items, setItems] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, any>>({});
@@ -241,6 +244,16 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
 
   const handleSave = async () => {
     setError('');
+    // Validate required fields
+    for (const field of fields) {
+      if (field.required && (!field.visibleWhen || field.visibleWhen(form))) {
+        const val = form[field.key];
+        if (val === undefined || val === null || val === '') {
+          setError(`${field.label} is required`);
+          return;
+        }
+      }
+    }
     // Validate JSON fields
     const newJsonErrors: Record<string, string> = {};
     const submitData: Record<string, any> = { ...form };
@@ -313,9 +326,18 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
     <div style={styles.container}>
       <div style={styles.listPanel}>
         <div style={styles.listTop}>
-          <button style={styles.newBtn} onClick={handleNew}>
+          <button
+            style={{ ...styles.newBtn, ...(disableCreate ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
+            onClick={disableCreate ? undefined : handleNew}
+            disabled={disableCreate}
+          >
             + New {entityName}
           </button>
+          {disableCreate && disableCreateMessage && (
+            <div style={{ fontSize: 11, color: '#999', marginTop: 6, textAlign: 'center' }}>
+              {disableCreateMessage}
+            </div>
+          )}
         </div>
         <div style={styles.listItems}>
           {items.map((item) => (

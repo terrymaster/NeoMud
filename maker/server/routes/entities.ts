@@ -83,6 +83,17 @@ entitiesRouter.get('/npcs/:id', async (req, res) => {
 
 entitiesRouter.post('/npcs', rejectIfReadOnly, async (req, res) => {
   try {
+    const { id, zoneId } = req.body
+    if (!id || !id.trim()) {
+      res.status(400).json({ error: 'NPC id is required' }); return
+    }
+    if (!zoneId || !zoneId.trim()) {
+      res.status(400).json({ error: 'zoneId is required — every NPC must belong to a zone' }); return
+    }
+    const zone = await db().zone.findUnique({ where: { id: zoneId } })
+    if (!zone) {
+      res.status(400).json({ error: `Zone "${zoneId}" does not exist` }); return
+    }
     const npc = await db().npc.create({ data: req.body })
     res.json(npc)
   } catch (err: any) {
