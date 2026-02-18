@@ -13,6 +13,8 @@ model Zone {
   description          String
   safe                 Boolean @default(true)
   bgm                  String  @default("")
+  bgmPrompt            String  @default("")
+  bgmDuration          Int     @default(120)
   spawnRoom            String?
   spawnMaxEntities     Int     @default(0)
   spawnMaxPerRoom      Int     @default(0)
@@ -34,6 +36,8 @@ model Room {
   backgroundImage     String @default("")
   effects             String @default("[]")
   bgm                 String @default("")
+  bgmPrompt           String @default("")
+  bgmDuration         Int    @default(0)
   departSound         String @default("")
   lockedExits         String @default("{}")
   imagePrompt         String @default("")

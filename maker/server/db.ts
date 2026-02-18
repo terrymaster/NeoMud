@@ -73,6 +73,18 @@ export async function openProject(name: string): Promise<PrismaClient> {
   if (prisma) {
     await prisma.$disconnect()
   }
+
+  // Ensure schema is up-to-date (adds new columns with defaults, safe for existing data)
+  const dbPath = path.join(projectsDir, `${name}.db`)
+  if (fs.existsSync(dbPath)) {
+    const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma')
+    execSync(`npx prisma db push --schema="${schemaPath}"`, {
+      env: { ...process.env, DATABASE_URL: `file:${dbPath}` },
+      cwd: path.join(__dirname, '..'),
+      stdio: 'pipe',
+    })
+  }
+
   activeProject = name
   const adapter = new PrismaBetterSqlite3({ url: dbUrl(name) })
   prisma = new PrismaClient({ adapter })

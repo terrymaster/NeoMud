@@ -43,7 +43,7 @@ zonesRouter.post('/zones', rejectIfReadOnly, async (req, res) => {
   try {
     const {
       id, name, description,
-      safe, bgm,
+      safe, bgm, bgmPrompt, bgmDuration,
       spawnRoom, spawnMaxEntities, spawnMaxPerRoom, spawnRateTicks,
     } = req.body
     const zone = await db().zone.create({
@@ -51,6 +51,8 @@ zonesRouter.post('/zones', rejectIfReadOnly, async (req, res) => {
         id, name, description,
         safe: safe ?? true,
         bgm: bgm ?? '',
+        bgmPrompt: bgmPrompt ?? '',
+        bgmDuration: bgmDuration ?? 120,
         spawnRoom: spawnRoom ?? null,
         spawnMaxEntities: spawnMaxEntities ?? 0,
         spawnMaxPerRoom: spawnMaxPerRoom ?? 0,
@@ -124,7 +126,7 @@ zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
     const { zoneId } = req.params
     const {
       id, name, description, x, y,
-      backgroundImage, effects, bgm, departSound,
+      backgroundImage, effects, bgm, bgmPrompt, bgmDuration, departSound,
     } = req.body
     const fullId = `${zoneId}:${id}`
     const room = await db().room.create({
@@ -138,6 +140,8 @@ zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
         backgroundImage: backgroundImage ?? '',
         effects: effects ?? '[]',
         bgm: bgm ?? '',
+        bgmPrompt: bgmPrompt ?? '',
+        bgmDuration: bgmDuration ?? 0,
         departSound: departSound ?? '',
       },
     })

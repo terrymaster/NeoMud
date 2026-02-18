@@ -120,9 +120,17 @@ generate "$SFX_DIR/spell_fizzle.ogg"        "Spell fizzling out, magic dissipati
 echo ""
 echo "=== Generating BGM ==="
 
-# BGM Tracks (10s)
-generate "$BGM_DIR/town_peaceful.ogg"  "Medieval fantasy town ambient, peaceful lute and flute, marketplace"  10.0
-generate "$BGM_DIR/forest_danger.ogg"  "Dark forest ambient, tense strings, ominous danger"                   10.0
+# BGM Tracks (22s max per ElevenLabs call)
+# For full-length tracks, generate multiple segments and stitch with ffmpeg:
+#   ffmpeg -i seg1.ogg -i seg2.ogg -filter_complex '[0][1]concat=n=2:v=0:a=1' output.ogg
+
+generate "$BGM_DIR/town_peaceful.ogg" \
+  "Medieval fantasy town ambiance, gentle lute melody in D major with wooden flute trills weaving through, distant market chatter and vendor calls, rhythmic blacksmith hammer clanging softly in background, horse hooves on cobblestone, children laughing in a square, warm golden afternoon atmosphere, peaceful and welcoming, rich harmonic layering with subtle hand drum percussion, loopable ambient music" \
+  22.0
+
+generate "$BGM_DIR/forest_danger.ogg" \
+  "Dark enchanted forest tension music, tremolo strings building slow unease, deep cello drone with dissonant minor harmonics, distant wolf howl echoing through ancient trees, owl calls and rustling underbrush suggesting unseen movement, ominous low brass stabs punctuating silence, heartbeat-like timpani growing in intensity, high violin scrapes and creaking branches, atmospheric horror adventure tension, threatening and suspenseful, loopable dark ambient" \
+  22.0
 
 echo ""
 echo "=== Summary ==="

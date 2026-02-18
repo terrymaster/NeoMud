@@ -146,6 +146,94 @@ describe('Exit CRUD', () => {
   })
 })
 
+describe('Zone BGM prompt fields', () => {
+  it('POST /api/zones persists bgmPrompt and bgmDuration', async () => {
+    const res = await request(app).post('/api/zones').send({
+      id: 'bgm_test_zone',
+      name: 'BGM Test Zone',
+      description: 'Testing BGM fields',
+      bgmPrompt: 'Medieval town ambiance',
+      bgmDuration: 60,
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.bgmPrompt).toBe('Medieval town ambiance')
+    expect(res.body.bgmDuration).toBe(60)
+  })
+
+  it('GET /api/zones/:id returns bgmPrompt and bgmDuration', async () => {
+    const res = await request(app).get('/api/zones/bgm_test_zone')
+    expect(res.status).toBe(200)
+    expect(res.body.bgmPrompt).toBe('Medieval town ambiance')
+    expect(res.body.bgmDuration).toBe(60)
+  })
+
+  it('PUT /api/zones/:id updates bgmPrompt and bgmDuration', async () => {
+    const res = await request(app)
+      .put('/api/zones/bgm_test_zone')
+      .send({ bgmPrompt: 'Updated prompt', bgmDuration: 90 })
+    expect(res.status).toBe(200)
+    expect(res.body.bgmPrompt).toBe('Updated prompt')
+    expect(res.body.bgmDuration).toBe(90)
+  })
+
+  it('Zone bgmPrompt defaults to empty string when not provided', async () => {
+    const res = await request(app).post('/api/zones').send({
+      id: 'bgm_default_zone',
+      name: 'Default BGM Zone',
+      description: 'No BGM fields provided',
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.bgmPrompt).toBe('')
+    expect(res.body.bgmDuration).toBe(120)
+  })
+})
+
+describe('Room BGM prompt fields', () => {
+  it('POST /api/zones/:zoneId/rooms persists room bgmPrompt and bgmDuration', async () => {
+    const res = await request(app).post('/api/zones/bgm_test_zone/rooms').send({
+      id: 'bgm_room',
+      name: 'BGM Room',
+      description: 'A room with BGM prompt',
+      x: 0,
+      y: 0,
+      bgmPrompt: 'Spooky cave echoes',
+      bgmDuration: 30,
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.bgmPrompt).toBe('Spooky cave echoes')
+    expect(res.body.bgmDuration).toBe(30)
+  })
+
+  it('GET /api/zones/:zoneId/rooms/:id returns room bgm prompt fields', async () => {
+    const res = await request(app).get('/api/zones/bgm_test_zone/rooms/bgm_room')
+    expect(res.status).toBe(200)
+    expect(res.body.bgmPrompt).toBe('Spooky cave echoes')
+    expect(res.body.bgmDuration).toBe(30)
+  })
+
+  it('PUT /api/zones/:zoneId/rooms/:id updates room bgm prompt fields', async () => {
+    const res = await request(app)
+      .put('/api/zones/bgm_test_zone/rooms/bgm_room')
+      .send({ bgmPrompt: 'Updated room prompt', bgmDuration: 45 })
+    expect(res.status).toBe(200)
+    expect(res.body.bgmPrompt).toBe('Updated room prompt')
+    expect(res.body.bgmDuration).toBe(45)
+  })
+
+  it('Room bgmPrompt defaults to empty and bgmDuration to 0', async () => {
+    const res = await request(app).post('/api/zones/bgm_test_zone/rooms').send({
+      id: 'default_room',
+      name: 'Default Room',
+      description: 'No BGM fields',
+      x: 1,
+      y: 0,
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.bgmPrompt).toBe('')
+    expect(res.body.bgmDuration).toBe(0)
+  })
+})
+
 describe('Room + Zone deletion', () => {
   it('DELETE room', async () => {
     const res = await request(app).delete('/api/zones/forest/rooms/cave')
@@ -155,6 +243,8 @@ describe('Room + Zone deletion', () => {
   })
 
   it('DELETE zone cascades rooms', async () => {
+    await request(app).delete('/api/zones/bgm_test_zone')
+    await request(app).delete('/api/zones/bgm_default_zone')
     const res = await request(app).delete('/api/zones/forest')
     expect(res.status).toBe(200)
     const zones = await request(app).get('/api/zones')

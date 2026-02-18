@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '../api';
 import MapCanvas from '../components/MapCanvas';
 import ImagePreview from '../components/ImagePreview';
+import AudioPreview from '../components/AudioPreview';
 import type { CSSProperties } from 'react';
 
 interface Zone {
@@ -10,6 +11,8 @@ interface Zone {
   description: string;
   safe: boolean;
   bgm: string;
+  bgmPrompt: string;
+  bgmDuration: number;
   spawnRoom: string | null;
   spawnMaxEntities: number;
   spawnMaxPerRoom: number;
@@ -32,6 +35,8 @@ interface Room {
   y: number;
   backgroundImage: string;
   bgm: string;
+  bgmPrompt: string;
+  bgmDuration: number;
   departSound: string;
   effects: string;
   lockedExits: string;
@@ -228,6 +233,8 @@ function ZoneEditor() {
           description: data.description,
           safe: data.safe,
           bgm: data.bgm,
+          bgmPrompt: data.bgmPrompt,
+          bgmDuration: data.bgmDuration,
           spawnRoom: data.spawnRoom,
           spawnMaxEntities: data.spawnMaxEntities,
           spawnMaxPerRoom: data.spawnMaxPerRoom,
@@ -449,11 +456,20 @@ function ZoneEditor() {
               />{' '}
               Safe Zone
             </label>
-            <label style={styles.label}>BGM</label>
+            <label style={styles.label}>BGM Track ID</label>
             <input
               style={styles.input}
               value={zoneForm.bgm || ''}
+              placeholder="e.g. town_peaceful"
               onChange={(e) => setZoneForm((f) => ({ ...f, bgm: e.target.value }))}
+            />
+            <AudioPreview
+              entityType="zone"
+              entityId={selectedZoneId!}
+              bgm={zoneForm.bgm}
+              bgmPrompt={zoneForm.bgmPrompt}
+              bgmDuration={zoneForm.bgmDuration}
+              onUpdate={(fields) => setZoneForm((f) => ({ ...f, ...fields }))}
             />
             <label style={styles.label}>Spawn Room</label>
             <input
@@ -578,11 +594,24 @@ function ZoneEditor() {
               value={roomForm.backgroundImage || ''}
               onChange={(e) => setRoomForm((f) => ({ ...f, backgroundImage: e.target.value }))}
             />
-            <label style={styles.label}>BGM</label>
+            <label style={styles.label}>
+              BGM Track ID <span style={{fontWeight:400,color:'#999',fontSize:10}}>(leave blank to use zone: {zoneForm.bgm || 'none'})</span>
+            </label>
             <input
               style={styles.input}
               value={roomForm.bgm || ''}
+              placeholder={`Zone default: ${zoneForm.bgm || 'none'}`}
               onChange={(e) => setRoomForm((f) => ({ ...f, bgm: e.target.value }))}
+            />
+            <AudioPreview
+              entityType="room"
+              entityId={selectedRoom!.id}
+              bgm={roomForm.bgm || zoneForm.bgm}
+              bgmPrompt={roomForm.bgmPrompt}
+              bgmDuration={roomForm.bgmDuration}
+              defaultBgmPrompt={zoneForm.bgmPrompt}
+              defaultBgmDuration={zoneForm.bgmDuration}
+              onUpdate={(fields) => setRoomForm((f) => ({ ...f, ...fields }))}
             />
             <label style={styles.label}>Depart Sound</label>
             <input
