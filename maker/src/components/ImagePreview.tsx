@@ -125,6 +125,9 @@ const styles: Record<string, CSSProperties> = {
 };
 
 function getImageUrl(entityType: string, entityId: string, assetPath?: string): string {
+  if (assetPath && entityType !== 'room') {
+    return `/api/assets/${assetPath}`;
+  }
   if (entityType === 'room') {
     if (!assetPath) return '';
     const filename = assetPath.split('/').pop() || assetPath;

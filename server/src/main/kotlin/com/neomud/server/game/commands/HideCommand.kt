@@ -25,7 +25,7 @@ class HideCommand(
             session.send(ServerMessage.HideModeUpdate(false, "You step out of the shadows."))
             sessionManager.broadcastToRoom(
                 roomId,
-                ServerMessage.PlayerEntered(playerName, roomId),
+                ServerMessage.PlayerEntered(playerName, roomId, session.toPlayerInfo()),
                 exclude = playerName
             )
             return

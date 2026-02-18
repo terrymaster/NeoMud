@@ -25,6 +25,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.crossfade
 import com.neomud.client.viewmodel.AuthState
 import com.neomud.shared.model.CharacterClassDef
 import com.neomud.shared.model.RaceDef
@@ -36,7 +40,8 @@ fun RegistrationScreen(
     authState: AuthState,
     availableClasses: List<CharacterClassDef>,
     availableRaces: List<RaceDef> = emptyList(),
-    onRegister: (String, String, String, String, String, Stats) -> Unit,
+    serverBaseUrl: String = "",
+    onRegister: (String, String, String, String, String, String, Stats) -> Unit,
     onBack: () -> Unit,
     onClearError: () -> Unit
 ) {
@@ -44,6 +49,7 @@ fun RegistrationScreen(
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var characterName by rememberSaveable { mutableStateOf("") }
+    var selectedGender by rememberSaveable { mutableStateOf("neutral") }
     var selectedRaceId by rememberSaveable { mutableStateOf("HUMAN") }
     var selectedClassId by rememberSaveable { mutableStateOf("WARRIOR") }
     var allocatedStats by remember { mutableStateOf<Stats?>(null) }
@@ -88,7 +94,7 @@ fun RegistrationScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Step indicator dots
-        StepIndicator(currentStep = currentStep, totalSteps = 4)
+        StepIndicator(currentStep = currentStep, totalSteps = 6)
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -103,12 +109,16 @@ fun RegistrationScreen(
                     onPasswordChange = { password = it },
                     onCharacterNameChange = { characterName = it }
                 )
-                1 -> RaceSelectionStep(
+                1 -> GenderSelectionStep(
+                    selectedGender = selectedGender,
+                    onGenderSelected = { selectedGender = it }
+                )
+                2 -> RaceSelectionStep(
                     availableRaces = availableRaces,
                     selectedRaceId = selectedRaceId,
                     onRaceSelected = { selectedRaceId = it }
                 )
-                2 -> ClassSelectionStep(
+                3 -> ClassSelectionStep(
                     availableClasses = availableClasses,
                     selectedClassId = selectedClassId,
                     onClassSelected = {
@@ -118,7 +128,7 @@ fun RegistrationScreen(
                         if (cls != null) allocatedStats = effectiveMin(cls, selectedRace)
                     }
                 )
-                3 -> {
+                4 -> {
                     val effMin = effectiveMin(selectedClass, selectedRace)
                     StatAllocationStep(
                         effectiveMinimum = effMin,
@@ -126,6 +136,14 @@ fun RegistrationScreen(
                         onStatsChanged = { allocatedStats = it }
                     )
                 }
+                5 -> CharacterPreviewStep(
+                    characterName = characterName,
+                    selectedRace = selectedRace,
+                    selectedClass = selectedClass,
+                    selectedGender = selectedGender,
+                    allocatedStats = allocatedStats ?: effectiveMin(selectedClass, selectedRace),
+                    serverBaseUrl = serverBaseUrl
+                )
             }
         }
 
@@ -152,11 +170,17 @@ fun RegistrationScreen(
                 }
             }
 
-            if (currentStep < 3) {
+            if (currentStep < 5) {
                 val canAdvance = when (currentStep) {
                     0 -> username.isNotBlank() && password.isNotBlank() && characterName.isNotBlank()
-                    1 -> availableRaces.isNotEmpty()
-                    2 -> availableClasses.isNotEmpty()
+                    1 -> true // Gender always has a default
+                    2 -> availableRaces.isNotEmpty()
+                    3 -> availableClasses.isNotEmpty()
+                    4 -> {
+                        val effMin = effectiveMin(selectedClass, selectedRace)
+                        val stats = allocatedStats ?: effMin
+                        StatAllocator.totalCpUsed(stats, effMin) == StatAllocator.CP_POOL
+                    }
                     else -> true
                 }
                 Button(
@@ -172,7 +196,7 @@ fun RegistrationScreen(
                 val cpUsed = StatAllocator.totalCpUsed(stats, effMin)
                 Button(
                     onClick = {
-                        onRegister(username, password, characterName, selectedClassId, selectedRaceId, stats)
+                        onRegister(username, password, characterName, selectedClassId, selectedRaceId, selectedGender, stats)
                     },
                     modifier = Modifier.weight(1f),
                     enabled = authState !is AuthState.Loading &&
@@ -200,7 +224,7 @@ fun RegistrationScreen(
 
 @Composable
 private fun StepIndicator(currentStep: Int, totalSteps: Int) {
-    val stepLabels = listOf("Account", "Race", "Class", "Stats")
+    val stepLabels = listOf("Account", "Gender", "Race", "Class", "Stats", "Review")
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -305,13 +329,57 @@ private fun CredentialsStep(
 }
 
 @Composable
+private fun GenderSelectionStep(
+    selectedGender: String,
+    onGenderSelected: (String) -> Unit
+) {
+    val genders = listOf(
+        Triple("male", "Male", "Your character presents as male."),
+        Triple("female", "Female", "Your character presents as female."),
+        Triple("neutral", "Neutral", "Your character presents as gender-neutral.")
+    )
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text("Step 2: Choose Gender", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        genders.forEach { (id, label, description) ->
+            val isSelected = selectedGender == id
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .clickable { onGenderSelected(id) }
+                    .then(
+                        if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                        else Modifier
+                    ),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun RaceSelectionStep(
     availableRaces: List<RaceDef>,
     selectedRaceId: String,
     onRaceSelected: (String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Step 2: Choose Race", style = MaterialTheme.typography.titleMedium)
+        Text("Step 3: Choose Race", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
         if (availableRaces.isEmpty()) {
@@ -388,7 +456,7 @@ private fun ClassSelectionStep(
     onClassSelected: (String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Step 3: Choose Class", style = MaterialTheme.typography.titleMedium)
+        Text("Step 4: Choose Class", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
         if (availableClasses.isEmpty()) {
@@ -468,7 +536,7 @@ private fun StatAllocationStep(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Step 4: Allocate Stats", style = MaterialTheme.typography.titleMedium)
+            Text("Step 5: Allocate Stats", style = MaterialTheme.typography.titleMedium)
             Text(
                 "CP: $cpUsed / ${StatAllocator.CP_POOL}",
                 style = MaterialTheme.typography.titleMedium,
@@ -519,6 +587,125 @@ private fun StatAllocationStep(
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("Reset Stats")
+        }
+    }
+}
+
+@Composable
+private fun CharacterPreviewStep(
+    characterName: String,
+    selectedRace: RaceDef?,
+    selectedClass: CharacterClassDef?,
+    selectedGender: String,
+    allocatedStats: Stats,
+    serverBaseUrl: String
+) {
+    val raceName = selectedRace?.name ?: "Unknown"
+    val className = selectedClass?.name ?: "Unknown"
+    val genderLabel = selectedGender.replaceFirstChar { it.uppercase() }
+
+    // Build sprite URL: images/players/{race}_{gender}_{class}.webp
+    val raceId = (selectedRace?.id ?: "HUMAN").lowercase()
+    val classId = (selectedClass?.id ?: "WARRIOR").lowercase()
+    val spriteUrl = "$serverBaseUrl/assets/images/players/${raceId}_${selectedGender}_${classId}.webp"
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Step 6: Review Character", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Sprite preview
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 280.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                AsyncImage(
+                    model = coil3.request.ImageRequest.Builder(context)
+                        .data(spriteUrl)
+                        .crossfade(200)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .build(),
+                    contentDescription = "$characterName sprite preview",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .height(180.dp)
+                        .widthIn(max = 140.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = characterName,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "$genderLabel $raceName $className",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Stats summary
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("Stats", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
+                val stats = listOf(
+                    "Strength" to allocatedStats.strength,
+                    "Agility" to allocatedStats.agility,
+                    "Intellect" to allocatedStats.intellect,
+                    "Willpower" to allocatedStats.willpower,
+                    "Health" to allocatedStats.health,
+                    "Charm" to allocatedStats.charm
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    stats.forEach { (name, value) ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = name.take(3).uppercase(),
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                            Text(
+                                text = "$value",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Future AI generation placeholder
+        OutlinedButton(
+            onClick = { /* Future: trigger on-device AI sprite generation */ },
+            enabled = false,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Generate Custom Sprite (Coming Soon)")
         }
     }
 }

@@ -9,6 +9,7 @@ import RaceEditor from './pages/RaceEditor';
 import SkillEditor from './pages/SkillEditor';
 import SpellEditor from './pages/SpellEditor';
 import LootTableEditor from './pages/LootTableEditor';
+import PcSpriteEditor from './pages/PcSpriteEditor';
 import SettingsEditor from './pages/SettingsEditor';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
           <Route path="skills" element={<SkillEditor />} />
           <Route path="spells" element={<SpellEditor />} />
           <Route path="loot-tables" element={<LootTableEditor />} />
+          <Route path="default-players" element={<PcSpriteEditor />} />
           <Route path="settings" element={<SettingsEditor />} />
         </Route>
       </Routes>

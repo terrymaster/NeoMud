@@ -51,8 +51,10 @@ import com.neomud.client.ui.components.SpellPicker
 import com.neomud.client.ui.components.SpriteOverlay
 import com.neomud.client.ui.components.TrainerPanel
 import com.neomud.client.ui.components.VendorPanel
+import com.neomud.client.ui.components.PlayerTooltip
 import com.neomud.client.viewmodel.GameViewModel
 import com.neomud.shared.model.Direction
+import com.neomud.shared.model.PlayerInfo
 
 @Composable
 fun GameScreen(
@@ -89,6 +91,9 @@ fun GameScreen(
     val readiedSpellId by gameViewModel.readiedSpellId.collectAsState()
     val showSpellPicker by gameViewModel.showSpellPicker.collectAsState()
     val editingSlotIndex by gameViewModel.editingSlotIndex.collectAsState()
+
+    val roomPlayers by gameViewModel.roomPlayers.collectAsState()
+    var tooltipPlayer by remember { mutableStateOf<PlayerInfo?>(null) }
 
     var sayText by remember { mutableStateOf("") }
 
@@ -128,7 +133,10 @@ fun GameScreen(
                 showTrainerButton = showTrainerButton,
                 showVendorButton = hasVendor,
                 sayText = sayText,
-                onSayTextChange = { sayText = it }
+                onSayTextChange = { sayText = it },
+                roomPlayers = roomPlayers,
+                onPlayerTap = { gameViewModel.selectTarget(it.name) },
+                onPlayerLongPress = { tooltipPlayer = it }
             )
         } else {
             GameScreenPortrait(
@@ -138,7 +146,10 @@ fun GameScreen(
                 showTrainerButton = showTrainerButton,
                 showVendorButton = hasVendor,
                 sayText = sayText,
-                onSayTextChange = { sayText = it }
+                onSayTextChange = { sayText = it },
+                roomPlayers = roomPlayers,
+                onPlayerTap = { gameViewModel.selectTarget(it.name) },
+                onPlayerLongPress = { tooltipPlayer = it }
             )
         }
 
@@ -247,6 +258,14 @@ fun GameScreen(
             }
         }
 
+        // Player tooltip overlay
+        if (tooltipPlayer != null) {
+            PlayerTooltip(
+                playerInfo = tooltipPlayer!!,
+                onDismiss = { tooltipPlayer = null }
+            )
+        }
+
         // Death overlay
         if (deathMessage != null) {
             DeathOverlay(
@@ -308,6 +327,9 @@ private fun GameScreenPortrait(
     showVendorButton: Boolean,
     sayText: String,
     onSayTextChange: (String) -> Unit,
+    roomPlayers: List<PlayerInfo> = emptyList(),
+    onPlayerTap: ((PlayerInfo) -> Unit)? = null,
+    onPlayerLongPress: ((PlayerInfo) -> Unit)? = null,
 ) {
     val roomInfo by gameViewModel.roomInfo.collectAsState()
     val mapData by gameViewModel.mapData.collectAsState()
@@ -345,9 +367,10 @@ private fun GameScreenPortrait(
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Layer 1.5: NPC & item sprites overlaid on background
+            // Layer 1.5: NPC & PC & item sprites overlaid on background
             SpriteOverlay(
                 npcs = roomEntities,
+                players = roomPlayers,
                 groundItems = roomGroundItems,
                 groundCoins = roomGroundCoins,
                 itemCatalog = itemCatalog,
@@ -355,7 +378,8 @@ private fun GameScreenPortrait(
                 onSelectTarget = { gameViewModel.selectTarget(it) },
                 onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
                 onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) },
-
+                onPlayerTap = onPlayerTap,
+                onPlayerLongPress = onPlayerLongPress,
                 readiedSpellId = readiedSpellId,
                 onCastSpell = { spellId, targetId -> gameViewModel.castSpell(spellId, targetId) },
                 modifier = Modifier.fillMaxSize()
@@ -487,7 +511,10 @@ private fun GameScreenLandscape(
     showTrainerButton: Boolean,
     showVendorButton: Boolean,
     sayText: String,
-    onSayTextChange: (String) -> Unit
+    onSayTextChange: (String) -> Unit,
+    roomPlayers: List<PlayerInfo> = emptyList(),
+    onPlayerTap: ((PlayerInfo) -> Unit)? = null,
+    onPlayerLongPress: ((PlayerInfo) -> Unit)? = null,
 ) {
     val roomInfo by gameViewModel.roomInfo.collectAsState()
     val mapData by gameViewModel.mapData.collectAsState()
@@ -531,9 +558,10 @@ private fun GameScreenLandscape(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Layer 1.5: NPC & item sprites overlaid on background
+                // Layer 1.5: NPC & PC & item sprites overlaid on background
                 SpriteOverlay(
                     npcs = roomEntities,
+                    players = roomPlayers,
                     groundItems = roomGroundItems,
                     groundCoins = roomGroundCoins,
                     itemCatalog = itemCatalog,
@@ -541,7 +569,8 @@ private fun GameScreenLandscape(
                     onSelectTarget = { gameViewModel.selectTarget(it) },
                     onPickupItem = { itemId, qty -> gameViewModel.pickupItem(itemId, qty) },
                     onPickupCoins = { coinType -> gameViewModel.pickupCoins(coinType) },
-    
+                    onPlayerTap = onPlayerTap,
+                    onPlayerLongPress = onPlayerLongPress,
                     readiedSpellId = readiedSpellId,
                     onCastSpell = { spellId, targetId -> gameViewModel.castSpell(spellId, targetId) },
                     modifier = Modifier.fillMaxSize()

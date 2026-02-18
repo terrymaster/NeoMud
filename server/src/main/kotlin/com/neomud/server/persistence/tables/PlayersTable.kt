@@ -32,6 +32,8 @@ object PlayersTable : Table("players") {
     val unspentCp = integer("unspent_cp").default(0)
     val totalCpEarned = integer("total_cp_earned").default(0)
     val isAdmin = bool("is_admin").default(false)
+    val gender = varchar("gender", 20).default("neutral")
+    val imagePrompt = text("image_prompt").default("")
 
     override val primaryKey = PrimaryKey(id)
 }

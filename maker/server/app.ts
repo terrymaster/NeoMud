@@ -9,6 +9,7 @@ import { exportRouter } from './routes/export.js'
 import { getProjectsDir, getActiveProject, deleteProject } from './db.js'
 import { importNmd } from './import.js'
 import { settingsRouter } from './routes/settings.js'
+import { pcSpritesRouter } from './routes/pcSprites.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -20,6 +21,7 @@ app.use('/api', zonesRouter)
 app.use('/api', entitiesRouter)
 app.use('/api/export', exportRouter)
 app.use('/api/settings', settingsRouter)
+app.use('/api/pc-sprites', pcSpritesRouter)
 
 // Serve assets from the active project's assets directory
 app.use('/api/assets', (req, res, next) => {

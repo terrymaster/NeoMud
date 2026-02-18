@@ -109,6 +109,11 @@ export async function createProject(name: string, readOnly = false): Promise<Pri
     activeReadOnly = true
   }
 
+  // Seed default PC sprites
+  const { seedPcSprites, generatePlaceholderSprites } = await import('./pcSpriteDefaults.js')
+  await seedPcSprites(client)
+  generatePlaceholderSprites(path.join(projectsDir, `${name}_assets`))
+
   return client
 }
 

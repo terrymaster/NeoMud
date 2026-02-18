@@ -95,7 +95,7 @@ class MoveCommand(
         if (!sneaking) {
             sessionManager.broadcastToRoom(
                 targetRoomId,
-                ServerMessage.PlayerEntered(playerName, targetRoomId),
+                ServerMessage.PlayerEntered(playerName, targetRoomId, session.toPlayerInfo()),
                 exclude = playerName
             )
         } else {
@@ -113,7 +113,7 @@ class MoveCommand(
                         session.send(ServerMessage.HideModeUpdate(false, "${npc.name} notices you sneaking in!"))
                         sessionManager.broadcastToRoom(
                             targetRoomId,
-                            ServerMessage.PlayerEntered(playerName, targetRoomId),
+                            ServerMessage.PlayerEntered(playerName, targetRoomId, session.toPlayerInfo()),
                             exclude = playerName
                         )
                         break
@@ -123,8 +123,8 @@ class MoveCommand(
         }
 
         // Send MoveOk + MapData to the player
-        val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(targetRoomId)
-            .filter { it != playerName }
+        val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(targetRoomId)
+            .filter { it.name != playerName }
         val npcsInRoom = npcManager.getNpcsInRoom(targetRoomId)
 
         session.send(ServerMessage.MoveOk(direction, targetRoom, playersInRoom, npcsInRoom))

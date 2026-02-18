@@ -15,6 +15,7 @@ sealed class ClientMessage {
         val characterName: String,
         val characterClass: String,
         val race: String = "",
+        val gender: String = "neutral",
         val allocatedStats: Stats = Stats()
     ) : ClientMessage()
 

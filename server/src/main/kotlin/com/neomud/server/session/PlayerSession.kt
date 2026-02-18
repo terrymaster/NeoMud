@@ -1,5 +1,6 @@
 package com.neomud.server.session
 
+import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.shared.model.*
 import com.neomud.shared.protocol.MessageSerializer
 import com.neomud.shared.protocol.ServerMessage
@@ -35,6 +36,18 @@ class PlayerSession(
     }
 
     val isAuthenticated: Boolean get() = player != null
+
+    fun toPlayerInfo(): PlayerInfo? {
+        val p = player ?: return null
+        return PlayerInfo(
+            name = p.name,
+            characterClass = p.characterClass,
+            race = p.race,
+            gender = p.gender,
+            level = p.level,
+            spriteUrl = PlayerRepository.pcSpriteRelativePath(p.race, p.gender, p.characterClass)
+        )
+    }
 
     suspend fun send(message: ServerMessage) {
         val text = MessageSerializer.encodeServerMessage(message)

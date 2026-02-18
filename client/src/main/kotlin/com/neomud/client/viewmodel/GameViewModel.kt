@@ -33,6 +33,9 @@ class GameViewModel(
     private val _roomEntities = MutableStateFlow<List<Npc>>(emptyList())
     val roomEntities: StateFlow<List<Npc>> = _roomEntities
 
+    private val _roomPlayers = MutableStateFlow<List<PlayerInfo>>(emptyList())
+    val roomPlayers: StateFlow<List<PlayerInfo>> = _roomPlayers
+
     private val _attackMode = MutableStateFlow(false)
     val attackMode: StateFlow<Boolean> = _attackMode
 
@@ -147,6 +150,7 @@ class GameViewModel(
     fun setInitialRoomInfo(roomInfo: ServerMessage.RoomInfo) {
         _roomInfo.value = roomInfo
         _roomEntities.value = roomInfo.npcs
+        _roomPlayers.value = roomInfo.players
         bgm(roomInfo.room.bgm)
     }
 
@@ -175,6 +179,7 @@ class GameViewModel(
             is ServerMessage.RoomInfo -> {
                 _roomInfo.value = message
                 _roomEntities.value = message.npcs
+                _roomPlayers.value = message.players
                 logRoomInfo(message.room, message.players, message.npcs)
                 bgm(message.room.bgm)
             }
@@ -184,6 +189,7 @@ class GameViewModel(
                 if (previousRoom != null) sfx(previousRoom.departSound)
                 _roomInfo.value = ServerMessage.RoomInfo(message.room, message.players, message.npcs)
                 _roomEntities.value = message.npcs
+                _roomPlayers.value = message.players
                 // Clear ground items on move (will be refreshed by RoomItemsUpdate)
                 _roomGroundItems.value = emptyList()
                 _roomGroundCoins.value = Coins()
@@ -193,8 +199,17 @@ class GameViewModel(
             }
             is ServerMessage.MoveError -> addLog("Cannot move: ${message.reason}", MudColors.error)
             is ServerMessage.MapData -> _mapData.value = message
-            is ServerMessage.PlayerEntered -> addLog("${message.playerName} has arrived.", MudColors.playerEvent)
-            is ServerMessage.PlayerLeft -> addLog("${message.playerName} left ${message.direction.name.lowercase()}.", MudColors.playerEvent)
+            is ServerMessage.PlayerEntered -> {
+                addLog("${message.playerName} has arrived.", MudColors.playerEvent)
+                val info = message.playerInfo
+                if (info != null) {
+                    _roomPlayers.value = _roomPlayers.value + info
+                }
+            }
+            is ServerMessage.PlayerLeft -> {
+                addLog("${message.playerName} left ${message.direction.name.lowercase()}.", MudColors.playerEvent)
+                _roomPlayers.value = _roomPlayers.value.filter { it.name != message.playerName }
+            }
             is ServerMessage.NpcEntered -> {
                 val color = if (message.hostile) MudColors.hostile else MudColors.friendly
                 val text = if (message.spawned) {
@@ -510,14 +525,14 @@ class GameViewModel(
         }
     }
 
-    private fun logRoomInfo(room: Room, players: List<String>, npcs: List<Npc>) {
+    private fun logRoomInfo(room: Room, players: List<PlayerInfo>, npcs: List<Npc>) {
         addLog("--- ${room.name} ---", MudColors.roomName)
         addLog(room.description, MudColors.roomDesc)
         if (players.isNotEmpty()) {
             val spans = mutableListOf(LogSpan("Players here: ", MudColors.default))
-            players.forEachIndexed { i, name ->
+            players.forEachIndexed { i, info ->
                 if (i > 0) spans.add(LogSpan(", ", MudColors.default))
-                spans.add(LogSpan(name, MudColors.playerName))
+                spans.add(LogSpan(info.name, MudColors.playerName))
             }
             addEntry(LogEntry(spans))
         }

@@ -83,7 +83,7 @@ class MessageSerializerTest {
             y = 0
         )
         val npc = Npc("npc:guard", "Town Guard", "A stern guard.", "town:square", "patrol")
-        val original = ServerMessage.RoomInfo(room, listOf("Gandalf"), listOf(npc))
+        val original = ServerMessage.RoomInfo(room, listOf(PlayerInfo("Gandalf", "MAGE", "ELF", "male", 5, "images/players/elf_male_mage.webp")), listOf(npc))
         val json = MessageSerializer.encodeServerMessage(original)
         val decoded = MessageSerializer.decodeServerMessage(json)
         assertEquals(original, decoded)
@@ -131,7 +131,8 @@ class MessageSerializerTest {
 
     @Test
     fun testPlayerEventsRoundTrip() {
-        val entered = ServerMessage.PlayerEntered("Gandalf", "town:square")
+        val entered = ServerMessage.PlayerEntered("Gandalf", "town:square",
+            PlayerInfo("Gandalf", "MAGE", "ELF", "male", 5, "images/players/elf_male_mage.webp"))
         val left = ServerMessage.PlayerLeft("Frodo", "town:square", Direction.NORTH)
 
         assertEquals(entered, MessageSerializer.decodeServerMessage(MessageSerializer.encodeServerMessage(entered)))
@@ -651,6 +652,69 @@ class MessageSerializerTest {
         val original = ServerMessage.RaceCatalogSync(listOf(raceDef))
         val json = MessageSerializer.encodeServerMessage(original)
         val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPlayerInfoRoundTrip() {
+        val info = PlayerInfo("Gandalf", "MAGE", "ELF", "male", 5, "images/players/elf_male_mage.webp")
+        val room = Room("town:square", "Town Square", "A bustling town square.",
+            mapOf(Direction.NORTH to "town:gate"), "town", 0, 0)
+        val original = ServerMessage.RoomInfo(room, listOf(info), emptyList())
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testRoomInfoWithPlayerInfoRoundTrip() {
+        val room = Room("town:square", "Town Square", "A bustling town square.",
+            mapOf(Direction.NORTH to "town:gate"), "town", 0, 0)
+        val players = listOf(
+            PlayerInfo("Gandalf", "MAGE", "ELF", "male", 5, "images/players/elf_male_mage.webp"),
+            PlayerInfo("Frodo", "THIEF", "HALFLING", "male", 3, "images/players/halfling_male_thief.webp")
+        )
+        val original = ServerMessage.RoomInfo(room, players, emptyList())
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testMoveOkWithPlayerInfoRoundTrip() {
+        val room = Room("forest:edge", "Forest Edge", "Trees everywhere.",
+            mapOf(Direction.SOUTH to "town:gate"), "forest", 0, 2)
+        val players = listOf(
+            PlayerInfo("Aragorn", "WARRIOR", "HUMAN", "male", 10, "images/players/human_male_warrior.webp")
+        )
+        val original = ServerMessage.MoveOk(Direction.NORTH, room, players, emptyList())
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPlayerEnteredWithInfoRoundTrip() {
+        val info = PlayerInfo("Gandalf", "MAGE", "ELF", "male", 5, "images/players/elf_male_mage.webp")
+        val original = ServerMessage.PlayerEntered("Gandalf", "town:square", info)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testPlayerEnteredBackwardCompatRoundTrip() {
+        val original = ServerMessage.PlayerEntered("Gandalf", "town:square", null)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testRegisterWithGenderRoundTrip() {
+        val original = ClientMessage.Register("user1", "pass123", "Elara", "MAGE", race = "ELF", gender = "female")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
         assertEquals(original, decoded)
     }
 }

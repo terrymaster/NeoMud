@@ -274,6 +274,33 @@ async function buildNmdBundle(prisma: PrismaClient, projectName: string): Promis
   }
   zip.addFile('world/loot_tables.json', Buffer.from(JSON.stringify({ tables: tablesObj }, null, 2)))
 
+  // ─── PC Sprites ────────────────────────────────────
+  const pcSprites = await prisma.pcSprite.findMany({ orderBy: { id: 'asc' } })
+  if (pcSprites.length > 0) {
+    zip.addFile(
+      'world/pc_sprites.json',
+      Buffer.from(
+        JSON.stringify(
+          {
+            sprites: pcSprites.map((s) => ({
+              id: s.id,
+              race: s.race,
+              gender: s.gender,
+              characterClass: s.characterClass,
+              imagePrompt: s.imagePrompt,
+              imageStyle: s.imageStyle,
+              imageNegativePrompt: s.imageNegativePrompt,
+              imageWidth: s.imageWidth,
+              imageHeight: s.imageHeight,
+            })),
+          },
+          null,
+          2
+        )
+      )
+    )
+  }
+
   // ─── Assets ─────────────────────────────────────────
   const assetsDir = path.join(getProjectsDir(), `${projectName}_assets`, 'assets')
   if (fs.existsSync(assetsDir)) {

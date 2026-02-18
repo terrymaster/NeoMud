@@ -74,12 +74,12 @@ class GameLoop(
                     }
                     sessionManager.broadcastToRoom(
                         respawnRoomId,
-                        ServerMessage.PlayerEntered(playerName, respawnRoomId),
+                        ServerMessage.PlayerEntered(playerName, respawnRoomId, session.toPlayerInfo()),
                         exclude = playerName
                     )
                     val room = worldGraph.getRoom(respawnRoomId)
                     if (room != null) {
-                        val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(respawnRoomId).filter { it != playerName }
+                        val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(respawnRoomId).filter { it.name != playerName }
                         val npcsInRoom = npcManager.getNpcsInRoom(respawnRoomId)
                         session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
                     }
@@ -134,7 +134,7 @@ class GameLoop(
                             // Reveal to other players
                             sessionManager.broadcastToRoom(
                                 event.roomId,
-                                ServerMessage.PlayerEntered(event.attackerName, event.roomId),
+                                ServerMessage.PlayerEntered(event.attackerName, event.roomId, attackerSession.toPlayerInfo()),
                                 exclude = event.attackerName
                             )
                         }
@@ -261,15 +261,15 @@ class GameLoop(
                     // Broadcast enter to spawn room
                     sessionManager.broadcastToRoom(
                         event.respawnRoomId,
-                        ServerMessage.PlayerEntered(playerName, event.respawnRoomId),
+                        ServerMessage.PlayerEntered(playerName, event.respawnRoomId, session.toPlayerInfo()),
                         exclude = playerName
                     )
 
                     // Send room info and map to respawned player
                     val room = worldGraph.getRoom(event.respawnRoomId)
                     if (room != null) {
-                        val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(event.respawnRoomId)
-                            .filter { it != playerName }
+                        val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(event.respawnRoomId)
+                            .filter { it.name != playerName }
                         val npcsInRoom = npcManager.getNpcsInRoom(event.respawnRoomId)
                         try {
                             session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
@@ -424,7 +424,7 @@ class GameLoop(
             // Reveal to other players in the room
             sessionManager.broadcastToRoom(
                 roomId,
-                ServerMessage.PlayerEntered(playerName, roomId),
+                ServerMessage.PlayerEntered(playerName, roomId, session.toPlayerInfo()),
                 exclude = playerName
             )
         }

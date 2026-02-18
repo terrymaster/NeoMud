@@ -22,6 +22,7 @@ class PlayerRepository {
         characterName: String,
         characterClass: String,
         race: String,
+        gender: String = "neutral",
         allocatedStats: Stats,
         spawnRoomId: RoomId,
         classCatalog: ClassCatalog,
@@ -71,12 +72,16 @@ class PlayerRepository {
             val maxMp = if (classDef.mpPerLevelMax > 0) classDef.mpPerLevelMax + (stats.willpower / 10) * 2 else 0
             val initialXpToNext = (100 * Math.pow(1.0, 2.2)).toLong().coerceAtLeast(100)
 
+            val initialImagePrompt = "A $gender ${race.lowercase()} ${characterClass.lowercase()}, fantasy RPG character portrait, full body, facing forward"
+
             PlayersTable.insert {
                 it[PlayersTable.username] = username
                 it[passwordHash] = hashPassword(password)
                 it[PlayersTable.characterName] = characterName
                 it[PlayersTable.characterClass] = characterClass
                 it[PlayersTable.race] = race
+                it[PlayersTable.gender] = gender
+                it[PlayersTable.imagePrompt] = initialImagePrompt
                 it[strength] = stats.strength
                 it[agility] = stats.agility
                 it[intellect] = stats.intellect
@@ -112,10 +117,12 @@ class PlayerRepository {
                 level = 1,
                 currentRoomId = spawnRoomId,
                 race = race,
+                gender = gender,
                 currentXp = 0,
                 xpToNextLevel = initialXpToNext,
                 unspentCp = 0,
-                totalCpEarned = StatAllocator.CP_POOL
+                totalCpEarned = StatAllocator.CP_POOL,
+                imagePrompt = initialImagePrompt
             )
         }
     }
@@ -151,11 +158,13 @@ class PlayerRepository {
                 level = row[PlayersTable.level],
                 currentRoomId = row[PlayersTable.currentRoomId],
                 race = row[PlayersTable.race],
+                gender = row[PlayersTable.gender],
                 currentXp = row[PlayersTable.currentXp],
                 xpToNextLevel = row[PlayersTable.xpToNextLevel],
                 unspentCp = row[PlayersTable.unspentCp],
                 totalCpEarned = row[PlayersTable.totalCpEarned],
-                isAdmin = row[PlayersTable.isAdmin]
+                isAdmin = row[PlayersTable.isAdmin],
+                imagePrompt = row[PlayersTable.imagePrompt]
             )
         }
     }
@@ -217,6 +226,11 @@ class PlayerRepository {
                 it[isAdmin] = true
             }
         }
+    }
+
+    companion object {
+        fun pcSpriteRelativePath(race: String, gender: String, characterClass: String): String =
+            "images/players/${race.lowercase()}_${gender.lowercase()}_${characterClass.lowercase()}.webp"
     }
 
     private fun hashPassword(password: String): String {

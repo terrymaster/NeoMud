@@ -190,6 +190,29 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
     }
   }
 
+  // ─── PC Sprites ───────────────────────────────────────
+  const pcSpritesEntry = zip.getEntry('world/pc_sprites.json')
+  if (pcSpritesEntry) {
+    const { sprites } = JSON.parse(zip.readAsText(pcSpritesEntry))
+    // Clear any seeded defaults first
+    await prisma.pcSprite.deleteMany()
+    for (const s of sprites) {
+      await prisma.pcSprite.create({
+        data: {
+          id: s.id,
+          race: s.race,
+          gender: s.gender,
+          characterClass: s.characterClass,
+          imagePrompt: s.imagePrompt ?? '',
+          imageStyle: s.imageStyle ?? '',
+          imageNegativePrompt: s.imageNegativePrompt ?? '',
+          imageWidth: s.imageWidth ?? 384,
+          imageHeight: s.imageHeight ?? 512,
+        },
+      })
+    }
+  }
+
   // ─── Legacy prompt_templates.json migration ────────────
   // If old bundle has prompt_templates.json, build a lookup to apply
   // template data to entities after they are created.

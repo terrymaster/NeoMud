@@ -1,6 +1,7 @@
 package com.neomud.server
 
 import com.neomud.shared.model.Direction
+import com.neomud.shared.model.PlayerInfo
 import com.neomud.shared.model.Stats
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.MessageSerializer
@@ -11,6 +12,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.*
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -212,6 +214,170 @@ class IntegrationTest {
             val error = receiveServerMessage()
             assertIs<ServerMessage.Error>(error)
             assertTrue(error.message.contains("log in"))
+        }
+    }
+
+    @Test
+    fun testRegisterWithGenderPersists() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        // Register with gender
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("genderuser", "testpass", "Elara", "MAGE", race = "ELF", gender = "female",
+                    allocatedStats = Stats(strength = 11, agility = 23, intellect = 37, willpower = 25, health = 13, charm = 25))
+            )))
+            val registerResponse = receiveServerMessage()
+            assertIs<ServerMessage.RegisterOk>(registerResponse)
+        }
+
+        // Login and verify gender is in LoginOk
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Login("genderuser", "testpass")
+            )))
+            val loginOk = receiveServerMessage()
+            assertIs<ServerMessage.LoginOk>(loginOk)
+            assertEquals("female", loginOk.player.gender)
+            assertEquals("ELF", loginOk.player.race)
+        }
+    }
+
+    @Test
+    fun testRoomInfoIncludesPlayerInfo() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        // Register two players
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("player_a", "pass123", "Alice", "WARRIOR", race = "HUMAN", gender = "female",
+                    allocatedStats = Stats(strength = 30, agility = 22, intellect = 18, willpower = 18, health = 30, charm = 18))
+            )))
+            receiveServerMessage() // RegisterOk
+        }
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("player_b", "pass123", "Bob", "THIEF", race = "ELF", gender = "male",
+                    allocatedStats = Stats(strength = 15, agility = 35, intellect = 27, willpower = 18, health = 15, charm = 30))
+            )))
+            receiveServerMessage() // RegisterOk
+        }
+
+        // Login both players concurrently so A is still in room when B connects
+        coroutineScope {
+            val sessionA = async {
+                wsClient.webSocket("/game") {
+                    consumeCatalogSync()
+                    send(Frame.Text(MessageSerializer.encodeClientMessage(
+                        ClientMessage.Login("player_a", "pass123")
+                    )))
+                    receiveServerMessage() // LoginOk
+                    receiveServerMessage() // RoomInfo
+                    receiveServerMessage() // MapData
+                    receiveServerMessage() // InventoryUpdate
+                    receiveServerMessage() // RoomItemsUpdate
+
+                    // Keep session alive until B finishes
+                    delay(5000)
+                }
+            }
+
+            delay(500) // Let A fully log in
+
+            val sessionB = async {
+                wsClient.webSocket("/game") {
+                    consumeCatalogSync()
+                    send(Frame.Text(MessageSerializer.encodeClientMessage(
+                        ClientMessage.Login("player_b", "pass123")
+                    )))
+                    receiveServerMessage() // LoginOk
+                    val roomInfo = receiveServerMessage()
+                    assertIs<ServerMessage.RoomInfo>(roomInfo)
+                    val aliceInfo = roomInfo.players.find { it.name == "Alice" }
+                    assertTrue(aliceInfo != null, "Alice should be in room players")
+                    assertEquals("WARRIOR", aliceInfo.characterClass)
+                    assertEquals("HUMAN", aliceInfo.race)
+                    assertEquals("female", aliceInfo.gender)
+                    assertEquals(1, aliceInfo.level)
+                    assertEquals("images/players/human_female_warrior.webp", aliceInfo.spriteUrl)
+                }
+            }
+
+            sessionB.await()
+            sessionA.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun testPlayerSpriteUrlConvention() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("spriteuser", "pass123", "SpriteHero", "WARRIOR", race = "HUMAN", gender = "female",
+                    allocatedStats = Stats(strength = 30, agility = 22, intellect = 18, willpower = 18, health = 30, charm = 18))
+            )))
+            receiveServerMessage() // RegisterOk
+        }
+
+        // Login a second player so the first appears in RoomInfo
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("spriteuser2", "pass123", "Other", "MAGE", race = "ELF", gender = "male",
+                    allocatedStats = Stats(strength = 11, agility = 23, intellect = 37, willpower = 25, health = 13, charm = 25))
+            )))
+            receiveServerMessage() // RegisterOk
+        }
+
+        // Login both concurrently so SpriteHero is still in room when Other connects
+        coroutineScope {
+            val sessionA = async {
+                wsClient.webSocket("/game") {
+                    consumeCatalogSync()
+                    send(Frame.Text(MessageSerializer.encodeClientMessage(
+                        ClientMessage.Login("spriteuser", "pass123")
+                    )))
+                    receiveServerMessage() // LoginOk
+                    receiveServerMessage() // RoomInfo
+                    receiveServerMessage() // MapData
+                    receiveServerMessage() // InventoryUpdate
+                    receiveServerMessage() // RoomItemsUpdate
+
+                    delay(5000)
+                }
+            }
+
+            delay(500) // Let SpriteHero fully log in
+
+            val sessionB = async {
+                wsClient.webSocket("/game") {
+                    consumeCatalogSync()
+                    send(Frame.Text(MessageSerializer.encodeClientMessage(
+                        ClientMessage.Login("spriteuser2", "pass123")
+                    )))
+                    receiveServerMessage() // LoginOk
+                    val roomInfo = receiveServerMessage()
+                    assertIs<ServerMessage.RoomInfo>(roomInfo)
+                    val spriteHero = roomInfo.players.find { it.name == "SpriteHero" }
+                    assertTrue(spriteHero != null)
+                    assertEquals("images/players/human_female_warrior.webp", spriteHero.spriteUrl)
+                }
+            }
+
+            sessionB.await()
+            sessionA.cancelAndJoin()
         }
     }
 

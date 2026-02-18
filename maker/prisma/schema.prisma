@@ -176,6 +176,22 @@ model LootTable {
   coinDrop String @default("")
 }
 
+model PcSprite {
+  id                  String   @id
+  race                String
+  gender              String
+  characterClass      String
+  imagePrompt         String   @default("")
+  imageStyle          String   @default("")
+  imageNegativePrompt String   @default("")
+  imageWidth          Int      @default(384)
+  imageHeight         Int      @default(512)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([race, gender, characterClass])
+}
+
 model ProjectMeta {
   key   String @id
   value String

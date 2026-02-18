@@ -23,8 +23,8 @@ class LookCommand(
         }
 
         val playerName = session.playerName!!
-        val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(currentRoomId)
-            .filter { it != playerName }
+        val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(currentRoomId)
+            .filter { it.name != playerName }
         val npcsInRoom = npcManager.getNpcsInRoom(currentRoomId)
 
         session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))

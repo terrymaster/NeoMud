@@ -33,12 +33,13 @@ export async function validateProject(
   const errors: string[] = []
   const warnings: string[] = []
 
-  const [zones, items, npcs, spells, lootTables] = await Promise.all([
+  const [zones, items, npcs, spells, lootTables, pcSprites] = await Promise.all([
     prisma.zone.findMany({ include: { rooms: { include: { exits: true } } } }),
     prisma.item.findMany(),
     prisma.npc.findMany(),
     prisma.spell.findMany(),
     prisma.lootTable.findMany(),
+    prisma.pcSprite.findMany(),
   ])
 
   // Build lookup sets
@@ -178,6 +179,12 @@ export async function validateProject(
     for (const room of zone.rooms) {
       if (!room.departSound) warnings.push(`Room '${room.id}' missing departSound`)
     }
+  }
+
+  // ─── PC Sprite asset existence ──────────────────────
+  for (const sprite of pcSprites) {
+    const p = `assets/images/players/${sprite.id}.webp`
+    if (!assetExists(p)) warnings.push(`PC sprite '${sprite.id}' missing asset: ${p}`)
   }
 
   // ─── Asset file existence ────────────────────────────

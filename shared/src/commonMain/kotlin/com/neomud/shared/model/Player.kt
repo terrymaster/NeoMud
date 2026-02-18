@@ -14,9 +14,11 @@ data class Player(
     val level: Int,
     val currentRoomId: RoomId,
     val race: String = "",
+    val gender: String = "neutral",
     val currentXp: Long = 0,
     val xpToNextLevel: Long = 0,
     val unspentCp: Int = 0,
     val totalCpEarned: Int = 0,
-    val isAdmin: Boolean = false
+    val isAdmin: Boolean = false,
+    val imagePrompt: String = ""
 )

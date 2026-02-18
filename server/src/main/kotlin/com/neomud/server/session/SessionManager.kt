@@ -1,5 +1,7 @@
 package com.neomud.server.session
 
+import com.neomud.server.persistence.repository.PlayerRepository
+import com.neomud.shared.model.PlayerInfo
 import com.neomud.shared.model.RoomId
 import com.neomud.shared.protocol.ServerMessage
 import java.util.concurrent.ConcurrentHashMap
@@ -31,6 +33,21 @@ class SessionManager {
         sessions.values
             .filter { it.currentRoomId == roomId && it.playerName != null && !it.isHidden }
             .map { it.playerName!! }
+
+    fun getVisiblePlayerInfosInRoom(roomId: RoomId): List<PlayerInfo> =
+        sessions.values
+            .filter { it.currentRoomId == roomId && it.playerName != null && !it.isHidden }
+            .mapNotNull { session ->
+                val player = session.player ?: return@mapNotNull null
+                PlayerInfo(
+                    name = player.name,
+                    characterClass = player.characterClass,
+                    race = player.race,
+                    gender = player.gender,
+                    level = player.level,
+                    spriteUrl = PlayerRepository.pcSpriteRelativePath(player.race, player.gender, player.characterClass)
+                )
+            }
 
     fun getAllAuthenticatedSessions(): List<PlayerSession> =
         sessions.values.filter { it.isAuthenticated }

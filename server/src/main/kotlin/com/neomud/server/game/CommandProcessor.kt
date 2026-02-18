@@ -202,6 +202,7 @@ class CommandProcessor(
             characterName = msg.characterName,
             characterClass = msg.characterClass,
             race = msg.race,
+            gender = msg.gender,
             allocatedStats = msg.allocatedStats,
             spawnRoomId = worldGraph.defaultSpawnRoom,
             classCatalog = classCatalog,
@@ -252,8 +253,8 @@ class CommandProcessor(
                 // Send initial room info
                 val room = worldGraph.getRoom(effectivePlayer.currentRoomId)
                 if (room != null) {
-                    val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(effectivePlayer.currentRoomId)
-                        .filter { it != effectivePlayer.name }
+                    val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(effectivePlayer.currentRoomId)
+                        .filter { it.name != effectivePlayer.name }
                     val npcsInRoom = npcManager.getNpcsInRoom(effectivePlayer.currentRoomId)
                     session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
 
@@ -268,7 +269,7 @@ class CommandProcessor(
                     // Broadcast to others in room
                     sessionManager.broadcastToRoom(
                         effectivePlayer.currentRoomId,
-                        ServerMessage.PlayerEntered(effectivePlayer.name, effectivePlayer.currentRoomId),
+                        ServerMessage.PlayerEntered(effectivePlayer.name, effectivePlayer.currentRoomId, session.toPlayerInfo()),
                         exclude = effectivePlayer.name
                     )
                 }

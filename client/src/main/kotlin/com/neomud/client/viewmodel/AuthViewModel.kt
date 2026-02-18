@@ -113,13 +113,13 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun register(username: String, password: String, characterName: String, characterClass: String, race: String = "", allocatedStats: Stats = Stats()) {
+    fun register(username: String, password: String, characterName: String, characterClass: String, race: String = "", gender: String = "neutral", allocatedStats: Stats = Stats()) {
         _authState.value = AuthState.Loading
         pendingLoginUsername = username
         pendingLoginPassword = password
         viewModelScope.launch {
             val sent = wsClient.send(
-                ClientMessage.Register(username, password, characterName, characterClass, race, allocatedStats)
+                ClientMessage.Register(username, password, characterName, characterClass, race, gender, allocatedStats)
             )
             if (!sent) {
                 pendingLoginUsername = null

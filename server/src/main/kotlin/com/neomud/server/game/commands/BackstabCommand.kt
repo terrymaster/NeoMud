@@ -46,7 +46,7 @@ class BackstabCommand(
         session.send(ServerMessage.HideModeUpdate(false, "You strike from the shadows!"))
         sessionManager.broadcastToRoom(
             roomId,
-            ServerMessage.PlayerEntered(playerName, roomId),
+            ServerMessage.PlayerEntered(playerName, roomId, session.toPlayerInfo()),
             exclude = playerName
         )
 

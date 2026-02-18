@@ -79,8 +79,9 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
                 authState = authState,
                 availableClasses = availableClasses,
                 availableRaces = availableRaces,
-                onRegister = { username, password, characterName, characterClass, race, allocatedStats ->
-                    authViewModel.register(username, password, characterName, characterClass, race, allocatedStats)
+                serverBaseUrl = authViewModel.serverBaseUrl,
+                onRegister = { username, password, characterName, characterClass, race, gender, allocatedStats ->
+                    authViewModel.register(username, password, characterName, characterClass, race, gender, allocatedStats)
                 },
                 onBack = { navController.popBackStack() },
                 onClearError = { authViewModel.clearError() }

@@ -24,7 +24,7 @@ sealed class ServerMessage {
     @SerialName("room_info")
     data class RoomInfo(
         val room: Room,
-        val players: List<String>,
+        val players: List<PlayerInfo>,
         val npcs: List<Npc>
     ) : ServerMessage()
 
@@ -33,7 +33,7 @@ sealed class ServerMessage {
     data class MoveOk(
         val direction: Direction,
         val room: Room,
-        val players: List<String>,
+        val players: List<PlayerInfo>,
         val npcs: List<Npc>
     ) : ServerMessage()
 
@@ -52,7 +52,7 @@ sealed class ServerMessage {
     // Events
     @Serializable
     @SerialName("player_entered")
-    data class PlayerEntered(val playerName: String, val roomId: RoomId) : ServerMessage()
+    data class PlayerEntered(val playerName: String, val roomId: RoomId, val playerInfo: PlayerInfo? = null) : ServerMessage()
 
     @Serializable
     @SerialName("player_left")

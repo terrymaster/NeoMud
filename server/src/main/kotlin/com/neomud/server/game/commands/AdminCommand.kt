@@ -209,12 +209,12 @@ class AdminCommand(
         // Broadcast enter to new room
         sessionManager.broadcastToRoom(
             roomId,
-            ServerMessage.PlayerEntered(playerName, roomId),
+            ServerMessage.PlayerEntered(playerName, roomId, target.toPlayerInfo()),
             exclude = playerName
         )
 
         // Send room info to teleported player
-        val playersInRoom = sessionManager.getVisiblePlayerNamesInRoom(roomId).filter { it != playerName }
+        val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(roomId).filter { it.name != playerName }
         val npcsInRoom = npcManager.getNpcsInRoom(roomId)
         target.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
 

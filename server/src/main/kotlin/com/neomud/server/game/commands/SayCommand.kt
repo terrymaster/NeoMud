@@ -28,7 +28,7 @@ class SayCommand(
             session.send(ServerMessage.HideModeUpdate(false, "Speaking reveals your presence!"))
             sessionManager.broadcastToRoom(
                 roomId,
-                ServerMessage.PlayerEntered(playerName, roomId),
+                ServerMessage.PlayerEntered(playerName, roomId, session.toPlayerInfo()),
                 exclude = playerName
             )
         }

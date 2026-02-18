@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("DatabaseFactory")
 
-private const val SCHEMA_VERSION = 4 // Added is_admin column
+private const val SCHEMA_VERSION = 5 // Added gender, image_prompt columns
 
 object DatabaseFactory {
     fun init(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
@@ -42,6 +42,22 @@ object DatabaseFactory {
             } catch (_: Exception) {
                 logger.info("Migrating schema: adding is_admin column")
                 exec("ALTER TABLE players ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0")
+            }
+
+            // Incremental migration: add gender if missing
+            try {
+                exec("SELECT gender FROM players LIMIT 1") { true }
+            } catch (_: Exception) {
+                logger.info("Migrating schema: adding gender column")
+                exec("ALTER TABLE players ADD COLUMN gender VARCHAR(20) NOT NULL DEFAULT 'neutral'")
+            }
+
+            // Incremental migration: add image_prompt if missing
+            try {
+                exec("SELECT image_prompt FROM players LIMIT 1") { true }
+            } catch (_: Exception) {
+                logger.info("Migrating schema: adding image_prompt column")
+                exec("ALTER TABLE players ADD COLUMN image_prompt TEXT NOT NULL DEFAULT ''")
             }
         }
 
