@@ -1,6 +1,6 @@
 package com.neomud.server.persistence.tables
 
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.v1.core.Table
 
 object InventoryTable : Table("inventory") {
     val id = integer("id").autoIncrement()

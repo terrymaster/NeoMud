@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.3.10"
 ktor = "3.4.0"
-exposed = "0.57.0"
+exposed = "1.0.0"
 sqlite = "3.51.2.0"
 kotlinx-serialization = "1.10.0"
 kotlinx-coroutines = "1.9.0"
