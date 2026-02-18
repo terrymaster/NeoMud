@@ -19,7 +19,7 @@ function parseJsonField(value: string, fallback: any = {}): any {
 }
 
 /** Build a .nmd ZIP bundle from the active project's data + assets. */
-async function buildNmdBundle(prisma: PrismaClient, projectName: string): Promise<Buffer> {
+export async function buildNmdBundle(prisma: PrismaClient, projectName: string): Promise<Buffer> {
   const zip = new AdmZip()
 
   // ─── Manifest ───────────────────────────────────────

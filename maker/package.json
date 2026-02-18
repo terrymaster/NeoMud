@@ -14,7 +14,8 @@
     "test:api": "vitest run server/",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "rebuild-world": "tsx scripts/rebuild-default-world.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.4.0",

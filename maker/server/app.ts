@@ -36,7 +36,7 @@ app.use('/api/assets', (req, res, next) => {
 
 export async function autoImportDefaultWorld() {
   const nmdPath = process.env.NEOMUD_DEFAULT_WORLD
-    || path.resolve(__dirname, '..', '..', 'server', 'build', 'worlds', 'default-world.nmd')
+    || path.resolve(__dirname, '..', 'default_world.nmd')
   if (!fs.existsSync(nmdPath)) {
     console.log(`[startup] No default-world.nmd found at ${nmdPath}, skipping auto-import.`)
     return

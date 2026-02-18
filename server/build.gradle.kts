@@ -47,16 +47,10 @@ kotlin {
     jvmToolchain(21)
 }
 
-tasks.register<Zip>("packageWorld") {
-    description = "Packages world data and assets into a .nmd bundle"
+tasks.register<Copy>("packageWorld") {
+    description = "Copies the maker-built default world bundle into build/worlds/"
     group = "build"
-
-    archiveFileName.set("default-world.nmd")
-    destinationDirectory.set(layout.buildDirectory.dir("worlds"))
-
-    from("src/main/resources/manifest.json")
-    from("src/main/resources") {
-        include("world/**")
-        include("assets/**")
-    }
+    from("../maker/default_world.nmd")
+    into(layout.buildDirectory.dir("worlds"))
+    rename { "default-world.nmd" }
 }
