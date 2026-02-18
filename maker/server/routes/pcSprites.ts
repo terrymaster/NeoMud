@@ -70,7 +70,8 @@ pcSpritesRouter.post('/reset', rejectIfReadOnly, async (req, res) => {
   try {
     await db().pcSprite.deleteMany()
     await seedPcSprites(db())
-    res.json({ ok: true, count: 270 })
+    const count = await db().pcSprite.count()
+    res.json({ ok: true, count })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
   }
