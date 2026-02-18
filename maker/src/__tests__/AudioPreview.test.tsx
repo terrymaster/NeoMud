@@ -7,7 +7,7 @@ import AudioPreview from '../components/AudioPreview'
 describe('AudioPreview', () => {
   it('shows placeholder when no bgm track is set', () => {
     render(<AudioPreview entityType="zone" entityId="test_zone" />)
-    expect(screen.getByText('No BGM Track')).toBeInTheDocument()
+    expect(screen.getByText('Missing BGM')).toBeInTheDocument()
   })
 
   it('shows track ID when bgm is provided', () => {

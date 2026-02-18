@@ -43,106 +43,86 @@ NeoMud/
 
 **Shared** module contains the protocol (sealed classes with `kotlinx.serialization`) and all data models. Client and server speak the same language at compile time.
 
-**Maker** is a web-based world editor (React frontend, Express API, SQLite per-project databases) for building zones, rooms, NPCs, items, and more — with visual map editing and export to the server's `.nmd` bundle format.
+**Maker** is a web-based world editor (React frontend, Express API) for building zones, rooms, NPCs, items, and more — with visual map editing and export to the server's `.nmd` bundle format.
 
-## Features
+## Current State
 
-### The World
-- Two zones: the town of Millhaven (safe) and the Whispering Forest (dangerous)
-- 17 rooms with hand-crafted background art (AI-generated, background-removed, served as WebP)
+This is an early-stage hobby project. A lot of the systems exist but are lightly tested and need real playtesting to shake out balance issues and bugs. Here's an honest breakdown.
+
+### What Works
+
+**The World**
+- 2 zones: Millhaven (safe town) and the Whispering Forest (hostile)
+- 10 rooms total with AI-generated background art (WebP)
 - JSON-driven room definitions with coordinates, exits, and background images
-- BFS-based minimap showing nearby rooms with player/NPC presence indicators
-- Temple of the Dawn healing aura — passively restores HP each tick while you rest
-- `.nmd` world bundles — self-contained ZIP archives with all zone data, catalogs, and assets
-- Asset validation at world load time — missing images or audio flagged on startup
+- BFS-based minimap showing nearby rooms with player/NPC presence
+- Temple of the Dawn healing aura — passively restores HP each tick
+- `.nmd` world bundles — self-contained ZIP archives with zone data, catalogs, and assets
 
-### Characters
+**Characters**
 - 6 races: Human, Dwarf, Elf, Halfling, Gnome, Half-Orc — each with stat modifiers and XP scaling
 - 15 character classes: Warrior, Paladin, Witch Hunter, Cleric, Priest, Missionary, Mage, Warlock, Druid, Ranger, Thief, Ninja, Mystic, Bard, Gypsy
 - 6-stat system: Strength, Agility, Intellect, Willpower, Health, Charm
 - 60 CP stat allocation at character creation with escalating costs above class minimums
-- Equipment slots: weapon, shield, head, chest, hands, legs, feet — managed via paperdoll screen
+- Equipment slots: weapon, shield, head, chest, hands, legs, feet
 
-### Progression
-- 30 level cap with XP from combat (scaled by level difference)
-- CP gains per level: 10 (levels 1–10), 15 (levels 11–20), 20 (levels 21+)
-- Trainers for spending CP on stat increases
-- 10% XP penalty on death
-
-### Spells & Skills
-- 5 magic schools: Mage, Priest, Druid, Kai, Bard
-- 20 spells with mana costs, cooldowns, and school-based progression
-- 12 skills: combat (Bash, Kick, Backstab, Parry, Dodge), stealth (Hide, Sneak), utility (Meditate, Perception, Pick Lock, Track, Haggle)
-- Spell bar UI with drag-to-assign slots
-
-### Combat
-- Tick-based (1.5s) — no button mashing, just tactical decisions
-- Weapon damage = Strength + bonus + random roll; armor reduces incoming damage
+**Combat & NPCs**
+- Tick-based (1.5s) combat — weapon damage = Strength + bonus + random roll; armor reduces incoming
+- 6 NPCs across both zones (guards, vendors, trainers, hostile creatures)
 - NPCs attack on sight if hostile; perception checks reveal hidden players
-- Per-NPC HP tracking — multiple spawned copies of the same NPC update independently via unique IDs
 - Backstab from stealth for bonus damage
-- Death respawns you at the Temple of the Dawn with a "YOU DIED" overlay
+- Death respawns at the Temple of the Dawn with 10% XP penalty
+- Continuous NPC spawn system per zone with configurable rates
 
-### NPCs & Spawning
-- 5 behavior types: idle, patrol, wander, trainer, vendor
-- Continuous spawn system — hostile NPCs respawn over time to maintain zone population
-- Per-zone spawn config: max entities, max per room, spawn rate in ticks
-- Spawned copies share template sprites — `shadow_wolf#3` resolves to `shadow_wolf.webp` automatically
-- NPC perception vs player stealth rolls each tick
-
-### Items & Economy
-- Data-driven items: weapons, armor, consumables, loot drops
-- Loot tables per NPC with weighted drops
+**Items & Economy**
+- 18 data-driven items: weapons, armor, consumables, crafting materials
+- 2 loot tables (wolf and spider drops)
 - Four-tier coin system: Copper, Silver, Gold, Platinum
+- Vendor buy/sell with charm-based pricing
 - Ground loot rendered as clickable sprites
 
-### Multiplayer
-- Real-time WebSocket sessions
-- Room-based chat
-- See other players enter and leave
-- One session per account
-- Player state persisted on disconnect — log back in where you left off with full room state restored
-- Game state mutex and rate limiter for server-side hardening
+**Progression**
+- 30 level cap with XP from combat (scaled by level difference)
+- CP gains per level for stat training
+- Inventory icon grid with item sprites and tap-to-use consumables
+- Paperdoll equipment screen with slot-based equip/unequip
 
-### Audio
+**Audio**
 - Per-zone background music with crossfade on zone transitions
 - Sound effects for combat, movement, spells, and item interactions
-- NPC interact sounds — audio feedback when opening trainer or vendor panels
+- NPC interact sounds
 - Configurable volume controls for BGM and SFX independently
 
-### Active Skills
-- Class-based skill activation (Bash, Kick, Backstab, Hide, etc.) via action panel
-- Locked exits requiring keys or items to pass
-- Contextual action buttons — permanent class actions separated from situational ones (shop, train, level up)
-
-### Client Navigation
-- 10-direction pad: N, S, E, W, NE, NW, SE, SW, Up, Down
+**Client**
+- 10-direction navigation pad (cardinal, diagonal, vertical)
 - Minimap with clickable room navigation
+- Game log, character sheet, spell bar
+- Dark fantasy stone UI theme
 
-## NeoMUD Maker
+### What Exists But Needs Work
 
-A web-based world editor for building and managing game worlds without touching JSON files.
+**Spells & Skills**
+- 20 spells across 5 magic schools (Mage, Priest, Druid, Kai, Bard) are defined in data
+- 12 skills (Bash, Kick, Backstab, Parry, Dodge, Hide, Sneak, Meditate, Perception, Pick Lock, Track, Haggle) are defined
+- Spell bar UI exists with drag-to-assign slots
+- The spell quick-cast menu is **not yet implemented** — spells currently fire from the spell bar only
+- Most of the extended skill tree has **not been playtested** — expect balance issues
 
-### What's Working
-- **Project management** — create, open, delete, and switch between world projects (each backed by its own SQLite database)
-- **Default world import** — auto-imports the server's `default-world.nmd` bundle as a read-only reference project on first startup
-- **Read-only projects** — the default world can be browsed but not modified; fork it to create an editable copy
-- **Visual zone editor** — drag-and-drop room placement on a grid canvas, click-to-connect exits with automatic bidirectional linking
-- **Zone/room/exit CRUD** — full create, update, delete for zones, rooms, and exits via REST API
-- **Entity editors** — full CRUD for all catalog types: Items, NPCs, Classes, Races, Skills, Spells, Loot Tables
-- **Image previews** — room backgrounds and NPC sprites shown inline in editors
-- **Prompt template editor** — configure AI art generation prompts per entity
-- **Export** — export any project as `.nmd` bundle or raw JSON for the game server
-- **Import** — import existing `.nmd` bundles into new maker projects
-- **Prisma schema** — 12 entity types: Zone, Room, Exit, Item, NPC, CharacterClass, Race, Skill, Spell, LootTable, PromptTemplate, ProjectMeta
+**Multiplayer**
+- Real-time WebSocket sessions work for basic gameplay
+- Room-based chat, player presence, one session per account
+- Player state persists across sessions
+- Server has a game state mutex and rate limiter
+- **Needs significant stress testing** — concurrent player interactions, edge cases around combat with multiple players, reconnection handling are all lightly tested at best
 
-### Running the Maker
-```bash
-cd maker
-npm install
-npm run dev
-```
-Opens on `http://localhost:5173` (Vite frontend) with the API server on port 3001.
+**Maker (World Editor)**
+- Full CRUD for all entity types: zones, rooms, NPCs, items, classes, races, skills, spells, loot tables
+- Visual zone editor with drag-and-drop room placement and click-to-connect exits
+- Import/export of `.nmd` bundles
+- Default world auto-import with read-only projects and fork workflow
+- **AI generation pipeline is early-stage** — image and audio generation endpoints exist, provider configuration works, but the pipeline needs more testing with real providers and error handling improvements
+- Provider status now persists across page reloads
+- Asset management with upload, undo history, and clear
 
 ## Tech Stack
 
@@ -157,7 +137,7 @@ Opens on `http://localhost:5173` (Vite frontend) with the API server on port 300
 | Protocol | kotlinx.serialization over WebSocket |
 | Shared Code | Kotlin Multiplatform |
 | Build | Gradle 8.11 with configuration cache |
-| Maker | React 18 + Express + Prisma (SQLite) |
+| Maker | React 18 + Express + SQLite |
 
 ## Running It
 
@@ -190,67 +170,33 @@ Opens the world editor at `http://localhost:5173`. On first run, it auto-imports
 
 ## Roadmap
 
-This is an active project. Here's what exists, what's in progress, and where it's headed.
+### Near Term
+- [ ] **Spell Quick-Cast Menu** — tap-to-cast from a radial or list menu, not just the spell bar
+- [ ] **Game Balance Pass** — rebalance combat, XP curves, item stats, and NPC difficulty with actual playtesting
+- [ ] **Multiplayer Stress Testing** — test concurrent players, combat interactions, reconnection edge cases
+- [ ] **AI Pipeline Hardening** — improve error handling, test with real Stable Diffusion / ElevenLabs / OpenAI providers
+- [ ] **Missing Item Art** — add icons for items without sprites
+- [ ] **More Content** — the 10-room world is a proof of concept; needs more zones, NPCs, and items to be fun
 
-### What's Built
-- [x] WebSocket multiplayer with real-time room presence
-- [x] Two zones (town + forest) with 17 rooms
-- [x] 6 races with stat modifiers and XP scaling
-- [x] 15 character classes with stat-based differentiation
-- [x] 60 CP stat allocation at registration with escalating costs
-- [x] Tick-based combat with hostile NPCs
-- [x] Stealth system with hide, backstab, and NPC perception checks
-- [x] 5 magic schools, 20 spells with cooldowns and mana costs
-- [x] 12 skills (combat, stealth, utility)
-- [x] XP and leveling system (30 level cap) with trainers
-- [x] Inventory icon grid with item sprites and tap-to-use consumables
-- [x] Paperdoll equipment screen with slot-based equip/unequip
-- [x] Vendor system with buy/sell tabs and charm-based pricing
-- [x] Loot tables and ground item drops
-- [x] Four-tier coin economy
-- [x] Continuous NPC spawn system per zone
-- [x] Room background art and sprite overlays
-- [x] Minimap, game log, character sheet, spell bar
-- [x] Death/respawn with XP penalty and temple spawn point
-- [x] Room healing aura (Temple of the Dawn)
-- [x] Player state persistence across sessions
-- [x] 10-direction navigation (cardinal, diagonal, vertical)
-- [x] Audio system with BGM, SFX, NPC interact sounds, and volume controls
-- [x] `.nmd` world bundle format with asset validation — server loads exclusively from bundles
-- [x] Active skills with class-based activation and locked exits
-- [x] Action panel with permanent class actions separated from contextual buttons
-- [x] Admin system with slash commands and inline autocomplete
-- [x] Multiplayer hardening — game state mutex, rate limiter, frame size cap
-- [x] Dark fantasy stone UI theme — beveled stone frames, gradient buttons, gold rivets
-- [x] NeoMUD Maker — web-based world editor with all entity editors, visual map canvas, import/export
-- [x] Default world import with read-only projects and fork workflow
-
-### Up Next
-- [ ] **Game Balance Pass** — rebalance combat, XP curves, item stats, and NPC difficulty across all content
-- [ ] **Missing Item Art** — add icons for items without sprites (e.g., leather chest piece)
-- [ ] **Player Status Condensing** — compact the HP/MP/XP status panel, explore horizontal orientation
-- [ ] **Equipment Upgrades** — tiered gear, enchantments, item rarity system
+### Medium Term
+- [ ] **Equipment Upgrades** — tiered gear, enchantments, item rarity
 - [ ] **NPC Dialogue** — conversation trees, quest givers, lore NPCs
 - [ ] **Quest System** — kill quests, fetch quests, quest log, rewards
-
-### NeoMUD Maker — Next Steps
-- [ ] **AI Art Pipeline** — generate room backgrounds, NPC sprites, and item icons from prompt templates
-- [ ] **AI Sound Design** — generate ambient audio, combat sounds, and zone music from descriptions
-- [ ] **Live Preview** — test your world in-client without restarting the server
-- [ ] **Publish & Share** — export complete `.nmd` bundles for other NeoMud servers
+- [ ] **Maker Live Preview** — test your world in-client without restarting the server
+- [ ] **Player Status Condensing** — compact the HP/MP/XP status panel
 
 ### Future Vision
-- [ ] **More Zones** — dungeons, caves, swamps, castles — each with unique NPCs and loot
-- [ ] **Crafting** — gather materials, combine into items, crafting recipes
-- [ ] **Party System** — group up, shared XP, party chat, group combat tactics
-- [ ] **PvP** — optional dueling, arenas, or PvP zones
-- [ ] **Guilds/Clans** — player organizations, shared banks, guild halls
-- [ ] **Boss Encounters** — multi-phase fights, special mechanics, rare drops
-- [ ] **Status Effects Expansion** — poison, stun, bleed, buffs/debuffs with tactical depth
-- [ ] **Emotes & Social** — /wave, /bow, roleplay support
-- [ ] **World Events** — timed spawns, invasions, seasonal content
-- [ ] **iOS Client** — Compose Multiplatform or SwiftUI
-- [ ] **Web Client** — browser-based alternative using the same WebSocket protocol
+- [ ] More zones — dungeons, caves, swamps, castles
+- [ ] Crafting system
+- [ ] Party system with shared XP and group combat
+- [ ] PvP — dueling, arenas, or PvP zones
+- [ ] Guilds/clans
+- [ ] Boss encounters with special mechanics
+- [ ] Status effects expansion — poison, stun, bleed, buffs/debuffs
+- [ ] Emotes and social features
+- [ ] World events — timed spawns, invasions
+- [ ] iOS client
+- [ ] Web client
 
 ### Someday/Maybe
 - [ ] Procedural zone generation

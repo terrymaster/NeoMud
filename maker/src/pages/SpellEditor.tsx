@@ -32,9 +32,9 @@ const fields: FieldConfig[] = [
   { key: 'effectType', label: 'Effect Type', type: 'text', placeholder: 'e.g. DOT, HOT, STUN' },
   { key: 'effectDuration', label: 'Effect Duration (ticks)', type: 'number' },
   { key: 'castMessage', label: 'Cast Message', type: 'text' },
-  { key: 'castSound', label: 'Cast Sound', type: 'text' },
-  { key: 'impactSound', label: 'Impact Sound', type: 'text' },
-  { key: 'missSound', label: 'Miss Sound', type: 'text' },
+  { key: 'castSound', label: 'Cast Sound', type: 'sfx' },
+  { key: 'impactSound', label: 'Impact Sound', type: 'sfx' },
+  { key: 'missSound', label: 'Miss Sound', type: 'sfx' },
 ];
 
 function SpellEditor() {

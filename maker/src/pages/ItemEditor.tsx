@@ -40,11 +40,11 @@ const fields: FieldConfig[] = [
   { key: 'damageRange', label: 'Damage Range', type: 'number', visibleWhen: isEquipment },
   { key: 'armorValue', label: 'Armor Value', type: 'number', visibleWhen: isEquipment },
   { key: 'levelRequirement', label: 'Level Requirement', type: 'number', visibleWhen: isEquipment },
-  { key: 'attackSound', label: 'Attack Sound', type: 'text', visibleWhen: isEquipment },
-  { key: 'missSound', label: 'Miss Sound', type: 'text', visibleWhen: isEquipment },
+  { key: 'attackSound', label: 'Attack Sound', type: 'sfx', visibleWhen: isEquipment },
+  { key: 'missSound', label: 'Miss Sound', type: 'sfx', visibleWhen: isEquipment },
   // Consumable fields
   { key: 'useEffect', label: 'Use Effect', type: 'text', help: 'Effect string applied on use (e.g. heal:25)', visibleWhen: isConsumable },
-  { key: 'useSound', label: 'Use Sound', type: 'text', visibleWhen: isConsumable },
+  { key: 'useSound', label: 'Use Sound', type: 'sfx', visibleWhen: isConsumable },
   // Stacking (consumable, crafting, misc)
   { key: 'stackable', label: 'Stackable', type: 'checkbox', visibleWhen: isStackable },
   { key: 'maxStack', label: 'Max Stack', type: 'number', visibleWhen: isStackable },

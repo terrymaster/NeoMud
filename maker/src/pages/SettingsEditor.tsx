@@ -15,6 +15,12 @@ interface CustomProvider {
   apiKey?: string;
 }
 
+interface ProviderStatus {
+  ok: boolean;
+  error?: string;
+  testedAt: string;
+}
+
 interface Settings {
   providers: {
     'stable-diffusion': ProviderConfig;
@@ -22,6 +28,9 @@ interface Settings {
     elevenlabs: ProviderConfig;
   };
   customProviders: CustomProvider[];
+  imageProvider: string;
+  soundProvider: string;
+  providerStatus: Record<string, ProviderStatus>;
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -79,6 +88,13 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 4,
     outline: 'none',
   },
+  select: {
+    flex: 1,
+    padding: '6px 10px',
+    fontSize: 13,
+    border: '1px solid #ccc',
+    borderRadius: 4,
+  },
   btn: {
     padding: '8px 16px',
     fontSize: 13,
@@ -109,6 +125,17 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: 5,
     cursor: 'pointer',
   },
+  btnTest: {
+    padding: '4px 10px',
+    fontSize: 12,
+    fontWeight: 600,
+    backgroundColor: '#fff',
+    color: '#1a1a2e',
+    border: '1px solid #1a1a2e',
+    borderRadius: 4,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
   note: {
     fontSize: 12,
     color: '#888',
@@ -124,11 +151,38 @@ const styles: Record<string, CSSProperties> = {
     marginLeft: 12,
     color: '#4caf50',
   },
+  testResult: {
+    fontSize: 11,
+    marginLeft: 8,
+    fontWeight: 600,
+  },
+  statusBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    fontSize: 11,
+    fontWeight: 500,
+    marginLeft: 8,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: '50%',
+    display: 'inline-block',
+    flexShrink: 0,
+  },
+  statusTime: {
+    fontSize: 10,
+    color: '#999',
+    marginLeft: 4,
+  },
 };
 
 function SettingsEditor() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [saveStatus, setSaveStatus] = useState('');
+  const [testResults, setTestResults] = useState<Record<string, { ok: boolean; error?: string } | null>>({});
+  const [testing, setTesting] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     api
@@ -192,17 +246,132 @@ function SettingsEditor() {
     setSettings({ ...settings, customProviders: updated });
   };
 
+  const testProvider = async (providerId: string) => {
+    setTesting((prev) => ({ ...prev, [providerId]: true }));
+    setTestResults((prev) => ({ ...prev, [providerId]: null }));
+    try {
+      const result = await api.post<{ ok: boolean; error?: string; testedAt: string }>('/settings/test-provider', { providerId });
+      setTestResults((prev) => ({ ...prev, [providerId]: result }));
+      // Update persisted status in local state
+      if (settings) {
+        setSettings({
+          ...settings,
+          providerStatus: { ...settings.providerStatus, [providerId]: result },
+        });
+      }
+    } catch (err: any) {
+      setTestResults((prev) => ({ ...prev, [providerId]: { ok: false, error: err.message } }));
+    } finally {
+      setTesting((prev) => ({ ...prev, [providerId]: false }));
+    }
+  };
+
+  const formatTimeAgo = (iso: string): string => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+  };
+
+  const renderStatusBadge = (providerId: string) => {
+    const status = settings?.providerStatus?.[providerId];
+    if (!status) {
+      return (
+        <span style={styles.statusBadge}>
+          <span style={{ ...styles.statusDot, backgroundColor: '#bbb' }} />
+          <span style={{ color: '#999' }}>Not tested</span>
+        </span>
+      );
+    }
+    return (
+      <span style={styles.statusBadge}>
+        <span style={{ ...styles.statusDot, backgroundColor: status.ok ? '#4caf50' : '#d32f2f' }} />
+        <span style={{ color: status.ok ? '#4caf50' : '#d32f2f' }}>
+          {status.ok ? 'Connected' : (status.error || 'Failed')}
+        </span>
+        <span style={styles.statusTime}>({formatTimeAgo(status.testedAt)})</span>
+      </span>
+    );
+  };
+
+  // Build provider options for dropdowns
+  const imageProviderOptions = [
+    { value: 'stable-diffusion', label: 'Stable Diffusion' },
+    { value: 'openai', label: 'OpenAI DALL-E' },
+    ...(settings?.customProviders || []).map((cp) => ({ value: cp.id, label: cp.label || cp.id })),
+  ];
+
+  const soundProviderOptions = [
+    { value: 'elevenlabs', label: 'ElevenLabs' },
+    ...(settings?.customProviders || []).map((cp) => ({ value: cp.id, label: cp.label || cp.id })),
+  ];
+
+  const renderTestButton = (providerId: string) => (
+    <>
+      <button
+        style={{ ...styles.btnTest, opacity: testing[providerId] ? 0.5 : 1 }}
+        onClick={() => testProvider(providerId)}
+        disabled={testing[providerId]}
+      >
+        {testing[providerId] ? 'Testing...' : 'Test'}
+      </button>
+      {testResults[providerId] && (
+        <span style={{ ...styles.testResult, color: testResults[providerId]!.ok ? '#4caf50' : '#d32f2f' }}>
+          {testResults[providerId]!.ok ? 'Connected' : testResults[providerId]!.error || 'Failed'}
+        </span>
+      )}
+    </>
+  );
+
   if (!settings) return null;
 
   return (
     <div style={styles.page}>
       <h2 style={styles.title}>Settings</h2>
 
+      {/* Active Providers */}
+      <div style={styles.card}>
+        <div style={styles.sectionTitle}>Active Providers</div>
+        <div style={styles.fieldRow}>
+          <span style={{ ...styles.fieldLabel, width: 100 }}>Image Provider</span>
+          <select
+            style={styles.select}
+            value={settings.imageProvider}
+            onChange={(e) => setSettings({ ...settings, imageProvider: e.target.value })}
+          >
+            {imageProviderOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          {renderTestButton(settings.imageProvider)}
+        </div>
+        <div style={{ ...styles.fieldRow, marginTop: 8 }}>
+          <span style={{ ...styles.fieldLabel, width: 100 }}>Sound Provider</span>
+          <select
+            style={styles.select}
+            value={settings.soundProvider}
+            onChange={(e) => setSettings({ ...settings, soundProvider: e.target.value })}
+          >
+            {soundProviderOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          {renderTestButton(settings.soundProvider)}
+        </div>
+      </div>
+
       <div style={styles.card}>
         <div style={styles.sectionTitle}>Built-in Providers</div>
 
         <div style={styles.providerBlock}>
-          <div style={styles.providerLabel}>Stable Diffusion</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={styles.providerLabel}>Stable Diffusion{renderStatusBadge('stable-diffusion')}</div>
+            {renderTestButton('stable-diffusion')}
+          </div>
           <div style={styles.fieldRow}>
             <span style={styles.fieldLabel}>URL</span>
             <input
@@ -229,7 +398,10 @@ function SettingsEditor() {
         </div>
 
         <div style={styles.providerBlock}>
-          <div style={styles.providerLabel}>OpenAI</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={styles.providerLabel}>OpenAI{renderStatusBadge('openai')}</div>
+            {renderTestButton('openai')}
+          </div>
           <div style={styles.fieldRow}>
             <span style={styles.fieldLabel}>URL</span>
             <input
@@ -256,7 +428,10 @@ function SettingsEditor() {
         </div>
 
         <div style={{ ...styles.providerBlock, borderBottom: 'none', marginBottom: 0, paddingBottom: 0 }}>
-          <div style={styles.providerLabel}>ElevenLabs</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={styles.providerLabel}>ElevenLabs{renderStatusBadge('elevenlabs')}</div>
+            {renderTestButton('elevenlabs')}
+          </div>
           <div style={styles.fieldRow}>
             <span style={styles.fieldLabel}>URL</span>
             <input
@@ -288,16 +463,22 @@ function SettingsEditor() {
         {settings.customProviders.map((cp, i) => (
           <div key={cp.id} style={styles.providerBlock}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <input
-                style={{ ...styles.input, fontWeight: 600, maxWidth: 200 }}
-                type="text"
-                value={cp.label}
-                onChange={(e) => updateCustomProvider(i, 'label', e.target.value)}
-                placeholder="Provider name"
-              />
-              <button style={styles.btnDanger} onClick={() => removeCustomProvider(i)}>
-                Remove
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <input
+                  style={{ ...styles.input, fontWeight: 600, maxWidth: 200, marginBottom: 0 }}
+                  type="text"
+                  value={cp.label}
+                  onChange={(e) => updateCustomProvider(i, 'label', e.target.value)}
+                  placeholder="Provider name"
+                />
+                {renderStatusBadge(cp.id)}
+              </div>
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                {renderTestButton(cp.id)}
+                <button style={styles.btnDanger} onClick={() => removeCustomProvider(i)}>
+                  Remove
+                </button>
+              </div>
             </div>
             <div style={styles.fieldRow}>
               <span style={styles.fieldLabel}>URL</span>

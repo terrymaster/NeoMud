@@ -3,6 +3,7 @@ import api from '../api';
 import MapCanvas from '../components/MapCanvas';
 import ImagePreview from '../components/ImagePreview';
 import AudioPreview from '../components/AudioPreview';
+import SfxPreview from '../components/SfxPreview';
 import type { CSSProperties } from 'react';
 
 interface Zone {
@@ -614,10 +615,10 @@ function ZoneEditor() {
               onUpdate={(fields) => setRoomForm((f) => ({ ...f, ...fields }))}
             />
             <label style={styles.label}>Depart Sound</label>
-            <input
-              style={styles.input}
-              value={roomForm.departSound || ''}
-              onChange={(e) => setRoomForm((f) => ({ ...f, departSound: e.target.value }))}
+            <SfxPreview
+              soundId={roomForm.departSound || ''}
+              onSoundIdChange={(id) => setRoomForm((f) => ({ ...f, departSound: id }))}
+              entityLabel={`${roomForm.name || 'room'} depart`}
             />
             {/* Effects */}
             <div style={{ ...styles.sectionTitle, marginTop: 12 }}>Effects</div>
@@ -663,11 +664,10 @@ function ZoneEditor() {
                         value={eff.message}
                         onChange={(e) => { const u = [...effectsList]; u[i] = { ...u[i], message: e.target.value }; updateEffects(u); }}
                       />
-                      <input
-                        style={styles.input}
-                        placeholder="Sound ID (optional)"
-                        value={eff.sound}
-                        onChange={(e) => { const u = [...effectsList]; u[i] = { ...u[i], sound: e.target.value }; updateEffects(u); }}
+                      <SfxPreview
+                        soundId={eff.sound || ''}
+                        onSoundIdChange={(id) => { const u = [...effectsList]; u[i] = { ...u[i], sound: id }; updateEffects(u); }}
+                        entityLabel={`${eff.type.toLowerCase()} effect`}
                       />
                     </div>
                   ))}

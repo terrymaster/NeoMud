@@ -10,11 +10,13 @@ import { getProjectsDir, getActiveProject, deleteProject } from './db.js'
 import { importNmd } from './import.js'
 import { settingsRouter } from './routes/settings.js'
 import { pcSpritesRouter } from './routes/pcSprites.js'
+import { generateRouter } from './routes/generate.js'
+import { assetMgmtRouter } from './routes/assets.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export const app = express()
-app.use(express.json())
+app.use(express.json({ limit: '50mb' }))
 
 app.use('/api/projects', projectsRouter)
 app.use('/api', zonesRouter)
@@ -22,6 +24,8 @@ app.use('/api', entitiesRouter)
 app.use('/api/export', exportRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/pc-sprites', pcSpritesRouter)
+app.use('/api/generate', generateRouter)
+app.use('/api/asset-mgmt', assetMgmtRouter)
 
 // Serve assets from the active project's assets directory
 app.use('/api/assets', (req, res, next) => {

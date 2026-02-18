@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { CSSProperties } from 'react';
+import api from '../api';
 
 interface ImagePreviewProps {
   entityType: string;     // "room" | "npc" | "item"
@@ -30,6 +31,7 @@ const styles: Record<string, CSSProperties> = {
     backgroundColor: '#f0f0f0',
     maxHeight: 180,
     overflow: 'hidden',
+    position: 'relative',
   },
   image: {
     display: 'block',
@@ -44,21 +46,24 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#e0e0e0',
-    color: '#888',
+    backgroundColor: '#fff0f0',
+    color: '#d32f2f',
+    border: '2px dashed #e57373',
+    borderRadius: 4,
   },
   placeholderIcon: {
     fontSize: 28,
     marginBottom: 4,
-    color: '#bbb',
+    color: '#d32f2f',
   },
   placeholderText: {
     fontSize: 11,
     fontWeight: 600,
+    color: '#d32f2f',
   },
   placeholderName: {
     fontSize: 10,
-    color: '#aaa',
+    color: '#e57373',
     marginTop: 2,
     maxWidth: '80%',
     textAlign: 'center',
@@ -66,9 +71,44 @@ const styles: Record<string, CSSProperties> = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
+  toolbar: {
+    display: 'flex',
+    gap: 4,
+    padding: '6px 10px',
+    borderTop: '1px solid #eee',
+    borderBottom: '1px solid #eee',
+    backgroundColor: '#fafafa',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  toolBtn: {
+    padding: '3px 8px',
+    fontSize: 11,
+    fontWeight: 600,
+    backgroundColor: '#fff',
+    color: '#1a1a2e',
+    border: '1px solid #ccc',
+    borderRadius: 3,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+  },
+  toolBtnPrimary: {
+    padding: '3px 8px',
+    fontSize: 11,
+    fontWeight: 600,
+    backgroundColor: '#1a1a2e',
+    color: '#fff',
+    border: '1px solid #1a1a2e',
+    borderRadius: 3,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+  },
   promptSection: {
     padding: 10,
-    borderTop: '1px solid #eee',
   },
   promptLabel: {
     fontSize: 11,
@@ -107,35 +147,45 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     gap: 6,
   },
-  btnRow: {
-    display: 'flex',
-    gap: 6,
-    marginTop: 6,
-  },
-  btnOutline: {
-    padding: '4px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    backgroundColor: '#fff',
-    color: '#1a1a2e',
-    border: '1px solid #1a1a2e',
-    borderRadius: 3,
+  copyLink: {
+    fontSize: 10,
+    color: '#666',
     cursor: 'pointer',
+    textDecoration: 'underline',
+    marginTop: 4,
+    display: 'inline-block',
+  },
+  spinnerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 600,
   },
 };
 
-function getImageUrl(entityType: string, entityId: string, assetPath?: string): string {
-  if (assetPath && entityType !== 'room') {
-    return `/api/assets/${assetPath}`;
-  }
+function resolveAssetPath(entityType: string, entityId: string, assetPath?: string): string {
   if (entityType === 'room') {
     if (!assetPath) return '';
     const filename = assetPath.split('/').pop() || assetPath;
     const withExt = filename.includes('.') ? filename : `${filename}.webp`;
-    return `/api/assets/images/rooms/${withExt}`;
+    return `images/rooms/${withExt}`;
   }
+  if (assetPath) return assetPath;
   const filename = entityId.replace(':', '_');
-  return `/api/assets/images/rooms/${filename}.webp`;
+  return `images/${entityType}s/${filename}.webp`;
+}
+
+function getImageUrl(assetPath: string, cacheBust: number): string {
+  if (!assetPath) return '';
+  return `/api/assets/${assetPath}${cacheBust ? `?t=${cacheBust}` : ''}`;
 }
 
 function ImagePreview({ entityType, entityId, description, assetPath, imagePrompt, imageStyle, imageNegativePrompt, imageWidth, imageHeight, onUpdate }: ImagePreviewProps) {
@@ -145,10 +195,14 @@ function ImagePreview({ entityType, entityId, description, assetPath, imagePromp
   const [localNeg, setLocalNeg] = useState(imageNegativePrompt || '');
   const [localW, setLocalW] = useState(imageWidth || 1024);
   const [localH, setLocalH] = useState(imageHeight || 576);
+  const [generating, setGenerating] = useState(false);
+  const [cacheBust, setCacheBust] = useState(0);
+  const [undoDepth, setUndoDepth] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const imageUrl = getImageUrl(entityType, entityId, assetPath);
+  const resolved = resolveAssetPath(entityType, entityId, assetPath);
+  const imageUrl = getImageUrl(resolved, cacheBust);
 
-  // Sync local state when props change (entity selection change)
   useEffect(() => {
     setLocalPrompt(imagePrompt || '');
     setLocalStyle(imageStyle || '');
@@ -159,7 +213,16 @@ function ImagePreview({ entityType, entityId, description, assetPath, imagePromp
 
   useEffect(() => {
     setImgError(false);
-  }, [imageUrl]);
+    setCacheBust(0);
+  }, [entityId, assetPath]);
+
+  // Load undo depth
+  useEffect(() => {
+    if (!resolved) return;
+    api.get<{ depth: number }>(`/asset-mgmt/history?path=${encodeURIComponent(resolved)}`)
+      .then((r) => setUndoDepth(r.depth))
+      .catch(() => setUndoDepth(0));
+  }, [resolved, cacheBust]);
 
   const fireUpdate = (overrides: Partial<{ imagePrompt: string; imageStyle: string; imageNegativePrompt: string; imageWidth: number; imageHeight: number }>) => {
     if (!onUpdate) return;
@@ -172,19 +235,73 @@ function ImagePreview({ entityType, entityId, description, assetPath, imagePromp
     });
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!resolved || !localPrompt || generating) return;
+    setGenerating(true);
+    try {
+      await api.post('/generate/image', {
+        prompt: localPrompt,
+        style: localStyle,
+        negativePrompt: localNeg,
+        width: localW,
+        height: localH,
+        assetPath: resolved,
+      });
+      setCacheBust(Date.now());
+      setImgError(false);
+    } catch (err: any) {
+      alert(`Image generation failed: ${err.message}`);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !resolved) return;
+    try {
+      await api.upload('/asset-mgmt/upload', file, { assetPath: resolved });
+      setCacheBust(Date.now());
+      setImgError(false);
+    } catch (err: any) {
+      alert(`Upload failed: ${err.message}`);
+    }
+    e.target.value = '';
+  };
+
+  const handleUndo = async () => {
+    if (!resolved) return;
+    try {
+      await api.post('/asset-mgmt/undo', { assetPath: resolved });
+      setCacheBust(Date.now());
+      setImgError(false);
+    } catch (err: any) {
+      alert(`Undo failed: ${err.message}`);
+    }
+  };
+
+  const handleClear = async () => {
+    if (!resolved) return;
+    try {
+      await api.post('/asset-mgmt/clear', { assetPath: resolved });
+      setCacheBust(Date.now());
+      setImgError(true);
+    } catch (err: any) {
+      alert(`Clear failed: ${err.message}`);
+    }
+  };
+
+  const handleCopyPrompt = () => {
     const fullPrompt = [localPrompt, localStyle && `Style: ${localStyle}`, localNeg && `Negative: ${localNeg}`]
       .filter(Boolean)
       .join('\n');
-    navigator.clipboard.writeText(fullPrompt).then(() => {
-      console.log('Prompt copied to clipboard:', fullPrompt);
-    });
+    navigator.clipboard.writeText(fullPrompt);
   };
 
   return (
     <div style={styles.container}>
       {/* Image Area */}
-      <div style={styles.imageArea}>
+      <div style={{ ...styles.imageArea, position: 'relative' as const }}>
         {imageUrl && !imgError ? (
           <img
             src={imageUrl}
@@ -195,16 +312,63 @@ function ImagePreview({ entityType, entityId, description, assetPath, imagePromp
         ) : (
           <div style={styles.placeholder}>
             <div style={styles.placeholderIcon}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#bbb" strokeWidth="1.5">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d32f2f" strokeWidth="1.5">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="M21 15l-5-5L5 21" />
+                <path d="M8 8l8 8M16 8l-8 8" />
               </svg>
             </div>
-            <div style={styles.placeholderText}>No Image</div>
+            <div style={styles.placeholderText}>Missing Asset</div>
             <div style={styles.placeholderName}>{entityId}</div>
           </div>
         )}
+        {generating && (
+          <div style={styles.spinnerOverlay}>Generating...</div>
+        )}
+      </div>
+
+      {/* Toolbar */}
+      <div style={styles.toolbar}>
+        <button
+          style={{ ...styles.toolBtnPrimary, opacity: generating || !localPrompt ? 0.5 : 1 }}
+          onClick={handleGenerate}
+          disabled={generating || !localPrompt}
+          title="Generate image with AI"
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0l1.5 4.5L14 6l-4.5 1.5L8 12l-1.5-4.5L2 6l4.5-1.5z" />
+            <path d="M12 10l.75 2.25L15 13l-2.25.75L12 16l-.75-2.25L9 13l2.25-.75z" opacity="0.6" />
+          </svg>
+          Generate
+        </button>
+        <button
+          style={styles.toolBtn}
+          onClick={() => fileInputRef.current?.click()}
+          title="Upload image file"
+        >
+          Upload
+        </button>
+        <button
+          style={{ ...styles.toolBtn, opacity: undoDepth > 0 ? 1 : 0.4 }}
+          onClick={handleUndo}
+          disabled={undoDepth === 0}
+          title={`Undo (${undoDepth} levels)`}
+        >
+          Undo
+        </button>
+        <button
+          style={styles.toolBtn}
+          onClick={handleClear}
+          title="Clear image"
+        >
+          Clear
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleUpload}
+        />
       </div>
 
       {/* Prompt Fields Section */}
@@ -252,11 +416,7 @@ function ImagePreview({ entityType, entityId, description, assetPath, imagePromp
             />
           </div>
         </div>
-        <div style={styles.btnRow}>
-          <button style={styles.btnOutline} onClick={handleGenerate}>
-            Copy Prompt
-          </button>
-        </div>
+        <span style={styles.copyLink} onClick={handleCopyPrompt}>Copy Prompt</span>
       </div>
     </div>
   );

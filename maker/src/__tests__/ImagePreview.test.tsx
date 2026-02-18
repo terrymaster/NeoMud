@@ -8,7 +8,7 @@ describe('ImagePreview', () => {
   it('shows placeholder when no image loads', () => {
     // room type with no assetPath returns empty URL, so placeholder shows
     render(<ImagePreview entityType="room" entityId="test_room" />)
-    expect(screen.getByText('No Image')).toBeInTheDocument()
+    expect(screen.getByText('Missing Asset')).toBeInTheDocument()
     expect(screen.getByText('test_room')).toBeInTheDocument()
   })
 

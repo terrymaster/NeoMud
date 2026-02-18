@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
 import ImagePreview from './ImagePreview';
+import SfxPreview from './SfxPreview';
 import type { CSSProperties } from 'react';
 
 export interface FieldConfig {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'checkbox' | 'select' | 'json' | 'radio';
+  type: 'text' | 'textarea' | 'number' | 'checkbox' | 'select' | 'json' | 'radio' | 'sfx';
   options?: { value: string; label: string }[];
   placeholder?: string;
   disabled?: boolean;
@@ -365,6 +366,7 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                 entityType={imagePreview.entityType}
                 entityId={selectedId}
                 description={form.description}
+                assetPath={`images/${imagePreview.entityType}s/${selectedId.replace(':', '_')}.webp`}
                 imagePrompt={form.imagePrompt}
                 imageStyle={form.imageStyle}
                 imageNegativePrompt={form.imageNegativePrompt}
@@ -457,6 +459,13 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                         </label>
                       ))}
                     </div>
+                  )}
+                  {field.type === 'sfx' && (
+                    <SfxPreview
+                      soundId={form[field.key] ?? ''}
+                      onSoundIdChange={(id) => handleChange(field.key, id)}
+                      entityLabel={form.name || form.id || selectedId || ''}
+                    />
                   )}
                   {field.help && <div style={styles.help}>{field.help}</div>}
                 </div>

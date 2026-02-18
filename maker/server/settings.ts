@@ -18,6 +18,12 @@ export interface CustomProvider {
   apiKey?: string
 }
 
+export interface ProviderStatus {
+  ok: boolean
+  error?: string
+  testedAt: string
+}
+
 export interface Settings {
   providers: {
     'stable-diffusion': ProviderConfig
@@ -25,6 +31,9 @@ export interface Settings {
     elevenlabs: ProviderConfig
   }
   customProviders: CustomProvider[]
+  imageProvider: string
+  soundProvider: string
+  providerStatus: Record<string, ProviderStatus>
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -34,6 +43,9 @@ const DEFAULT_SETTINGS: Settings = {
     elevenlabs: { label: 'ElevenLabs', apiUrl: 'https://api.elevenlabs.io/v1', apiKey: '' },
   },
   customProviders: [],
+  imageProvider: 'stable-diffusion',
+  soundProvider: 'elevenlabs',
+  providerStatus: {},
 }
 
 export function readSettings(): Settings {
@@ -49,6 +61,9 @@ export function readSettings(): Settings {
         elevenlabs: { ...DEFAULT_SETTINGS.providers.elevenlabs, ...raw.providers?.elevenlabs },
       },
       customProviders: Array.isArray(raw.customProviders) ? raw.customProviders : [],
+      imageProvider: raw.imageProvider || DEFAULT_SETTINGS.imageProvider,
+      soundProvider: raw.soundProvider || DEFAULT_SETTINGS.soundProvider,
+      providerStatus: raw.providerStatus && typeof raw.providerStatus === 'object' ? raw.providerStatus : {},
     }
   } catch {
     return structuredClone(DEFAULT_SETTINGS)
