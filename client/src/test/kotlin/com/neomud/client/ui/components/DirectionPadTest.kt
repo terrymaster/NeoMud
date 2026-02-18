@@ -142,7 +142,7 @@ class DirectionPadTest {
             }
         }
 
-        composeRule.onNodeWithText("\u25CE").performClick() // Look ◎
+        composeRule.onNodeWithText("\uD83D\uDC41").performClick() // Look 👁
         assert(looked) { "Expected look to fire" }
     }
 }

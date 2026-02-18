@@ -138,4 +138,78 @@ class PlayerStatusPanelTest {
         composeRule.onNodeWithText("HP: 80/100").performClick()
         assert(clicked) { "Expected onClick to fire" }
     }
+
+    // --- Compact mode tests (landscape layout) ---
+
+    @Test
+    fun `compact mode displays HP and MP labels and counts`() {
+        val player = TestData.player(currentHp = 8, maxHp = 10, currentMp = 11, maxMp = 15)
+        composeRule.setContent {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = player,
+                    activeEffects = emptyList(),
+                    compact = true,
+                    onClick = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("HP:").assertIsDisplayed()
+        composeRule.onNodeWithText("8/10").assertIsDisplayed()
+        composeRule.onNodeWithText("MP:").assertIsDisplayed()
+        composeRule.onNodeWithText("11/15").assertIsDisplayed()
+    }
+
+    @Test
+    fun `compact mode shows hidden eye icon when isHidden`() {
+        composeRule.setContent {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(),
+                    activeEffects = emptyList(),
+                    isHidden = true,
+                    compact = true,
+                    onClick = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("\uD83D\uDC41").assertIsDisplayed()
+    }
+
+    @Test
+    fun `compact mode no eye icon when not hidden`() {
+        composeRule.setContent {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(),
+                    activeEffects = emptyList(),
+                    isHidden = false,
+                    compact = true,
+                    onClick = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("\uD83D\uDC41").assertDoesNotExist()
+    }
+
+    @Test
+    fun `compact mode clicking fires onClick`() {
+        var clicked = false
+        composeRule.setContent {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(),
+                    activeEffects = emptyList(),
+                    compact = true,
+                    onClick = { clicked = true }
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("HP:").performClick()
+        assert(clicked) { "Expected onClick to fire in compact mode" }
+    }
 }

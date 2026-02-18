@@ -639,17 +639,18 @@ private fun GameScreenLandscape(
                     .background(StoneTheme.panelBg)
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                // Player status panel
+                // Player status panel (compact in landscape to save vertical space)
                 val p = player
                 if (p != null && p.maxHp > 0) {
                     PlayerStatusPanel(
                         player = p,
                         activeEffects = activeEffects,
                         isHidden = isHidden,
+                        compact = true,
                         onClick = { gameViewModel.toggleCharacterSheet() },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                 }
 
                 // D-pad and action buttons side by side

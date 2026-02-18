@@ -57,4 +57,64 @@ class PlayerStatusPanelScreenshotTest {
             }
         }
     }
+
+    @Test
+    fun hiddenState() {
+        paparazzi.snapshot {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(),
+                    activeEffects = emptyList(),
+                    isHidden = true,
+                    onClick = {}
+                )
+            }
+        }
+    }
+
+    @Test
+    fun compactFullHp() {
+        paparazzi.snapshot {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(currentHp = 100, maxHp = 100, currentMp = 50, maxMp = 50),
+                    activeEffects = emptyList(),
+                    compact = true,
+                    onClick = {}
+                )
+            }
+        }
+    }
+
+    @Test
+    fun compactLowHp() {
+        paparazzi.snapshot {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(currentHp = 8, maxHp = 100, currentMp = 3, maxMp = 50),
+                    activeEffects = emptyList(),
+                    compact = true,
+                    onClick = {}
+                )
+            }
+        }
+    }
+
+    @Test
+    fun compactHiddenWithEffects() {
+        paparazzi.snapshot {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(),
+                    activeEffects = listOf(
+                        TestData.activeEffect(name = "Poison", type = EffectType.POISON),
+                        TestData.activeEffect(name = "Haste", type = EffectType.HASTE)
+                    ),
+                    isHidden = true,
+                    compact = true,
+                    onClick = {}
+                )
+            }
+        }
+    }
 }
