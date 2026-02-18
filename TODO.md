@@ -47,7 +47,7 @@ Active work items and known issues, ordered roughly by priority.
 - ~~**AGP 8.9 → 8.13.2 + Gradle 8.11.1 → 9.2.1**: Upgraded for Paparazzi 2.0.0-alpha04 compatibility. Kotlin 2.3.10 on Gradle 9.2.1 works with deprecation warnings.~~ ✓
 - ~~**Exposed 0.57 → 1.0**: Full package rename to v1 namespace across 8 files.~~ ✓
 - ~~**React 18 → 19**: Bumped react, react-dom, @types/react, @types/react-dom + types codemod.~~ ✓
-- **Prisma 6 → 7**: Must bump `prisma` and `@prisma/client` together + run `prisma generate`. Engine moved to WASM.
+- ~~**Prisma 6 → 7**: Migrated to driver adapter pattern (better-sqlite3), new client output path, prisma.config.ts.~~ ✓
 
 ## Medium Priority
 

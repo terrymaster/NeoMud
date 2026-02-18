@@ -39,6 +39,7 @@ maker/dist/
 maker/projects/
 maker/settings.json
 maker/test-results/
+maker/server/generated/
 
 # Claude
 .claude/

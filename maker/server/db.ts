@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from './generated/prisma/client.js'
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
@@ -56,11 +57,9 @@ async function isProjectReadOnly(name: string): Promise<boolean> {
   }
 
   // Otherwise open a temporary client to check
-  const tmpClient = new PrismaClient({
-    datasources: { db: { url: dbUrl(name) } },
-  })
+  const adapter = new PrismaBetterSqlite3({ url: dbUrl(name) })
+  const tmpClient = new PrismaClient({ adapter })
   try {
-    await tmpClient.$connect()
     const meta = await tmpClient.projectMeta.findUnique({ where: { key: 'readOnly' } })
     return meta?.value === 'true'
   } catch {
@@ -75,10 +74,8 @@ export async function openProject(name: string): Promise<PrismaClient> {
     await prisma.$disconnect()
   }
   activeProject = name
-  prisma = new PrismaClient({
-    datasources: { db: { url: dbUrl(name) } },
-  })
-  await prisma.$connect()
+  const adapter = new PrismaBetterSqlite3({ url: dbUrl(name) })
+  prisma = new PrismaClient({ adapter })
 
   // Cache the read-only flag
   try {
@@ -99,7 +96,7 @@ export async function createProject(name: string, readOnly = false): Promise<Pri
 
   // Push schema to the new database
   const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma')
-  execSync(`npx prisma db push --schema="${schemaPath}" --skip-generate`, {
+  execSync(`npx prisma db push --schema="${schemaPath}"`, {
     env: { ...process.env, DATABASE_URL: `file:${dbPath}` },
     cwd: path.join(__dirname, '..'),
     stdio: 'pipe',
@@ -154,11 +151,9 @@ export async function forkProject(source: string, newName: string): Promise<void
   }
 
   // Open the copy and remove the read-only flag
-  const tmpClient = new PrismaClient({
-    datasources: { db: { url: `file:${destPath}` } },
-  })
+  const forkAdapter = new PrismaBetterSqlite3({ url: `file:${destPath}` })
+  const tmpClient = new PrismaClient({ adapter: forkAdapter })
   try {
-    await tmpClient.$connect()
     await tmpClient.projectMeta.deleteMany({ where: { key: 'readOnly' } })
   } finally {
     await tmpClient.$disconnect()

@@ -2,7 +2,7 @@ import { Router } from 'express'
 import fs from 'fs'
 import path from 'path'
 import AdmZip from 'adm-zip'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '../generated/prisma/client.js'
 import { db, getActiveProject, getProjectsDir } from '../db.js'
 import { validateProject } from '../validate.js'
 
