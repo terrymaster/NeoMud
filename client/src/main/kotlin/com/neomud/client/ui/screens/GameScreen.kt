@@ -456,66 +456,73 @@ private fun GameScreenPortrait(
         StoneDivider()
 
         // Bottom: Controls (~25%)
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(0.25f)
                 .background(StoneTheme.panelBg)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.Top
+                .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
-            DirectionPad(
-                availableExits = availableExits,
-                onMove = { direction -> gameViewModel.move(direction) },
-                onLook = { gameViewModel.look() },
-                lockedExits = (roomInfo?.room?.lockedExits?.keys ?: emptySet())
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                ActionButtonRow(
-                    gameViewModel = gameViewModel,
-                    attackMode = attackMode,
-                    hasHostiles = hasHostiles,
-                    showInventory = showInventory,
-                    showEquipment = showEquipmentState,
-                    player = player,
-                    activeEffects = activeEffects,
-                    isHidden = isHidden,
-                    isMeditating = gameViewModel.isMeditating.collectAsState().value,
-                    spellSlots = spellSlots,
-                    spellCatalog = spellCatalogState,
-                    readiedSpellId = readiedSpellId,
-                    classCatalog = classCatalog,
-                    skillCatalog = gameViewModel.skillCatalog.collectAsState().value
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalAlignment = Alignment.Top
+            ) {
+                DirectionPad(
+                    availableExits = availableExits,
+                    onMove = { direction -> gameViewModel.move(direction) },
+                    onLook = { gameViewModel.look() },
+                    lockedExits = (roomInfo?.room?.lockedExits?.keys ?: emptySet())
                 )
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.width(12.dp))
 
-                // Say bar + contextual icons (inventory, equipment, settings)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SayBar(
-                        sayText = sayText,
-                        onSayTextChange = onSayTextChange,
-                        onSay = { gameViewModel.say(it) },
-                        isAdmin = player?.isAdmin == true,
-                        modifier = Modifier.weight(1f)
+                Column(modifier = Modifier.weight(1f)) {
+                    ActionButtonRow(
+                        gameViewModel = gameViewModel,
+                        attackMode = attackMode,
+                        hasHostiles = hasHostiles,
+                        showInventory = showInventory,
+                        showEquipment = showEquipmentState,
+                        player = player,
+                        activeEffects = activeEffects,
+                        isHidden = isHidden,
+                        isMeditating = gameViewModel.isMeditating.collectAsState().value,
+                        spellSlots = spellSlots,
+                        spellCatalog = spellCatalogState,
+                        readiedSpellId = readiedSpellId,
+                        classCatalog = classCatalog,
+                        skillCatalog = gameViewModel.skillCatalog.collectAsState().value
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    InventoryIconButton(
-                        active = showInventory,
-                        onClick = { gameViewModel.toggleInventory() }
-                    )
-                    EquipmentIconButton(
-                        active = showEquipmentState,
-                        onClick = { gameViewModel.toggleEquipment() }
-                    )
-                    SettingsGearButton(onClick = { gameViewModel.toggleSettings() })
                 }
+            }
+
+            // Say bar + utility icons (full width, below D-pad)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SayBar(
+                    sayText = sayText,
+                    onSayTextChange = onSayTextChange,
+                    onSay = { gameViewModel.say(it) },
+                    isAdmin = player?.isAdmin == true,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                SpellUtilityButton(classCatalog, player?.characterClass) {
+                    gameViewModel.openSpellPicker(0)
+                }
+                InventoryIconButton(
+                    active = showInventory,
+                    onClick = { gameViewModel.toggleInventory() }
+                )
+                EquipmentIconButton(
+                    active = showEquipmentState,
+                    onClick = { gameViewModel.toggleEquipment() }
+                )
+                SettingsGearButton(onClick = { gameViewModel.toggleSettings() })
             }
         }
     }
@@ -711,6 +718,9 @@ private fun GameScreenLandscape(
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            SpellUtilityButton(classCatalog, player?.characterClass) {
+                                gameViewModel.openSpellPicker(0)
+                            }
                             InventoryIconButton(
                                 active = showInventory,
                                 onClick = { gameViewModel.toggleInventory() }
@@ -873,24 +883,6 @@ private fun ActionButtonRow(
             }
         }
 
-        // Spells button (magic classes only)
-        if (hasMagic) {
-            val primarySchool = classDef?.magicSchools?.keys?.firstOrNull() ?: ""
-            val spellColor = when (primarySchool) {
-                "mage" -> Color(0xFF5599FF)
-                "priest" -> Color(0xFFFFDD44)
-                "druid" -> Color(0xFF55CC55)
-                "kai" -> Color(0xFFFF7744)
-                "bard" -> Color(0xFFCC77FF)
-                else -> Color(0xFF9B59FF)
-            }
-            ActionButton(
-                icon = "\u2728",
-                color = spellColor,
-                onClick = { gameViewModel.openSpellPicker(0) }
-            )
-        }
-
         Spacer(modifier = Modifier.width(4.dp))
 
         // Player status panel (only in portrait — landscape puts it above)
@@ -948,6 +940,42 @@ private fun RoomOverlayButton(
                 color = color
             )
         }
+    }
+}
+
+@Composable
+private fun SpellUtilityButton(
+    classCatalog: Map<String, com.neomud.shared.model.CharacterClassDef>,
+    playerCharacterClass: String?,
+    onClick: () -> Unit
+) {
+    val classDef = playerCharacterClass?.let { classCatalog[it] }
+    val hasMagic = classDef?.magicSchools?.isNotEmpty() == true
+    if (!hasMagic) return
+
+    val primarySchool = classDef?.magicSchools?.keys?.firstOrNull() ?: ""
+    val spellColor = when (primarySchool) {
+        "mage" -> Color(0xFF5599FF)
+        "priest" -> Color(0xFFFFDD44)
+        "druid" -> Color(0xFF55CC55)
+        "kai" -> Color(0xFFFF7744)
+        "bard" -> Color(0xFFCC77FF)
+        else -> Color(0xFF9B59FF)
+    }
+    val stoneBg = Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark))
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .background(stoneBg, RoundedCornerShape(4.dp))
+            .border(1.dp, StoneTheme.frameMid, RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "\u2728",
+            fontSize = 16.sp,
+            color = spellColor
+        )
     }
 }
 
