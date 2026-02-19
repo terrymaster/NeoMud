@@ -68,6 +68,8 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 
 **Combat & NPCs**
 - Tick-based (1.5s) combat — weapon damage = Strength + bonus + random roll; armor reduces incoming
+- Parry system — class-gated (Warrior, Paladin, Witch Hunter), STR-scaled chance to reduce incoming damage
+- Dodge system — class-gated (Warrior, Thief, Ninja, Mystic, Ranger), AGI-scaled chance to avoid attacks entirely
 - 6 NPCs across both zones (guards, vendors, trainers, hostile creatures)
 - NPCs attack on sight if hostile; perception checks reveal hidden players
 - Backstab from stealth for bonus damage
@@ -78,7 +80,7 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 - 18 data-driven items: weapons, armor, consumables, crafting materials
 - 2 loot tables (wolf and spider drops)
 - Four-tier coin system: Copper, Silver, Gold, Platinum
-- Vendor buy/sell with charm-based pricing
+- Vendor buy/sell with charm-based pricing and Haggle skill discounts
 - Ground loot rendered as clickable sprites
 
 **Progression**
@@ -104,6 +106,7 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 **Spells & Skills**
 - 20 spells across 5 magic schools (Mage, Priest, Druid, Kai, Bard) are defined in data
 - 12 skills (Bash, Kick, Backstab, Parry, Dodge, Hide, Sneak, Meditate, Perception, Pick Lock, Track, Haggle) are defined
+- Parry, Dodge, and Haggle are passive skills that scale linearly with their primary stat
 - Spell bar UI exists with drag-to-assign slots
 - The spell quick-cast menu is **not yet implemented** — spells currently fire from the spell bar only
 - Most of the extended skill tree has **not been playtested** — expect balance issues
@@ -118,6 +121,8 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 **Maker (World Editor)**
 - Full CRUD for all entity types: zones, rooms, NPCs, items, classes, races, skills, spells, loot tables
 - Visual zone editor with drag-and-drop room placement and click-to-connect exits
+- Default SFX editor — browse, preview, and regenerate system sound effects (dodge, parry, footsteps, etc.)
+- Default player sprite editor — manage race/gender/class sprite combinations
 - Import/export of `.nmd` bundles
 - Default world auto-import with read-only projects and fork workflow
 - **AI generation pipeline is early-stage** — image and audio generation endpoints exist, provider configuration works, but the pipeline needs more testing with real providers and error handling improvements

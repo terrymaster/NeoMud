@@ -36,6 +36,8 @@ Active work items and known issues, ordered roughly by priority.
 ### Sound Effects System
 - ~~Combat hits~~ ✓
 - ~~Item pickup~~ ✓
+- ~~Parry SFX~~ ✓
+- ~~Default SFX editor in maker (browse, preview, regenerate 16 system sounds)~~ ✓
 - Equip/unequip sounds
 - Spell casting, potion use sounds
 - Death sound and respawn chime
@@ -52,9 +54,12 @@ Active work items and known issues, ordered roughly by priority.
 ## Medium Priority
 
 ### Skills System
+- ~~Parry: class-gated passive, STR-scaled damage reduction~~ ✓
+- ~~Dodge: class-gated passive, AGI-scaled full avoidance~~ ✓
+- ~~Haggle: class-gated passive, charm-scaled vendor price adjustments~~ ✓
 - Expand active skills beyond current implementation
 - Skill cooldowns, resource costs, and scaling
-- Passive skills and skill trees
+- Additional passive skills and skill trees
 - Class-specific skill unlocks at level thresholds
 
 ### Hidden Content
@@ -66,6 +71,8 @@ Active work items and known issues, ordered roughly by priority.
 - Trap disarm mechanics (rogue/thief class abilities, items)
 
 ### Maker Tool
+- ~~Default SFX editor with category filtering, playback, and AI generation~~ ✓
+- ~~Room depart sound dropdown (constrained to movement SFX set)~~ ✓
 - **Custom world build**: verify end-to-end export → server load of a non-default world
 - **AI generation integrations**: verify 3rd party API connections (image gen, text gen)
 - **Generation UI**: incorporate buttons/workflows for AI-generated room art, descriptions, NPC dialogue
