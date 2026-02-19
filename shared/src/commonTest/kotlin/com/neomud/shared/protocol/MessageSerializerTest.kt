@@ -733,4 +733,36 @@ class MessageSerializerTest {
         val decoded = MessageSerializer.decodeClientMessage(json)
         assertEquals(original, decoded)
     }
+
+    @Test
+    fun testCombatHitParryRoundTrip() {
+        val original = ServerMessage.CombatHit(
+            "Shadow Wolf", "Hero", 3, 90, 100,
+            isPlayerDefender = true, isParry = true
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testVendorInfoWithHaggleRoundTrip() {
+        val items = listOf(
+            VendorItem(
+                Item("item:sword", "Sword", "A blade.", "weapon", "weapon", damageBonus = 3, value = 100),
+                Coins(gold = 1)
+            )
+        )
+        val original = ServerMessage.VendorInfo(
+            vendorName = "Test Vendor",
+            items = items,
+            playerCoins = Coins(copper = 50, silver = 10),
+            playerInventory = emptyList(),
+            playerCharm = 75,
+            hasHaggle = true
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
 }

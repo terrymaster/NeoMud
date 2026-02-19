@@ -147,4 +147,40 @@ class VendorPanelTest {
         composeRule.onNodeWithText("Close").performClick()
         assert(closed) { "Expected onClose to fire" }
     }
+
+    @Test
+    fun `haggle active badge displayed when hasHaggle is true`() {
+        composeRule.setContent {
+            TestThemeWrapper {
+                VendorPanel(
+                    vendorInfo = TestData.vendorInfo(hasHaggle = true),
+                    playerLevel = 5,
+                    itemCatalog = catalog,
+                    onBuy = {},
+                    onSell = {},
+                    onClose = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Haggle Active", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `haggle badge not shown when hasHaggle is false`() {
+        composeRule.setContent {
+            TestThemeWrapper {
+                VendorPanel(
+                    vendorInfo = TestData.vendorInfo(hasHaggle = false),
+                    playerLevel = 5,
+                    itemCatalog = catalog,
+                    onBuy = {},
+                    onSell = {},
+                    onClose = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Haggle Active", substring = true).assertDoesNotExist()
+    }
 }

@@ -44,4 +44,84 @@ class CoinsTest {
         val coins = Coins(copper = 0, silver = 0, gold = 0, platinum = 1)
         assertEquals(1_000_000L, coins.totalCopper())
     }
+
+    // ─── buyPriceCopper ─────────────────────────────────────────
+
+    @Test
+    fun testBuyPriceWithoutHaggle() {
+        // Without haggle, buy price is full value
+        assertEquals(100L, Coins.buyPriceCopper(100, 1, 50, hasHaggle = false))
+        assertEquals(500L, Coins.buyPriceCopper(100, 5, 50, hasHaggle = false))
+    }
+
+    @Test
+    fun testBuyPriceWithHaggleAppliesCharmDiscount() {
+        // charm=100 → discountPercent = min(100*15/100, 15) = 15%
+        // 100 * (100-15) / 100 = 85
+        assertEquals(85L, Coins.buyPriceCopper(100, 1, 100, hasHaggle = true))
+    }
+
+    @Test
+    fun testBuyPriceWithHaggleLowCharm() {
+        // charm=10 → discountPercent = min(10*15/100, 15) = 1
+        // 100 * (100-1) / 100 = 99
+        assertEquals(99L, Coins.buyPriceCopper(100, 1, 10, hasHaggle = true))
+    }
+
+    @Test
+    fun testBuyPriceWithHaggleQuantity() {
+        // charm=100 → 15% discount, quantity=3
+        // 100 * 3 * 85 / 100 = 255
+        assertEquals(255L, Coins.buyPriceCopper(100, 3, 100, hasHaggle = true))
+    }
+
+    @Test
+    fun testBuyPriceNeverBelowOne() {
+        assertEquals(1L, Coins.buyPriceCopper(1, 1, 100, hasHaggle = true))
+    }
+
+    // ─── sellPriceCopper ────────────────────────────────────────
+
+    @Test
+    fun testSellPriceBasicNoHaggle() {
+        // charm=0 → sellPercent = 25 + 0 = 25 (clamped to 25..99)
+        // 100 * 1 * 25 / 100 = 25
+        assertEquals(25L, Coins.sellPriceCopper(100, 1, 0, hasHaggle = false))
+    }
+
+    @Test
+    fun testSellPriceHighCharmNoHaggle() {
+        // charm=100 → sellPercent = 25 + 100*74/100 = 25 + 74 = 99
+        assertEquals(99L, Coins.sellPriceCopper(100, 1, 100, hasHaggle = false))
+    }
+
+    @Test
+    fun testSellPriceWithHaggleBonus() {
+        // charm=50, no haggle → sellPercent = 25 + 50*74/100 = 25 + 37 = 62
+        val noHaggle = Coins.sellPriceCopper(100, 1, 50, hasHaggle = false)
+        // charm=50, haggle → sellPercent = 25 + 37 + 50*10/100 = 25 + 37 + 5 = 67
+        val withHaggle = Coins.sellPriceCopper(100, 1, 50, hasHaggle = true)
+        assertTrue(withHaggle > noHaggle)
+        assertEquals(62L, noHaggle)
+        assertEquals(67L, withHaggle)
+    }
+
+    @Test
+    fun testSellPriceCappedAt99Percent() {
+        // Even with haggle + max charm, cannot exceed 99%
+        val price = Coins.sellPriceCopper(100, 1, 100, hasHaggle = true)
+        assertTrue(price <= 99L)
+    }
+
+    @Test
+    fun testSellPriceNeverBelowOne() {
+        assertEquals(1L, Coins.sellPriceCopper(1, 1, 0, hasHaggle = false))
+    }
+
+    @Test
+    fun testSellPriceQuantityMultiplier() {
+        val single = Coins.sellPriceCopper(100, 1, 50)
+        val triple = Coins.sellPriceCopper(100, 3, 50)
+        assertEquals(single * 3, triple)
+    }
 }

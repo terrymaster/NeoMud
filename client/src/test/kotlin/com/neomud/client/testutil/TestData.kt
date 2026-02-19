@@ -110,13 +110,15 @@ object TestData {
         items: List<VendorItem> = listOf(vendorItem()),
         playerCoins: Coins = coins(),
         playerInventory: List<InventoryItem> = emptyList(),
-        playerCharm: Int = 30
+        playerCharm: Int = 30,
+        hasHaggle: Boolean = false
     ) = ServerMessage.VendorInfo(
         vendorName = vendorName,
         items = items,
         playerCoins = playerCoins,
         playerInventory = playerInventory,
-        playerCharm = playerCharm
+        playerCharm = playerCharm,
+        hasHaggle = hasHaggle
     )
 
     fun spellDef(

@@ -13,9 +13,16 @@ class StatThresholdsTest {
         val bonuses = ThresholdBonuses.compute(stats)
         assertEquals(0, bonuses.meleeDamageBonus)
         assertEquals(0.0, bonuses.critChance)
-        assertEquals(0.0, bonuses.dodgeChance)
         assertEquals(0, bonuses.hpBonus)
         assertEquals(0, bonuses.mpBonus)
+    }
+
+    @Test
+    fun testStrength40Threshold() {
+        val stats = Stats(strength = 40, agility = 30, intellect = 30, willpower = 30, health = 30, charm = 30)
+        val bonuses = ThresholdBonuses.compute(stats)
+        assertEquals(1, bonuses.meleeDamageBonus)
+        assertEquals(0, bonuses.hitBonus)
     }
 
     @Test
@@ -47,7 +54,6 @@ class StatThresholdsTest {
         val stats = Stats(strength = 30, agility = 90, intellect = 30, willpower = 30, health = 30, charm = 30)
         val bonuses = ThresholdBonuses.compute(stats)
         assertEquals(0.05, bonuses.critChance)
-        assertEquals(0.10, bonuses.dodgeChance)
     }
 
     @Test
@@ -73,11 +79,11 @@ class StatThresholdsTest {
 
     @Test
     fun testCombinedThresholds() {
-        val stats = Stats(strength = 90, agility = 75, intellect = 75, willpower = 60, health = 60, charm = 75)
+        val stats = Stats(strength = 90, agility = 90, intellect = 75, willpower = 60, health = 60, charm = 75)
         val bonuses = ThresholdBonuses.compute(stats)
         assertEquals(5, bonuses.meleeDamageBonus)
-        assertTrue(bonuses.critChance >= 0.05)
-        assertTrue(bonuses.dodgeChance >= 0.05)
+        // AGI 90 crit (0.05) + INT 75 crit (0.05) = 0.10
+        assertEquals(0.10, bonuses.critChance)
         assertEquals(15, bonuses.hpBonus)
         assertEquals(10, bonuses.mpBonus)
     }
