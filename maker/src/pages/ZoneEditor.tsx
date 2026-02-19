@@ -899,21 +899,44 @@ function ZoneEditor() {
                           {targetRoom ? targetRoom.name : exit.toRoomId}
                         </span>
                       </span>
-                      <input
-                        type="number"
-                        title="Lock DC (0 = unlocked)"
-                        placeholder="DC"
-                        value={lockDc || ''}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value) || 0;
+                      <button
+                        onClick={() => {
                           const updated = { ...lockedMap };
-                          if (val > 0) updated[exit.direction] = val;
-                          else delete updated[exit.direction];
+                          if (lockDc > 0) {
+                            delete updated[exit.direction];
+                          } else {
+                            updated[exit.direction] = 10;
+                          }
                           setRoomForm((f) => ({ ...f, lockedExits: JSON.stringify(updated) }));
                         }}
-                        style={{ width: 40, padding: '2px 4px', fontSize: 11, border: '1px solid #ccc', borderRadius: 3, textAlign: 'center' as const }}
-                      />
-                      <span style={{ fontSize: 10, color: '#999' }}>🔒</span>
+                        title={lockDc > 0 ? 'Remove lock' : 'Add lock'}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          padding: '0 2px',
+                          color: lockDc > 0 ? '#e65100' : '#bbb',
+                        }}
+                      >
+                        {lockDc > 0 ? '\uD83D\uDD12' : '\uD83D\uDD13'}
+                      </button>
+                      {lockDc > 0 && (
+                        <input
+                          type="number"
+                          title="Lock DC"
+                          value={lockDc}
+                          min={1}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 0;
+                            const updated = { ...lockedMap };
+                            if (val > 0) updated[exit.direction] = val;
+                            else delete updated[exit.direction];
+                            setRoomForm((f) => ({ ...f, lockedExits: JSON.stringify(updated) }));
+                          }}
+                          style={{ width: 40, padding: '2px 4px', fontSize: 11, border: '1px solid #ccc', borderRadius: 3, textAlign: 'center' as const }}
+                        />
+                      )}
                       <button
                         onClick={() => handleDeleteExit(selectedRoomId!, exit.direction)}
                         style={{
