@@ -2,7 +2,7 @@ package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
-import com.neomud.server.game.combat.CombatUtils
+
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.progression.XpCalculator
 import com.neomud.server.persistence.repository.PlayerRepository
@@ -71,7 +71,7 @@ class SpellCommand(
         }
 
         // Calculate spell power using buffed stats
-        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val effStats = session.effectiveStats()
         val statValue = when (spell.primaryStat) {
             "intellect" -> effStats.intellect
             "willpower" -> effStats.willpower

@@ -1,7 +1,7 @@
 package com.neomud.server.game.commands
 
 import com.neomud.server.game.StealthUtils
-import com.neomud.server.game.combat.CombatUtils
+
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
@@ -54,14 +54,14 @@ class LookCommand(
             val hiddenSessions = sessionManager.getSessionsInRoom(currentRoomId)
                 .filter { it.isHidden && it != session }
             if (hiddenSessions.isNotEmpty()) {
-                val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+                val effStats = session.effectiveStats()
                 val bonus = StealthUtils.perceptionBonus(player.characterClass, classCatalog)
                 val observerRoll = effStats.willpower + effStats.intellect / 2 + player.level / 2 + bonus + (1..20).random()
 
                 for (hiddenSession in hiddenSessions) {
                     if (!hiddenSession.isHidden) continue
                     val hiddenPlayer = hiddenSession.player ?: continue
-                    val hiddenStats = CombatUtils.effectiveStats(hiddenPlayer.stats, hiddenSession.activeEffects.toList())
+                    val hiddenStats = hiddenSession.effectiveStats()
                     val stealthDc = hiddenStats.agility + hiddenStats.willpower / 2 + hiddenPlayer.level / 2 + 10
 
                     if (observerRoll >= stealthDc) {

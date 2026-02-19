@@ -1,6 +1,6 @@
 package com.neomud.server.game.commands
 
-import com.neomud.server.game.combat.CombatUtils
+
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
@@ -43,7 +43,7 @@ class BashCommand(
             session.send(ServerMessage.AttackModeUpdate(true))
         }
 
-        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val effStats = session.effectiveStats()
         val damage = effStats.strength + (1..4).random()
         target.currentHp -= damage
 

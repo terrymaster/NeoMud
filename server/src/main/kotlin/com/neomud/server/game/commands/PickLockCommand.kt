@@ -2,7 +2,7 @@ package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
-import com.neomud.server.game.combat.CombatUtils
+
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.WorldGraph
@@ -73,7 +73,7 @@ class PickLockCommand(
 
         session.skillCooldowns["PICK_LOCK"] = 3
 
-        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val effStats = session.effectiveStats()
         val roll = (1..20).random()
         val check = effStats.agility + effStats.intellect / 2 + roll
 

@@ -2,7 +2,7 @@ package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
-import com.neomud.server.game.combat.CombatUtils
+
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.repository.PlayerRepository
@@ -61,7 +61,7 @@ class MoveCommand(
         // Stealth check on room transition
         var sneaking = false
         if (session.isHidden && player != null) {
-            val stats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+            val stats = session.effectiveStats()
             val roll = (1..20).random()
             val check = stats.agility + stats.willpower / 2 + player.level / 2 + roll
             val difficulty = 15
@@ -107,7 +107,7 @@ class MoveCommand(
         } else {
             // Even if the player's sneak check passed, NPCs in the new room get perception rolls
             if (player != null) {
-                val stats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+                val stats = session.effectiveStats()
                 val stealthDc = stats.agility + stats.willpower / 2 + player.level / 2 + 10
 
                 val npcsHere = npcManager.getLivingNpcsInRoom(targetRoomId)
@@ -133,7 +133,7 @@ class MoveCommand(
                         if (otherSession == session || otherSession.isHidden) continue
                         if (!session.isHidden) break
                         val otherPlayer = otherSession.player ?: continue
-                        val otherStats = CombatUtils.effectiveStats(otherPlayer.stats, otherSession.activeEffects.toList())
+                        val otherStats = otherSession.effectiveStats()
                         val bonus = StealthUtils.perceptionBonus(otherPlayer.characterClass, classCatalog)
                         val observerRoll = otherStats.willpower + otherStats.intellect / 2 + otherPlayer.level / 2 + bonus + (1..20).random()
                         if (observerRoll >= stealthDc) {

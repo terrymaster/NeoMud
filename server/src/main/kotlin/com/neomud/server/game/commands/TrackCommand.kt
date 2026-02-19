@@ -1,6 +1,6 @@
 package com.neomud.server.game.commands
 
-import com.neomud.server.game.combat.CombatUtils
+
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.world.WorldGraph
@@ -24,7 +24,7 @@ class TrackCommand(
         session.skillCooldowns["TRACK"] = 4
 
         // Skill check
-        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val effStats = session.effectiveStats()
         val roll = (1..20).random()
         val check = effStats.willpower + effStats.intellect / 2 + roll
         if (check < 13) {

@@ -2,7 +2,7 @@ package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
-import com.neomud.server.game.combat.CombatUtils
+
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
@@ -59,7 +59,7 @@ class SneakCommand(
         }
 
         // Skill check: AGI + WIL/2 + level/2 + d20 vs 15 (using buffed stats)
-        val stats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val stats = session.effectiveStats()
         val roll = (1..20).random()
         val check = stats.agility + stats.willpower / 2 + player.level / 2 + roll
         val difficulty = 15
@@ -91,7 +91,7 @@ class SneakCommand(
             for (otherSession in sessionManager.getSessionsInRoom(roomId)) {
                 if (otherSession == session || otherSession.isHidden) continue
                 val otherPlayer = otherSession.player ?: continue
-                val otherStats = CombatUtils.effectiveStats(otherPlayer.stats, otherSession.activeEffects.toList())
+                val otherStats = otherSession.effectiveStats()
                 val bonus = StealthUtils.perceptionBonus(otherPlayer.characterClass, classCatalog)
                 val observerRoll = otherStats.willpower + otherStats.intellect / 2 + otherPlayer.level / 2 + bonus + (1..20).random()
                 if (observerRoll >= stealthDc) {

@@ -38,6 +38,25 @@ class PlayerSession(
 
     val isAuthenticated: Boolean get() = player != null
 
+    /** Base stats + active buff magnitudes. */
+    fun effectiveStats(): Stats {
+        val p = player ?: return Stats()
+        var str = p.stats.strength
+        var agi = p.stats.agility
+        var int = p.stats.intellect
+        var wil = p.stats.willpower
+        for (e in activeEffects) {
+            when (e.type) {
+                EffectType.BUFF_STRENGTH -> str += e.magnitude
+                EffectType.BUFF_AGILITY -> agi += e.magnitude
+                EffectType.BUFF_INTELLECT -> int += e.magnitude
+                EffectType.BUFF_WILLPOWER -> wil += e.magnitude
+                else -> {}
+            }
+        }
+        return p.stats.copy(strength = str, agility = agi, intellect = int, willpower = wil)
+    }
+
     fun toPlayerInfo(): PlayerInfo? {
         val p = player ?: return null
         return PlayerInfo(

@@ -62,16 +62,20 @@ object CombatUtils {
     fun rollEvasion(evasionPercent: Double): Boolean =
         Math.random() < evasionPercent
 
-    fun playerEvasion(thresholds: ThresholdBonuses, effects: List<ActiveEffect>): Double {
-        var evasion = thresholds.dodgeChance
-        for (e in effects) {
-            if (e.type == EffectType.BUFF_AGILITY) {
-                evasion += 0.01 * e.magnitude
-            }
-        }
-        return evasion
-    }
+    /** AGI-scaled dodge chance: 0% at AGI 0, ~3% at AGI 20, ~15% at AGI 100. */
+    fun playerEvasion(stats: Stats): Double =
+        stats.agility / 100.0 * 0.15
 
     fun npcEvasion(npc: NpcState): Double =
         npc.evasion / 100.0
+
+    /** STR-scaled parry chance: 0% at STR 0, ~3% at STR 20, ~15% at STR 100. */
+    fun playerParry(stats: Stats): Double =
+        stats.strength / 100.0 * 0.15
+
+    fun rollParry(parryPercent: Double): Boolean =
+        Math.random() < parryPercent
+
+    fun parryReduction(stats: Stats): Int =
+        2 + stats.strength / 20
 }

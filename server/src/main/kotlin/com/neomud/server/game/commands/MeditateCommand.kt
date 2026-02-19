@@ -2,7 +2,7 @@ package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
-import com.neomud.server.game.combat.CombatUtils
+
 import com.neomud.server.game.skills.SkillCheck
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
@@ -52,7 +52,7 @@ class MeditateCommand(
             return
         }
 
-        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val effStats = session.effectiveStats()
         val result = SkillCheck.check(skillDef, effStats, player.level)
 
         if (!result.success) {
