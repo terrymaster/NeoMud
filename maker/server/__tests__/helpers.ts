@@ -9,6 +9,7 @@ import { entitiesRouter } from '../routes/entities.js'
 import { projectsRouter } from '../routes/projects.js'
 import { exportRouter } from '../routes/export.js'
 import { pcSpritesRouter } from '../routes/pcSprites.js'
+import { defaultSfxRouter } from '../routes/defaultSfx.js'
 import { createProject, openProject, deleteProject, getProjectsDir } from '../db.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -34,6 +35,7 @@ export async function createTestApp(projectName?: string): Promise<{
   app.use('/api', entitiesRouter)
   app.use('/api/export', exportRouter)
   app.use('/api/pc-sprites', pcSpritesRouter)
+  app.use('/api/default-sfx', defaultSfxRouter)
 
   const cleanup = async () => {
     try {
@@ -63,6 +65,7 @@ export async function createReadOnlyTestApp(): Promise<{
   app.use('/api', entitiesRouter)
   app.use('/api/export', exportRouter)
   app.use('/api/pc-sprites', pcSpritesRouter)
+  app.use('/api/default-sfx', defaultSfxRouter)
 
   const cleanup = async () => {
     try {
