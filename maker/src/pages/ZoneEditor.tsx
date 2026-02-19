@@ -248,6 +248,7 @@ function ZoneEditor() {
   const [newExitDir, setNewExitDir] = useState('');
   const [newExitTarget, setNewExitTarget] = useState('');
   const [allRooms, setAllRooms] = useState<AllRoomsGroup[]>([]);
+  const [movementSfx, setMovementSfx] = useState<{ id: string; label: string }[]>([]);
 
   // Load zones list + all rooms for exit picker
   useEffect(() => {
@@ -263,6 +264,8 @@ function ZoneEditor() {
       );
       Promise.all(promises).then(setAllRooms).catch(() => {});
     }).catch(() => {});
+    api.get<{ id: string; label: string }[]>('/default-sfx?category=movement')
+      .then(setMovementSfx).catch(() => {});
   }, []);
 
   // Load zone detail when selected
@@ -797,11 +800,30 @@ function ZoneEditor() {
               onUpdate={(fields) => setRoomForm((f) => ({ ...f, ...fields }))}
             />
             <label style={styles.label}>Depart Sound</label>
-            <SfxPreview
-              soundId={roomForm.departSound || ''}
-              onSoundIdChange={(id) => setRoomForm((f) => ({ ...f, departSound: id }))}
-              entityLabel={`${roomForm.name || 'room'} depart`}
-            />
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <select
+                style={{ ...styles.input, flex: 1 }}
+                value={roomForm.departSound || ''}
+                onChange={(e) => setRoomForm((f) => ({ ...f, departSound: e.target.value }))}
+              >
+                <option value="">None</option>
+                {movementSfx.map((sfx) => (
+                  <option key={sfx.id} value={sfx.id}>{sfx.label}</option>
+                ))}
+              </select>
+              <button
+                style={{ padding: '4px 8px', fontSize: 11, fontWeight: 600, backgroundColor: '#fff', color: '#1a1a2e', border: '1px solid #ccc', borderRadius: 3, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                disabled={!roomForm.departSound}
+                onClick={() => {
+                  if (roomForm.departSound) {
+                    const audio = new Audio(`/api/assets/audio/sfx/${roomForm.departSound}.ogg`);
+                    audio.play().catch(() => {});
+                  }
+                }}
+              >
+                Play
+              </button>
+            </div>
             {/* Effects */}
             <div style={{ ...styles.sectionTitle, marginTop: 12 }}>Effects</div>
             {(() => {

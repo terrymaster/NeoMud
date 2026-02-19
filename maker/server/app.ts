@@ -10,6 +10,7 @@ import { getProjectsDir, getActiveProject, deleteProject } from './db.js'
 import { importNmd } from './import.js'
 import { settingsRouter } from './routes/settings.js'
 import { pcSpritesRouter } from './routes/pcSprites.js'
+import { defaultSfxRouter } from './routes/defaultSfx.js'
 import { generateRouter } from './routes/generate.js'
 import { assetMgmtRouter } from './routes/assets.js'
 
@@ -24,6 +25,7 @@ app.use('/api', entitiesRouter)
 app.use('/api/export', exportRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/pc-sprites', pcSpritesRouter)
+app.use('/api/default-sfx', defaultSfxRouter)
 app.use('/api/generate', generateRouter)
 app.use('/api/asset-mgmt', assetMgmtRouter)
 

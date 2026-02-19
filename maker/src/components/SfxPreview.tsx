@@ -6,6 +6,14 @@ interface SfxPreviewProps {
   soundId: string;
   onSoundIdChange: (id: string) => void;
   entityLabel?: string;
+  /** Pre-fill the AI prompt (e.g. from DB-persisted value) */
+  initialPrompt?: string;
+  /** Pre-fill the AI duration (e.g. from DB-persisted value) */
+  initialDuration?: number;
+  /** Called when prompt/duration change so the parent can persist them */
+  onPromptChange?: (prompt: string, duration: number) => void;
+  /** If true, the sound ID input is read-only */
+  readOnlyId?: boolean;
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -97,13 +105,21 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
-function SfxPreview({ soundId, onSoundIdChange, entityLabel }: SfxPreviewProps) {
+function SfxPreview({ soundId, onSoundIdChange, entityLabel, initialPrompt, initialDuration, onPromptChange, readOnlyId }: SfxPreviewProps) {
   const [showPopover, setShowPopover] = useState(false);
-  const [prompt, setPrompt] = useState('');
-  const [duration, setDuration] = useState(5);
+  const [prompt, setPrompt] = useState(initialPrompt ?? '');
+  const [duration, setDuration] = useState(initialDuration ?? 5);
   const [generating, setGenerating] = useState(false);
   const [undoDepth, setUndoDepth] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync from parent when initialPrompt/initialDuration change (e.g. selecting a different entry)
+  useEffect(() => {
+    if (initialPrompt !== undefined) setPrompt(initialPrompt);
+  }, [initialPrompt]);
+  useEffect(() => {
+    if (initialDuration !== undefined) setDuration(initialDuration);
+  }, [initialDuration]);
 
   const assetPath = soundId ? `audio/sfx/${soundId}.ogg` : '';
 
@@ -125,6 +141,16 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel }: SfxPreviewProps) 
       setPrompt(`${entityLabel} sound effect`);
     }
     setShowPopover(true);
+  };
+
+  const updatePrompt = (p: string) => {
+    setPrompt(p);
+    onPromptChange?.(p, duration);
+  };
+
+  const updateDuration = (d: number) => {
+    setDuration(d);
+    onPromptChange?.(prompt, d);
   };
 
   const handleAIGenerate = async () => {
@@ -195,6 +221,7 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel }: SfxPreviewProps) 
           value={soundId}
           onChange={(e) => onSoundIdChange(e.target.value)}
           placeholder="sound_id"
+          readOnly={readOnlyId}
         />
         <button style={styles.btn} onClick={handlePlay} disabled={!soundId} title="Play">
           Play
@@ -230,7 +257,7 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel }: SfxPreviewProps) 
           <textarea
             style={styles.popTextarea}
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => updatePrompt(e.target.value)}
             rows={2}
             placeholder="Describe the sound effect..."
           />
@@ -239,7 +266,7 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel }: SfxPreviewProps) 
             style={styles.popInput}
             type="number"
             value={duration}
-            onChange={(e) => setDuration(parseInt(e.target.value) || 5)}
+            onChange={(e) => updateDuration(parseInt(e.target.value) || 5)}
           />
           <div style={styles.popBtnRow}>
             <button

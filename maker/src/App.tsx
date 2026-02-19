@@ -10,6 +10,7 @@ import SkillEditor from './pages/SkillEditor';
 import SpellEditor from './pages/SpellEditor';
 import LootTableEditor from './pages/LootTableEditor';
 import PcSpriteEditor from './pages/PcSpriteEditor';
+import DefaultSfxEditor from './pages/DefaultSfxEditor';
 import SettingsEditor from './pages/SettingsEditor';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
           <Route path="spells" element={<SpellEditor />} />
           <Route path="loot-tables" element={<LootTableEditor />} />
           <Route path="default-players" element={<PcSpriteEditor />} />
+          <Route path="default-sfx" element={<DefaultSfxEditor />} />
           <Route path="settings" element={<SettingsEditor />} />
         </Route>
       </Routes>

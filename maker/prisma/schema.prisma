@@ -196,6 +196,17 @@ model PcSprite {
   @@unique([race, gender, characterClass])
 }
 
+model DefaultSfx {
+  id          String   @id
+  label       String
+  category    String   @default("")
+  description String   @default("")
+  prompt      String   @default("")
+  duration    Int      @default(3)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model ProjectMeta {
   key   String @id
   value String

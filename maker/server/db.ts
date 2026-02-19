@@ -97,6 +97,17 @@ export async function openProject(name: string): Promise<PrismaClient> {
     activeReadOnly = false
   }
 
+  // Auto-seed DefaultSfx if table is empty (for projects created before this feature)
+  try {
+    const sfxCount = await prisma.defaultSfx.count()
+    if (sfxCount === 0) {
+      const { seedDefaultSfx } = await import('./defaultSfxDefaults.js')
+      await seedDefaultSfx(prisma)
+    }
+  } catch {
+    // Table may not exist yet on very old DBs — ignore
+  }
+
   return prisma
 }
 
@@ -125,6 +136,10 @@ export async function createProject(name: string, readOnly = false): Promise<Pri
   const { seedPcSprites, generatePlaceholderSprites } = await import('./pcSpriteDefaults.js')
   await seedPcSprites(client)
   generatePlaceholderSprites(path.join(projectsDir, `${name}_assets`))
+
+  // Seed default SFX entries
+  const { seedDefaultSfx } = await import('./defaultSfxDefaults.js')
+  await seedDefaultSfx(client)
 
   return client
 }

@@ -342,6 +342,13 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
     }
   }
 
+  // ─── Default SFX ─────────────────────────────────────
+  const sfxCount = await prisma.defaultSfx.count()
+  if (sfxCount === 0) {
+    const { seedDefaultSfx } = await import('./defaultSfxDefaults.js')
+    await seedDefaultSfx(prisma)
+  }
+
   // Second pass: create all exits now that every room exists
   for (const zone of parsedZones) {
     for (const room of zone.rooms ?? []) {
