@@ -7,6 +7,7 @@ import com.neomud.server.game.npc.NpcState
 import com.neomud.server.game.progression.ThresholdBonuses
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
+import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.RoomId
 import org.slf4j.LoggerFactory
@@ -23,6 +24,7 @@ sealed class CombatEvent {
         val isBackstab: Boolean = false,
         val isMiss: Boolean = false,
         val isDodge: Boolean = false,
+        val isParry: Boolean = false,
         val defenderId: String = ""
     ) : CombatEvent()
 
@@ -49,7 +51,8 @@ class CombatManager(
     private val npcManager: NpcManager,
     private val sessionManager: SessionManager,
     private val worldGraph: WorldGraph,
-    private val equipmentService: EquipmentService
+    private val equipmentService: EquipmentService,
+    private val skillCatalog: SkillCatalog
 ) {
     private val logger = LoggerFactory.getLogger(CombatManager::class.java)
 
@@ -81,8 +84,7 @@ class CombatManager(
             if (!session.attackMode) continue
             val roomId = session.currentRoomId ?: continue
             val player = session.player ?: continue
-            val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
-            combatants.add(Combatant.PlayerCombatant(session, effStats.agility, roomId))
+            combatants.add(Combatant.PlayerCombatant(session, session.effectiveStats().agility, roomId))
         }
 
         // Collect rooms with visible players for NPC retaliation
@@ -128,7 +130,7 @@ class CombatManager(
                         session.isHidden = false
                     }
 
-                    val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+                    val effStats = session.effectiveStats()
                     val bonuses = equipmentService.getCombatBonuses(player.name)
                     val thresholds = ThresholdBonuses.compute(effStats)
 
@@ -226,9 +228,8 @@ class CombatManager(
                     val targetSession = visiblePlayers.randomOrNull() ?: continue
                     val targetPlayer = targetSession.player ?: continue
 
-                    val effStats = CombatUtils.effectiveStats(targetPlayer.stats, targetSession.activeEffects.toList())
+                    val effStats = targetSession.effectiveStats()
                     val playerBonuses = equipmentService.getCombatBonuses(targetPlayer.name)
-                    val playerThresholds = ThresholdBonuses.compute(effStats)
 
                     val npcAccuracy = CombatUtils.computeNpcAccuracy(npc)
                     val playerDefense = CombatUtils.computePlayerDefense(effStats, playerBonuses, targetPlayer.level)
@@ -248,7 +249,11 @@ class CombatManager(
                         continue
                     }
 
-                    val playerEvasion = CombatUtils.playerEvasion(playerThresholds, targetSession.activeEffects.toList())
+                    // Dodge check: class-gated, AGI-scaled full avoidance
+                    val hasDodge = skillCatalog.getSkill("DODGE")?.let { skill ->
+                        skill.classRestrictions.isEmpty() || targetPlayer.characterClass in skill.classRestrictions
+                    } ?: false
+                    val playerEvasion = if (hasDodge) CombatUtils.playerEvasion(effStats) else 0.0
                     if (playerEvasion > 0 && CombatUtils.rollEvasion(playerEvasion)) {
                         events.add(CombatEvent.Hit(
                             attackerName = npc.name,
@@ -264,9 +269,19 @@ class CombatManager(
                         continue
                     }
 
+                    // Parry check: class-gated, STR-scaled partial damage reduction
+                    val hasParry = skillCatalog.getSkill("PARRY")?.let { skill ->
+                        skill.classRestrictions.isEmpty() || targetPlayer.characterClass in skill.classRestrictions
+                    } ?: false
+                    val isParry = if (hasParry) {
+                        val parryChance = CombatUtils.playerParry(effStats)
+                        parryChance > 0 && CombatUtils.rollParry(parryChance)
+                    } else false
+
                     val variance = maxOf(npc.damage / 3, 1)
                     val rawDamage = npc.damage + (1..variance).random()
-                    val damage = (rawDamage - playerBonuses.totalArmorValue).coerceAtLeast(1)
+                    val parryReduction = if (isParry) CombatUtils.parryReduction(effStats) else 0
+                    val damage = (rawDamage - playerBonuses.totalArmorValue - parryReduction).coerceAtLeast(1)
                     val newHp = (targetPlayer.currentHp - damage).coerceAtLeast(0)
                     targetSession.player = targetPlayer.copy(currentHp = newHp)
 
@@ -283,6 +298,7 @@ class CombatManager(
                         defenderMaxHp = targetPlayer.maxHp,
                         isPlayerDefender = true,
                         roomId = roomId,
+                        isParry = isParry,
                         defenderId = targetPlayer.name
                     ))
 

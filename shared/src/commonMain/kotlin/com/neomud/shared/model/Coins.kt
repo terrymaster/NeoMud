@@ -34,8 +34,17 @@ data class Coins(
     }
 
     companion object {
-        fun sellPriceCopper(itemValue: Int, quantity: Int, charm: Int): Long {
-            val sellPercent = (25 + charm * 74 / 100).coerceIn(25, 99)
+        fun buyPriceCopper(itemValue: Int, quantity: Int, charm: Int, hasHaggle: Boolean): Long {
+            val base = itemValue.toLong() * quantity
+            if (!hasHaggle) return base
+            val discountPercent = (charm * 15 / 100).coerceAtMost(15)
+            return (base * (100 - discountPercent) / 100).coerceAtLeast(1L)
+        }
+
+        fun sellPriceCopper(itemValue: Int, quantity: Int, charm: Int, hasHaggle: Boolean = false): Long {
+            var sellPercent = 25 + charm * 74 / 100
+            if (hasHaggle) sellPercent += charm * 10 / 100
+            sellPercent = sellPercent.coerceIn(25, 99)
             return (itemValue.toLong() * quantity * sellPercent / 100).coerceAtLeast(1L)
         }
 

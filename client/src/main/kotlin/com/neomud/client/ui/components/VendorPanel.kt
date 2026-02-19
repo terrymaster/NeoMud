@@ -67,12 +67,28 @@ fun VendorPanel(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = vendorInfo.vendorName,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFFD700)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = vendorInfo.vendorName,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFFD700)
+                        )
+                        if (vendorInfo.hasHaggle) {
+                            Text(
+                                text = "Haggle Active",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1A1A2E),
+                                modifier = Modifier
+                                    .background(Color(0xFF66BB6A), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                     TextButton(onClick = onClose) {
                         Text("Close", color = Color(0xFFAAAAAA))
                     }
@@ -149,7 +165,7 @@ fun VendorPanel(
                                 inventoryItem = invItem,
                                 item = item,
                                 playerCharm = vendorInfo.playerCharm,
-
+                                hasHaggle = vendorInfo.hasHaggle,
                                 onSell = { onSell(invItem.itemId) }
                             )
                         }
@@ -272,11 +288,12 @@ private fun SellItemRow(
     inventoryItem: InventoryItem,
     item: Item?,
     playerCharm: Int,
+    hasHaggle: Boolean = false,
     onSell: () -> Unit
 ) {
     val itemName = item?.name ?: inventoryItem.itemId
     val itemValue = item?.value ?: 0
-    val sellPriceCopper = if (itemValue > 0) Coins.sellPriceCopper(itemValue, inventoryItem.quantity, playerCharm) else 0L
+    val sellPriceCopper = if (itemValue > 0) Coins.sellPriceCopper(itemValue, inventoryItem.quantity, playerCharm, hasHaggle) else 0L
     val sellPrice = Coins.fromCopper(sellPriceCopper)
     val canSell = itemValue > 0
     val context = LocalContext.current

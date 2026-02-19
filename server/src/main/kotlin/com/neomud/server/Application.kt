@@ -95,10 +95,10 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     val roomItemManager = RoomItemManager()
     val inventoryCommand = InventoryCommand(inventoryRepository, itemCatalog, coinRepository, worldGraph, sessionManager)
     val pickupCommand = PickupCommand(roomItemManager, inventoryRepository, coinRepository, itemCatalog, sessionManager)
-    val combatManager = CombatManager(npcManager, sessionManager, worldGraph, equipmentService)
+    val combatManager = CombatManager(npcManager, sessionManager, worldGraph, equipmentService, skillCatalog)
     val trainerCommand = TrainerCommand(classCatalog, raceCatalog, playerRepository, sessionManager, npcManager)
     val spellCommand = SpellCommand(spellCatalog, classCatalog, npcManager, sessionManager, playerRepository)
-    val vendorCommand = VendorCommand(npcManager, itemCatalog, inventoryRepository, coinRepository, inventoryCommand, sessionManager)
+    val vendorCommand = VendorCommand(npcManager, itemCatalog, inventoryRepository, coinRepository, inventoryCommand, sessionManager, skillCatalog)
     val adminUsernames = adminUsernamesOverride ?: (System.getenv("NEOMUD_ADMINS")
         ?.split(",")
         ?.map { it.trim().lowercase() }

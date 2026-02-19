@@ -8,6 +8,7 @@ import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ItemCatalog
+import com.neomud.server.world.SkillCatalog
 import com.neomud.shared.model.Coins
 import com.neomud.shared.model.VendorItem
 import com.neomud.shared.protocol.ServerMessage
@@ -19,7 +20,8 @@ class VendorCommand(
     private val inventoryRepository: InventoryRepository,
     private val coinRepository: CoinRepository,
     private val inventoryCommand: InventoryCommand,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val skillCatalog: SkillCatalog
 ) {
     private val logger = LoggerFactory.getLogger(VendorCommand::class.java)
 
@@ -37,9 +39,15 @@ class VendorCommand(
             return
         }
 
+        val hasHaggle = skillCatalog.getSkill("HAGGLE")?.let { skill ->
+            skill.classRestrictions.isEmpty() || player.characterClass in skill.classRestrictions
+        } ?: false
+
+        val charm = player.stats.charm
         val vendorItems = vendor.vendorItems.mapNotNull { itemId ->
             val item = itemCatalog.getItem(itemId) ?: return@mapNotNull null
-            VendorItem(item = item, price = Coins.fromCopper(item.value.toLong()))
+            val buyPrice = Coins.buyPriceCopper(item.value, 1, charm, hasHaggle)
+            VendorItem(item = item, price = Coins.fromCopper(buyPrice))
         }
 
         val playerCoins = coinRepository.getCoins(playerName)
@@ -50,8 +58,9 @@ class VendorCommand(
             items = vendorItems,
             playerCoins = playerCoins,
             playerInventory = playerInventory,
-            playerCharm = player.stats.charm,
-            interactSound = vendor.interactSound
+            playerCharm = charm,
+            interactSound = vendor.interactSound,
+            hasHaggle = hasHaggle
         ))
     }
 
@@ -83,7 +92,10 @@ class VendorCommand(
             return
         }
 
-        val totalCost = Coins.fromCopper(item.value.toLong() * quantity)
+        val hasHaggle = skillCatalog.getSkill("HAGGLE")?.let { skill ->
+            skill.classRestrictions.isEmpty() || player.characterClass in skill.classRestrictions
+        } ?: false
+        val totalCost = Coins.fromCopper(Coins.buyPriceCopper(item.value, quantity, player.stats.charm, hasHaggle))
         val success = coinRepository.subtractCoins(playerName, totalCost)
         if (!success) {
             session.send(ServerMessage.Error("You can't afford ${item.name}. It costs ${totalCost.displayString()}."))
@@ -138,7 +150,10 @@ class VendorCommand(
             return
         }
 
-        val sellPriceCopper = Coins.sellPriceCopper(item.value, quantity, player.stats.charm)
+        val hasHaggle = skillCatalog.getSkill("HAGGLE")?.let { skill ->
+            skill.classRestrictions.isEmpty() || player.characterClass in skill.classRestrictions
+        } ?: false
+        val sellPriceCopper = Coins.sellPriceCopper(item.value, quantity, player.stats.charm, hasHaggle)
         val sellPrice = Coins.fromCopper(sellPriceCopper)
         coinRepository.addCoins(playerName, sellPrice)
         logger.info("$playerName sold ${item.name} x$quantity for ${sellPrice.displayString()}")

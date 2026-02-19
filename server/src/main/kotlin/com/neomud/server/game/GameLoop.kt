@@ -2,7 +2,7 @@ package com.neomud.server.game
 
 import com.neomud.server.game.combat.CombatEvent
 import com.neomud.server.game.combat.CombatManager
-import com.neomud.server.game.combat.CombatUtils
+
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
@@ -163,10 +163,17 @@ class GameLoop(
                     sessionManager.broadcastToRoom(
                         event.roomId,
                         ServerMessage.CombatHit(
-                            event.attackerName, event.defenderName, event.damage,
-                            event.defenderHp, event.defenderMaxHp, event.isPlayerDefender,
-                            event.isBackstab, event.isMiss, event.isDodge,
-                            event.defenderId
+                            attackerName = event.attackerName,
+                            defenderName = event.defenderName,
+                            damage = event.damage,
+                            defenderHp = event.defenderHp,
+                            defenderMaxHp = event.defenderMaxHp,
+                            isPlayerDefender = event.isPlayerDefender,
+                            isBackstab = event.isBackstab,
+                            isMiss = event.isMiss,
+                            isDodge = event.isDodge,
+                            isParry = event.isParry,
+                            defenderId = event.defenderId
                         )
                     )
                 }
@@ -439,7 +446,7 @@ class GameLoop(
         val playerName = session.playerName ?: return
 
         val npcRoll = npc.perception + npc.level + (1..20).random()
-        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val effStats = session.effectiveStats()
         val stealthDc = effStats.agility + effStats.willpower / 2 + player.level / 2 + 10
 
         if (npcRoll >= stealthDc) {
@@ -463,7 +470,7 @@ class GameLoop(
             if (!session.isMeditating) continue
             val player = session.player ?: continue
 
-            val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+            val effStats = session.effectiveStats()
             val restore = maxOf(effStats.willpower / 10 + 2, 1)
             val newMp = minOf(player.currentMp + restore, player.maxMp)
             val restored = newMp - player.currentMp
@@ -505,14 +512,14 @@ class GameLoop(
             val observers = sessionManager.getSessionsInRoom(roomId).filter { !it.isHidden }
             for (observer in observers) {
                 val observerPlayer = observer.player ?: continue
-                val obsStats = CombatUtils.effectiveStats(observerPlayer.stats, observer.activeEffects.toList())
+                val obsStats = observer.effectiveStats()
                 val bonus = StealthUtils.perceptionBonus(observerPlayer.characterClass, classCatalog)
                 val observerRoll = obsStats.willpower + obsStats.intellect / 2 + observerPlayer.level / 2 + bonus + (1..20).random()
 
                 for (hiddenSession in hiddenPlayers) {
                     if (!hiddenSession.isHidden) continue
                     val hiddenPlayer = hiddenSession.player ?: continue
-                    val hiddenStats = CombatUtils.effectiveStats(hiddenPlayer.stats, hiddenSession.activeEffects.toList())
+                    val hiddenStats = hiddenSession.effectiveStats()
                     val stealthDc = hiddenStats.agility + hiddenStats.willpower / 2 + hiddenPlayer.level / 2 + 10
 
                     if (observerRoll >= stealthDc) {

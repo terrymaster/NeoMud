@@ -272,6 +272,10 @@ class GameViewModel(
                         addLog("${message.defenderName} dodges ${message.attackerName}'s attack!", MudColors.combatYou)
                         sfx("dodge")
                     }
+                    message.isParry && message.damage > 0 -> {
+                        addLog("${message.defenderName} parries ${message.attackerName}'s blow for reduced damage! (${message.damage} damage, ${message.defenderHp}/${message.defenderMaxHp} HP)", MudColors.combatYou)
+                        sfx("parry")
+                    }
                     message.damage > 0 -> {
                         val verb = if (message.isBackstab) "backstabs" else "hits"
                         val color = if (message.isPlayerDefender) MudColors.combatEnemy

@@ -97,6 +97,7 @@ sealed class ServerMessage {
         val isBackstab: Boolean = false,
         val isMiss: Boolean = false,
         val isDodge: Boolean = false,
+        val isParry: Boolean = false,
         val defenderId: String = ""
     ) : ServerMessage()
 
@@ -304,7 +305,8 @@ sealed class ServerMessage {
         val playerCoins: Coins,
         val playerInventory: List<InventoryItem>,
         val playerCharm: Int = 0,
-        val interactSound: String = ""
+        val interactSound: String = "",
+        val hasHaggle: Boolean = false
     ) : ServerMessage()
 
     @Serializable
