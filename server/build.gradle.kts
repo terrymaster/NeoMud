@@ -47,10 +47,24 @@ kotlin {
     jvmToolchain(21)
 }
 
-tasks.register<Copy>("packageWorld") {
-    description = "Copies the maker-built default world bundle into build/worlds/"
+tasks.register<Zip>("packageWorld") {
+    description = "Builds the default world bundle (.nmd) from server resources"
     group = "build"
-    from("../maker/default_world.nmd")
-    into(layout.buildDirectory.dir("worlds"))
-    rename { "default-world.nmd" }
+
+    archiveFileName.set("default-world.nmd")
+    destinationDirectory.set(layout.buildDirectory.dir("worlds"))
+
+    from("src/main/resources") {
+        include("manifest.json")
+        include("world/**")
+        include("assets/**")
+    }
+
+    val makerDest = rootProject.file("maker/default_world.nmd")
+    doLast {
+        if (makerDest.parentFile.exists()) {
+            archiveFile.get().asFile.copyTo(makerDest, overwrite = true)
+            logger.lifecycle("Copied world bundle to maker/default_world.nmd")
+        }
+    }
 }

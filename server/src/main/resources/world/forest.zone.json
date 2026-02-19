@@ -21,6 +21,8 @@
       "backgroundImage": "/assets/images/rooms/forest_edge.webp",
       "departSound": "footstep_dirt",
       "imagePrompt": "First-person view standing at the edge of an ancient forest. Flat grass and dirt ground plane filling the lower third, transitioning from open field to tree roots. Towering oaks ahead framing a path into darkness. Shafts of golden sunlight pierce the canopy. Town walls faintly visible behind. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     },
@@ -38,6 +40,8 @@
       "backgroundImage": "/assets/images/rooms/forest_path.webp",
       "departSound": "footstep_dirt",
       "imagePrompt": "First-person view standing on a winding forest path. Flat dirt trail filling the lower third, flanked by exposed roots. Massive ancient tree trunks on both sides covered in luminescent moss, receding into the distance. Dappled light filters through the dense canopy. Path splits ahead. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     },
@@ -53,6 +57,8 @@
       "backgroundImage": "/assets/images/rooms/forest_clearing.webp",
       "departSound": "footstep_grass",
       "imagePrompt": "First-person view standing in a sunlit forest clearing. Flat grassy ground plane carpeted with wildflowers filling the lower third. A moss-covered fallen log in the mid-ground. Trees form a natural wall around the edges. Warm golden sunlight streaming down from above. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     },
@@ -64,12 +70,15 @@
       "y": 4,
       "exits": {
         "SOUTH": "forest:path",
-        "EAST": "forest:stream"
+        "EAST": "forest:stream",
+        "NORTH": "forest:ruins"
       },
-      "lockedExits": { "EAST": 14 },
+      "lockedExits": { "EAST": 14, "NORTH": 16 },
       "backgroundImage": "/assets/images/rooms/forest_deep.webp",
       "departSound": "footstep_dirt",
       "imagePrompt": "First-person view standing in a deep primeval forest. Flat dark earth ground plane with gnarled roots breaking through, filling the lower third. Massive ancient trunks on both sides disappearing upward into dense canopy. Only dim green twilight reaches the floor. Ominous and ancient atmosphere. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     },
@@ -85,6 +94,25 @@
       "backgroundImage": "/assets/images/rooms/forest_stream.webp",
       "departSound": "footstep_splash",
       "imagePrompt": "First-person view standing at the bank of a forest stream. Flat mossy ground and smooth river stones filling the lower third. A crystal-clear stream cuts across the mid-ground from left to right. Ferns and water plants line the far bank. Trees frame both sides. Gentle dappled light filtering through canopy. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "imageWidth": 1024,
+      "imageHeight": 576
+    },
+    {
+      "id": "forest:ruins",
+      "name": "Overgrown Ruins",
+      "description": "Crumbling stone walls rise from the forest floor, half-swallowed by moss and creeping vines. The remains of an ancient structure — perhaps a watchtower or shrine — stand in eerie silence. Faded carvings on the stones hint at a civilization long forgotten. The air here feels heavy, as if the ruins remember what the forest has tried to bury.",
+      "x": 0,
+      "y": 5,
+      "exits": {
+        "SOUTH": "forest:deep"
+      },
+      "backgroundImage": "/assets/images/rooms/forest_ruins.jpg",
+      "departSound": "footstep_dirt",
+      "imagePrompt": "First-person view standing among ancient overgrown stone ruins in a forest. Flat earth and broken flagstones filling the lower third. Crumbling moss-covered walls rise on both sides, vines creeping over faded stone carvings. Dim green light filters through dense canopy overhead. Mysterious and solemn atmosphere. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     }

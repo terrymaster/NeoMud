@@ -9,7 +9,6 @@ import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ClassCatalog
-import com.neomud.server.world.LockStateManager
 import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
@@ -24,7 +23,6 @@ class MoveCommand(
     private val npcManager: NpcManager,
     private val playerRepository: PlayerRepository,
     private val roomItemManager: RoomItemManager,
-    private val lockStateManager: LockStateManager,
     private val skillCatalog: SkillCatalog,
     private val classCatalog: ClassCatalog
 ) {
@@ -46,8 +44,7 @@ class MoveCommand(
         }
 
         // Check if exit is locked
-        val lockDifficulty = currentRoom.lockedExits[direction]
-        if (lockDifficulty != null && !lockStateManager.isUnlocked(currentRoomId, direction)) {
+        if (currentRoom.lockedExits[direction] != null) {
             session.send(ServerMessage.MoveError("The door to the ${direction.name} is locked."))
             return
         }

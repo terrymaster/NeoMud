@@ -51,6 +51,7 @@ import com.neomud.client.ui.components.SpellPicker
 import com.neomud.client.ui.components.SpriteOverlay
 import com.neomud.client.ui.components.TrainerPanel
 import com.neomud.client.ui.components.VendorPanel
+import com.neomud.client.ui.components.LockTargetPicker
 import com.neomud.client.ui.components.PlayerTooltip
 import com.neomud.client.viewmodel.GameViewModel
 import com.neomud.shared.model.Direction
@@ -91,6 +92,8 @@ fun GameScreen(
     val readiedSpellId by gameViewModel.readiedSpellId.collectAsState()
     val showSpellPicker by gameViewModel.showSpellPicker.collectAsState()
     val editingSlotIndex by gameViewModel.editingSlotIndex.collectAsState()
+
+    val showLockTargetPicker by gameViewModel.showLockTargetPicker.collectAsState()
 
     val roomPlayers by gameViewModel.roomPlayers.collectAsState()
     var tooltipPlayer by remember { mutableStateOf<PlayerInfo?>(null) }
@@ -255,6 +258,18 @@ fun GameScreen(
                     playerLevel = p?.level ?: 1,
                     onAssignSpell = { spellId -> gameViewModel.assignSpellToSlot(slotIdx, spellId) },
                     onClose = { gameViewModel.dismissSpellPicker() }
+                )
+            }
+        }
+
+        // Lock target picker overlay
+        if (showLockTargetPicker) {
+            val lockedExits = roomInfo?.room?.lockedExits ?: emptyMap()
+            if (lockedExits.isNotEmpty()) {
+                LockTargetPicker(
+                    lockedExits = lockedExits,
+                    onSelect = { targetId -> gameViewModel.pickLockTarget(targetId) },
+                    onDismiss = { gameViewModel.dismissLockTargetPicker() }
                 )
             }
         }
@@ -452,7 +467,8 @@ private fun GameScreenPortrait(
             DirectionPad(
                 availableExits = availableExits,
                 onMove = { direction -> gameViewModel.move(direction) },
-                onLook = { gameViewModel.look() }
+                onLook = { gameViewModel.look() },
+                lockedExits = (roomInfo?.room?.lockedExits?.keys ?: emptySet())
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -664,7 +680,8 @@ private fun GameScreenLandscape(
                     DirectionPad(
                         availableExits = availableExits,
                         onMove = { direction -> gameViewModel.move(direction) },
-                        onLook = { gameViewModel.look() }
+                        onLook = { gameViewModel.look() },
+                        lockedExits = (roomInfo?.room?.lockedExits?.keys ?: emptySet())
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -840,6 +857,12 @@ private fun ActionButtonRow(
                     isActive = isMeditating,
                     enabled = !attackMode || isMeditating,
                     onClick = { gameViewModel.useSkill("MEDITATE") }
+                )
+            } else if (skillId == "PICK_LOCK") {
+                ActionButton(
+                    icon = btnInfo.icon,
+                    color = btnInfo.activeColor,
+                    onClick = { gameViewModel.showLockTargetPicker() }
                 )
             } else {
                 ActionButton(

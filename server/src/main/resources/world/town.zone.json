@@ -24,21 +24,27 @@
       "backgroundImage": "/assets/images/rooms/town_square.webp",
       "departSound": "footstep_cobblestone",
       "imagePrompt": "First-person view standing in a medieval fantasy town square. Flat cobblestone ground plane filling the lower third. A weathered stone fountain ahead in the mid-ground. Colorful merchant stalls and timber-framed buildings line left and right edges receding to a vanishing point. Clear sky above. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     },
     {
       "id": "town:tavern",
       "name": "The Rusty Tankard",
-      "description": "A dim, smoky tavern with low wooden beams and a roaring fireplace. Scarred tables are scattered about, and the bar is stained with years of spilled ale. A grizzled barkeep polishes mugs behind the counter, eyeing newcomers with practiced suspicion.",
+      "description": "A dim, smoky tavern with low wooden beams and a roaring fireplace. Scarred tables are scattered about, and the bar is stained with years of spilled ale. A grizzled barkeep polishes mugs behind the counter, eyeing newcomers with practiced suspicion. A heavy trapdoor in the floor leads down to a cellar.",
       "x": -1,
       "y": 0,
       "exits": {
-        "EAST": "town:square"
+        "EAST": "town:square",
+        "DOWN": "town:cellar"
       },
+      "lockedExits": { "DOWN": 10 },
       "backgroundImage": "/assets/images/rooms/town_tavern.webp",
       "departSound": "footstep_wood",
       "imagePrompt": "First-person view standing inside a dim medieval tavern. Flat wooden plank floor filling the lower third. Low wooden beams overhead, a roaring fireplace on the back wall. A long bar counter ahead, scarred tables on either side. Warm candlelight and smoky atmosphere. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     },
@@ -54,6 +60,8 @@
       "backgroundImage": "/assets/images/rooms/town_market.webp",
       "departSound": "footstep_cobblestone",
       "imagePrompt": "First-person view standing on a narrow medieval market street. Flat stone-paved ground plane filling the lower third. Merchant stalls with colorful awnings lining both sides, receding toward a glowing blacksmith's forge ahead. Weapons and armor on display. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     },
@@ -70,6 +78,8 @@
       "backgroundImage": "/assets/images/rooms/town_gate.webp",
       "departSound": "footstep_cobblestone",
       "imagePrompt": "First-person view standing before a fortified medieval town gate. Flat dirt and cobblestone ground plane filling the lower third. Massive oak doors reinforced with iron bands ahead, flanked by stone watchtowers on each side. A dirt road visible beyond leading into a dark forest. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     },
@@ -86,6 +96,25 @@
       "effects": [{"type": "HEAL", "value": 5, "message": "The temple's aura soothes your wounds.", "sound": "healing_aura"}, {"type": "SANCTUARY", "value": 0, "message": "The divine sanctuary of the temple forbids violence here.", "sound": ""}],
       "departSound": "footstep_marble",
       "imagePrompt": "First-person view standing inside a serene stone temple. Flat polished marble floor filling the lower third. Tall stained glass windows on left and right casting rainbow light. A white-draped altar centered ahead at the far wall, incense smoke curling upward. Vaulted stone ceiling. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "imageWidth": 1024,
+      "imageHeight": 576
+    },
+    {
+      "id": "town:cellar",
+      "name": "Tavern Cellar",
+      "description": "A damp stone cellar beneath the tavern, lit by a single sputtering torch. Barrels of ale and crates of provisions line the walls. Cobwebs hang in every corner, and the air smells of old wood and stale beer. A rickety wooden ladder leads back up to the tavern above.",
+      "x": -1,
+      "y": -1,
+      "exits": {
+        "UP": "town:tavern"
+      },
+      "backgroundImage": "/assets/images/rooms/town_cellar.jpg",
+      "departSound": "footstep_wood",
+      "imagePrompt": "First-person view standing in a dim stone cellar beneath a tavern. Flat flagstone floor filling the lower third. Wooden barrels and crates line both walls receding into shadow. A single sputtering torch on the left wall. Cobwebs in corners. A wooden ladder leads up through a trapdoor in the ceiling. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,
       "imageHeight": 576
     }

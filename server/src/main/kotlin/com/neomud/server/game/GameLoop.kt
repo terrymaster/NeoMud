@@ -102,6 +102,22 @@ class GameLoop(
                     event.fromRoomId,
                     ServerMessage.NpcLeft(event.npcName, event.fromRoomId, event.direction, event.npcId)
                 )
+                // Auto-disable attack mode for players who lost their target
+                for (session in sessionManager.getSessionsInRoom(event.fromRoomId)) {
+                    if (session.attackMode) {
+                        if (session.selectedTargetId == event.npcId) {
+                            session.selectedTargetId = null
+                        }
+                        val remaining = npcManager.getLivingHostileNpcsInRoom(event.fromRoomId)
+                        if (remaining.isEmpty()) {
+                            session.attackMode = false
+                            session.selectedTargetId = null
+                            try {
+                                session.send(ServerMessage.AttackModeUpdate(false))
+                            } catch (_: Exception) { }
+                        }
+                    }
+                }
             }
             // Broadcast NPC entered new room
             val isSpawn = event.fromRoomId == null

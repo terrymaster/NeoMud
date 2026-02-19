@@ -10,11 +10,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neomud.shared.model.Direction
+
+private val LockedContainer = Color(0xFFFFCC80) // amber/orange
+private val LockedContent = Color(0xFF6D4C00)   // dark amber
 
 private val BUTTON_SIZE = 40.dp
 private val SMALL_BUTTON_SIZE = 34.dp
@@ -26,7 +30,8 @@ fun DirectionPad(
     availableExits: Set<Direction>,
     onMove: (Direction) -> Unit,
     onLook: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    lockedExits: Set<Direction> = emptySet()
 ) {
     Column(
         modifier = modifier,
@@ -41,17 +46,20 @@ fun DirectionPad(
             DPadButton(
                 text = "\u2196",
                 enabled = Direction.NORTHWEST in availableExits,
+                locked = Direction.NORTHWEST in lockedExits,
                 onClick = { onMove(Direction.NORTHWEST) },
                 size = SMALL_BUTTON_SIZE
             )
             DPadButton(
                 text = "\u25B2",
                 enabled = Direction.NORTH in availableExits,
+                locked = Direction.NORTH in lockedExits,
                 onClick = { onMove(Direction.NORTH) }
             )
             DPadButton(
                 text = "\u2197",
                 enabled = Direction.NORTHEAST in availableExits,
+                locked = Direction.NORTHEAST in lockedExits,
                 onClick = { onMove(Direction.NORTHEAST) },
                 size = SMALL_BUTTON_SIZE
             )
@@ -65,6 +73,7 @@ fun DirectionPad(
             DPadButton(
                 text = "\u25C0",
                 enabled = Direction.WEST in availableExits,
+                locked = Direction.WEST in lockedExits,
                 onClick = { onMove(Direction.WEST) }
             )
             DPadButton(
@@ -76,6 +85,7 @@ fun DirectionPad(
             DPadButton(
                 text = "\u25B6",
                 enabled = Direction.EAST in availableExits,
+                locked = Direction.EAST in lockedExits,
                 onClick = { onMove(Direction.EAST) }
             )
         }
@@ -88,17 +98,20 @@ fun DirectionPad(
             DPadButton(
                 text = "\u2199",
                 enabled = Direction.SOUTHWEST in availableExits,
+                locked = Direction.SOUTHWEST in lockedExits,
                 onClick = { onMove(Direction.SOUTHWEST) },
                 size = SMALL_BUTTON_SIZE
             )
             DPadButton(
                 text = "\u25BC",
                 enabled = Direction.SOUTH in availableExits,
+                locked = Direction.SOUTH in lockedExits,
                 onClick = { onMove(Direction.SOUTH) }
             )
             DPadButton(
                 text = "\u2198",
                 enabled = Direction.SOUTHEAST in availableExits,
+                locked = Direction.SOUTHEAST in lockedExits,
                 onClick = { onMove(Direction.SOUTHEAST) },
                 size = SMALL_BUTTON_SIZE
             )
@@ -112,12 +125,14 @@ fun DirectionPad(
             StairButton(
                 label = "\u2B06",
                 enabled = Direction.UP in availableExits,
+                locked = Direction.UP in lockedExits,
                 onClick = { onMove(Direction.UP) }
             )
             Spacer(modifier = Modifier.width(BUTTON_SIZE))
             StairButton(
                 label = "\u2B07",
                 enabled = Direction.DOWN in availableExits,
+                locked = Direction.DOWN in lockedExits,
                 onClick = { onMove(Direction.DOWN) }
             )
         }
@@ -130,6 +145,7 @@ private fun DPadButton(
     enabled: Boolean,
     onClick: () -> Unit,
     isLook: Boolean = false,
+    locked: Boolean = false,
     size: Dp = BUTTON_SIZE
 ) {
     FilledTonalButton(
@@ -141,11 +157,13 @@ private fun DPadButton(
         colors = ButtonDefaults.filledTonalButtonColors(
             containerColor = when {
                 isLook -> MaterialTheme.colorScheme.secondaryContainer
+                locked -> LockedContainer
                 enabled -> MaterialTheme.colorScheme.primaryContainer
                 else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             },
             contentColor = when {
                 isLook -> MaterialTheme.colorScheme.onSecondaryContainer
+                locked -> LockedContent
                 enabled -> MaterialTheme.colorScheme.onPrimaryContainer
                 else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
             }
@@ -163,6 +181,7 @@ private fun DPadButton(
 private fun StairButton(
     label: String,
     enabled: Boolean,
+    locked: Boolean = false,
     onClick: () -> Unit
 ) {
     FilledTonalButton(
@@ -172,10 +191,16 @@ private fun StairButton(
         shape = RoundedCornerShape(8.dp),
         contentPadding = PaddingValues(0.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = if (enabled) MaterialTheme.colorScheme.tertiaryContainer
-                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-            contentColor = if (enabled) MaterialTheme.colorScheme.onTertiaryContainer
-                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+            containerColor = when {
+                locked -> LockedContainer
+                enabled -> MaterialTheme.colorScheme.tertiaryContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            },
+            contentColor = when {
+                locked -> LockedContent
+                enabled -> MaterialTheme.colorScheme.onTertiaryContainer
+                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+            }
         )
     ) {
         Text(

@@ -13,6 +13,11 @@ interface ExitEdge {
   direction: string;
 }
 
+interface VerticalExit {
+  roomId: string;
+  direction: string;
+}
+
 interface MapCanvasProps {
   rooms: RoomNode[];
   exits: ExitEdge[];
@@ -20,6 +25,7 @@ interface MapCanvasProps {
   onSelectRoom: (id: string) => void;
   onCreateRoom: (x: number, y: number) => void;
   onCreateExit: (fromId: string, toId: string) => void;
+  verticalExits?: VerticalExit[];
 }
 
 const CELL_SIZE = 80;
@@ -34,6 +40,7 @@ function MapCanvas({
   onSelectRoom,
   onCreateRoom,
   onCreateExit,
+  verticalExits = [],
 }: MapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -258,7 +265,36 @@ function MapCanvas({
         room.name.length > 10 ? room.name.substring(0, 9) + '...' : room.name;
       ctx.fillText(displayName, px, py);
     }
-  }, [rooms, exits, selectedRoomId, offset, canvasSize, gridToPixel, dragPreview, roomAtPixel]);
+
+    // Draw vertical exit indicators (▲/▼ triangles)
+    ctx.fillStyle = '#00acc1';
+    const TRI_SIZE = 8;
+    for (const ve of verticalExits) {
+      const room = roomMap.get(ve.roomId);
+      if (!room) continue;
+      const { px, py } = gridToPixel(room.x, room.y);
+
+      if (ve.direction === 'UP') {
+        // Triangle above room box
+        const tipY = py - CELL_SIZE / 2 - 4;
+        ctx.beginPath();
+        ctx.moveTo(px, tipY - TRI_SIZE);
+        ctx.lineTo(px - TRI_SIZE, tipY);
+        ctx.lineTo(px + TRI_SIZE, tipY);
+        ctx.closePath();
+        ctx.fill();
+      } else if (ve.direction === 'DOWN') {
+        // Triangle below room box
+        const tipY = py + CELL_SIZE / 2 + 4;
+        ctx.beginPath();
+        ctx.moveTo(px, tipY + TRI_SIZE);
+        ctx.lineTo(px - TRI_SIZE, tipY);
+        ctx.lineTo(px + TRI_SIZE, tipY);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }, [rooms, exits, selectedRoomId, offset, canvasSize, gridToPixel, dragPreview, roomAtPixel, verticalExits]);
 
   // Mouse handlers
   const handleMouseDown = useCallback(

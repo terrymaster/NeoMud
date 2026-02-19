@@ -1,5 +1,6 @@
 package com.neomud.server.world
 
+import com.neomud.shared.model.Direction
 import com.neomud.shared.model.MapRoom
 import com.neomud.shared.model.Room
 import com.neomud.shared.model.RoomId
@@ -68,4 +69,10 @@ class WorldGraph {
     val roomCount: Int get() = rooms.size
 
     fun getAllRooms(): List<Room> = rooms.values.toList()
+
+    // TODO: Consider a global lock refresh timer to re-lock exits periodically
+    fun unlockExit(roomId: RoomId, direction: Direction) {
+        val room = rooms[roomId] ?: return
+        rooms[roomId] = room.copy(lockedExits = room.lockedExits - direction)
+    }
 }

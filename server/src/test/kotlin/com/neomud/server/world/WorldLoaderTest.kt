@@ -15,7 +15,7 @@ class WorldLoaderTest {
         val result = load()
         val world = result.worldGraph
 
-        assertTrue(world.roomCount >= 10, "Should load at least 10 rooms (5 town + 5 forest)")
+        assertTrue(world.roomCount >= 12, "Should load at least 12 rooms (6 town + 6 forest)")
     }
 
     @Test
@@ -28,6 +28,7 @@ class WorldLoaderTest {
         assertNotNull(world.getRoom("town:market"), "town:market should exist")
         assertNotNull(world.getRoom("town:gate"), "town:gate should exist")
         assertNotNull(world.getRoom("town:temple"), "town:temple should exist")
+        assertNotNull(world.getRoom("town:cellar"), "town:cellar should exist")
     }
 
     @Test
@@ -40,6 +41,7 @@ class WorldLoaderTest {
         assertNotNull(world.getRoom("forest:clearing"), "forest:clearing should exist")
         assertNotNull(world.getRoom("forest:deep"), "forest:deep should exist")
         assertNotNull(world.getRoom("forest:stream"), "forest:stream should exist")
+        assertNotNull(world.getRoom("forest:ruins"), "forest:ruins should exist")
     }
 
     @Test
@@ -96,6 +98,23 @@ class WorldLoaderTest {
         assertEquals(8, spider.first.damage)
         assertEquals(3, spider.first.level)
         assertEquals("forest", spider.second, "Spider should belong to forest zone")
+    }
+
+    @Test
+    fun testLockedExitsLoaded() {
+        val result = load()
+        val world = result.worldGraph
+
+        val deep = world.getRoom("forest:deep")
+        assertNotNull(deep)
+        assertEquals(2, deep.lockedExits.size, "forest:deep should have 2 locked exits")
+        assertEquals(14, deep.lockedExits[com.neomud.shared.model.Direction.EAST])
+        assertEquals(16, deep.lockedExits[com.neomud.shared.model.Direction.NORTH])
+
+        val tavern = world.getRoom("town:tavern")
+        assertNotNull(tavern)
+        assertEquals(1, tavern.lockedExits.size, "town:tavern should have 1 locked exit")
+        assertEquals(10, tavern.lockedExits[com.neomud.shared.model.Direction.DOWN])
     }
 
     @Test

@@ -118,6 +118,10 @@ class GameViewModel(
     private val _showVendor = MutableStateFlow(false)
     val showVendor: StateFlow<Boolean> = _showVendor
 
+    // Lock target picker
+    private val _showLockTargetPicker = MutableStateFlow(false)
+    val showLockTargetPicker: StateFlow<Boolean> = _showLockTargetPicker
+
     // Death notification
     private val _deathMessage = MutableStateFlow<String?>(null)
     val deathMessage: StateFlow<String?> = _deathMessage
@@ -725,6 +729,28 @@ class GameViewModel(
     fun dismissVendor() {
         _showVendor.value = false
         _vendorInfo.value = null
+    }
+
+    // Lock target picker methods
+    fun showLockTargetPicker() {
+        val lockedExits = _roomInfo.value?.room?.lockedExits ?: emptyMap()
+        when (lockedExits.size) {
+            0 -> useSkill("PICK_LOCK") // Let server handle "nothing locked" message
+            1 -> {
+                val dir = lockedExits.keys.first()
+                useSkill("PICK_LOCK", "exit:${dir.name}")
+            }
+            else -> _showLockTargetPicker.value = true
+        }
+    }
+
+    fun dismissLockTargetPicker() {
+        _showLockTargetPicker.value = false
+    }
+
+    fun pickLockTarget(targetId: String) {
+        _showLockTargetPicker.value = false
+        useSkill("PICK_LOCK", targetId)
     }
 
     // Spell methods

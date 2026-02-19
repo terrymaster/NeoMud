@@ -30,7 +30,6 @@ import com.neomud.server.world.LootTableCatalog
 import com.neomud.server.world.RaceCatalog
 import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.SpellCatalog
-import com.neomud.server.world.LockStateManager
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
@@ -56,7 +55,6 @@ class CommandProcessor(
     private val lootService: LootService,
     private val lootTableCatalog: LootTableCatalog,
     private val inventoryRepository: InventoryRepository,
-    private val lockStateManager: LockStateManager,
     private val adminUsernames: Set<String> = emptySet()
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
@@ -64,7 +62,7 @@ class CommandProcessor(
         sessionManager, playerRepository, npcManager, worldGraph,
         inventoryCommand, inventoryRepository, itemCatalog, classCatalog, raceCatalog, roomItemManager
     )
-    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, lockStateManager, skillCatalog, classCatalog)
+    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, skillCatalog, classCatalog)
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager, skillCatalog, classCatalog)
     private val sayCommand = SayCommand(sessionManager, adminCommand)
     private val attackCommand = AttackCommand(npcManager, worldGraph)
@@ -74,7 +72,7 @@ class CommandProcessor(
     private val kickCommand = KickCommand(npcManager, sessionManager, skillKillHandler)
     private val meditateCommand = MeditateCommand(skillCatalog, sessionManager)
     private val trackCommand = TrackCommand(npcManager, worldGraph)
-    private val pickLockCommand = PickLockCommand(worldGraph, lockStateManager, sessionManager)
+    private val pickLockCommand = PickLockCommand(worldGraph, sessionManager)
 
     suspend fun sendCatalogSync(session: PlayerSession) {
         session.send(ServerMessage.ClassCatalogSync(classCatalog.getAllClasses()))
@@ -140,7 +138,10 @@ class CommandProcessor(
                         "KICK" -> kickCommand.execute(session, message.targetId)
                         "MEDITATE" -> meditateCommand.execute(session)
                         "TRACK" -> trackCommand.execute(session)
-                        "PICK_LOCK" -> pickLockCommand.execute(session)
+                        "PICK_LOCK" -> {
+                            val unlocked = pickLockCommand.execute(session, message.targetId)
+                            if (unlocked) lookCommand.execute(session)
+                        }
                         else -> session.send(ServerMessage.SystemMessage("Unknown skill: ${message.skillId}"))
                     }
                 }

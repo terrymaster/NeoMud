@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import api from '../api';
 import MapCanvas from '../components/MapCanvas';
 import ImagePreview from '../components/ImagePreview';
@@ -185,6 +185,51 @@ interface AllRoomsGroup {
   rooms: { id: string; name: string }[];
 }
 
+function computeLayerMap(rooms: Room[], exits: Exit[]) {
+  const downTargets = new Map<string, string[]>();
+  const upTargets = new Map<string, string[]>();
+  const roomIds = new Set(rooms.map((r) => r.id));
+
+  for (const exit of exits) {
+    if (exit.direction === 'DOWN' && roomIds.has(exit.toRoomId)) {
+      const list = downTargets.get(exit.fromRoomId) || [];
+      list.push(exit.toRoomId);
+      downTargets.set(exit.fromRoomId, list);
+    }
+    if (exit.direction === 'UP' && roomIds.has(exit.toRoomId)) {
+      const list = upTargets.get(exit.fromRoomId) || [];
+      list.push(exit.toRoomId);
+      upTargets.set(exit.fromRoomId, list);
+    }
+  }
+
+  const layerMap = new Map<string, number>();
+  for (const room of rooms) {
+    if (layerMap.has(room.id)) continue;
+    layerMap.set(room.id, 0);
+    const queue = [room.id];
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const layer = layerMap.get(current)!;
+      for (const target of downTargets.get(current) || []) {
+        if (!layerMap.has(target)) {
+          layerMap.set(target, layer - 1);
+          queue.push(target);
+        }
+      }
+      for (const target of upTargets.get(current) || []) {
+        if (!layerMap.has(target)) {
+          layerMap.set(target, layer + 1);
+          queue.push(target);
+        }
+      }
+    }
+  }
+
+  const layers = [...new Set(layerMap.values())].sort((a, b) => b - a);
+  return { layerMap, layers };
+}
+
 let zoneCounter = 0;
 
 function ZoneEditor() {
@@ -195,6 +240,9 @@ function ZoneEditor() {
 
   const [zoneForm, setZoneForm] = useState<Partial<Zone>>({});
   const [roomForm, setRoomForm] = useState<Partial<Room>>({});
+
+  // Layer navigation state
+  const [currentLayer, setCurrentLayer] = useState(0);
 
   // Manual exit creation state
   const [newExitDir, setNewExitDir] = useState('');
@@ -259,6 +307,77 @@ function ZoneEditor() {
 
   // Collect all exits from rooms
   const allExits: Exit[] = rooms.flatMap((r) => r.exits || []);
+
+  // Compute layers from UP/DOWN exit topology
+  const { layerMap, layers } = useMemo(
+    () => {
+      const result = computeLayerMap(rooms, allExits);
+      if (allExits.some((e) => e.direction === 'UP' || e.direction === 'DOWN')) {
+        console.log('[LayerDebug] UP/DOWN exits found:', allExits.filter((e) => e.direction === 'UP' || e.direction === 'DOWN'));
+        console.log('[LayerDebug] layerMap:', Object.fromEntries(result.layerMap));
+        console.log('[LayerDebug] layers:', result.layers);
+      }
+      return result;
+    },
+    [rooms, allExits]
+  );
+
+  // Reset layer to 0 when zone changes (if 0 exists), otherwise pick highest
+  useEffect(() => {
+    if (layers.length === 0) {
+      setCurrentLayer(0);
+    } else if (!layers.includes(currentLayer)) {
+      setCurrentLayer(layers.includes(0) ? 0 : layers[0]);
+    }
+  }, [layers]);
+
+  // Filter rooms and exits to the current layer
+  const layerRoomIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const room of rooms) {
+      if ((layerMap.get(room.id) ?? 0) === currentLayer) ids.add(room.id);
+    }
+    return ids;
+  }, [rooms, layerMap, currentLayer]);
+
+  const filteredRooms = useMemo(
+    () => rooms.filter((r) => layerRoomIds.has(r.id)),
+    [rooms, layerRoomIds]
+  );
+
+  const filteredExits = useMemo(
+    () => allExits.filter(
+      (e) =>
+        layerRoomIds.has(e.fromRoomId) &&
+        layerRoomIds.has(e.toRoomId) &&
+        e.direction !== 'UP' &&
+        e.direction !== 'DOWN'
+    ),
+    [allExits, layerRoomIds]
+  );
+
+  // Vertical exit indicators for rooms on the current layer
+  const verticalExits = useMemo(() => {
+    const result: { roomId: string; direction: string }[] = [];
+    for (const exit of allExits) {
+      if (
+        (exit.direction === 'UP' || exit.direction === 'DOWN') &&
+        layerRoomIds.has(exit.fromRoomId)
+      ) {
+        result.push({ roomId: exit.fromRoomId, direction: exit.direction });
+      }
+    }
+    return result;
+  }, [allExits, layerRoomIds]);
+
+  const layerLabel = (layer: number) => {
+    if (layer === 0) return 'Ground';
+    if (layer > 0) return `Above +${layer}`;
+    return `Below ${layer}`;
+  };
+
+  const canGoUp = layers.some((l) => l > currentLayer);
+  const canGoDown = layers.some((l) => l < currentLayer);
 
   const handleNewZone = async () => {
     const id = `zone_${++zoneCounter}_${Date.now()}`;
@@ -534,14 +653,77 @@ function ZoneEditor() {
       {/* Center Panel */}
       <div style={styles.centerPanel}>
         {selectedZoneId ? (
-          <MapCanvas
-            rooms={rooms.map((r) => ({ id: r.id, name: r.name, x: r.x, y: r.y }))}
-            exits={allExits}
-            selectedRoomId={selectedRoomId}
-            onSelectRoom={handleSelectRoom}
-            onCreateRoom={handleCreateRoom}
-            onCreateExit={handleCreateExit}
-          />
+          <>
+            {/* Layer navigation bar */}
+            {layers.length > 1 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 12,
+                  padding: '6px 12px',
+                  backgroundColor: '#fff',
+                  borderBottom: '1px solid #ddd',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#1a1a2e',
+                  userSelect: 'none',
+                }}
+              >
+                <button
+                  onClick={() => {
+                    const above = layers.filter((l) => l > currentLayer);
+                    if (above.length > 0) setCurrentLayer(above[above.length - 1]);
+                  }}
+                  disabled={!canGoUp}
+                  style={{
+                    padding: '2px 10px',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    border: '1px solid #ccc',
+                    borderRadius: 4,
+                    backgroundColor: canGoUp ? '#e8eaf6' : '#f5f5f5',
+                    color: canGoUp ? '#1a1a2e' : '#bbb',
+                    cursor: canGoUp ? 'pointer' : 'default',
+                  }}
+                  title="Go up one layer"
+                >
+                  &#9650;
+                </button>
+                <span>Layer {currentLayer} ({layerLabel(currentLayer)})</span>
+                <button
+                  onClick={() => {
+                    const below = layers.filter((l) => l < currentLayer);
+                    if (below.length > 0) setCurrentLayer(below[0]);
+                  }}
+                  disabled={!canGoDown}
+                  style={{
+                    padding: '2px 10px',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    border: '1px solid #ccc',
+                    borderRadius: 4,
+                    backgroundColor: canGoDown ? '#e8eaf6' : '#f5f5f5',
+                    color: canGoDown ? '#1a1a2e' : '#bbb',
+                    cursor: canGoDown ? 'pointer' : 'default',
+                  }}
+                  title="Go down one layer"
+                >
+                  &#9660;
+                </button>
+              </div>
+            )}
+            <MapCanvas
+              rooms={filteredRooms.map((r) => ({ id: r.id, name: r.name, x: r.x, y: r.y }))}
+              exits={filteredExits}
+              selectedRoomId={selectedRoomId}
+              onSelectRoom={handleSelectRoom}
+              onCreateRoom={handleCreateRoom}
+              onCreateExit={handleCreateExit}
+              verticalExits={verticalExits}
+            />
+          </>
         ) : (
           <div
             style={{
