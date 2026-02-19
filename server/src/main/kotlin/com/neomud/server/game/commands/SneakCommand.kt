@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.game.npc.NpcManager
@@ -35,6 +36,9 @@ class SneakCommand(
             )
             return
         }
+
+        // Sneaking breaks meditation
+        MeditationUtils.breakMeditation(session, "You stop meditating.")
 
         // Sneak attempt
         if (session.attackMode) {

@@ -1,17 +1,35 @@
 package com.neomud.server.game.commands
 
-import com.neomud.server.persistence.repository.PlayerRepository
+import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.StealthUtils
+import com.neomud.server.game.combat.CombatUtils
+import com.neomud.server.game.skills.SkillCheck
 import com.neomud.server.session.PlayerSession
+import com.neomud.server.session.SessionManager
+import com.neomud.server.world.SkillCatalog
 import com.neomud.shared.protocol.ServerMessage
 
 class MeditateCommand(
-    private val playerRepository: PlayerRepository
+    private val skillCatalog: SkillCatalog,
+    private val sessionManager: SessionManager
 ) {
     suspend fun execute(session: PlayerSession) {
         val player = session.player ?: return
 
+        // If already meditating, cancel
+        if (session.isMeditating) {
+            session.isMeditating = false
+            session.send(ServerMessage.MeditateUpdate(false, "You stop meditating."))
+            return
+        }
+
         if (session.attackMode) {
             session.send(ServerMessage.SystemMessage("You cannot meditate while in combat!"))
+            return
+        }
+
+        if (player.currentMp >= player.maxMp) {
+            session.send(ServerMessage.SystemMessage("Your mana is already full."))
             return
         }
 
@@ -21,28 +39,28 @@ class MeditateCommand(
             return
         }
 
-        val missingMp = player.maxMp - player.currentMp
-        if (missingMp <= 0) {
-            session.send(ServerMessage.SystemMessage("Your mana is already full."))
+        // Cooldown applies regardless of pass/fail
+        session.skillCooldowns["MEDITATE"] = 6
+
+        // Break stealth if hidden
+        StealthUtils.breakStealth(session, sessionManager, "Meditating reveals your presence!")
+
+        // Skill check: WIL + INT/2 + level/2 + d20 vs difficulty
+        val skillDef = skillCatalog.getSkill("MEDITATE")
+        if (skillDef == null) {
+            session.send(ServerMessage.SystemMessage("Meditate skill not found."))
             return
         }
 
-        val restored = minOf(15, missingMp)
-        val newMp = player.currentMp + restored
-        session.player = player.copy(currentMp = newMp)
+        val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+        val result = SkillCheck.check(skillDef, effStats, player.level)
 
-        session.skillCooldowns["MEDITATE"] = 6
+        if (!result.success) {
+            session.send(ServerMessage.MeditateUpdate(false, "You fail to focus your mind. (roll: ${result.roll})"))
+            return
+        }
 
-        // Use SpellCastResult to push MP update to client (it handles newMp)
-        session.send(ServerMessage.SpellCastResult(
-            success = true,
-            spellName = "Meditate",
-            message = "You meditate and restore $restored mana.",
-            newMp = newMp
-        ))
-
-        try {
-            playerRepository.savePlayerState(session.player!!)
-        } catch (_: Exception) { }
+        session.isMeditating = true
+        session.send(ServerMessage.MeditateUpdate(true, "You enter a meditative state. (roll: ${result.roll})"))
     }
 }

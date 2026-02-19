@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.game.inventory.RoomItemManager
@@ -28,6 +29,8 @@ class MoveCommand(
     private val classCatalog: ClassCatalog
 ) {
     suspend fun execute(session: PlayerSession, direction: Direction) {
+        MeditationUtils.breakMeditation(session, "You stop meditating.")
+
         val currentRoomId = session.currentRoomId ?: return
         val currentRoom = worldGraph.getRoom(currentRoomId)
 

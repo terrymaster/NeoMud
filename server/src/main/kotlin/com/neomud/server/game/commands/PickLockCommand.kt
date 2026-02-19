@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.combat.CombatUtils
 import com.neomud.server.session.PlayerSession
@@ -17,7 +18,8 @@ class PickLockCommand(
         val roomId = session.currentRoomId ?: return
         val player = session.player ?: return
 
-        // Picking a lock breaks stealth
+        // Picking a lock breaks meditation and stealth
+        MeditationUtils.breakMeditation(session, "You stop meditating.")
         StealthUtils.breakStealth(session, sessionManager, "Picking a lock reveals your presence!")
 
         val cooldown = session.skillCooldowns["PICK_LOCK"]

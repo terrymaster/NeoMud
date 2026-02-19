@@ -46,8 +46,8 @@ class WebSocketClient {
                             try {
                                 val message = MessageSerializer.decodeServerMessage(text)
                                 _messages.emit(message)
-                            } catch (_: Exception) {
-                                // Ignore malformed messages
+                            } catch (e: Exception) {
+                                android.util.Log.w("WebSocketClient", "Failed to decode message: ${text.take(200)}", e)
                             }
                         }
                     }
@@ -64,12 +64,16 @@ class WebSocketClient {
     }
 
     suspend fun send(message: ClientMessage): Boolean {
-        val s = session ?: return false
+        val s = session ?: run {
+            android.util.Log.w("WebSocketClient", "send() called with no active session for ${message::class.simpleName}")
+            return false
+        }
         val text = MessageSerializer.encodeClientMessage(message)
         return try {
             s.send(Frame.Text(text))
             true
         } catch (e: Exception) {
+            android.util.Log.e("WebSocketClient", "send() failed for ${message::class.simpleName}", e)
             false
         }
     }

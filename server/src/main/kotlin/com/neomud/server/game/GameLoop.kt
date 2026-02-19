@@ -57,6 +57,7 @@ class GameLoop(
                 session.attackMode = false
                 session.selectedTargetId = null
                 session.isHidden = false
+                session.isMeditating = false
                 session.activeEffects.clear()
 
                 val oldRoomId = session.currentRoomId
@@ -236,10 +237,11 @@ class GameLoop(
                         session.send(ServerMessage.PlayerDied(event.killerName, event.respawnRoomId, event.respawnHp, event.respawnMp))
                     } catch (_: Exception) { }
 
-                    // Disable attack mode and stealth
+                    // Disable attack mode, stealth, and meditation
                     session.attackMode = false
                     session.selectedTargetId = null
                     session.isHidden = false
+                    session.isMeditating = false
 
                     // Broadcast leave from death room
                     sessionManager.broadcastToRoom(
@@ -315,6 +317,9 @@ class GameLoop(
 
         // 4b. Player perception scans for hidden players
         playerPerceptionPhase()
+
+        // 4c. Meditation MP restoration
+        meditationPhase()
 
         // 5. Process active effects on all authenticated players
         for (session in sessionManager.getAllAuthenticatedSessions()) {
@@ -434,6 +439,35 @@ class GameLoop(
                 ServerMessage.PlayerEntered(playerName, roomId, session.toPlayerInfo()),
                 exclude = playerName
             )
+        }
+    }
+
+    private suspend fun meditationPhase() {
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            if (!session.isMeditating) continue
+            val player = session.player ?: continue
+
+            val effStats = CombatUtils.effectiveStats(player.stats, session.activeEffects.toList())
+            val restore = maxOf(effStats.willpower / 10 + 2, 1)
+            val newMp = minOf(player.currentMp + restore, player.maxMp)
+            val restored = newMp - player.currentMp
+            session.player = player.copy(currentMp = newMp)
+
+            try {
+                // SpellCastResult updates client MP state and logs the message
+                session.send(ServerMessage.SpellCastResult(
+                    success = true,
+                    spellName = "Meditate",
+                    message = "You meditate and restore $restored mana.",
+                    newMp = newMp
+                ))
+
+                if (newMp >= player.maxMp) {
+                    MeditationUtils.breakMeditation(session, "Your mana is fully restored.")
+                }
+
+                playerRepository.savePlayerState(session.player!!)
+            } catch (_: Exception) { }
         }
     }
 

@@ -196,6 +196,73 @@ class PlayerStatusPanelTest {
     }
 
     @Test
+    fun `shows meditation icon when isMeditating`() {
+        composeRule.setContent {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(),
+                    activeEffects = emptyList(),
+                    isMeditating = true,
+                    onClick = {}
+                )
+            }
+        }
+
+        // Meditation icon 🧘 (U+1F9D8)
+        composeRule.onNodeWithText("\uD83E\uDDD8").assertIsDisplayed()
+    }
+
+    @Test
+    fun `no meditation icon when not meditating`() {
+        composeRule.setContent {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(),
+                    activeEffects = emptyList(),
+                    isMeditating = false,
+                    onClick = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("\uD83E\uDDD8").assertDoesNotExist()
+    }
+
+    @Test
+    fun `compact mode shows meditation icon when isMeditating`() {
+        composeRule.setContent {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(),
+                    activeEffects = emptyList(),
+                    isMeditating = true,
+                    compact = true,
+                    onClick = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("\uD83E\uDDD8").assertIsDisplayed()
+    }
+
+    @Test
+    fun `compact mode no meditation icon when not meditating`() {
+        composeRule.setContent {
+            TestThemeWrapper {
+                PlayerStatusPanel(
+                    player = TestData.player(),
+                    activeEffects = emptyList(),
+                    isMeditating = false,
+                    compact = true,
+                    onClick = {}
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("\uD83E\uDDD8").assertDoesNotExist()
+    }
+
+    @Test
     fun `compact mode clicking fires onClick`() {
         var clicked = false
         composeRule.setContent {

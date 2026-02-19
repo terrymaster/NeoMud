@@ -72,7 +72,7 @@ class CommandProcessor(
     private val skillKillHandler = SkillKillHandler(npcManager, sessionManager, playerRepository, lootService, lootTableCatalog, roomItemManager)
     private val bashCommand = BashCommand(npcManager, sessionManager, skillKillHandler)
     private val kickCommand = KickCommand(npcManager, sessionManager, skillKillHandler)
-    private val meditateCommand = MeditateCommand(playerRepository)
+    private val meditateCommand = MeditateCommand(skillCatalog, sessionManager)
     private val trackCommand = TrackCommand(npcManager, worldGraph)
     private val pickLockCommand = PickLockCommand(worldGraph, lockStateManager, sessionManager)
 

@@ -76,6 +76,10 @@ class GameViewModel(
     private val _isHidden = MutableStateFlow(false)
     val isHidden: StateFlow<Boolean> = _isHidden
 
+    // Meditation
+    private val _isMeditating = MutableStateFlow(false)
+    val isMeditating: StateFlow<Boolean> = _isMeditating
+
     // Skill catalog
     private val _skillCatalog = MutableStateFlow<Map<String, SkillDef>>(emptyMap())
     val skillCatalog: StateFlow<Map<String, SkillDef>> = _skillCatalog
@@ -168,7 +172,11 @@ class GameViewModel(
     fun startCollecting() {
         viewModelScope.launch {
             wsClient.messages.collect { message ->
-                handleMessage(message)
+                try {
+                    handleMessage(message)
+                } catch (e: Exception) {
+                    android.util.Log.e("GameViewModel", "handleMessage crashed for ${message::class.simpleName}", e)
+                }
             }
         }
         look()
@@ -308,6 +316,7 @@ class GameViewModel(
                 _selectedTargetId.value = null
                 _activeEffects.value = emptyList()
                 _isHidden.value = false
+                _isMeditating.value = false
                 _roomGroundItems.value = emptyList()
                 _roomGroundCoins.value = Coins()
             }
@@ -412,6 +421,12 @@ class GameViewModel(
                 }
                 if (message.hidden) {
                     _attackMode.value = false
+                }
+            }
+            is ServerMessage.MeditateUpdate -> {
+                _isMeditating.value = message.meditating
+                if (message.message.isNotEmpty()) {
+                    addLog(message.message, MudColors.spell)
                 }
             }
             is ServerMessage.SkillCatalogSync -> {

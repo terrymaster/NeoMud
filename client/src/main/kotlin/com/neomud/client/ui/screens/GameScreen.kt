@@ -98,6 +98,7 @@ fun GameScreen(
     var sayText by remember { mutableStateOf("") }
 
     val isHidden by gameViewModel.isHidden.collectAsState()
+    val isMeditating by gameViewModel.isMeditating.collectAsState()
     val skillCatalog by gameViewModel.skillCatalog.collectAsState()
 
     val availableExits = roomInfo?.room?.exits?.keys ?: emptySet()
@@ -466,6 +467,7 @@ private fun GameScreenPortrait(
                     player = player,
                     activeEffects = activeEffects,
                     isHidden = isHidden,
+                    isMeditating = gameViewModel.isMeditating.collectAsState().value,
                     spellSlots = spellSlots,
                     spellCatalog = spellCatalogState,
                     readiedSpellId = readiedSpellId,
@@ -646,6 +648,7 @@ private fun GameScreenLandscape(
                         player = p,
                         activeEffects = activeEffects,
                         isHidden = isHidden,
+                        isMeditating = gameViewModel.isMeditating.collectAsState().value,
                         compact = true,
                         onClick = { gameViewModel.toggleCharacterSheet() },
                         modifier = Modifier.fillMaxWidth()
@@ -680,6 +683,7 @@ private fun GameScreenLandscape(
                             player = null, // Status is above in landscape
                             activeEffects = activeEffects,
                             isHidden = isHidden,
+                            isMeditating = gameViewModel.isMeditating.collectAsState().value,
                             spellSlots = spellSlots,
                             spellCatalog = spellCatalogState,
                             readiedSpellId = readiedSpellId,
@@ -775,6 +779,7 @@ private fun ActionButtonRow(
     player: com.neomud.shared.model.Player?,
     activeEffects: List<com.neomud.shared.model.ActiveEffect>,
     isHidden: Boolean = false,
+    isMeditating: Boolean = false,
     spellSlots: List<String?> = listOf(null, null, null, null),
     spellCatalog: Map<String, com.neomud.shared.model.SpellDef> = emptyMap(),
     readiedSpellId: String? = null,
@@ -828,6 +833,14 @@ private fun ActionButtonRow(
                     enabled = sneakEnabled,
                     onClick = { gameViewModel.toggleSneakMode(!isHidden) }
                 )
+            } else if (skillId == "MEDITATE") {
+                ActionButton(
+                    icon = btnInfo.icon,
+                    color = if (isMeditating) MudColors.spell else btnInfo.activeColor,
+                    isActive = isMeditating,
+                    enabled = !attackMode || isMeditating,
+                    onClick = { gameViewModel.useSkill("MEDITATE") }
+                )
             } else {
                 ActionButton(
                     icon = btnInfo.icon,
@@ -863,6 +876,7 @@ private fun ActionButtonRow(
                 player = player,
                 activeEffects = activeEffects,
                 isHidden = isHidden,
+                isMeditating = isMeditating,
                 onClick = { gameViewModel.toggleCharacterSheet() },
                 modifier = Modifier.weight(1f)
             )

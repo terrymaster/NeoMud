@@ -221,6 +221,10 @@ sealed class ServerMessage {
     data class StealthUpdate(val hidden: Boolean, val message: String = "") : ServerMessage()
 
     @Serializable
+    @SerialName("meditate_update")
+    data class MeditateUpdate(val meditating: Boolean, val message: String = "") : ServerMessage()
+
+    @Serializable
     @SerialName("skill_catalog_sync")
     data class SkillCatalogSync(val skills: List<SkillDef>) : ServerMessage()
 

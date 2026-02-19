@@ -381,6 +381,51 @@ class IntegrationTest {
         }
     }
 
+    @Test
+    fun testMeditateWithFullMpSendsSystemMessage() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        // Register Mystic — min: str=12,agi=18,int=10,wil=15,hlt=12,chm=8
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("mystic_med", "pass123", "MysticTester", "MYSTIC",
+                    allocatedStats = Stats(strength = 22, agility = 28, intellect = 20, willpower = 25, health = 22, charm = 18))
+            )))
+            val reg = receiveServerMessage()
+            assertIs<ServerMessage.RegisterOk>(reg)
+        }
+
+        // Login and try to meditate at full MP
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Login("mystic_med", "pass123")
+            )))
+            val loginOk = receiveServerMessage()
+            assertIs<ServerMessage.LoginOk>(loginOk)
+            val player = loginOk.player
+            assertEquals(player.currentMp, player.maxMp, "New character should start at full MP")
+            assertTrue(player.maxMp > 0, "Mystic should have MP")
+
+            receiveServerMessage() // RoomInfo
+            receiveServerMessage() // MapData
+            receiveServerMessage() // InventoryUpdate
+            receiveServerMessage() // RoomItemsUpdate
+
+            // Now send UseSkill("MEDITATE") with full MP
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.UseSkill("MEDITATE")
+            )))
+
+            val response = receiveServerMessage()
+            assertIs<ServerMessage.SystemMessage>(response, "Should get SystemMessage when meditating at full MP, got: $response")
+            assertTrue(response.message.contains("full"), "Should say mana is full: ${response.message}")
+        }
+    }
+
     private suspend fun DefaultClientWebSocketSession.receiveServerMessage(): ServerMessage {
         val frame = incoming.receive()
         assertTrue(frame is Frame.Text, "Expected text frame")

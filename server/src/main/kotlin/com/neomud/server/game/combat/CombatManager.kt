@@ -1,5 +1,6 @@
 package com.neomud.server.game.combat
 
+import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.inventory.EquipmentService
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.npc.NpcState
@@ -69,7 +70,7 @@ class CombatManager(
         ) : Combatant()
     }
 
-    fun processCombatTick(): List<CombatEvent> {
+    suspend fun processCombatTick(): List<CombatEvent> {
         val events = mutableListOf<CombatEvent>()
 
         // Build unified combatant list
@@ -268,6 +269,11 @@ class CombatManager(
                     val damage = (rawDamage - playerBonuses.totalArmorValue).coerceAtLeast(1)
                     val newHp = (targetPlayer.currentHp - damage).coerceAtLeast(0)
                     targetSession.player = targetPlayer.copy(currentHp = newHp)
+
+                    // Taking damage breaks meditation
+                    if (targetSession.isMeditating) {
+                        MeditationUtils.breakMeditation(targetSession, "You are hit and lose concentration!")
+                    }
 
                     events.add(CombatEvent.Hit(
                         attackerName = npc.name,

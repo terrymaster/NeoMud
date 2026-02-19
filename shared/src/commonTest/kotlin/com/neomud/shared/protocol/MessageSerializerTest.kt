@@ -711,6 +711,22 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testMeditateUpdateRoundTrip() {
+        val original = ServerMessage.MeditateUpdate(true, "You enter a meditative state.")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testMeditateUpdateNoMessageRoundTrip() {
+        val original = ServerMessage.MeditateUpdate(false)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
     fun testRegisterWithGenderRoundTrip() {
         val original = ClientMessage.Register("user1", "pass123", "Elara", "MAGE", race = "ELF", gender = "female")
         val json = MessageSerializer.encodeClientMessage(original)

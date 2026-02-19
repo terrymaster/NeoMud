@@ -101,16 +101,16 @@
     {
       "id": "MEDITATE",
       "name": "Meditate",
-      "description": "Enter a meditative state to recover mana more quickly.",
+      "description": "Enter a channeled meditative state that restores mana each tick until interrupted.",
       "category": "utility",
       "primaryStat": "willpower",
       "secondaryStat": "intellect",
       "cooldownTicks": 6,
       "manaCost": 0,
-      "difficulty": 11,
+      "difficulty": 15,
       "isPassive": false,
       "classRestrictions": ["CLERIC", "PRIEST", "MAGE", "WARLOCK", "DRUID", "MYSTIC"],
-      "properties": {"manaRestore": "15"}
+      "properties": {}
     },
     {
       "id": "PICK_LOCK",

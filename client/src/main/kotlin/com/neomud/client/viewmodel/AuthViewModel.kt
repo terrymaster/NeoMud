@@ -50,48 +50,52 @@ class AuthViewModel : ViewModel() {
     init {
         viewModelScope.launch {
             wsClient.messages.collect { message ->
-                when (message) {
-                    is ServerMessage.LoginOk -> {
-                        pendingLoginUsername = null
-                        pendingLoginPassword = null
-                        _initialRoomInfo.value = null
-                        _authState.value = AuthState.LoggedIn(message.player)
-                    }
-                    is ServerMessage.RoomInfo -> {
-                        // Capture the initial RoomInfo sent right after LoginOk
-                        // so GameViewModel can use it before its collector subscribes
-                        if (_authState.value is AuthState.LoggedIn) {
-                            _initialRoomInfo.value = message
+                try {
+                    when (message) {
+                        is ServerMessage.LoginOk -> {
+                            pendingLoginUsername = null
+                            pendingLoginPassword = null
+                            _initialRoomInfo.value = null
+                            _authState.value = AuthState.LoggedIn(message.player)
                         }
-                    }
-                    is ServerMessage.RegisterOk -> {
-                        // Auto-login after successful registration
-                        val username = pendingLoginUsername
-                        val password = pendingLoginPassword
-                        if (username != null && password != null) {
-                            wsClient.send(ClientMessage.Login(username, password))
-                        } else {
-                            _authState.value = AuthState.Registered
+                        is ServerMessage.RoomInfo -> {
+                            // Capture the initial RoomInfo sent right after LoginOk
+                            // so GameViewModel can use it before its collector subscribes
+                            if (_authState.value is AuthState.LoggedIn) {
+                                _initialRoomInfo.value = message
+                            }
                         }
+                        is ServerMessage.RegisterOk -> {
+                            // Auto-login after successful registration
+                            val username = pendingLoginUsername
+                            val password = pendingLoginPassword
+                            if (username != null && password != null) {
+                                wsClient.send(ClientMessage.Login(username, password))
+                            } else {
+                                _authState.value = AuthState.Registered
+                            }
+                        }
+                        is ServerMessage.AuthError -> {
+                            pendingLoginUsername = null
+                            pendingLoginPassword = null
+                            _authState.value = AuthState.Error(message.reason)
+                        }
+                        is ServerMessage.ClassCatalogSync -> {
+                            _availableClasses.value = message.classes
+                        }
+                        is ServerMessage.RaceCatalogSync -> {
+                            _availableRaces.value = message.races
+                        }
+                        is ServerMessage.SpellCatalogSync -> {
+                            _availableSpells.value = message.spells
+                        }
+                        is ServerMessage.ItemCatalogSync -> {
+                            _availableItems.value = message.items
+                        }
+                        else -> { /* handled by GameViewModel */ }
                     }
-                    is ServerMessage.AuthError -> {
-                        pendingLoginUsername = null
-                        pendingLoginPassword = null
-                        _authState.value = AuthState.Error(message.reason)
-                    }
-                    is ServerMessage.ClassCatalogSync -> {
-                        _availableClasses.value = message.classes
-                    }
-                    is ServerMessage.RaceCatalogSync -> {
-                        _availableRaces.value = message.races
-                    }
-                    is ServerMessage.SpellCatalogSync -> {
-                        _availableSpells.value = message.spells
-                    }
-                    is ServerMessage.ItemCatalogSync -> {
-                        _availableItems.value = message.items
-                    }
-                    else -> { /* handled by GameViewModel */ }
+                } catch (e: Exception) {
+                    android.util.Log.e("AuthViewModel", "Message handling failed for ${message::class.simpleName}", e)
                 }
             }
         }

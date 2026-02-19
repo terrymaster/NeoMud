@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.world.WorldGraph
@@ -29,6 +30,9 @@ class AttackCommand(
                 session.send(ServerMessage.SystemMessage("No hostile targets here."))
                 return
             }
+
+            // Entering attack mode breaks meditation
+            MeditationUtils.breakMeditation(session, "You stop meditating.")
 
             session.attackMode = true
             session.send(ServerMessage.AttackModeUpdate(true))

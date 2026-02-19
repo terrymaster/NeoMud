@@ -24,6 +24,7 @@ fun PlayerStatusPanel(
     player: Player,
     activeEffects: List<ActiveEffect>,
     isHidden: Boolean = false,
+    isMeditating: Boolean = false,
     compact: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -51,6 +52,9 @@ fun PlayerStatusPanel(
             ) {
                 if (isHidden) {
                     CompactEffectDot(Color(0xFF555555), "\uD83D\uDC41")
+                }
+                if (isMeditating) {
+                    CompactEffectDot(Color(0xFF7755CC), "\uD83E\uDDD8")
                 }
                 for (effect in activeEffects) {
                     val (bgColor, _) = effectStyle(effect.type)
@@ -140,6 +144,22 @@ fun PlayerStatusPanel(
                     ) {
                         Text(
                             text = "\uD83D\uDC41",
+                            fontSize = 10.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+                if (isMeditating) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF7755CC).copy(alpha = 0.8f))
+                            .border(1.dp, Color(0xFF9977EE), CircleShape)
+                    ) {
+                        Text(
+                            text = "\uD83E\uDDD8",
                             fontSize = 10.sp,
                             color = Color.White
                         )
