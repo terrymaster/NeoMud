@@ -40,6 +40,7 @@ maker/projects/
 maker/settings.json
 maker/test-results/
 maker/server/generated/
+maker/default_world.nmd
 
 # Claude
 .claude/

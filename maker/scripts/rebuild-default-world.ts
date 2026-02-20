@@ -1,59 +1,46 @@
 /**
- * Headless script to rebuild maker/default_world.nmd from its own contents.
+ * Rebuild maker/default_world.nmd by zipping maker/default_world_src/.
  *
  * Usage:  cd maker && npm run rebuild-world
  *
- * Flow:
- *   1. Delete temp project "_rebuild_default_world" if leftover from a previous run
- *   2. If default_world.nmd exists -> import it (preserves all world data + assets)
- *      Otherwise -> createProject() (seeds 270 PC sprites automatically)
- *   3. Export via buildNmdBundle() -> write to maker/default_world.nmd
- *   4. Clean up temp project and disconnect
+ * This replaces the old round-trip (import → Prisma → export) with a direct
+ * ZIP of the source directory, which is faster and lossless.
  */
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { createProject, db, deleteProject, disconnectDb, getActiveProject } from '../server/db.js'
-import { importNmd } from '../server/import.js'
-import { buildNmdBundle } from '../server/routes/export.js'
+import AdmZip from 'adm-zip'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const TEMP_PROJECT = '_rebuild_default_world'
+const SRC_DIR = path.resolve(__dirname, '..', 'default_world_src')
 const NMD_PATH = path.resolve(__dirname, '..', 'default_world.nmd')
 
-async function main() {
-  try {
-    // 1. Clean up any leftover temp project
-    await deleteProject(TEMP_PROJECT)
-
-    // 2. Import existing bundle or create fresh project
-    if (fs.existsSync(NMD_PATH)) {
-      console.log(`Importing existing bundle: ${NMD_PATH}`)
-      await importNmd(NMD_PATH, TEMP_PROJECT)
+function addDirToZip(zip: AdmZip, dirPath: string, zipPrefix: string) {
+  for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+    const fullPath = path.join(dirPath, entry.name)
+    const zipPath = zipPrefix ? `${zipPrefix}/${entry.name}` : entry.name
+    if (entry.isDirectory()) {
+      addDirToZip(zip, fullPath, zipPath)
     } else {
-      console.log('No existing bundle found — creating fresh project with seeded data.')
-      await createProject(TEMP_PROJECT)
+      zip.addLocalFile(fullPath, zipPrefix || '')
     }
+  }
+}
 
-    // 3. Export
-    const prisma = db()
-    const projectName = getActiveProject()!
-    const buffer = await buildNmdBundle(prisma, projectName)
-
-    fs.writeFileSync(NMD_PATH, buffer)
-    const sizeMB = (buffer.length / (1024 * 1024)).toFixed(1)
-    console.log(`Wrote ${sizeMB} MB to ${NMD_PATH}`)
-
-    // 4. Clean up
-    await deleteProject(TEMP_PROJECT)
-    await disconnectDb()
-  } catch (err) {
-    console.error('rebuild-default-world failed:', err)
-    // Best-effort cleanup
-    try { await deleteProject(TEMP_PROJECT) } catch {}
-    try { await disconnectDb() } catch {}
+function main() {
+  if (!fs.existsSync(SRC_DIR)) {
+    console.error(`Source directory not found: ${SRC_DIR}`)
     process.exit(1)
   }
+
+  console.log(`Zipping ${SRC_DIR} ...`)
+  const zip = new AdmZip()
+  addDirToZip(zip, SRC_DIR, '')
+
+  zip.writeZip(NMD_PATH)
+  const stats = fs.statSync(NMD_PATH)
+  const sizeMB = (stats.size / (1024 * 1024)).toFixed(1)
+  console.log(`Wrote ${sizeMB} MB to ${NMD_PATH}`)
 }
 
 main()

@@ -48,13 +48,13 @@ kotlin {
 }
 
 tasks.register<Zip>("packageWorld") {
-    description = "Builds the default world bundle (.nmd) from server resources"
+    description = "Builds the default world bundle (.nmd) from maker source"
     group = "build"
 
     archiveFileName.set("default-world.nmd")
     destinationDirectory.set(layout.buildDirectory.dir("worlds"))
 
-    from("src/main/resources") {
+    from(rootProject.file("maker/default_world_src")) {
         include("manifest.json")
         include("world/**")
         include("assets/**")
