@@ -226,6 +226,15 @@ sealed class ServerMessage {
     data class MeditateUpdate(val meditating: Boolean, val message: String = "") : ServerMessage()
 
     @Serializable
+    @SerialName("track_result")
+    data class TrackResult(
+        val success: Boolean,
+        val direction: Direction? = null,
+        val targetName: String? = null,
+        val message: String
+    ) : ServerMessage()
+
+    @Serializable
     @SerialName("skill_catalog_sync")
     data class SkillCatalogSync(val skills: List<SkillDef>) : ServerMessage()
 

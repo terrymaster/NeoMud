@@ -78,6 +78,7 @@ fun SpriteOverlay(
     classCatalog: Map<String, CharacterClassDef> = emptyMap(),
     playerCharacterClass: String? = null,
     onAttackTarget: ((String) -> Unit)? = null,
+    onTrackTarget: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val serverBaseUrl = LocalServerBaseUrl.current
@@ -132,6 +133,7 @@ fun SpriteOverlay(
                             classCatalog = classCatalog,
                             playerCharacterClass = playerCharacterClass,
                             onAttackTarget = onAttackTarget,
+                            onTrackTarget = onTrackTarget,
                             scale = 0.9f,
                             modifier = Modifier
                                 .weight(1f, fill = false)
@@ -170,6 +172,7 @@ fun SpriteOverlay(
                             classCatalog = classCatalog,
                             playerCharacterClass = playerCharacterClass,
                             onAttackTarget = onAttackTarget,
+                            onTrackTarget = onTrackTarget,
                             scale = 1.0f,
                             modifier = Modifier
                                 .weight(1f, fill = false)
@@ -262,6 +265,7 @@ private fun EntitySprite(
     classCatalog: Map<String, CharacterClassDef>,
     playerCharacterClass: String?,
     onAttackTarget: ((String) -> Unit)?,
+    onTrackTarget: ((String) -> Unit)?,
     scale: Float,
     modifier: Modifier = Modifier
 ) {
@@ -312,6 +316,12 @@ private fun EntitySprite(
                             onCastSpell?.invoke(spellId, npc.id)
                             contextMenuNpcId.value = null
                         },
+                        onTrackTarget = if (onTrackTarget != null) {
+                            {
+                                onTrackTarget.invoke(npc.id)
+                                contextMenuNpcId.value = null
+                            }
+                        } else null,
                         modifier = Modifier.align(Alignment.TopCenter)
                     )
                 }
@@ -412,6 +422,7 @@ private fun NpcContextMenu(
     playerCharacterClass: String?,
     onAttackTarget: () -> Unit,
     onCastSpell: (String) -> Unit,
+    onTrackTarget: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val offensiveSpells = targetableSlottedSpells(
@@ -437,6 +448,20 @@ private fun NpcContextMenu(
             contentAlignment = Alignment.Center
         ) {
             Text(text = "\u2694\uFE0F", fontSize = 14.sp)
+        }
+
+        // Track button
+        if (onTrackTarget != null) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(stoneBg, CircleShape)
+                    .border(1.dp, Color(0xFF55AA55).copy(alpha = 0.7f), CircleShape)
+                    .clickable { onTrackTarget() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "\uD83D\uDC3E", fontSize = 14.sp)
+            }
         }
 
         // Offensive spell buttons

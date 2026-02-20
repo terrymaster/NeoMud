@@ -25,7 +25,8 @@ class MoveCommand(
     private val playerRepository: PlayerRepository,
     private val roomItemManager: RoomItemManager,
     private val skillCatalog: SkillCatalog,
-    private val classCatalog: ClassCatalog
+    private val classCatalog: ClassCatalog,
+    private val movementTrailManager: com.neomud.server.game.MovementTrailManager? = null
 ) {
     suspend fun execute(session: PlayerSession, direction: Direction) {
         MeditationUtils.breakMeditation(session, "You stop meditating.")
@@ -84,6 +85,11 @@ class MoveCommand(
                 session.send(ServerMessage.StealthUpdate(false, "Your movement gives you away!"))
             }
         }
+
+        // Record movement trail before leaving room
+        movementTrailManager?.recordTrail(currentRoomId, com.neomud.server.game.TrailEntry(
+            playerName, playerName, direction, System.currentTimeMillis(), isPlayer = true
+        ))
 
         // Broadcast leave to old room (only if not sneaking)
         if (!sneaking) {

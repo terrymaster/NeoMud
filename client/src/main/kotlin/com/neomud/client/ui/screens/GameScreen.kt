@@ -365,6 +365,11 @@ private fun GameScreenPortrait(
     val readiedSpellId by gameViewModel.readiedSpellId.collectAsState()
     val spellSlots by gameViewModel.spellSlots.collectAsState()
     val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
+    val trackedDirection by gameViewModel.trackedDirection.collectAsState()
+    val skillCatalog by gameViewModel.skillCatalog.collectAsState()
+
+    // Determine if player has TRACK skill
+    val hasTrackSkill = player?.characterClass?.let { classCatalog[it] }?.skills?.contains("TRACK") == true
 
     Column(modifier = Modifier.fillMaxSize().background(StoneTheme.panelBg)) {
         // Top: Room background + sidebars + floating minimap (~35%)
@@ -403,6 +408,7 @@ private fun GameScreenPortrait(
                 classCatalog = classCatalog,
                 playerCharacterClass = player?.characterClass,
                 onAttackTarget = { gameViewModel.attackTarget(it) },
+                onTrackTarget = if (hasTrackSkill) { npcId -> gameViewModel.useSkill("TRACK", npcId) } else null,
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -478,7 +484,8 @@ private fun GameScreenPortrait(
                     availableExits = availableExits,
                     onMove = { direction -> gameViewModel.move(direction) },
                     onLook = { gameViewModel.look() },
-                    lockedExits = (roomInfo?.room?.lockedExits?.keys ?: emptySet())
+                    lockedExits = (roomInfo?.room?.lockedExits?.keys ?: emptySet()),
+                    trackedDirection = trackedDirection
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -564,6 +571,10 @@ private fun GameScreenLandscape(
     val readiedSpellId by gameViewModel.readiedSpellId.collectAsState()
     val spellSlots by gameViewModel.spellSlots.collectAsState()
     val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
+    val trackedDirection by gameViewModel.trackedDirection.collectAsState()
+
+    // Determine if player has TRACK skill
+    val hasTrackSkill = player?.characterClass?.let { classCatalog[it] }?.skills?.contains("TRACK") == true
 
     Column(modifier = Modifier.fillMaxSize().background(StoneTheme.panelBg)) {
         // Top row (~55%): Map area + Controls side-by-side
@@ -584,7 +595,7 @@ private fun GameScreenLandscape(
                 RoomBackground(
                     imageUrl = currentRoom?.backgroundImage ?: "",
                     roomName = currentRoom?.name ?: "",
-    
+
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -608,6 +619,7 @@ private fun GameScreenLandscape(
                     classCatalog = classCatalog,
                     playerCharacterClass = player?.characterClass,
                     onAttackTarget = { gameViewModel.attackTarget(it) },
+                    onTrackTarget = if (hasTrackSkill) { npcId -> gameViewModel.useSkill("TRACK", npcId) } else null,
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -698,7 +710,8 @@ private fun GameScreenLandscape(
                         availableExits = availableExits,
                         onMove = { direction -> gameViewModel.move(direction) },
                         onLook = { gameViewModel.look() },
-                        lockedExits = (roomInfo?.room?.lockedExits?.keys ?: emptySet())
+                        lockedExits = (roomInfo?.room?.lockedExits?.keys ?: emptySet()),
+                        trackedDirection = trackedDirection
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))

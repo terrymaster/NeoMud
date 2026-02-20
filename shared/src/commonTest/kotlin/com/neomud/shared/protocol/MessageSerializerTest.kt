@@ -746,6 +746,30 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testTrackResultSuccessRoundTrip() {
+        val original = ServerMessage.TrackResult(
+            success = true,
+            direction = Direction.NORTH,
+            targetName = "Shadow Wolf",
+            message = "You find tracks leading north..."
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testTrackResultFailureRoundTrip() {
+        val original = ServerMessage.TrackResult(
+            success = false,
+            message = "You don't find any tracks here."
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
     fun testVendorInfoWithHaggleRoundTrip() {
         val items = listOf(
             VendorItem(

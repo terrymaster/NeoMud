@@ -55,14 +55,15 @@ class CommandProcessor(
     private val lootService: LootService,
     private val lootTableCatalog: LootTableCatalog,
     private val inventoryRepository: InventoryRepository,
-    private val adminUsernames: Set<String> = emptySet()
+    private val adminUsernames: Set<String> = emptySet(),
+    private val movementTrailManager: MovementTrailManager? = null
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
     private val adminCommand = AdminCommand(
         sessionManager, playerRepository, npcManager, worldGraph,
         inventoryCommand, inventoryRepository, itemCatalog, classCatalog, raceCatalog, roomItemManager
     )
-    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, skillCatalog, classCatalog)
+    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, skillCatalog, classCatalog, movementTrailManager)
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager, skillCatalog, classCatalog)
     private val sayCommand = SayCommand(sessionManager, adminCommand)
     private val attackCommand = AttackCommand(npcManager, worldGraph)
@@ -71,7 +72,7 @@ class CommandProcessor(
     private val bashCommand = BashCommand(npcManager, sessionManager, skillKillHandler)
     private val kickCommand = KickCommand(npcManager, sessionManager, skillKillHandler)
     private val meditateCommand = MeditateCommand(skillCatalog, sessionManager)
-    private val trackCommand = TrackCommand(npcManager, worldGraph)
+    private val trackCommand = TrackCommand(movementTrailManager ?: MovementTrailManager(), worldGraph)
     private val pickLockCommand = PickLockCommand(worldGraph, sessionManager)
 
     suspend fun sendCatalogSync(session: PlayerSession) {
@@ -137,7 +138,7 @@ class CommandProcessor(
                         "BASH" -> bashCommand.execute(session, message.targetId)
                         "KICK" -> kickCommand.execute(session, message.targetId)
                         "MEDITATE" -> meditateCommand.execute(session)
-                        "TRACK" -> trackCommand.execute(session)
+                        "TRACK" -> trackCommand.execute(session, message.targetId)
                         "PICK_LOCK" -> {
                             val unlocked = pickLockCommand.execute(session, message.targetId)
                             if (unlocked) lookCommand.execute(session)

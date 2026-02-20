@@ -118,6 +118,10 @@ class GameViewModel(
     private val _showVendor = MutableStateFlow(false)
     val showVendor: StateFlow<Boolean> = _showVendor
 
+    // Tracked direction (from TRACK skill)
+    private val _trackedDirection = MutableStateFlow<Direction?>(null)
+    val trackedDirection: StateFlow<Direction?> = _trackedDirection
+
     // Lock target picker
     private val _showLockTargetPicker = MutableStateFlow(false)
     val showLockTargetPicker: StateFlow<Boolean> = _showLockTargetPicker
@@ -205,6 +209,7 @@ class GameViewModel(
                 // Clear ground items on move (will be refreshed by RoomItemsUpdate)
                 _roomGroundItems.value = emptyList()
                 _roomGroundCoins.value = Coins()
+                _trackedDirection.value = null
                 addLog("You move ${message.direction.name.lowercase()}.", MudColors.selfAction)
                 logRoomInfo(message.room, message.players, message.npcs)
                 bgm(message.room.bgm)
@@ -436,6 +441,12 @@ class GameViewModel(
                 if (message.message.isNotEmpty()) {
                     addLog(message.message, MudColors.spell)
                 }
+            }
+            is ServerMessage.TrackResult -> {
+                if (message.success && message.direction != null) {
+                    _trackedDirection.value = message.direction
+                }
+                addLog(message.message, MudColors.system)
             }
             is ServerMessage.SkillCatalogSync -> {
                 _skillCatalog.value = message.skills.associateBy { it.id }

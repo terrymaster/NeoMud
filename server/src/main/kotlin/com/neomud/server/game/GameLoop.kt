@@ -33,7 +33,8 @@ class GameLoop(
     private val roomItemManager: RoomItemManager,
     private val playerRepository: PlayerRepository,
     private val skillCatalog: SkillCatalog,
-    private val classCatalog: ClassCatalog
+    private val classCatalog: ClassCatalog,
+    private val movementTrailManager: MovementTrailManager? = null
 ) {
     private val logger = LoggerFactory.getLogger(GameLoop::class.java)
 
@@ -96,6 +97,12 @@ class GameLoop(
         // 1. NPC behavior
         val npcEvents = npcManager.tick()
         for (event in npcEvents) {
+            // Record NPC movement trail
+            if (event.fromRoomId != null && event.direction != null) {
+                movementTrailManager?.recordTrail(event.fromRoomId, TrailEntry(
+                    event.npcName, event.npcId, event.direction, System.currentTimeMillis(), isPlayer = false
+                ))
+            }
             // Broadcast NPC left old room
             if (event.fromRoomId != null && event.direction != null) {
                 sessionManager.broadcastToRoom(
@@ -419,6 +426,9 @@ class GameLoop(
                 } catch (_: Exception) { /* session closing */ }
             }
         }
+
+        // 7. Prune stale movement trails
+        movementTrailManager?.pruneStale()
     }
 
     /**

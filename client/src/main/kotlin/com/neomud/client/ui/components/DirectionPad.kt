@@ -19,6 +19,8 @@ import com.neomud.shared.model.Direction
 
 private val LockedContainer = Color(0xFFFFCC80) // amber/orange
 private val LockedContent = Color(0xFF6D4C00)   // dark amber
+private val TrackedContainer = Color(0xFF55AA55) // green highlight
+private val TrackedContent = Color(0xFFFFFFFF)
 
 private val BUTTON_SIZE = 40.dp
 private val SMALL_BUTTON_SIZE = 34.dp
@@ -31,7 +33,8 @@ fun DirectionPad(
     onMove: (Direction) -> Unit,
     onLook: () -> Unit,
     modifier: Modifier = Modifier,
-    lockedExits: Set<Direction> = emptySet()
+    lockedExits: Set<Direction> = emptySet(),
+    trackedDirection: Direction? = null
 ) {
     Column(
         modifier = modifier,
@@ -47,6 +50,7 @@ fun DirectionPad(
                 text = "\u2196",
                 enabled = Direction.NORTHWEST in availableExits,
                 locked = Direction.NORTHWEST in lockedExits,
+                tracked = trackedDirection == Direction.NORTHWEST,
                 onClick = { onMove(Direction.NORTHWEST) },
                 size = SMALL_BUTTON_SIZE
             )
@@ -54,12 +58,14 @@ fun DirectionPad(
                 text = "\u25B2",
                 enabled = Direction.NORTH in availableExits,
                 locked = Direction.NORTH in lockedExits,
+                tracked = trackedDirection == Direction.NORTH,
                 onClick = { onMove(Direction.NORTH) }
             )
             DPadButton(
                 text = "\u2197",
                 enabled = Direction.NORTHEAST in availableExits,
                 locked = Direction.NORTHEAST in lockedExits,
+                tracked = trackedDirection == Direction.NORTHEAST,
                 onClick = { onMove(Direction.NORTHEAST) },
                 size = SMALL_BUTTON_SIZE
             )
@@ -74,6 +80,7 @@ fun DirectionPad(
                 text = "\u25C0",
                 enabled = Direction.WEST in availableExits,
                 locked = Direction.WEST in lockedExits,
+                tracked = trackedDirection == Direction.WEST,
                 onClick = { onMove(Direction.WEST) }
             )
             DPadButton(
@@ -86,6 +93,7 @@ fun DirectionPad(
                 text = "\u25B6",
                 enabled = Direction.EAST in availableExits,
                 locked = Direction.EAST in lockedExits,
+                tracked = trackedDirection == Direction.EAST,
                 onClick = { onMove(Direction.EAST) }
             )
         }
@@ -99,6 +107,7 @@ fun DirectionPad(
                 text = "\u2199",
                 enabled = Direction.SOUTHWEST in availableExits,
                 locked = Direction.SOUTHWEST in lockedExits,
+                tracked = trackedDirection == Direction.SOUTHWEST,
                 onClick = { onMove(Direction.SOUTHWEST) },
                 size = SMALL_BUTTON_SIZE
             )
@@ -106,12 +115,14 @@ fun DirectionPad(
                 text = "\u25BC",
                 enabled = Direction.SOUTH in availableExits,
                 locked = Direction.SOUTH in lockedExits,
+                tracked = trackedDirection == Direction.SOUTH,
                 onClick = { onMove(Direction.SOUTH) }
             )
             DPadButton(
                 text = "\u2198",
                 enabled = Direction.SOUTHEAST in availableExits,
                 locked = Direction.SOUTHEAST in lockedExits,
+                tracked = trackedDirection == Direction.SOUTHEAST,
                 onClick = { onMove(Direction.SOUTHEAST) },
                 size = SMALL_BUTTON_SIZE
             )
@@ -126,6 +137,7 @@ fun DirectionPad(
                 label = "\u2B06",
                 enabled = Direction.UP in availableExits,
                 locked = Direction.UP in lockedExits,
+                tracked = trackedDirection == Direction.UP,
                 onClick = { onMove(Direction.UP) }
             )
             Spacer(modifier = Modifier.width(BUTTON_SIZE))
@@ -133,6 +145,7 @@ fun DirectionPad(
                 label = "\u2B07",
                 enabled = Direction.DOWN in availableExits,
                 locked = Direction.DOWN in lockedExits,
+                tracked = trackedDirection == Direction.DOWN,
                 onClick = { onMove(Direction.DOWN) }
             )
         }
@@ -146,6 +159,7 @@ private fun DPadButton(
     onClick: () -> Unit,
     isLook: Boolean = false,
     locked: Boolean = false,
+    tracked: Boolean = false,
     size: Dp = BUTTON_SIZE
 ) {
     FilledTonalButton(
@@ -157,12 +171,14 @@ private fun DPadButton(
         colors = ButtonDefaults.filledTonalButtonColors(
             containerColor = when {
                 isLook -> MaterialTheme.colorScheme.secondaryContainer
+                tracked -> TrackedContainer
                 locked -> LockedContainer
                 enabled -> MaterialTheme.colorScheme.primaryContainer
                 else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             },
             contentColor = when {
                 isLook -> MaterialTheme.colorScheme.onSecondaryContainer
+                tracked -> TrackedContent
                 locked -> LockedContent
                 enabled -> MaterialTheme.colorScheme.onPrimaryContainer
                 else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
@@ -182,6 +198,7 @@ private fun StairButton(
     label: String,
     enabled: Boolean,
     locked: Boolean = false,
+    tracked: Boolean = false,
     onClick: () -> Unit
 ) {
     FilledTonalButton(
@@ -192,11 +209,13 @@ private fun StairButton(
         contentPadding = PaddingValues(0.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
             containerColor = when {
+                tracked -> TrackedContainer
                 locked -> LockedContainer
                 enabled -> MaterialTheme.colorScheme.tertiaryContainer
                 else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             },
             contentColor = when {
+                tracked -> TrackedContent
                 locked -> LockedContent
                 enabled -> MaterialTheme.colorScheme.onTertiaryContainer
                 else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)

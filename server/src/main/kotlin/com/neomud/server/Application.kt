@@ -2,6 +2,7 @@ package com.neomud.server
 
 import com.neomud.server.game.CommandProcessor
 import com.neomud.server.game.GameLoop
+import com.neomud.server.game.MovementTrailManager
 import com.neomud.server.game.combat.CombatManager
 import com.neomud.server.game.commands.InventoryCommand
 import com.neomud.server.game.commands.PickupCommand
@@ -109,13 +110,15 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
         logger.info("Admin usernames: $adminUsernames")
     }
 
+    val movementTrailManager = MovementTrailManager()
+
     val commandProcessor = CommandProcessor(
         worldGraph, sessionManager, npcManager, playerRepository,
         classCatalog, itemCatalog, skillCatalog, raceCatalog, inventoryCommand, pickupCommand, roomItemManager,
         trainerCommand, spellCommand, spellCatalog, vendorCommand, lootService, lootTableCatalog,
-        inventoryRepository, adminUsernames
+        inventoryRepository, adminUsernames, movementTrailManager
     )
-    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository, skillCatalog, classCatalog)
+    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository, skillCatalog, classCatalog, movementTrailManager)
 
     // Install plugins
     configureWebSockets()
