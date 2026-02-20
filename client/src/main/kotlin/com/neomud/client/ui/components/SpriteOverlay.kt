@@ -6,11 +6,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -21,11 +26,15 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.crossfade
+import com.neomud.client.ui.theme.StoneTheme
+import com.neomud.shared.model.CharacterClassDef
 import com.neomud.shared.model.Coins
 import com.neomud.shared.model.GroundItem
 import com.neomud.shared.model.Item
 import com.neomud.shared.model.Npc
 import com.neomud.shared.model.PlayerInfo
+import com.neomud.shared.model.SpellDef
+import com.neomud.shared.model.TargetType
 
 private val SelectedGlow = Color(0xFFFF3333)
 
@@ -64,10 +73,26 @@ fun SpriteOverlay(
     onPlayerLongPress: ((PlayerInfo) -> Unit)? = null,
     readiedSpellId: String? = null,
     onCastSpell: ((String, String) -> Unit)? = null,
+    spellSlots: List<String?> = emptyList(),
+    spellCatalog: Map<String, SpellDef> = emptyMap(),
+    classCatalog: Map<String, CharacterClassDef> = emptyMap(),
+    playerCharacterClass: String? = null,
+    onAttackTarget: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val serverBaseUrl = LocalServerBaseUrl.current
+    val contextMenuNpcId = remember { mutableStateOf<String?>(null) }
+
     Box(modifier = modifier.fillMaxSize()) {
+        // Dismiss scrim when context menu is showing
+        if (contextMenuNpcId.value != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { contextMenuNpcId.value = null }
+            )
+        }
+
         val allEntities = (npcs.map { RoomEntity.NpcEntity(it) } +
                 players.map { RoomEntity.PcEntity(it) }).take(8)
 
@@ -101,6 +126,12 @@ fun SpriteOverlay(
                             onPlayerLongPress = onPlayerLongPress,
                             readiedSpellId = readiedSpellId,
                             onCastSpell = onCastSpell,
+                            contextMenuNpcId = contextMenuNpcId,
+                            spellSlots = spellSlots,
+                            spellCatalog = spellCatalog,
+                            classCatalog = classCatalog,
+                            playerCharacterClass = playerCharacterClass,
+                            onAttackTarget = onAttackTarget,
                             scale = 0.9f,
                             modifier = Modifier
                                 .weight(1f, fill = false)
@@ -133,6 +164,12 @@ fun SpriteOverlay(
                             onPlayerLongPress = onPlayerLongPress,
                             readiedSpellId = readiedSpellId,
                             onCastSpell = onCastSpell,
+                            contextMenuNpcId = contextMenuNpcId,
+                            spellSlots = spellSlots,
+                            spellCatalog = spellCatalog,
+                            classCatalog = classCatalog,
+                            playerCharacterClass = playerCharacterClass,
+                            onAttackTarget = onAttackTarget,
                             scale = 1.0f,
                             modifier = Modifier
                                 .weight(1f, fill = false)
@@ -219,6 +256,12 @@ private fun EntitySprite(
     onPlayerLongPress: ((PlayerInfo) -> Unit)?,
     readiedSpellId: String?,
     onCastSpell: ((String, String) -> Unit)?,
+    contextMenuNpcId: MutableState<String?>,
+    spellSlots: List<String?>,
+    spellCatalog: Map<String, SpellDef>,
+    classCatalog: Map<String, CharacterClassDef>,
+    playerCharacterClass: String?,
+    onAttackTarget: ((String) -> Unit)?,
     scale: Float,
     modifier: Modifier = Modifier
 ) {
@@ -226,6 +269,7 @@ private fun EntitySprite(
         is RoomEntity.NpcEntity -> {
             val npc = entity.npc
             val isSelected = npc.id == selectedTargetId
+            val showContextMenu = contextMenuNpcId.value == npc.id
             Box(
                 modifier = modifier
                     .then(
@@ -233,17 +277,45 @@ private fun EntitySprite(
                             2.dp, SelectedGlow, RoundedCornerShape(4.dp)
                         ) else Modifier
                     )
-                    .clickable(enabled = npc.hostile) {
-                        if (npc.hostile) {
-                            if (readiedSpellId != null && onCastSpell != null) {
-                                onCastSpell(readiedSpellId, npc.id)
-                            } else {
-                                onSelectTarget(if (isSelected) null else npc.id)
+                    .combinedClickable(
+                        enabled = npc.hostile,
+                        onClick = {
+                            if (npc.hostile) {
+                                if (readiedSpellId != null && onCastSpell != null) {
+                                    onCastSpell(readiedSpellId, npc.id)
+                                } else {
+                                    onSelectTarget(if (isSelected) null else npc.id)
+                                }
+                            }
+                        },
+                        onLongClick = {
+                            if (npc.hostile) {
+                                contextMenuNpcId.value = npc.id
                             }
                         }
-                    },
+                    ),
                 contentAlignment = Alignment.BottomCenter
             ) {
+                // Context menu above sprite
+                if (showContextMenu) {
+                    NpcContextMenu(
+                        npcId = npc.id,
+                        spellSlots = spellSlots,
+                        spellCatalog = spellCatalog,
+                        classCatalog = classCatalog,
+                        playerCharacterClass = playerCharacterClass,
+                        onAttackTarget = {
+                            onAttackTarget?.invoke(npc.id)
+                            contextMenuNpcId.value = null
+                        },
+                        onCastSpell = { spellId ->
+                            onCastSpell?.invoke(spellId, npc.id)
+                            contextMenuNpcId.value = null
+                        },
+                        modifier = Modifier.align(Alignment.TopCenter)
+                    )
+                }
+
                 AsyncImage(
                     model = coil3.request.ImageRequest.Builder(context)
                         .data(spriteUrl(serverBaseUrl, npc.id))
@@ -295,6 +367,94 @@ private fun EntitySprite(
                     modifier = Modifier
                         .background(Color(0xAA000000), RoundedCornerShape(3.dp))
                         .padding(horizontal = 4.dp, vertical = 1.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Returns the list of targetable spells from the player's spell slots
+ * that belong to the player's class magic schools. Self-only spells are
+ * excluded since they don't accept a target; everything else (heals,
+ * damage, buffs that target another entity) is included.
+ */
+internal fun targetableSlottedSpells(
+    spellSlots: List<String?>,
+    spellCatalog: Map<String, SpellDef>,
+    classCatalog: Map<String, CharacterClassDef>,
+    playerCharacterClass: String?
+): List<SpellDef> {
+    val classDef = playerCharacterClass?.let { classCatalog[it] }
+    val classSchools = classDef?.magicSchools?.keys ?: emptySet()
+    return spellSlots
+        .filterNotNull()
+        .distinct()
+        .mapNotNull { spellCatalog[it] }
+        .filter { it.targetType != TargetType.SELF && it.school in classSchools }
+}
+
+private fun schoolColor(school: String): Color = when (school) {
+    "mage" -> Color(0xFF5599FF)
+    "priest" -> Color(0xFFFFDD44)
+    "druid" -> Color(0xFF55CC55)
+    "kai" -> Color(0xFFFF7744)
+    "bard" -> Color(0xFFCC77FF)
+    else -> Color(0xFF9B59FF)
+}
+
+@Composable
+private fun NpcContextMenu(
+    npcId: String,
+    spellSlots: List<String?>,
+    spellCatalog: Map<String, SpellDef>,
+    classCatalog: Map<String, CharacterClassDef>,
+    playerCharacterClass: String?,
+    onAttackTarget: () -> Unit,
+    onCastSpell: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val offensiveSpells = targetableSlottedSpells(
+        spellSlots, spellCatalog, classCatalog, playerCharacterClass
+    )
+
+    val stoneBg = Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark))
+
+    Row(
+        modifier = modifier
+            .background(Color(0xCC1a1a2e.toInt()), RoundedCornerShape(6.dp))
+            .padding(horizontal = 4.dp, vertical = 3.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Attack button (always present)
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .background(stoneBg, CircleShape)
+                .border(1.dp, StoneTheme.frameMid, CircleShape)
+                .clickable { onAttackTarget() },
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "\u2694\uFE0F", fontSize = 14.sp)
+        }
+
+        // Offensive spell buttons
+        offensiveSpells.forEach { spell ->
+            val color = schoolColor(spell.school)
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(stoneBg, CircleShape)
+                    .border(1.dp, color.copy(alpha = 0.7f), CircleShape)
+                    .clickable { onCastSpell(spell.id) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = spell.name.take(2),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = color
                 )
             }
         }

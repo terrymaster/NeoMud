@@ -611,6 +611,11 @@ class GameViewModel(
         }
     }
 
+    fun attackTarget(npcId: String) {
+        selectTarget(npcId)
+        toggleAttackMode(true)
+    }
+
     fun toggleInventory() {
         _showInventory.value = !_showInventory.value
         if (_showInventory.value) {

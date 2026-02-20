@@ -398,6 +398,11 @@ private fun GameScreenPortrait(
                 onPlayerLongPress = onPlayerLongPress,
                 readiedSpellId = readiedSpellId,
                 onCastSpell = { spellId, targetId -> gameViewModel.castSpell(spellId, targetId) },
+                spellSlots = spellSlots,
+                spellCatalog = spellCatalogState,
+                classCatalog = classCatalog,
+                playerCharacterClass = player?.characterClass,
+                onAttackTarget = { gameViewModel.attackTarget(it) },
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -598,6 +603,11 @@ private fun GameScreenLandscape(
                     onPlayerLongPress = onPlayerLongPress,
                     readiedSpellId = readiedSpellId,
                     onCastSpell = { spellId, targetId -> gameViewModel.castSpell(spellId, targetId) },
+                    spellSlots = spellSlots,
+                    spellCatalog = spellCatalogState,
+                    classCatalog = classCatalog,
+                    playerCharacterClass = player?.characterClass,
+                    onAttackTarget = { gameViewModel.attackTarget(it) },
                     modifier = Modifier.fillMaxSize()
                 )
 
