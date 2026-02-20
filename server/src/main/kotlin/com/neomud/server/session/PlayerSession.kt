@@ -19,6 +19,18 @@ class PlayerSession(
     var isMeditating: Boolean = false
     var godMode: Boolean = false
     val skillCooldowns: MutableMap<String, Int> = mutableMapOf()
+    val discoveredHiddenExits: MutableSet<String> = mutableSetOf()
+
+    fun hasDiscoveredExit(roomId: RoomId, direction: Direction): Boolean =
+        "$roomId:$direction" in discoveredHiddenExits
+
+    fun discoverExit(roomId: RoomId, direction: Direction) {
+        discoveredHiddenExits.add("$roomId:$direction")
+    }
+
+    fun forgetExit(roomId: RoomId, direction: Direction) {
+        discoveredHiddenExits.remove("$roomId:$direction")
+    }
 
     // Rate limiting (token bucket)
     private var messageTokens: Double = BURST_CAPACITY.toDouble()

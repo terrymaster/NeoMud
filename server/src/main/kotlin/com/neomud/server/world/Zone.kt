@@ -28,6 +28,14 @@ data class ZoneData(
 )
 
 @Serializable
+data class HiddenExitData(
+    val perceptionDC: Int,
+    val lockDifficulty: Int = 0,
+    val hiddenResetTicks: Int = 0,
+    val lockResetTicks: Int = 0
+)
+
+@Serializable
 data class RoomData(
     val id: RoomId,
     val name: String,
@@ -41,6 +49,8 @@ data class RoomData(
     val bgm: String = "",
     val departSound: String = "",
     val lockedExits: Map<Direction, Int> = emptyMap(),
+    val lockResetTicks: Map<Direction, Int> = emptyMap(),
+    val hiddenExits: Map<Direction, HiddenExitData> = emptyMap(),
     val imagePrompt: String = "",
     val imageStyle: String = "",
     val imageNegativePrompt: String = "",

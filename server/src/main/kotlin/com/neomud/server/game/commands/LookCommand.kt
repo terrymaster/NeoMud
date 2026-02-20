@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.RoomFilter
 import com.neomud.server.game.StealthUtils
 
 import com.neomud.server.game.inventory.RoomItemManager
@@ -30,11 +31,19 @@ class LookCommand(
 
         val playerName = session.playerName!!
         val player = session.player
+
+        // Passive perception check for hidden exits before sending room info
+        if (player != null) {
+            checkHiddenExits(session, currentRoomId)
+        }
+
+        val filteredRoom = RoomFilter.forPlayer(room, session, worldGraph)
+
         val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(currentRoomId)
             .filter { it.name != playerName }
         val npcsInRoom = npcManager.getNpcsInRoom(currentRoomId)
 
-        session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
+        session.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
 
         val mapRooms = worldGraph.getRoomsNear(currentRoomId).map { mapRoom ->
             mapRoom.copy(
@@ -69,6 +78,25 @@ class LookCommand(
                         session.send(ServerMessage.SystemMessage("Your keen eyes spot ${hiddenPlayer.name} lurking in the shadows!"))
                     }
                 }
+            }
+        }
+    }
+
+    private suspend fun checkHiddenExits(session: PlayerSession, roomId: String) {
+        val player = session.player ?: return
+        val hiddenDefs = worldGraph.getHiddenExitDefs(roomId)
+        if (hiddenDefs.isEmpty()) return
+
+        val effStats = session.effectiveStats()
+        val bonus = StealthUtils.perceptionBonus(player.characterClass, classCatalog)
+        val roll = effStats.willpower + effStats.intellect / 2 + player.level / 2 + bonus + (1..20).random()
+
+        for ((dir, data) in hiddenDefs) {
+            if (session.hasDiscoveredExit(roomId, dir)) continue
+            if (roll >= data.perceptionDC) {
+                session.discoverExit(roomId, dir)
+                worldGraph.revealHiddenExit(roomId, dir)
+                session.send(ServerMessage.SystemMessage("You notice a hidden passage to the ${dir.name.lowercase()}!"))
             }
         }
     }

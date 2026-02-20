@@ -71,6 +71,8 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
           exits[exit.direction] = exit.toRoomId
         }
         const lockedExits = parseJsonField(room.lockedExits, {})
+        const lockResetTicks = parseJsonField(room.lockResetTicks, {})
+        const hiddenExits = parseJsonField(room.hiddenExits, {})
         return {
           id: room.id,
           name: room.name,
@@ -90,6 +92,8 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
           imageHeight: room.imageHeight,
           exits,
           ...(Object.keys(lockedExits).length > 0 ? { lockedExits } : {}),
+          ...(Object.keys(lockResetTicks).length > 0 ? { lockResetTicks } : {}),
+          ...(Object.keys(hiddenExits).length > 0 ? { hiddenExits } : {}),
         }
       }),
       npcs: zoneNpcs.map((npc) => ({
@@ -361,6 +365,8 @@ exportRouter.get('/json', async (_req, res) => {
           exits[exit.direction] = exit.toRoomId
         }
         const lockedExits = parseJsonField(room.lockedExits, {})
+        const lockResetTicks = parseJsonField(room.lockResetTicks, {})
+        const hiddenExits = parseJsonField(room.hiddenExits, {})
         roomsOut[room.id] = {
           name: room.name,
           description: room.description,
@@ -377,6 +383,8 @@ exportRouter.get('/json', async (_req, res) => {
           imageHeight: room.imageHeight,
           exits,
           ...(Object.keys(lockedExits).length > 0 ? { lockedExits } : {}),
+          ...(Object.keys(lockResetTicks).length > 0 ? { lockResetTicks } : {}),
+          ...(Object.keys(hiddenExits).length > 0 ? { hiddenExits } : {}),
         }
       }
 

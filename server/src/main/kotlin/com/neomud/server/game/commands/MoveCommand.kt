@@ -1,6 +1,7 @@
 package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.RoomFilter
 import com.neomud.server.game.StealthUtils
 
 import com.neomud.server.game.inventory.RoomItemManager
@@ -34,6 +35,13 @@ class MoveCommand(
 
         if (currentRoom == null) {
             session.send(ServerMessage.MoveError("You are in an invalid location."))
+            return
+        }
+
+        // Check if exit is hidden and player hasn't discovered it
+        val hiddenDefs = worldGraph.getHiddenExitDefs(currentRoomId)
+        if (direction in hiddenDefs && !session.hasDiscoveredExit(currentRoomId, direction)) {
+            session.send(ServerMessage.MoveError("You cannot go ${direction.name.lowercase()}."))
             return
         }
 
@@ -152,12 +160,20 @@ class MoveCommand(
             }
         }
 
-        // Send MoveOk + MapData to the player
+        // Passive perception check for hidden exits in new room
+        if (player != null) {
+            checkHiddenExits(session, targetRoomId)
+        }
+
+        // Send MoveOk + MapData to the player (filtered for hidden exits)
+        val filteredTargetRoom = RoomFilter.forPlayer(
+            worldGraph.getRoom(targetRoomId) ?: targetRoom, session, worldGraph
+        )
         val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(targetRoomId)
             .filter { it.name != playerName }
         val npcsInRoom = npcManager.getNpcsInRoom(targetRoomId)
 
-        session.send(ServerMessage.MoveOk(direction, targetRoom, playersInRoom, npcsInRoom))
+        session.send(ServerMessage.MoveOk(direction, filteredTargetRoom, playersInRoom, npcsInRoom))
 
         val mapRooms = worldGraph.getRoomsNear(targetRoomId).map { mapRoom ->
             mapRoom.copy(
@@ -188,6 +204,25 @@ class MoveCommand(
                         // Fire-and-forget
                     }
                 }
+            }
+        }
+    }
+
+    private suspend fun checkHiddenExits(session: PlayerSession, roomId: String) {
+        val player = session.player ?: return
+        val hiddenDefs = worldGraph.getHiddenExitDefs(roomId)
+        if (hiddenDefs.isEmpty()) return
+
+        val effStats = session.effectiveStats()
+        val bonus = StealthUtils.perceptionBonus(player.characterClass, classCatalog)
+        val roll = effStats.willpower + effStats.intellect / 2 + player.level / 2 + bonus + (1..20).random()
+
+        for ((dir, data) in hiddenDefs) {
+            if (session.hasDiscoveredExit(roomId, dir)) continue
+            if (roll >= data.perceptionDC) {
+                session.discoverExit(roomId, dir)
+                worldGraph.revealHiddenExit(roomId, dir)
+                session.send(ServerMessage.SystemMessage("You notice a hidden passage to the ${dir.name.lowercase()}!"))
             }
         }
     }

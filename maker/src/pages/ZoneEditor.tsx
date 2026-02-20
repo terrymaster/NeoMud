@@ -41,12 +41,21 @@ interface Room {
   departSound: string;
   effects: string;
   lockedExits: string;
+  lockResetTicks: string;
+  hiddenExits: string;
   imagePrompt: string;
   imageStyle: string;
   imageNegativePrompt: string;
   imageWidth: number;
   imageHeight: number;
   exits: Exit[];
+}
+
+interface HiddenExitData {
+  perceptionDC: number;
+  lockDifficulty: number;
+  hiddenResetTicks: number;
+  lockResetTicks: number;
 }
 
 interface ZoneWithRooms extends Zone {
@@ -349,14 +358,41 @@ function ZoneEditor() {
   );
 
   const filteredExits = useMemo(
-    () => allExits.filter(
-      (e) =>
-        layerRoomIds.has(e.fromRoomId) &&
-        layerRoomIds.has(e.toRoomId) &&
-        e.direction !== 'UP' &&
-        e.direction !== 'DOWN'
-    ),
-    [allExits, layerRoomIds]
+    () => {
+      // Build lookup maps for locked/hidden status per room
+      const roomById = new Map(rooms.map((r) => [r.id, r]));
+      return allExits
+        .filter(
+          (e) =>
+            layerRoomIds.has(e.fromRoomId) &&
+            layerRoomIds.has(e.toRoomId) &&
+            e.direction !== 'UP' &&
+            e.direction !== 'DOWN'
+        )
+        .map((e) => {
+          const room = roomById.get(e.fromRoomId);
+          let isLocked = false;
+          let isHidden = false;
+          if (room) {
+            try {
+              const locked: Record<string, number> = JSON.parse(room.lockedExits || '{}');
+              isLocked = e.direction in locked;
+            } catch {}
+            try {
+              const hidden: Record<string, any> = JSON.parse(room.hiddenExits || '{}');
+              if (e.direction in hidden) {
+                isHidden = true;
+                // Hidden exits store their own lockDifficulty (not in lockedExits)
+                if (hidden[e.direction]?.lockDifficulty > 0) {
+                  isLocked = true;
+                }
+              }
+            } catch {}
+          }
+          return { ...e, isLocked, isHidden };
+        });
+    },
+    [allExits, layerRoomIds, rooms]
   );
 
   // Vertical exit indicators for rooms on the current layer
@@ -900,80 +936,112 @@ function ZoneEditor() {
                   const lockedMap: Record<string, number> = (() => {
                     try { return JSON.parse(roomForm.lockedExits || '{}'); } catch { return {}; }
                   })();
+                  const resetMap: Record<string, number> = (() => {
+                    try { return JSON.parse(roomForm.lockResetTicks || '{}'); } catch { return {}; }
+                  })();
+                  const hiddenMap: Record<string, HiddenExitData> = (() => {
+                    try { return JSON.parse(roomForm.hiddenExits || '{}'); } catch { return {}; }
+                  })();
                   const lockDc = lockedMap[exit.direction] ?? 0;
+                  const resetTicks = resetMap[exit.direction] ?? 0;
+                  const isHidden = exit.direction in hiddenMap;
                   return (
                     <div
                       key={exit.direction}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
                         padding: '4px 8px',
-                        backgroundColor: lockDc > 0 ? '#fff8e1' : '#f5f5f5',
+                        backgroundColor: isHidden ? '#e8f5e9' : lockDc > 0 ? '#fff8e1' : '#f5f5f5',
                         borderRadius: 4,
                         fontSize: 12,
-                        gap: 4,
                       }}
                     >
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <strong>{exit.direction}</strong>{' '}
-                        <span style={{ color: '#666' }}>
-                          {targetRoom ? targetRoom.name : exit.toRoomId}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <strong>{exit.direction}</strong>{' '}
+                          <span style={{ color: '#666' }}>
+                            {targetRoom ? targetRoom.name : exit.toRoomId}
+                          </span>
+                          {isHidden && <span style={{ color: '#388e3c', fontSize: 10, marginLeft: 4 }}>(hidden)</span>}
                         </span>
-                      </span>
-                      <button
-                        onClick={() => {
-                          const updated = { ...lockedMap };
-                          if (lockDc > 0) {
-                            delete updated[exit.direction];
-                          } else {
-                            updated[exit.direction] = 10;
-                          }
-                          setRoomForm((f) => ({ ...f, lockedExits: JSON.stringify(updated) }));
-                        }}
-                        title={lockDc > 0 ? 'Remove lock' : 'Add lock'}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: 14,
-                          padding: '0 2px',
-                          color: lockDc > 0 ? '#e65100' : '#bbb',
-                        }}
-                      >
-                        {lockDc > 0 ? '\uD83D\uDD12' : '\uD83D\uDD13'}
-                      </button>
-                      {lockDc > 0 && (
-                        <input
-                          type="number"
-                          title="Lock DC"
-                          value={lockDc}
-                          min={1}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 0;
+                        <button
+                          onClick={() => {
                             const updated = { ...lockedMap };
-                            if (val > 0) updated[exit.direction] = val;
-                            else delete updated[exit.direction];
-                            setRoomForm((f) => ({ ...f, lockedExits: JSON.stringify(updated) }));
+                            if (lockDc > 0) {
+                              delete updated[exit.direction];
+                              // Also remove reset ticks
+                              const updReset = { ...resetMap };
+                              delete updReset[exit.direction];
+                              setRoomForm((f) => ({ ...f, lockedExits: JSON.stringify(updated), lockResetTicks: JSON.stringify(updReset) }));
+                            } else {
+                              updated[exit.direction] = 10;
+                              setRoomForm((f) => ({ ...f, lockedExits: JSON.stringify(updated) }));
+                            }
                           }}
-                          style={{ width: 40, padding: '2px 4px', fontSize: 11, border: '1px solid #ccc', borderRadius: 3, textAlign: 'center' as const }}
-                        />
+                          title={lockDc > 0 ? 'Remove lock' : 'Add lock'}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: 14,
+                            padding: '0 2px',
+                            color: lockDc > 0 ? '#e65100' : '#bbb',
+                          }}
+                        >
+                          {lockDc > 0 ? '\uD83D\uDD12' : '\uD83D\uDD13'}
+                        </button>
+                        {lockDc > 0 && (
+                          <input
+                            type="number"
+                            title="Lock DC"
+                            value={lockDc}
+                            min={1}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0;
+                              const updated = { ...lockedMap };
+                              if (val > 0) updated[exit.direction] = val;
+                              else delete updated[exit.direction];
+                              setRoomForm((f) => ({ ...f, lockedExits: JSON.stringify(updated) }));
+                            }}
+                            style={{ width: 40, padding: '2px 4px', fontSize: 11, border: '1px solid #ccc', borderRadius: 3, textAlign: 'center' as const }}
+                          />
+                        )}
+                        <button
+                          onClick={() => handleDeleteExit(selectedRoomId!, exit.direction)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#d32f2f',
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            fontSize: 14,
+                            padding: '0 4px',
+                          }}
+                          title="Delete exit"
+                        >
+                          x
+                        </button>
+                      </div>
+                      {/* Lock reset ticks (shown when locked) */}
+                      {lockDc > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2, marginLeft: 8 }}>
+                          <span style={{ fontSize: 10, color: '#888' }}>Re-lock after</span>
+                          <input
+                            type="number"
+                            title="Lock reset ticks (0 = permanent unlock)"
+                            value={resetTicks}
+                            min={0}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0;
+                              const updated = { ...resetMap };
+                              if (val > 0) updated[exit.direction] = val;
+                              else delete updated[exit.direction];
+                              setRoomForm((f) => ({ ...f, lockResetTicks: JSON.stringify(updated) }));
+                            }}
+                            style={{ width: 40, padding: '2px 4px', fontSize: 10, border: '1px solid #ccc', borderRadius: 3, textAlign: 'center' as const }}
+                          />
+                          <span style={{ fontSize: 10, color: '#888' }}>ticks</span>
+                        </div>
                       )}
-                      <button
-                        onClick={() => handleDeleteExit(selectedRoomId!, exit.direction)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#d32f2f',
-                          cursor: 'pointer',
-                          fontWeight: 700,
-                          fontSize: 14,
-                          padding: '0 4px',
-                        }}
-                        title="Delete exit"
-                      >
-                        x
-                      </button>
                     </div>
                   );
                 })}
@@ -983,6 +1051,124 @@ function ZoneEditor() {
                 No exits. Drag on the map or use the form below to add one.
               </div>
             )}
+
+            {/* Hidden Exits section */}
+            <div style={{ ...styles.sectionTitle, marginTop: 16 }}>Hidden Exits</div>
+            {(() => {
+              const hiddenMap: Record<string, HiddenExitData> = (() => {
+                try { return JSON.parse(roomForm.hiddenExits || '{}'); } catch { return {}; }
+              })();
+              const updateHidden = (updated: Record<string, HiddenExitData>) =>
+                setRoomForm((f) => ({ ...f, hiddenExits: JSON.stringify(updated) }));
+              const exitDirs = selectedRoom.exits?.map((e) => e.direction) || [];
+              const hiddenDirs = Object.keys(hiddenMap);
+
+              return (
+                <>
+                  {hiddenDirs.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {hiddenDirs.map((dir) => {
+                        const data = hiddenMap[dir];
+                        return (
+                          <div key={dir} style={{ padding: '6px 8px', backgroundColor: '#e8f5e9', borderRadius: 4, border: '1px solid #c8e6c9' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <strong style={{ fontSize: 12 }}>{dir}</strong>
+                              <button
+                                onClick={() => {
+                                  const updated = { ...hiddenMap };
+                                  delete updated[dir];
+                                  updateHidden(updated);
+                                }}
+                                style={{ background: 'none', border: 'none', color: '#d32f2f', cursor: 'pointer', fontWeight: 700, fontSize: 14, padding: '0 4px' }}
+                                title="Remove hidden exit"
+                              >x</button>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 10 }}>
+                              <div>
+                                <label style={{ color: '#666' }}>Perception DC</label>
+                                <input
+                                  type="number"
+                                  value={data.perceptionDC}
+                                  min={1}
+                                  onChange={(e) => {
+                                    const updated = { ...hiddenMap, [dir]: { ...data, perceptionDC: parseInt(e.target.value) || 0 } };
+                                    updateHidden(updated);
+                                  }}
+                                  style={{ width: '100%', padding: '2px 4px', fontSize: 11, border: '1px solid #ccc', borderRadius: 3, boxSizing: 'border-box' as const }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ color: '#666' }}>Lock DC</label>
+                                <input
+                                  type="number"
+                                  value={data.lockDifficulty}
+                                  min={0}
+                                  onChange={(e) => {
+                                    const updated = { ...hiddenMap, [dir]: { ...data, lockDifficulty: parseInt(e.target.value) || 0 } };
+                                    updateHidden(updated);
+                                  }}
+                                  style={{ width: '100%', padding: '2px 4px', fontSize: 11, border: '1px solid #ccc', borderRadius: 3, boxSizing: 'border-box' as const }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ color: '#666' }}>Re-hide ticks</label>
+                                <input
+                                  type="number"
+                                  value={data.hiddenResetTicks}
+                                  min={0}
+                                  onChange={(e) => {
+                                    const updated = { ...hiddenMap, [dir]: { ...data, hiddenResetTicks: parseInt(e.target.value) || 0 } };
+                                    updateHidden(updated);
+                                  }}
+                                  style={{ width: '100%', padding: '2px 4px', fontSize: 11, border: '1px solid #ccc', borderRadius: 3, boxSizing: 'border-box' as const }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ color: '#666' }}>Re-lock ticks</label>
+                                <input
+                                  type="number"
+                                  value={data.lockResetTicks}
+                                  min={0}
+                                  onChange={(e) => {
+                                    const updated = { ...hiddenMap, [dir]: { ...data, lockResetTicks: parseInt(e.target.value) || 0 } };
+                                    updateHidden(updated);
+                                  }}
+                                  style={{ width: '100%', padding: '2px 4px', fontSize: 11, border: '1px solid #ccc', borderRadius: 3, boxSizing: 'border-box' as const }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>
+                      No hidden exits. Mark an existing exit as hidden below.
+                    </div>
+                  )}
+                  {/* Toggle: mark an existing exit as hidden */}
+                  {exitDirs.filter((d) => !hiddenDirs.includes(d)).length > 0 && (
+                    <div style={{ marginTop: 4 }}>
+                      <select
+                        style={{ ...styles.input, fontSize: 11 }}
+                        value=""
+                        onChange={(e) => {
+                          const dir = e.target.value;
+                          if (!dir) return;
+                          const updated = { ...hiddenMap, [dir]: { perceptionDC: 15, lockDifficulty: 0, hiddenResetTicks: 0, lockResetTicks: 0 } };
+                          updateHidden(updated);
+                        }}
+                      >
+                        <option value="">-- Mark exit as hidden --</option>
+                        {exitDirs.filter((d) => !hiddenDirs.includes(d)).map((d) => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {/* Add Exit form */}
             <div style={{ marginTop: 12, padding: '10px', backgroundColor: '#f9f9f9', borderRadius: 4, border: '1px solid #eee' }}>

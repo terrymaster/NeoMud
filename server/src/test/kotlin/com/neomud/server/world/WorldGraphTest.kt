@@ -6,6 +6,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 class WorldGraphTest {
 
@@ -76,5 +78,155 @@ class WorldGraphTest {
     fun testRoomCount() {
         val graph = buildTestWorld()
         assertEquals(5, graph.roomCount)
+    }
+
+    // --- Lock reset timer tests ---
+
+    @Test
+    fun testUnlockExitStartsResetTimer() {
+        val graph = WorldGraph()
+        graph.addRoom(Room(
+            "r1", "Room 1", "desc",
+            mapOf(Direction.NORTH to "r2"), "zone", 0, 0,
+            lockedExits = mapOf(Direction.NORTH to 15)
+        ))
+        graph.addRoom(Room("r2", "Room 2", "desc", mapOf(Direction.SOUTH to "r1"), "zone", 0, 1))
+        graph.setOriginalLockedExits("r1", mapOf(Direction.NORTH to 15))
+        graph.setLockResetDurations("r1", mapOf(Direction.NORTH to 3))
+
+        // Unlock
+        graph.unlockExit("r1", Direction.NORTH)
+        val room = graph.getRoom("r1")!!
+        assertTrue(room.lockedExits.isEmpty(), "Exit should be unlocked")
+
+        // Tick 1
+        var events = graph.tickResetTimers()
+        assertTrue(events.isEmpty())
+
+        // Tick 2
+        events = graph.tickResetTimers()
+        assertTrue(events.isEmpty())
+
+        // Tick 3 — should re-lock
+        events = graph.tickResetTimers()
+        assertEquals(1, events.size)
+        val relock = events[0] as ExitResetEvent.Relocked
+        assertEquals("r1", relock.roomId)
+        assertEquals(Direction.NORTH, relock.direction)
+        assertEquals(15, relock.difficulty)
+
+        val roomAfter = graph.getRoom("r1")!!
+        assertEquals(15, roomAfter.lockedExits[Direction.NORTH])
+    }
+
+    @Test
+    fun testHiddenExitRevealAndRehide() {
+        val graph = WorldGraph()
+        graph.addRoom(Room(
+            "r1", "Room 1", "desc",
+            mapOf(Direction.WEST to "r2"), "zone", 0, 0
+        ))
+        graph.addRoom(Room("r2", "Room 2", "desc", mapOf(Direction.EAST to "r1"), "zone", -1, 0))
+
+        val hiddenData = HiddenExitData(perceptionDC = 15, hiddenResetTicks = 2)
+        graph.setHiddenExitDefs("r1", mapOf(Direction.WEST to hiddenData))
+
+        // Initially hidden
+        assertTrue(graph.isExitCurrentlyHidden("r1", Direction.WEST))
+
+        // Reveal
+        graph.revealHiddenExit("r1", Direction.WEST)
+        assertFalse(graph.isExitCurrentlyHidden("r1", Direction.WEST))
+
+        // Tick 1
+        var events = graph.tickResetTimers()
+        assertTrue(events.isEmpty())
+
+        // Tick 2 — should re-hide
+        events = graph.tickResetTimers()
+        assertEquals(1, events.size)
+        val rehide = events[0] as ExitResetEvent.Rehidden
+        assertEquals("r1", rehide.roomId)
+        assertEquals(Direction.WEST, rehide.direction)
+
+        // Should be hidden again
+        assertTrue(graph.isExitCurrentlyHidden("r1", Direction.WEST))
+    }
+
+    @Test
+    fun testPermanentReveal() {
+        val graph = WorldGraph()
+        graph.addRoom(Room(
+            "r1", "Room 1", "desc",
+            mapOf(Direction.WEST to "r2"), "zone", 0, 0
+        ))
+        graph.addRoom(Room("r2", "Room 2", "desc", mapOf(Direction.EAST to "r1"), "zone", -1, 0))
+
+        val hiddenData = HiddenExitData(perceptionDC = 15, hiddenResetTicks = 0) // permanent
+        graph.setHiddenExitDefs("r1", mapOf(Direction.WEST to hiddenData))
+
+        graph.revealHiddenExit("r1", Direction.WEST)
+        assertFalse(graph.isExitCurrentlyHidden("r1", Direction.WEST))
+
+        // Tick many times — should never re-hide
+        repeat(10) {
+            val events = graph.tickResetTimers()
+            assertTrue(events.none { it is ExitResetEvent.Rehidden })
+        }
+        assertFalse(graph.isExitCurrentlyHidden("r1", Direction.WEST))
+    }
+
+    @Test
+    fun testHiddenLockedExitFullLifecycle() {
+        val graph = WorldGraph()
+        graph.addRoom(Room(
+            "r1", "Room 1", "desc",
+            mapOf(Direction.WEST to "r2"), "zone", 0, 0,
+            lockedExits = mapOf(Direction.WEST to 12)
+        ))
+        graph.addRoom(Room("r2", "Room 2", "desc", mapOf(Direction.EAST to "r1"), "zone", -1, 0))
+
+        val hiddenData = HiddenExitData(
+            perceptionDC = 18,
+            lockDifficulty = 12,
+            hiddenResetTicks = 4,
+            lockResetTicks = 2
+        )
+        graph.setHiddenExitDefs("r1", mapOf(Direction.WEST to hiddenData))
+        graph.setOriginalLockedExits("r1", mapOf(Direction.WEST to 12))
+
+        // Reveal hidden exit
+        graph.revealHiddenExit("r1", Direction.WEST)
+        assertFalse(graph.isExitCurrentlyHidden("r1", Direction.WEST))
+
+        // Unlock the lock
+        graph.unlockExit("r1", Direction.WEST)
+        assertTrue(graph.getRoom("r1")!!.lockedExits.isEmpty())
+
+        // Tick 1 — nothing yet
+        var events = graph.tickResetTimers()
+        assertTrue(events.isEmpty())
+
+        // Tick 2 — lock re-locks (lockResetTicks=2)
+        events = graph.tickResetTimers()
+        assertEquals(1, events.size)
+        assertTrue(events[0] is ExitResetEvent.Relocked)
+        assertEquals(12, graph.getRoom("r1")!!.lockedExits[Direction.WEST])
+
+        // Tick 3 — nothing
+        events = graph.tickResetTimers()
+        assertTrue(events.isEmpty())
+
+        // Tick 4 — hidden exit re-hides (hiddenResetTicks=4)
+        events = graph.tickResetTimers()
+        assertEquals(1, events.size)
+        assertTrue(events[0] is ExitResetEvent.Rehidden)
+        assertTrue(graph.isExitCurrentlyHidden("r1", Direction.WEST))
+    }
+
+    @Test
+    fun testIsExitCurrentlyHiddenForNonHiddenExit() {
+        val graph = buildTestWorld()
+        assertFalse(graph.isExitCurrentlyHidden("town:square", Direction.NORTH))
     }
 }

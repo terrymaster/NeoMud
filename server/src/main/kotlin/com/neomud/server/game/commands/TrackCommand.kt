@@ -36,10 +36,37 @@ class TrackCommand(
         val result = bfsForNpcs(roomId, maxDepth = 5)
         if (result == null) {
             session.send(ServerMessage.SystemMessage("You don't detect anything nearby."))
-            return
+        } else {
+            session.send(ServerMessage.SystemMessage("You sense creatures to the ${result.name}."))
         }
 
-        session.send(ServerMessage.SystemMessage("You sense creatures to the ${result.name}."))
+        // Hidden exit detection — TRACK gets a bonus (+5) over passive perception
+        val hiddenDefs = worldGraph.getHiddenExitDefs(roomId)
+        if (hiddenDefs.isNotEmpty()) {
+            val trackRoll = check + 5 // reuse the TRACK roll with a bonus
+            var found = false
+            for ((dir, data) in hiddenDefs) {
+                if (session.hasDiscoveredExit(roomId, dir)) continue
+                if (trackRoll >= data.perceptionDC) {
+                    session.discoverExit(roomId, dir)
+                    worldGraph.revealHiddenExit(roomId, dir)
+                    session.send(ServerMessage.SystemMessage("Your tracking skills reveal a hidden passage to the ${dir.name.lowercase()}!"))
+                    found = true
+                }
+            }
+            if (found) {
+                // Re-send room info so client updates the D-pad
+                val room = worldGraph.getRoom(roomId)
+                if (room != null) {
+                    val filteredRoom = com.neomud.server.game.RoomFilter.forPlayer(room, session, worldGraph)
+                    session.send(ServerMessage.RoomInfo(
+                        filteredRoom,
+                        emptyList(), // players list will be re-sent on next look
+                        emptyList()
+                    ))
+                }
+            }
+        }
     }
 
     private fun bfsForNpcs(startRoomId: RoomId, maxDepth: Int): com.neomud.shared.model.Direction? {

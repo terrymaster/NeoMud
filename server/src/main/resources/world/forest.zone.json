@@ -71,12 +71,39 @@
       "exits": {
         "SOUTH": "forest:path",
         "EAST": "forest:stream",
-        "NORTH": "forest:ruins"
+        "NORTH": "forest:ruins",
+        "WEST": "forest:cave"
       },
       "lockedExits": { "EAST": 14, "NORTH": 16 },
+      "lockResetTicks": { "EAST": 40 },
+      "hiddenExits": {
+        "WEST": {
+          "perceptionDC": 18,
+          "lockDifficulty": 12,
+          "hiddenResetTicks": 60,
+          "lockResetTicks": 40
+        }
+      },
       "backgroundImage": "/assets/images/rooms/forest_deep.webp",
       "departSound": "footstep_dirt",
       "imagePrompt": "First-person view standing in a deep primeval forest. Flat dark earth ground plane with gnarled roots breaking through, filling the lower third. Massive ancient trunks on both sides disappearing upward into dense canopy. Only dim green twilight reaches the floor. Ominous and ancient atmosphere. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "imageWidth": 1024,
+      "imageHeight": 576
+    },
+    {
+      "id": "forest:cave",
+      "name": "Hidden Cave",
+      "description": "A narrow cave entrance hidden behind thick vines opens into a small, damp chamber. Water drips from the low ceiling, and patches of bioluminescent moss cast an eerie blue-green glow across the rough stone walls. The air smells of damp earth and something faintly metallic.",
+      "x": -1,
+      "y": 4,
+      "exits": {
+        "EAST": "forest:deep"
+      },
+      "backgroundImage": "/assets/images/rooms/forest_cave.jpg",
+      "departSound": "footstep_stone",
+      "imagePrompt": "First-person view standing inside a small natural cave. Rough stone floor filling the lower third. Low ceiling with water droplets. Bioluminescent moss on walls casting blue-green glow. Narrow entrance visible behind with vines. Damp and mysterious atmosphere. No people or creatures.",
       "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
       "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,

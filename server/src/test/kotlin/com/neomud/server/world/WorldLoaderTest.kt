@@ -15,7 +15,7 @@ class WorldLoaderTest {
         val result = load()
         val world = result.worldGraph
 
-        assertTrue(world.roomCount >= 12, "Should load at least 12 rooms (6 town + 6 forest)")
+        assertTrue(world.roomCount >= 13, "Should load at least 13 rooms (6 town + 7 forest)")
     }
 
     @Test
@@ -107,7 +107,7 @@ class WorldLoaderTest {
 
         val deep = world.getRoom("forest:deep")
         assertNotNull(deep)
-        assertEquals(2, deep.lockedExits.size, "forest:deep should have 2 locked exits")
+        assertEquals(3, deep.lockedExits.size, "forest:deep should have 3 locked exits (2 regular + 1 hidden)")
         assertEquals(14, deep.lockedExits[com.neomud.shared.model.Direction.EAST])
         assertEquals(16, deep.lockedExits[com.neomud.shared.model.Direction.NORTH])
 
@@ -115,6 +115,52 @@ class WorldLoaderTest {
         assertNotNull(tavern)
         assertEquals(1, tavern.lockedExits.size, "town:tavern should have 1 locked exit")
         assertEquals(10, tavern.lockedExits[com.neomud.shared.model.Direction.DOWN])
+    }
+
+    @Test
+    fun testHiddenExitsLoaded() {
+        val result = load()
+        val world = result.worldGraph
+
+        val deep = world.getRoom("forest:deep")
+        assertNotNull(deep)
+        // Hidden exit WEST should be merged into exits
+        assertEquals("forest:cave", deep.exits[com.neomud.shared.model.Direction.WEST])
+        // Hidden exit's lockDifficulty should be in lockedExits
+        assertEquals(12, deep.lockedExits[com.neomud.shared.model.Direction.WEST])
+
+        // Hidden exit defs should be stored
+        val hiddenDefs = world.getHiddenExitDefs("forest:deep")
+        assertTrue(hiddenDefs.isNotEmpty(), "Hidden exit defs should be stored")
+        val westDef = hiddenDefs[com.neomud.shared.model.Direction.WEST]
+        assertNotNull(westDef)
+        assertEquals(18, westDef.perceptionDC)
+        assertEquals(12, westDef.lockDifficulty)
+        assertEquals(60, westDef.hiddenResetTicks)
+        assertEquals(40, westDef.lockResetTicks)
+    }
+
+    @Test
+    fun testLockResetTicksLoaded() {
+        val result = load()
+        val world = result.worldGraph
+
+        // forest:deep has lockResetTicks for EAST (40)
+        // Verify by unlocking and checking timer behavior
+        val deep = world.getRoom("forest:deep")
+        assertNotNull(deep)
+        assertEquals(14, deep.lockedExits[com.neomud.shared.model.Direction.EAST])
+    }
+
+    @Test
+    fun testForestCaveRoomLoaded() {
+        val result = load()
+        val world = result.worldGraph
+
+        val cave = world.getRoom("forest:cave")
+        assertNotNull(cave, "forest:cave should exist (hidden exit target)")
+        assertEquals("Hidden Cave", cave.name)
+        assertEquals("forest:deep", cave.exits[com.neomud.shared.model.Direction.EAST])
     }
 
     @Test

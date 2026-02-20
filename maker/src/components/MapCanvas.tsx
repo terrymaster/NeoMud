@@ -11,6 +11,8 @@ interface ExitEdge {
   fromRoomId: string;
   toRoomId: string;
   direction: string;
+  isLocked?: boolean;
+  isHidden?: boolean;
 }
 
 interface VerticalExit {
@@ -173,15 +175,33 @@ function MapCanvas({
     const roomMap = new Map<string, RoomNode>();
     for (const r of rooms) roomMap.set(r.id, r);
 
-    // Draw exits as lines
-    ctx.strokeStyle = '#888';
-    ctx.lineWidth = 2;
+    // Draw exits as lines (color-coded by type)
     for (const exit of exits) {
       const from = roomMap.get(exit.fromRoomId);
       const to = roomMap.get(exit.toRoomId);
       if (!from || !to) continue;
       const { px: x1, py: y1 } = gridToPixel(from.x, from.y);
       const { px: x2, py: y2 } = gridToPixel(to.x, to.y);
+
+      // Color: hidden+locked = purple, hidden = green, locked = orange, normal = grey
+      if (exit.isHidden && exit.isLocked) {
+        ctx.strokeStyle = '#7b1fa2'; // purple
+      } else if (exit.isHidden) {
+        ctx.strokeStyle = '#388e3c'; // green
+      } else if (exit.isLocked) {
+        ctx.strokeStyle = '#e65100'; // orange
+      } else {
+        ctx.strokeStyle = '#888';
+      }
+
+      // Dashed line for hidden exits
+      if (exit.isHidden) {
+        ctx.setLineDash([6, 4]);
+      } else {
+        ctx.setLineDash([]);
+      }
+
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
@@ -192,6 +212,7 @@ function MapCanvas({
       const headLen = 10;
       const endX = x2 - Math.cos(angle) * (CELL_SIZE / 2);
       const endY = y2 - Math.sin(angle) * (CELL_SIZE / 2);
+      ctx.setLineDash([]); // arrowhead always solid
       ctx.beginPath();
       ctx.moveTo(endX, endY);
       ctx.lineTo(
@@ -205,6 +226,7 @@ function MapCanvas({
       );
       ctx.stroke();
     }
+    ctx.setLineDash([]);
 
     // Draw drag preview line
     if (dragPreview) {

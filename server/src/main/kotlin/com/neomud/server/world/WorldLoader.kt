@@ -64,11 +64,34 @@ object WorldLoader {
                         listOf(RoomEffect(type = "HEAL", value = roomData.healPerTick))
                     } else emptyList()
                 }
+
+                // Merge hidden exits into regular exits and lockedExits
+                val mergedExits = roomData.exits.toMutableMap()
+                val mergedLockedExits = roomData.lockedExits.toMutableMap()
+                for ((dir, hiddenData) in roomData.hiddenExits) {
+                    // Hidden exit target must already be in exits map
+                    if (dir !in mergedExits) {
+                        logger.warn("Room '${roomData.id}' hiddenExits direction $dir has no target in exits map — skipping")
+                        continue
+                    }
+                    if (hiddenData.lockDifficulty > 0) {
+                        mergedLockedExits[dir] = hiddenData.lockDifficulty
+                    }
+                }
+
+                // Combine lock reset durations from both regular and hidden exits
+                val allLockResetDurations = roomData.lockResetTicks.toMutableMap()
+                for ((dir, hiddenData) in roomData.hiddenExits) {
+                    if (hiddenData.lockResetTicks > 0 && dir !in allLockResetDurations) {
+                        allLockResetDurations[dir] = hiddenData.lockResetTicks
+                    }
+                }
+
                 val room = Room(
                     id = roomData.id,
                     name = roomData.name,
                     description = roomData.description,
-                    exits = roomData.exits,
+                    exits = mergedExits,
                     zoneId = zone.id,
                     x = roomData.x,
                     y = roomData.y,
@@ -76,9 +99,18 @@ object WorldLoader {
                     effects = effects,
                     bgm = roomData.bgm.ifEmpty { zone.bgm },
                     departSound = roomData.departSound,
-                    lockedExits = roomData.lockedExits
+                    lockedExits = mergedLockedExits
                 )
                 worldGraph.addRoom(room)
+
+                // Store original locked exits for re-locking
+                if (mergedLockedExits.isNotEmpty()) {
+                    worldGraph.setOriginalLockedExits(roomData.id, mergedLockedExits.toMap())
+                }
+                // Store lock reset durations
+                worldGraph.setLockResetDurations(roomData.id, allLockResetDurations.toMap())
+                // Store hidden exit definitions
+                worldGraph.setHiddenExitDefs(roomData.id, roomData.hiddenExits)
             }
 
             allNpcData.addAll(zone.npcs.map { it to zone.id })

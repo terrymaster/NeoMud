@@ -274,6 +274,8 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           bgm: room.bgm ?? '',
           departSound: room.departSound ?? '',
           lockedExits: JSON.stringify(room.lockedExits ?? {}),
+          lockResetTicks: JSON.stringify(room.lockResetTicks ?? {}),
+          hiddenExits: JSON.stringify(room.hiddenExits ?? {}),
           imagePrompt: room.imagePrompt ?? legacyRoom?.prompt ?? '',
           imageStyle: room.imageStyle ?? legacyRoom?.style ?? '',
           imageNegativePrompt: room.imageNegativePrompt ?? legacyRoom?.negativePrompt ?? '',

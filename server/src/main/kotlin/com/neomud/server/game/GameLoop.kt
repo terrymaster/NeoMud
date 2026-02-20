@@ -335,6 +335,26 @@ class GameLoop(
             }
         }
 
+        // 3b. Tick exit reset timers (lock re-lock, hidden re-hide)
+        val resetEvents = worldGraph.tickResetTimers()
+        for (event in resetEvents) {
+            when (event) {
+                is com.neomud.server.world.ExitResetEvent.Relocked -> {
+                    sessionManager.broadcastToRoom(event.roomId,
+                        ServerMessage.SystemMessage("You hear a click as the ${event.direction.name.lowercase()} door locks."))
+                    resendRoomInfoToPlayersInRoom(event.roomId)
+                }
+                is com.neomud.server.world.ExitResetEvent.Rehidden -> {
+                    for (session in sessionManager.getSessionsInRoom(event.roomId)) {
+                        session.forgetExit(event.roomId, event.direction)
+                    }
+                    sessionManager.broadcastToRoom(event.roomId,
+                        ServerMessage.SystemMessage("The passage to the ${event.direction.name.lowercase()} seems to vanish..."))
+                    resendRoomInfoToPlayersInRoom(event.roomId)
+                }
+            }
+        }
+
         // 4. NPC perception scans for hidden players
         npcPerceptionPhase()
 
@@ -462,6 +482,27 @@ class GameLoop(
                 ServerMessage.PlayerEntered(playerName, roomId, session.toPlayerInfo()),
                 exclude = playerName
             )
+        }
+    }
+
+    private suspend fun resendRoomInfoToPlayersInRoom(roomId: RoomId) {
+        val room = worldGraph.getRoom(roomId) ?: return
+        for (session in sessionManager.getSessionsInRoom(roomId)) {
+            val playerName = session.playerName ?: continue
+            val filteredRoom = RoomFilter.forPlayer(room, session, worldGraph)
+            val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(roomId)
+                .filter { it.name != playerName }
+            val npcsInRoom = npcManager.getNpcsInRoom(roomId)
+            try {
+                session.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
+                val mapRooms = worldGraph.getRoomsNear(roomId).map { mapRoom ->
+                    mapRoom.copy(
+                        hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
+                        hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
+                    )
+                }
+                session.send(ServerMessage.MapData(mapRooms, roomId))
+            } catch (_: Exception) { }
         }
     }
 

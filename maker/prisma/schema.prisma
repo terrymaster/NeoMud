@@ -40,6 +40,8 @@ model Room {
   bgmDuration         Int    @default(0)
   departSound         String @default("")
   lockedExits         String @default("{}")
+  lockResetTicks      String @default("{}")
+  hiddenExits         String @default("{}")
   imagePrompt         String @default("")
   imageStyle          String @default("")
   imageNegativePrompt String @default("")

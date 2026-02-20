@@ -30,9 +30,14 @@ class PickLockCommand(
 
         val room = worldGraph.getRoom(roomId) ?: return false
 
-        val lockedExits = room.lockedExits
+        // Build list of pickable locks: regular locked exits + discovered hidden+locked exits
+        val hiddenDefs = worldGraph.getHiddenExitDefs(roomId)
+        val pickableExits = room.lockedExits.filter { (dir, _) ->
+            // Regular locked exit, or hidden+locked that player has discovered
+            dir !in hiddenDefs || session.hasDiscoveredExit(roomId, dir)
+        }
 
-        if (lockedExits.isEmpty()) {
+        if (pickableExits.isEmpty()) {
             session.send(ServerMessage.SystemMessage("You don't see anything locked here."))
             return false
         }
@@ -52,21 +57,21 @@ class PickLockCommand(
                 session.send(ServerMessage.SystemMessage("Invalid direction: $dirName"))
                 return false
             }
-            val diff = lockedExits[parsedDir]
+            val diff = pickableExits[parsedDir]
             if (diff == null) {
                 session.send(ServerMessage.SystemMessage("The door to the ${parsedDir.name} is not locked."))
                 return false
             }
             direction = parsedDir
             difficulty = diff
-        } else if (lockedExits.size == 1) {
+        } else if (pickableExits.size == 1) {
             // Auto-pick the only target
-            val entry = lockedExits.entries.first()
+            val entry = pickableExits.entries.first()
             direction = entry.key
             difficulty = entry.value
         } else {
             // Multiple targets — list them for the player
-            val listing = lockedExits.keys.joinToString(", ") { "exit:${it.name}" }
+            val listing = pickableExits.keys.joinToString(", ") { "exit:${it.name}" }
             session.send(ServerMessage.SystemMessage("Multiple locked exits: $listing. Specify a target."))
             return false
         }
