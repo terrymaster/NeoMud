@@ -73,6 +73,7 @@ Active work items and known issues, ordered roughly by priority.
 ### Maker Tool
 - ~~Default SFX editor with category filtering, playback, and AI generation~~ ✓
 - ~~Room depart sound dropdown (constrained to movement SFX set)~~ ✓
+- **Spells/Skills icon parity**: Maker spell & skill editors should show a 1:1 preview of how each spell/skill icon appears in the client's quick spell bar and skill action buttons. Currently icons are hardcoded by school/id in the client (`schoolIcon()` in SpellBar, `SKILL_BUTTON_MAP` in GameScreen). Add an `icon` field to `SpellDef` and `SkillDef` models, add icon picker/input to the maker editors, and update client to prefer the model field with hardcoded fallback.
 - **Custom world build**: verify end-to-end export → server load of a non-default world
 - **AI generation integrations**: verify 3rd party API connections (image gen, text gen)
 - **Generation UI**: incorporate buttons/workflows for AI-generated room art, descriptions, NPC dialogue
