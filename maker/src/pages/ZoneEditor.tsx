@@ -64,9 +64,12 @@ interface Interactable {
   id: string;
   label: string;
   description: string;
+  failureMessage: string;
   icon: string;
   actionType: string;
   actionData: Record<string, string>;
+  difficulty: number;
+  difficultyCheck: string;
   perceptionDC: number;
   cooldownTicks: number;
   resetTicks: number;
@@ -223,12 +226,48 @@ function InteractablesEditor({ roomForm, setRoomForm }: {
     update(u);
   };
 
+  const hiddenMap: Record<string, HiddenExitData> = (() => {
+    try { return JSON.parse(roomForm.hiddenExits || '{}'); } catch { return {}; }
+  })();
+
+  const actionSummary = (feat: Interactable): string => {
+    let base: string;
+    switch (feat.actionType) {
+      case 'EXIT_OPEN': {
+        const dir = feat.actionData?.direction;
+        if (!dir) { base = 'Opens: (no direction)'; break; }
+        const hidden = dir in hiddenMap;
+        base = `Opens: ${dir}${hidden ? ' (hidden)' : ''}`; break;
+      }
+      case 'TREASURE_DROP':
+        base = `Loot: ${feat.actionData?.lootTableId || '(none)'}`; break;
+      case 'MONSTER_SPAWN':
+        base = `Spawns: ${feat.actionData?.npcId || '(none)'} x${feat.actionData?.count || 1}`; break;
+      case 'ROOM_EFFECT':
+        base = `${feat.actionData?.effectType || 'Effect'}: ${feat.actionData?.value || 0}${(parseInt(feat.actionData?.durationTicks) || 0) > 0 ? ` (${feat.actionData.durationTicks}t)` : ''}`; break;
+      case 'TELEPORT':
+        base = `Teleport: ${feat.actionData?.targetRoomId || '(none)'}`; break;
+      default:
+        base = feat.actionType;
+    }
+    if (feat.difficultyCheck && feat.difficulty > 0) {
+      base += ` [${feat.difficultyCheck} DC ${feat.difficulty}]`;
+    }
+    return base;
+  };
+
   return (
     <>
       {interactList.map((feat, i) => (
         <div key={i} style={{ padding: '6px 8px', backgroundColor: '#f3f0ff', borderRadius: 4, marginBottom: 4, border: '1px solid #e0d8f0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <strong style={{ fontSize: 11 }}>{feat.label || feat.id || `#${i}`}</strong>
+            <div>
+              <strong style={{ fontSize: 11 }}>{feat.label || feat.id || `#${i}`}</strong>
+              <div style={{ fontSize: 9, color: '#888', marginTop: 1 }}>
+                {actionSummary(feat)}
+                {feat.description ? ` — "${feat.description.length > 40 ? feat.description.slice(0, 40) + '...' : feat.description}"` : ' — (no success message)'}
+              </div>
+            </div>
             <button
               onClick={() => update(interactList.filter((_, j) => j !== i))}
               style={{ background: 'none', border: 'none', color: '#d32f2f', cursor: 'pointer', fontWeight: 700, fontSize: 14, padding: '0 4px' }}
@@ -245,8 +284,30 @@ function InteractablesEditor({ roomForm, setRoomForm }: {
               <input style={{ ...styles.input, fontSize: 11 }} value={feat.label} onChange={(e) => set(i, { label: e.target.value })} />
             </div>
           </div>
-          <label style={{ fontSize: 10, color: '#666', marginTop: 2, display: 'block' }}>Description</label>
-          <textarea style={{ ...styles.textarea, minHeight: 30, fontSize: 11 }} value={feat.description} onChange={(e) => set(i, { description: e.target.value })} />
+          <label style={{ fontSize: 10, color: '#d84315', fontWeight: 600, marginTop: 2, display: 'block' }}>Success Message (shown to player)</label>
+          <textarea style={{ ...styles.textarea, minHeight: 30, fontSize: 11, borderColor: feat.description ? '#ccc' : '#e65100' }} placeholder="e.g. You pull the ancient lever and hear a grinding sound..." value={feat.description} onChange={(e) => set(i, { description: e.target.value })} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 10, marginTop: 2 }}>
+            <div>
+              <label style={{ color: '#666' }}>Stat Check</label>
+              <select style={{ ...styles.input, fontSize: 11 }} value={feat.difficultyCheck || ''} onChange={(e) => set(i, { difficultyCheck: e.target.value, difficulty: e.target.value ? (feat.difficulty || 15) : 0 })}>
+                <option value="">None (always succeeds)</option>
+                <option value="STRENGTH">Strength</option>
+                <option value="AGILITY">Agility</option>
+                <option value="INTELLECT">Intellect</option>
+                <option value="WILLPOWER">Willpower</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ color: '#666' }}>Difficulty DC</label>
+              <input type="number" style={{ ...styles.input, fontSize: 11, opacity: feat.difficultyCheck ? 1 : 0.4 }} value={feat.difficulty || 0} min={0} disabled={!feat.difficultyCheck} onChange={(e) => set(i, { difficulty: parseInt(e.target.value) || 0 })} />
+            </div>
+          </div>
+          {feat.difficultyCheck && (
+            <>
+              <label style={{ fontSize: 10, color: '#c62828', fontWeight: 600, marginTop: 2, display: 'block' }}>Failure Message (shown to player)</label>
+              <textarea style={{ ...styles.textarea, minHeight: 30, fontSize: 11, borderColor: feat.failureMessage ? '#ccc' : '#c62828' }} placeholder="e.g. The lever won't budge, you're not strong enough..." value={feat.failureMessage || ''} onChange={(e) => set(i, { failureMessage: e.target.value })} />
+            </>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 10, marginTop: 2 }}>
             <div>
               <label style={{ color: '#666' }}>Action Type</label>
@@ -277,7 +338,7 @@ function InteractablesEditor({ roomForm, setRoomForm }: {
               <label style={{ color: '#666' }}>Direction</label>
               <select style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.direction || ''} onChange={(e) => setData(i, { direction: e.target.value })}>
                 <option value="">--</option>
-                {ALL_DIRECTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+                {ALL_DIRECTIONS.map((d) => <option key={d} value={d}>{d}{d in hiddenMap ? ' (hidden)' : ''}</option>)}
               </select>
             </div>
           )}
@@ -344,7 +405,7 @@ function InteractablesEditor({ roomForm, setRoomForm }: {
       ))}
       <button
         style={{ ...styles.btnSmall, width: '100%' }}
-        onClick={() => update([...interactList, { id: `feat_${interactList.length + 1}`, label: 'New Feature', description: '', icon: '', actionType: 'EXIT_OPEN', actionData: {}, perceptionDC: 0, cooldownTicks: 0, resetTicks: 0, sound: '' }])}
+        onClick={() => update([...interactList, { id: `feat_${interactList.length + 1}`, label: 'New Feature', description: '', failureMessage: '', icon: '', actionType: 'EXIT_OPEN', actionData: {}, difficulty: 0, difficultyCheck: '', perceptionDC: 0, cooldownTicks: 0, resetTicks: 0, sound: '' }])}
       >+ Add Interactable</button>
     </>
   );
@@ -667,6 +728,20 @@ function ZoneEditor() {
 
   const handleSaveRoom = async () => {
     if (!selectedZoneId || !selectedRoomId) return;
+    // Validate interactables have success messages
+    try {
+      const interactables: Interactable[] = JSON.parse(roomForm.interactables || '[]');
+      const missingSuccess = interactables.filter((f) => !f.description?.trim());
+      if (missingSuccess.length > 0) {
+        alert(`Cannot save: interactable${missingSuccess.length > 1 ? 's' : ''} ${missingSuccess.map((f) => `"${f.label || f.id}"`).join(', ')} missing a success message.`);
+        return;
+      }
+      const missingFailure = interactables.filter((f) => f.difficultyCheck && !f.failureMessage?.trim());
+      if (missingFailure.length > 0) {
+        alert(`Cannot save: interactable${missingFailure.length > 1 ? 's' : ''} ${missingFailure.map((f) => `"${f.label || f.id}"`).join(', ')} missing a failure message (required when difficulty is set).`);
+        return;
+      }
+    } catch {}
     try {
       const roomSuffix = selectedRoomId.split(':').slice(1).join(':');
       const { exits: _, ...fields } = roomForm;
@@ -1245,6 +1320,9 @@ function ZoneEditor() {
               const hiddenMap: Record<string, HiddenExitData> = (() => {
                 try { return JSON.parse(roomForm.hiddenExits || '{}'); } catch { return {}; }
               })();
+              const interactList: Interactable[] = (() => {
+                try { return JSON.parse(roomForm.interactables || '[]'); } catch { return []; }
+              })();
               const updateHidden = (updated: Record<string, HiddenExitData>) =>
                 setRoomForm((f) => ({ ...f, hiddenExits: JSON.stringify(updated) }));
               const exitDirs = selectedRoom.exits?.map((e) => e.direction) || [];
@@ -1256,10 +1334,24 @@ function ZoneEditor() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       {hiddenDirs.map((dir) => {
                         const data = hiddenMap[dir];
+                        const linkedInteractables = interactList.filter(
+                          (f) => f.actionType === 'EXIT_OPEN' && f.actionData?.direction === dir
+                        );
                         return (
                           <div key={dir} style={{ padding: '6px 8px', backgroundColor: '#e8f5e9', borderRadius: 4, border: '1px solid #c8e6c9' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <strong style={{ fontSize: 12 }}>{dir}</strong>
+                              <div>
+                                <strong style={{ fontSize: 12 }}>{dir}</strong>
+                                {linkedInteractables.length > 0 ? (
+                                  <span style={{ fontSize: 9, color: '#388e3c', marginLeft: 6 }}>
+                                    Opened by: {linkedInteractables.map((f) => f.label || f.id).join(', ')}
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: 9, color: '#e65100', marginLeft: 6 }}>
+                                    No interactable linked
+                                  </span>
+                                )}
+                              </div>
                               <button
                                 onClick={() => {
                                   const updated = { ...hiddenMap };

@@ -59,6 +59,28 @@ class InteractCommand(
             return
         }
 
+        // Difficulty check (if configured)
+        if (feat.difficulty > 0 && feat.difficultyCheck.isNotEmpty()) {
+            val effStats = session.effectiveStats()
+            val statValue = when (feat.difficultyCheck) {
+                "STRENGTH" -> effStats.strength
+                "AGILITY" -> effStats.agility
+                "INTELLECT" -> effStats.intellect
+                "WILLPOWER" -> effStats.willpower
+                else -> 0
+            }
+            val roll = statValue + player.level / 2 + (1..20).random()
+            if (roll < feat.difficulty) {
+                val failMsg = feat.failureMessage.ifEmpty { "You failed to use the ${feat.label}." }
+                session.send(ServerMessage.InteractResult(false, feat.label, failMsg, feat.sound))
+                // Still apply cooldown on failure so players can't spam attempts
+                if (feat.cooldownTicks > 0) {
+                    session.interactableCooldowns[cooldownKey] = feat.cooldownTicks
+                }
+                return
+            }
+        }
+
         // Execute action
         val success = when (feat.actionType) {
             "EXIT_OPEN" -> executeExitOpen(session, roomId, feat.actionData)
