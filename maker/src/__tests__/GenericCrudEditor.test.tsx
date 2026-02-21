@@ -197,4 +197,50 @@ describe('GenericCrudEditor', () => {
     const idInput = screen.getByDisplayValue('sword')
     expect(idInput).toBeDisabled()
   })
+
+  it('number field with max clamps input value', async () => {
+    const user = userEvent.setup()
+    const maxField: FieldConfig = { key: 'width', label: 'Width', type: 'number', max: 384 }
+    mockApi.get.mockResolvedValue([])
+
+    render(<GenericCrudEditor entityName="Item" apiPath="/items" fields={[maxField]} />)
+    await user.click(screen.getByText('+ New Item'))
+
+    const input = screen.getByRole('spinbutton')
+    // The HTML max attribute should be set
+    expect(input).toHaveAttribute('max', '384')
+  })
+
+  it('number field without max has no max attribute', async () => {
+    const user = userEvent.setup()
+    const noMaxField: FieldConfig = { key: 'value', label: 'Value', type: 'number' }
+    mockApi.get.mockResolvedValue([])
+
+    render(<GenericCrudEditor entityName="Item" apiPath="/items" fields={[noMaxField]} />)
+    await user.click(screen.getByText('+ New Item'))
+
+    const input = screen.getByRole('spinbutton')
+    expect(input).not.toHaveAttribute('max')
+  })
+
+  it('passes maxWidth and maxHeight to ImagePreview', async () => {
+    const items = [{ id: 'sword', name: 'Sword', imagePrompt: '', imageStyle: '', imageNegativePrompt: '', imageWidth: 512, imageHeight: 512 }]
+    mockApi.get.mockResolvedValue(items)
+
+    render(
+      <GenericCrudEditor
+        entityName="Item"
+        apiPath="/items"
+        fields={[{ key: 'name', label: 'Name', type: 'text' as const }]}
+        imagePreview={{ entityType: 'item', maxWidth: 256, maxHeight: 256 }}
+      />
+    )
+
+    await waitFor(() => expect(screen.getByText('Sword')).toBeInTheDocument())
+    await userEvent.click(screen.getByText('Sword'))
+
+    // ImagePreview should show max labels
+    expect(screen.getByText(/Width \(max 256\)/)).toBeInTheDocument()
+    expect(screen.getByText(/Height \(max 256\)/)).toBeInTheDocument()
+  })
 })
