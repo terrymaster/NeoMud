@@ -1,33 +1,21 @@
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const projectsDir = path.join(__dirname, '..', '..', 'projects')
-
 /**
- * Vitest globalSetup: clean up stale test project files left behind by
- * interrupted test runs. Runs once before any test file.
+ * Vitest globalSetup: ensure process signals trigger a clean exit so that
+ * the per-worker 'exit' handlers in helpers.ts can delete test project files.
+ *
+ * Vitest already handles SIGINT/SIGTERM gracefully, but this ensures
+ * any edge cases (double Ctrl+C, etc.) still result in process.exit()
+ * rather than an abrupt termination.
  */
 export function setup() {
-  if (!fs.existsSync(projectsDir)) return
+  const forceExit = () => process.exit(1)
 
-  const entries = fs.readdirSync(projectsDir)
-  for (const entry of entries) {
-    // Test projects: test_*, proj_create_test_*, fork_*, del_test_*
-    const isTestArtifact =
-      entry.startsWith('test_') ||
-      entry.startsWith('proj_create_test_') ||
-      entry.startsWith('fork_') ||
-      entry.startsWith('del_test_')
-    if (!isTestArtifact) continue
+  // On second SIGINT (user hammering Ctrl+C), force exit immediately
+  // — the first SIGINT is handled by vitest's graceful shutdown
+  let sigintCount = 0
+  process.on('SIGINT', () => {
+    sigintCount++
+    if (sigintCount > 1) forceExit()
+  })
 
-    const fullPath = path.join(projectsDir, entry)
-    const stat = fs.statSync(fullPath)
-    if (stat.isDirectory()) {
-      fs.rmSync(fullPath, { recursive: true, force: true })
-    } else {
-      fs.unlinkSync(fullPath)
-    }
-  }
+  process.on('SIGTERM', forceExit)
 }
