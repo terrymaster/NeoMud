@@ -121,6 +121,7 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 **Maker (World Editor)**
 - Full CRUD for all entity types: zones, rooms, NPCs, items, classes, races, skills, spells, loot tables
 - Visual zone editor with drag-and-drop room placement and click-to-connect exits
+- Room zone assignment — editable zone dropdown in room properties with cross-zone move support
 - Default SFX editor — browse, preview, and regenerate system sound effects (dodge, parry, footsteps, etc.)
 - Default player sprite editor — manage race/gender/class sprite combinations
 - Import/export of `.nmd` bundles

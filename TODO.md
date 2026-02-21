@@ -64,15 +64,16 @@ Active work items and known issues, ordered roughly by priority.
 
 ### Hidden Content
 - Hidden items in rooms (discoverable via search/perception)
-- Hidden pathways / secret exits
-- Room-based interactive objects (levers, chests, altars, etc.)
+- ~~Hidden pathways / secret exits~~ ✓
+- ~~Room-based interactive objects (levers, chests, altars, etc.)~~ ✓
 - Traps (room traps, trapped locked doors, trapped objects)
-- Detection mechanics (class abilities, item bonuses, skill checks)
+- ~~Detection mechanics (class abilities, item bonuses, skill checks)~~ ✓
 - Trap disarm mechanics (rogue/thief class abilities, items)
 
 ### Maker Tool
 - ~~Default SFX editor with category filtering, playback, and AI generation~~ ✓
 - ~~Room depart sound dropdown (constrained to movement SFX set)~~ ✓
+- ~~Room zone assignment — editable zone dropdown with cross-zone move~~ ✓
 - **Spells/Skills icon parity**: Maker spell & skill editors should show a 1:1 preview of how each spell/skill icon appears in the client's quick spell bar and skill action buttons. Currently icons are hardcoded by school/id in the client (`schoolIcon()` in SpellBar, `SKILL_BUTTON_MAP` in GameScreen). Add an `icon` field to `SpellDef` and `SkillDef` models, add icon picker/input to the maker editors, and update client to prefer the model field with hardcoded fallback.
 - **Custom world build**: verify end-to-end export → server load of a non-default world
 - **AI generation integrations**: verify 3rd party API connections (image gen, text gen)
