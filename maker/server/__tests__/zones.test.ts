@@ -234,17 +234,181 @@ describe('Room BGM prompt fields', () => {
   })
 })
 
+describe('Room rename', () => {
+  // Re-create the exit (deleted in previous test block) so we can test rename with exits
+  it('setup: re-create exit clearing→cave', async () => {
+    const res = await request(app).post('/api/rooms/forest:clearing/exits').send({
+      direction: 'EAST',
+      toRoomId: 'forest:cave',
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('PUT rename returns 400 for invalid slug', async () => {
+    const res = await request(app)
+      .put('/api/zones/forest/rooms/clearing/rename')
+      .send({ newId: 'has spaces' })
+    expect(res.status).toBe(400)
+  })
+
+  it('PUT rename returns 400 for slug with colons', async () => {
+    const res = await request(app)
+      .put('/api/zones/forest/rooms/clearing/rename')
+      .send({ newId: 'bad:slug' })
+    expect(res.status).toBe(400)
+  })
+
+  it('PUT rename returns 409 for duplicate', async () => {
+    const res = await request(app)
+      .put('/api/zones/forest/rooms/clearing/rename')
+      .send({ newId: 'cave' })
+    expect(res.status).toBe(409)
+  })
+
+  it('PUT rename rewires exits correctly', async () => {
+    // Rename clearing → meadow
+    const res = await request(app)
+      .put('/api/zones/forest/rooms/clearing/rename')
+      .send({ newId: 'meadow' })
+    expect(res.status).toBe(200)
+    expect(res.body.id).toBe('forest:meadow')
+    expect(res.body.name).toBe('Updated Clearing')
+
+    // Verify the renamed room has the EAST exit to cave
+    const meadowExits = res.body.exits
+    const eastExit = meadowExits.find((e: any) => e.direction === 'EAST')
+    expect(eastExit).toBeDefined()
+    expect(eastExit.fromRoomId).toBe('forest:meadow')
+    expect(eastExit.toRoomId).toBe('forest:cave')
+
+    // Verify the cave's WEST exit now points to the renamed room
+    const zone = await request(app).get('/api/zones/forest')
+    const cave = zone.body.rooms.find((r: any) => r.id === 'forest:cave')
+    const westExit = cave.exits.find((e: any) => e.direction === 'WEST')
+    expect(westExit).toBeDefined()
+    expect(westExit.toRoomId).toBe('forest:meadow')
+
+    // Verify old room no longer exists
+    const oldRoom = await request(app).get('/api/zones/forest/rooms/clearing')
+    expect(oldRoom.status).toBe(404)
+  })
+
+  it('PUT rename returns 404 for missing room', async () => {
+    const res = await request(app)
+      .put('/api/zones/forest/rooms/nonexistent/rename')
+      .send({ newId: 'something' })
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('Cross-zone room move', () => {
+  it('setup: create target zone and exit', async () => {
+    const res = await request(app).post('/api/zones').send({
+      id: 'dungeon',
+      name: 'Dark Dungeon',
+      description: 'An underground dungeon',
+    })
+    expect(res.status).toBe(200)
+
+    // Create a room in the dungeon zone
+    const room = await request(app).post('/api/zones/dungeon/rooms').send({
+      id: 'entrance',
+      name: 'Dungeon Entrance',
+      description: 'A dark entrance',
+      x: 0,
+      y: 0,
+    })
+    expect(room.status).toBe(200)
+
+    // Create exit from forest:meadow to dungeon:entrance
+    const exit = await request(app).post('/api/rooms/forest:meadow/exits').send({
+      direction: 'NORTH',
+      toRoomId: 'dungeon:entrance',
+    })
+    expect(exit.status).toBe(200)
+  })
+
+  it('PUT rename with targetZoneId moves room to another zone', async () => {
+    // Move forest:meadow → dungeon:meadow
+    const res = await request(app)
+      .put('/api/zones/forest/rooms/meadow/rename')
+      .send({ newId: 'meadow', targetZoneId: 'dungeon' })
+    expect(res.status).toBe(200)
+    expect(res.body.id).toBe('dungeon:meadow')
+    expect(res.body.zoneId).toBe('dungeon')
+
+    // Old room should be gone
+    const oldRoom = await request(app).get('/api/zones/forest/rooms/meadow')
+    expect(oldRoom.status).toBe(404)
+
+    // New room should be in dungeon zone
+    const newRoom = await request(app).get('/api/zones/dungeon/rooms/meadow')
+    expect(newRoom.status).toBe(200)
+    expect(newRoom.body.name).toBe('Updated Clearing')
+  })
+
+  it('exits are rewired after cross-zone move', async () => {
+    // The dungeon:entrance had a SOUTH exit pointing to forest:meadow → should now be dungeon:meadow
+    const dungeon = await request(app).get('/api/zones/dungeon')
+    const entrance = dungeon.body.rooms.find((r: any) => r.id === 'dungeon:entrance')
+    const southExit = entrance.exits.find((e: any) => e.direction === 'SOUTH')
+    expect(southExit).toBeDefined()
+    expect(southExit.toRoomId).toBe('dungeon:meadow')
+
+    // The meadow's NORTH exit should still point to dungeon:entrance
+    const meadow = dungeon.body.rooms.find((r: any) => r.id === 'dungeon:meadow')
+    const northExit = meadow.exits.find((e: any) => e.direction === 'NORTH')
+    expect(northExit).toBeDefined()
+    expect(northExit.toRoomId).toBe('dungeon:entrance')
+  })
+
+  it('PUT rename with targetZoneId returns 404 for nonexistent target zone', async () => {
+    const res = await request(app)
+      .put('/api/zones/dungeon/rooms/meadow/rename')
+      .send({ newId: 'meadow', targetZoneId: 'nonexistent' })
+    expect(res.status).toBe(404)
+    expect(res.body.error).toContain('Target zone')
+  })
+
+  it('PUT rename with targetZoneId returns 409 for duplicate in target zone', async () => {
+    const res = await request(app)
+      .put('/api/zones/dungeon/rooms/meadow/rename')
+      .send({ newId: 'entrance', targetZoneId: 'dungeon' })
+    expect(res.status).toBe(409)
+  })
+
+  it('cross-zone move + slug rename simultaneously', async () => {
+    // Move dungeon:meadow → forest:glade (new slug + new zone)
+    const res = await request(app)
+      .put('/api/zones/dungeon/rooms/meadow/rename')
+      .send({ newId: 'glade', targetZoneId: 'forest' })
+    expect(res.status).toBe(200)
+    expect(res.body.id).toBe('forest:glade')
+    expect(res.body.zoneId).toBe('forest')
+
+    // Verify exits rewired
+    const forest = await request(app).get('/api/zones/forest')
+    const glade = forest.body.rooms.find((r: any) => r.id === 'forest:glade')
+    const northExit = glade.exits.find((e: any) => e.direction === 'NORTH')
+    expect(northExit).toBeDefined()
+    expect(northExit.toRoomId).toBe('dungeon:entrance')
+  })
+})
+
 describe('Room + Zone deletion', () => {
   it('DELETE room', async () => {
     const res = await request(app).delete('/api/zones/forest/rooms/cave')
     expect(res.status).toBe(200)
     const rooms = await request(app).get('/api/zones/forest/rooms')
+    // Only glade (renamed from clearing→meadow, moved cross-zone, back as glade) remains
     expect(rooms.body).toHaveLength(1)
+    expect(rooms.body[0].id).toBe('forest:glade')
   })
 
   it('DELETE zone cascades rooms', async () => {
     await request(app).delete('/api/zones/bgm_test_zone')
     await request(app).delete('/api/zones/bgm_default_zone')
+    await request(app).delete('/api/zones/dungeon')
     const res = await request(app).delete('/api/zones/forest')
     expect(res.status).toBe(200)
     const zones = await request(app).get('/api/zones')

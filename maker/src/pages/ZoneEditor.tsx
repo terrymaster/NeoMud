@@ -51,6 +51,8 @@ interface Room {
   imageWidth: number;
   imageHeight: number;
   exits: Exit[];
+  _editSlug?: string;
+  _editZone?: string;
 }
 
 interface HiddenExitData {
@@ -676,7 +678,7 @@ function ZoneEditor() {
   const handleCreateRoom = useCallback(
     async (x: number, y: number) => {
       if (!selectedZoneId) return;
-      const roomSlug = `room_${x}_${y}`;
+      const roomSlug = `${selectedZoneId}_room_${x}_${y}`;
       const roomName = `New Room (${x},${y})`;
       try {
         const room = await api.post<Room>(`/zones/${selectedZoneId}/rooms`, {
@@ -751,7 +753,7 @@ function ZoneEditor() {
     } catch {}
     try {
       const roomSuffix = selectedRoomId.split(':').slice(1).join(':');
-      const { exits: _, ...fields } = roomForm;
+      const { exits: _, _editSlug: __, _editZone: ___, ...fields } = roomForm as any;
       const updated = await api.put<Room>(
         `/zones/${selectedZoneId}/rooms/${roomSuffix}`,
         fields
@@ -1055,8 +1057,112 @@ function ZoneEditor() {
               onUpdate={(fields) => setRoomForm((f) => ({ ...f, ...fields }))}
             />
             <div style={styles.sectionTitle}>Room Properties</div>
-            <label style={styles.label}>ID</label>
-            <input style={styles.input} value={selectedRoom.id} disabled />
+            <label style={styles.label}>Room ID</label>
+            {(() => {
+              const currentZone = roomForm._editZone ?? selectedRoom.id.split(':')[0];
+              const currentSlug = roomForm._editSlug ?? selectedRoom.id.split(':').slice(1).join(':');
+              const origZone = selectedRoom.id.split(':')[0];
+              const origSlug = selectedRoom.id.split(':').slice(1).join(':');
+              const hasChanges = currentZone !== origZone || currentSlug !== origSlug;
+              return (
+                <div style={{ display: 'flex', gap: 0, alignItems: 'center' }}>
+                  <select
+                    style={{
+                      fontSize: 13,
+                      color: '#555',
+                      padding: '6px 4px 6px 8px',
+                      backgroundColor: '#f0f0f0',
+                      border: '1px solid #ccc',
+                      borderRight: 'none',
+                      borderRadius: '4px 0 0 4px',
+                      lineHeight: '1.2',
+                      cursor: 'pointer',
+                      appearance: 'auto' as const,
+                    }}
+                    value={currentZone}
+                    onChange={(e) => setRoomForm((f) => ({ ...f, _editZone: e.target.value }))}
+                  >
+                    {zones.map((z) => (
+                      <option key={z.id} value={z.id}>{z.id}</option>
+                    ))}
+                  </select>
+                  <span style={{
+                    fontSize: 13,
+                    color: '#999',
+                    padding: '6px 0',
+                    backgroundColor: '#f0f0f0',
+                    borderTop: '1px solid #ccc',
+                    borderBottom: '1px solid #ccc',
+                    lineHeight: '1.2',
+                  }}>:</span>
+                  <input
+                    style={{
+                      ...styles.input,
+                      flex: 1,
+                      borderRadius: '0 4px 4px 0',
+                      borderLeft: 'none',
+                    }}
+                    value={currentSlug}
+                    onChange={(e) => setRoomForm((f) => ({ ...f, _editSlug: e.target.value }))}
+                  />
+                  <button
+                    style={{
+                      ...styles.btnSmall,
+                      marginTop: 0,
+                      marginLeft: 4,
+                      opacity: hasChanges ? 1 : 0.4,
+                      whiteSpace: 'nowrap',
+                    }}
+                    disabled={!hasChanges}
+                    onClick={async () => {
+                      const newSlug = currentSlug.trim();
+                      if (!newSlug) { alert('ID cannot be empty'); return; }
+                      if (!/^[a-zA-Z0-9_]+$/.test(newSlug)) { alert('ID must contain only letters, numbers, and underscores'); return; }
+                      const oldSlug = origSlug;
+                      const targetZoneId = currentZone !== origZone ? currentZone : undefined;
+                      try {
+                        // Save any pending form changes (name, description, etc.) before renaming
+                        const { exits: _e, _editSlug: _s, _editZone: _z, ...saveFields } = roomForm as any;
+                        await api.put<Room>(`/zones/${selectedZoneId}/rooms/${oldSlug}`, saveFields);
+                        // Now rename (change slug and/or zone)
+                        const renamed = await api.put<Room>(`/zones/${selectedZoneId}/rooms/${oldSlug}/rename`, {
+                          newId: newSlug,
+                          ...(targetZoneId ? { targetZoneId } : {}),
+                        });
+                        const newFullId = renamed.id;
+                        // Reload current zone data
+                        const data = await api.get<ZoneWithRooms>(`/zones/${selectedZoneId}`);
+                        // Update rooms + selection together so the useEffect doesn't flash
+                        setRooms(data.rooms || []);
+                        if (targetZoneId) {
+                          // Room moved to a different zone — deselect it (it's no longer in this zone)
+                          setSelectedRoomId(null);
+                          setRoomForm({});
+                        } else {
+                          setSelectedRoomId(newFullId);
+                          setRoomForm((f) => ({ ...f, id: newFullId, _editSlug: undefined, _editZone: undefined }));
+                        }
+                        // Refresh allRooms across all zones for exit target dropdown (fire-and-forget)
+                        api.get<Zone[]>('/zones').then((zoneList) => {
+                          const promises = zoneList.map((z) =>
+                            api.get<Room[]>(`/zones/${z.id}/rooms`).then((zoneRooms) => ({
+                              zoneId: z.id,
+                              zoneName: z.name,
+                              rooms: zoneRooms.map((r) => ({ id: r.id, name: r.name })),
+                            }))
+                          );
+                          Promise.all(promises).then(setAllRooms).catch(() => {});
+                        }).catch(() => {});
+                      } catch (err: any) {
+                        alert(err?.message || 'Rename failed');
+                      }
+                    }}
+                  >
+                    {(currentZone !== origZone) ? 'Move' : 'Rename'}
+                  </button>
+                </div>
+              );
+            })()}
             <label style={styles.label}>Name</label>
             <input
               style={styles.input}

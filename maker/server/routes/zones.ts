@@ -183,6 +183,87 @@ zonesRouter.put('/zones/:zoneId/rooms/:id', rejectIfReadOnly, async (req, res) =
   }
 })
 
+// PUT /zones/:zoneId/rooms/:id/rename — rename room (change slug and/or zone)
+zonesRouter.put('/zones/:zoneId/rooms/:id/rename', rejectIfReadOnly, async (req, res) => {
+  try {
+    const { zoneId } = req.params
+    const oldSlug = req.params.id
+    const { newId: newSlug, targetZoneId } = req.body
+    const oldFullId = `${zoneId}:${oldSlug}`
+    const effectiveZoneId = targetZoneId || zoneId
+    const newFullId = `${effectiveZoneId}:${newSlug}`
+
+    // Validate slug format
+    if (!newSlug || typeof newSlug !== 'string') {
+      res.status(400).json({ error: 'newId is required' })
+      return
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(newSlug)) {
+      res.status(400).json({ error: 'ID must contain only letters, numbers, and underscores' })
+      return
+    }
+    if (newFullId === oldFullId) {
+      res.status(400).json({ error: 'New ID is the same as the current ID' })
+      return
+    }
+
+    // If moving to a different zone, validate that zone exists
+    if (targetZoneId && targetZoneId !== zoneId) {
+      const targetZone = await db().zone.findUnique({ where: { id: targetZoneId } })
+      if (!targetZone) {
+        res.status(404).json({ error: `Target zone "${targetZoneId}" not found` })
+        return
+      }
+    }
+
+    // Check uniqueness
+    const existing = await db().room.findUnique({ where: { id: newFullId } })
+    if (existing) {
+      res.status(409).json({ error: `Room "${newFullId}" already exists` })
+      return
+    }
+
+    // Find old room
+    const oldRoom = await db().room.findUnique({ where: { id: oldFullId }, include: { exits: true } })
+    if (!oldRoom) {
+      res.status(404).json({ error: 'Room not found' })
+      return
+    }
+
+    // Transaction: create new → update exit FKs → delete old
+    const result = await db().$transaction(async (tx) => {
+      // 1. Create new room with all fields from old room
+      const { exits: _, ...roomData } = oldRoom as any
+      const { id: __, zoneId: ___, ...fields } = roomData
+      const newRoom = await tx.room.create({
+        data: { id: newFullId, zoneId: effectiveZoneId, ...fields },
+      })
+
+      // 2. Update exits where fromRoomId = oldFullId
+      await tx.exit.updateMany({
+        where: { fromRoomId: oldFullId },
+        data: { fromRoomId: newFullId },
+      })
+
+      // 3. Update exits where toRoomId = oldFullId
+      await tx.exit.updateMany({
+        where: { toRoomId: oldFullId },
+        data: { toRoomId: newFullId },
+      })
+
+      // 4. Delete old room
+      await tx.room.delete({ where: { id: oldFullId } })
+
+      // Return new room with exits
+      return tx.room.findUnique({ where: { id: newFullId }, include: { exits: true } })
+    })
+
+    res.json(result)
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // DELETE /zones/:zoneId/rooms/:id — delete room
 zonesRouter.delete('/zones/:zoneId/rooms/:id', rejectIfReadOnly, async (req, res) => {
   try {
