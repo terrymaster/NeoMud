@@ -95,24 +95,26 @@ fun SpriteOverlay(
         }
 
         val allEntities = (npcs.map { RoomEntity.NpcEntity(it) } +
-                players.map { RoomEntity.PcEntity(it) }).take(8)
+                players.map { RoomEntity.PcEntity(it) }).take(7)
 
         if (allEntities.isNotEmpty()) {
             val totalEntities = npcs.size + players.size
-            val backRow = allEntities.filterIndexed { i, _ -> i % 2 == 0 }
-            val frontRow = allEntities.filterIndexed { i, _ -> i % 2 == 1 }
+            // Front row: indices 0, 2, 4, 6 (up to 4 entities)
+            val frontRow = allEntities.filterIndexed { i, _ -> i % 2 == 0 }
+            // Back row: indices 1, 3, 5 (up to 3 entities)
+            val backRow = allEntities.filterIndexed { i, _ -> i % 2 == 1 }
 
             val context = androidx.compose.ui.platform.LocalContext.current
 
-            // Back row — slightly higher, smaller scale
+            // Back row — sits higher, smaller scale
             if (backRow.isNotEmpty()) {
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .fillMaxHeight(0.45f)
+                        .fillMaxHeight(0.55f)
                         .padding(horizontal = 16.dp)
-                        .padding(bottom = 24.dp),
+                        .padding(bottom = 48.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom
                 ) {
@@ -134,11 +136,11 @@ fun SpriteOverlay(
                             playerCharacterClass = playerCharacterClass,
                             onAttackTarget = onAttackTarget,
                             onTrackTarget = onTrackTarget,
-                            scale = 0.9f,
+                            scale = 0.75f,
                             modifier = Modifier
                                 .weight(1f, fill = false)
                                 .fillMaxHeight()
-                                .widthIn(max = 100.dp)
+                                .widthIn(max = 80.dp)
                         )
                     }
                 }
@@ -150,7 +152,7 @@ fun SpriteOverlay(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .fillMaxHeight(0.40f)
+                        .fillMaxHeight(0.38f)
                         .padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom
@@ -177,16 +179,16 @@ fun SpriteOverlay(
                             modifier = Modifier
                                 .weight(1f, fill = false)
                                 .fillMaxHeight()
-                                .widthIn(max = 120.dp)
+                                .widthIn(max = 96.dp)
                         )
                     }
                 }
             }
 
             // Overflow indicator
-            if (totalEntities > 8) {
+            if (totalEntities > 7) {
                 Text(
-                    text = "+${totalEntities - 8} more",
+                    text = "+${totalEntities - 7} more",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -337,7 +339,7 @@ private fun EntitySprite(
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxHeight(0.85f * scale)
-                        .widthIn(max = (100 * scale).dp)
+                        .widthIn(max = (80 * scale).dp)
                 )
             }
         }
@@ -363,7 +365,7 @@ private fun EntitySprite(
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .weight(1f, fill = false)
-                        .widthIn(max = (100 * scale).dp)
+                        .widthIn(max = (80 * scale).dp)
                 )
                 // Name label below sprite
                 Text(

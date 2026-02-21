@@ -37,10 +37,29 @@ abstract class UpdateVersionTask : DefaultTask() {
     }
 }
 
-// Run the maker via: cd maker && npm run dev
-// Use an IntelliJ "npm" run configuration pointed at maker/package.json → "dev" script.
-// This avoids wrapping Node processes in the Gradle daemon JVM, which causes
-// orphaned processes on Windows since the daemon doesn't propagate signals.
+val npx = if (org.gradle.internal.os.OperatingSystem.current().isWindows) "npx.cmd" else "npx"
+val npm = if (org.gradle.internal.os.OperatingSystem.current().isWindows) "npm.cmd" else "npm"
+
+tasks.register<Exec>("makerDev") {
+    group = "maker"
+    description = "Start the Maker Vite dev server (kills stale instance first)"
+    workingDir = file("maker")
+    commandLine(npm, "run", "dev")
+}
+
+tasks.register<Exec>("makerInstall") {
+    group = "maker"
+    description = "Install Maker npm dependencies"
+    workingDir = file("maker")
+    commandLine(npm, "install")
+}
+
+tasks.register<Exec>("makerRebuildWorld") {
+    group = "maker"
+    description = "Rebuild the default world bundle"
+    workingDir = file("maker")
+    commandLine(npm, "run", "rebuild-world")
+}
 
 tasks.register<UpdateVersionTask>("updateVersion") {
     group = "versioning"

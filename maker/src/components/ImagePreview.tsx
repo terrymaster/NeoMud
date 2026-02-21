@@ -12,6 +12,8 @@ interface ImagePreviewProps {
   imageNegativePrompt?: string;
   imageWidth?: number;
   imageHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
   onUpdate?: (fields: { imagePrompt: string; imageStyle: string; imageNegativePrompt: string; imageWidth: number; imageHeight: number }) => void;
 }
 
@@ -188,7 +190,7 @@ function getImageUrl(assetPath: string, cacheBust: number): string {
   return `/api/assets/${assetPath}${cacheBust ? `?t=${cacheBust}` : ''}`;
 }
 
-function ImagePreview({ entityType, entityId, description, assetPath, imagePrompt, imageStyle, imageNegativePrompt, imageWidth, imageHeight, onUpdate }: ImagePreviewProps) {
+function ImagePreview({ entityType, entityId, description, assetPath, imagePrompt, imageStyle, imageNegativePrompt, imageWidth, imageHeight, maxWidth, maxHeight, onUpdate }: ImagePreviewProps) {
   const [imgError, setImgError] = useState(false);
   const [localPrompt, setLocalPrompt] = useState(imagePrompt || '');
   const [localStyle, setLocalStyle] = useState(imageStyle || '');
@@ -398,21 +400,23 @@ function ImagePreview({ entityType, entityId, description, assetPath, imagePromp
         />
         <div style={styles.row}>
           <div style={{ flex: 1 }}>
-            <div style={styles.fieldLabel}>Width</div>
+            <div style={styles.fieldLabel}>Width{maxWidth ? ` (max ${maxWidth})` : ''}</div>
             <input
               style={styles.input}
               type="number"
               value={localW}
-              onChange={(e) => { const v = parseInt(e.target.value) || 0; setLocalW(v); fireUpdate({ imageWidth: v }); }}
+              max={maxWidth}
+              onChange={(e) => { let v = parseInt(e.target.value) || 0; if (maxWidth) v = Math.min(v, maxWidth); setLocalW(v); fireUpdate({ imageWidth: v }); }}
             />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={styles.fieldLabel}>Height</div>
+            <div style={styles.fieldLabel}>Height{maxHeight ? ` (max ${maxHeight})` : ''}</div>
             <input
               style={styles.input}
               type="number"
               value={localH}
-              onChange={(e) => { const v = parseInt(e.target.value) || 0; setLocalH(v); fireUpdate({ imageHeight: v }); }}
+              max={maxHeight}
+              onChange={(e) => { let v = parseInt(e.target.value) || 0; if (maxHeight) v = Math.min(v, maxHeight); setLocalH(v); fireUpdate({ imageHeight: v }); }}
             />
           </div>
         </div>

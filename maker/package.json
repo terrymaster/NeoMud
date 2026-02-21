@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "kill-vite": "tsx scripts/kill-port.ts",
+    "predev": "tsx scripts/kill-port.ts",
     "dev": "vite",
     "build": "vite build",
     "server": "tsx server/index.ts",
@@ -15,6 +17,7 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:watch": "vitest",
+    "prerebuild-world": "tsx scripts/kill-port.ts",
     "rebuild-world": "tsx scripts/rebuild-default-world.ts"
   },
   "dependencies": {

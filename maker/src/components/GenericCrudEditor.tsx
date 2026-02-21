@@ -14,6 +14,7 @@ export interface FieldConfig {
   required?: boolean;
   rows?: number;
   help?: string;
+  max?: number;
   visibleWhen?: (form: Record<string, any>) => boolean;
 }
 
@@ -22,7 +23,7 @@ interface GenericCrudEditorProps {
   apiPath: string;
   fields: FieldConfig[];
   idField?: string;
-  imagePreview?: { entityType: string };
+  imagePreview?: { entityType: string; maxWidth?: number; maxHeight?: number };
   disableCreate?: boolean;
   disableCreateMessage?: string;
 }
@@ -372,6 +373,8 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                 imageNegativePrompt={form.imageNegativePrompt}
                 imageWidth={form.imageWidth}
                 imageHeight={form.imageHeight}
+                maxWidth={imagePreview.maxWidth}
+                maxHeight={imagePreview.maxHeight}
                 onUpdate={(fields) => setForm((f: any) => ({ ...f, ...fields }))}
               />
             )}
@@ -404,7 +407,12 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                       style={styles.input}
                       type="number"
                       value={form[field.key] ?? 0}
-                      onChange={(e) => handleChange(field.key, parseFloat(e.target.value) || 0)}
+                      max={field.max}
+                      onChange={(e) => {
+                        let v = parseFloat(e.target.value) || 0;
+                        if (field.max != null) v = Math.min(v, field.max);
+                        handleChange(field.key, v);
+                      }}
                     />
                   )}
                   {field.type === 'checkbox' && (

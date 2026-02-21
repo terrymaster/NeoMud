@@ -69,8 +69,8 @@ function NpcEditor() {
     { key: 'imagePrompt', label: 'Image Prompt', type: 'textarea', rows: 3 },
     { key: 'imageStyle', label: 'Image Style', type: 'text' },
     { key: 'imageNegativePrompt', label: 'Image Negative Prompt', type: 'text' },
-    { key: 'imageWidth', label: 'Image Width', type: 'number' },
-    { key: 'imageHeight', label: 'Image Height', type: 'number' },
+    { key: 'imageWidth', label: 'Image Width (max 384)', type: 'number', max: 384 },
+    { key: 'imageHeight', label: 'Image Height (max 512)', type: 'number', max: 512 },
   ];
 
   return (
@@ -78,7 +78,7 @@ function NpcEditor() {
       entityName="NPC"
       apiPath="/npcs"
       fields={fields}
-      imagePreview={{ entityType: 'npc' }}
+      imagePreview={{ entityType: 'npc', maxWidth: 384, maxHeight: 512 }}
       disableCreate={zoneOptions.length === 0}
       disableCreateMessage="Create a zone first before adding NPCs."
     />

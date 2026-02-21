@@ -305,13 +305,13 @@ function InteractablesEditor({ roomForm, setRoomForm }: {
                 <label style={{ color: '#666' }}>Effect Type</label>
                 <select style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.effectType || ''} onChange={(e) => setData(i, { effectType: e.target.value })}>
                   <option value="">--</option>
-                  <option value="HEAL">HEAL</option>
-                  <option value="DAMAGE">DAMAGE</option>
-                  <option value="MANA_REGEN">MANA_REGEN</option>
-                  <option value="BUFF_STRENGTH">BUFF_STRENGTH</option>
-                  <option value="BUFF_AGILITY">BUFF_AGILITY</option>
-                  <option value="BUFF_INTELLECT">BUFF_INTELLECT</option>
-                  <option value="BUFF_WILLPOWER">BUFF_WILLPOWER</option>
+                  <option value="HEAL">HEAL — Restores HP</option>
+                  <option value="DAMAGE">DAMAGE — Deals damage</option>
+                  <option value="MANA_REGEN">MANA_REGEN — Restores mana</option>
+                  <option value="BUFF_STRENGTH">BUFF_STRENGTH — Boosts strength</option>
+                  <option value="BUFF_AGILITY">BUFF_AGILITY — Boosts agility</option>
+                  <option value="BUFF_INTELLECT">BUFF_INTELLECT — Boosts intellect</option>
+                  <option value="BUFF_WILLPOWER">BUFF_WILLPOWER — Boosts willpower</option>
                 </select>
               </div>
               <div>
@@ -319,12 +319,12 @@ function InteractablesEditor({ roomForm, setRoomForm }: {
                 <input type="number" style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.value || '0'} onChange={(e) => setData(i, { value: e.target.value })} />
               </div>
               <div>
-                <label style={{ color: '#666' }}>Duration</label>
+                <label style={{ color: '#666' }}>Duration (ticks, 0=instant)</label>
                 <input type="number" style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.durationTicks || '0'} onChange={(e) => setData(i, { durationTicks: e.target.value })} />
               </div>
               <div>
-                <label style={{ color: '#666' }}>Message</label>
-                <input style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.message || ''} onChange={(e) => setData(i, { message: e.target.value })} />
+                <label style={{ color: '#666' }}>Player Message</label>
+                <input style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.message || ''} placeholder="e.g. A warm glow fills you" onChange={(e) => setData(i, { message: e.target.value })} />
               </div>
             </div>
           )}

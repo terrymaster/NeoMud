@@ -52,12 +52,12 @@ const fields: FieldConfig[] = [
   { key: 'imagePrompt', label: 'Image Prompt', type: 'textarea', rows: 3 },
   { key: 'imageStyle', label: 'Image Style', type: 'text' },
   { key: 'imageNegativePrompt', label: 'Image Negative Prompt', type: 'text' },
-  { key: 'imageWidth', label: 'Image Width', type: 'number' },
-  { key: 'imageHeight', label: 'Image Height', type: 'number' },
+  { key: 'imageWidth', label: 'Image Width (max 256)', type: 'number', max: 256 },
+  { key: 'imageHeight', label: 'Image Height (max 256)', type: 'number', max: 256 },
 ];
 
 function ItemEditor() {
-  return <GenericCrudEditor entityName="Item" apiPath="/items" fields={fields} imagePreview={{ entityType: 'item' }} />;
+  return <GenericCrudEditor entityName="Item" apiPath="/items" fields={fields} imagePreview={{ entityType: 'item', maxWidth: 256, maxHeight: 256 }} />;
 }
 
 export default ItemEditor;

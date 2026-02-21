@@ -536,6 +536,8 @@ function PcSpriteEditor() {
                   imageNegativePrompt={selected.imageNegativePrompt}
                   imageWidth={selected.imageWidth}
                   imageHeight={selected.imageHeight}
+                  maxWidth={384}
+                  maxHeight={512}
                   onUpdate={handleUpdate}
                 />
               </div>
