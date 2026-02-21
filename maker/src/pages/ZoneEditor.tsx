@@ -677,16 +677,23 @@ function ZoneEditor() {
     async (x: number, y: number) => {
       if (!selectedZoneId) return;
       const roomSlug = `room_${x}_${y}`;
+      const roomName = `New Room (${x},${y})`;
       try {
         const room = await api.post<Room>(`/zones/${selectedZoneId}/rooms`, {
           id: roomSlug,
-          name: 'New Room',
+          name: roomName,
           description: '',
           x,
           y,
         });
         setRooms((prev) => [...prev, { ...room, exits: room.exits || [] }]);
         setSelectedRoomId(room.id);
+        // Update allRooms so the exit target dropdown includes the new room
+        setAllRooms((prev) => prev.map((g) =>
+          g.zoneId === selectedZoneId
+            ? { ...g, rooms: [...g.rooms, { id: room.id, name: room.name }] }
+            : g
+        ));
       } catch {}
     },
     [selectedZoneId]
@@ -755,6 +762,14 @@ function ZoneEditor() {
         )
       );
       setRoomForm((prev) => ({ ...prev, ...updated }));
+      // Sync allRooms so exit target dropdown reflects the updated name
+      if (selectedZoneId) {
+        setAllRooms((prev) => prev.map((g) =>
+          g.zoneId === selectedZoneId
+            ? { ...g, rooms: g.rooms.map((r) => r.id === updated.id ? { id: r.id, name: updated.name } : r) }
+            : g
+        ));
+      }
     } catch {}
   };
 
@@ -763,8 +778,15 @@ function ZoneEditor() {
     try {
       const roomSuffix = selectedRoomId.split(':').slice(1).join(':');
       await api.del(`/zones/${selectedZoneId}/rooms/${roomSuffix}`);
-      setRooms((prev) => prev.filter((r) => r.id !== selectedRoomId));
+      const deletedId = selectedRoomId;
+      setRooms((prev) => prev.filter((r) => r.id !== deletedId));
       setSelectedRoomId(null);
+      // Remove from allRooms so exit target dropdown stays in sync
+      setAllRooms((prev) => prev.map((g) =>
+        g.zoneId === selectedZoneId
+          ? { ...g, rooms: g.rooms.filter((r) => r.id !== deletedId) }
+          : g
+      ));
     } catch {}
   };
 

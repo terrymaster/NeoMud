@@ -175,7 +175,15 @@ function MapCanvas({
     const roomMap = new Map<string, RoomNode>();
     for (const r of rooms) roomMap.set(r.id, r);
 
-    // Draw exits as lines (color-coded by type)
+    // Compute exit color for reuse in line + arrowhead passes
+    const exitColor = (exit: ExitEdge): string => {
+      if (exit.isHidden && exit.isLocked) return '#7b1fa2'; // purple
+      if (exit.isHidden) return '#388e3c'; // green
+      if (exit.isLocked) return '#e65100'; // orange
+      return '#888';
+    };
+
+    // Pass 1: Draw exit lines (under rooms)
     for (const exit of exits) {
       const from = roomMap.get(exit.fromRoomId);
       const to = roomMap.get(exit.toRoomId);
@@ -183,47 +191,12 @@ function MapCanvas({
       const { px: x1, py: y1 } = gridToPixel(from.x, from.y);
       const { px: x2, py: y2 } = gridToPixel(to.x, to.y);
 
-      // Color: hidden+locked = purple, hidden = green, locked = orange, normal = grey
-      if (exit.isHidden && exit.isLocked) {
-        ctx.strokeStyle = '#7b1fa2'; // purple
-      } else if (exit.isHidden) {
-        ctx.strokeStyle = '#388e3c'; // green
-      } else if (exit.isLocked) {
-        ctx.strokeStyle = '#e65100'; // orange
-      } else {
-        ctx.strokeStyle = '#888';
-      }
-
-      // Dashed line for hidden exits
-      if (exit.isHidden) {
-        ctx.setLineDash([6, 4]);
-      } else {
-        ctx.setLineDash([]);
-      }
-
+      ctx.strokeStyle = exitColor(exit);
+      ctx.setLineDash(exit.isHidden ? [6, 4] : []);
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
-      ctx.stroke();
-
-      // Arrowhead
-      const angle = Math.atan2(y2 - y1, x2 - x1);
-      const headLen = 10;
-      const endX = x2 - Math.cos(angle) * (CELL_SIZE / 2);
-      const endY = y2 - Math.sin(angle) * (CELL_SIZE / 2);
-      ctx.setLineDash([]); // arrowhead always solid
-      ctx.beginPath();
-      ctx.moveTo(endX, endY);
-      ctx.lineTo(
-        endX - headLen * Math.cos(angle - Math.PI / 6),
-        endY - headLen * Math.sin(angle - Math.PI / 6)
-      );
-      ctx.moveTo(endX, endY);
-      ctx.lineTo(
-        endX - headLen * Math.cos(angle + Math.PI / 6),
-        endY - headLen * Math.sin(angle + Math.PI / 6)
-      );
       ctx.stroke();
     }
     ctx.setLineDash([]);
@@ -286,6 +259,41 @@ function MapCanvas({
       const displayName =
         room.name.length > 10 ? room.name.substring(0, 9) + '...' : room.name;
       ctx.fillText(displayName, px, py);
+    }
+
+    // Pass 2: Draw exit arrowheads (on top of rooms so diagonals are visible)
+    for (const exit of exits) {
+      const from = roomMap.get(exit.fromRoomId);
+      const to = roomMap.get(exit.toRoomId);
+      if (!from || !to) continue;
+      const { px: x1, py: y1 } = gridToPixel(from.x, from.y);
+      const { px: x2, py: y2 } = gridToPixel(to.x, to.y);
+
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      const absC = Math.abs(Math.cos(angle));
+      const absS = Math.abs(Math.sin(angle));
+      const half = CELL_SIZE / 2;
+      // Distance from center to square edge along the line's angle
+      const isCardinal = absC < 0.001 || absS < 0.001;
+      const edgeDist = isCardinal
+        ? half
+        : Math.min(half / absC, half / absS) - 6; // pull diagonal tips 6px closer
+      const endX = x2 - Math.cos(angle) * edgeDist;
+      const endY = y2 - Math.sin(angle) * edgeDist;
+      const headLen = 8;
+      ctx.fillStyle = exitColor(exit);
+      ctx.beginPath();
+      ctx.moveTo(endX, endY);
+      ctx.lineTo(
+        endX - headLen * Math.cos(angle - Math.PI / 7),
+        endY - headLen * Math.sin(angle - Math.PI / 7)
+      );
+      ctx.lineTo(
+        endX - headLen * Math.cos(angle + Math.PI / 7),
+        endY - headLen * Math.sin(angle + Math.PI / 7)
+      );
+      ctx.closePath();
+      ctx.fill();
     }
 
     // Draw vertical exit indicators (▲/▼ triangles)
