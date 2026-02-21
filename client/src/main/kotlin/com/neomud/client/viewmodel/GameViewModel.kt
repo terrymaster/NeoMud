@@ -539,6 +539,11 @@ class GameViewModel(
                     unspentCp = message.unspentCp
                 )
             }
+            is ServerMessage.InteractResult -> {
+                val color = if (message.success) MudColors.selfAction else MudColors.error
+                addLog(message.message, color)
+                sfx(message.sound)
+            }
             is ServerMessage.StatTrained -> {
                 addLog("Trained ${message.stat} to ${message.newValue} (${message.cpSpent} CP spent, ${message.remainingCp} remaining)", MudColors.system)
                 _player.value = _player.value?.let { p ->
@@ -749,6 +754,12 @@ class GameViewModel(
     fun dismissVendor() {
         _showVendor.value = false
         _vendorInfo.value = null
+    }
+
+    fun interactFeature(featureId: String) {
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.InteractFeature(featureId))
+        }
     }
 
     // Lock target picker methods

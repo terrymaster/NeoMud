@@ -8,6 +8,7 @@ import com.neomud.server.game.commands.KickCommand
 import com.neomud.server.game.commands.LookCommand
 import com.neomud.server.game.commands.MeditateCommand
 import com.neomud.server.game.commands.MoveCommand
+import com.neomud.server.game.commands.InteractCommand
 import com.neomud.server.game.commands.PickLockCommand
 import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.commands.SayCommand
@@ -74,6 +75,7 @@ class CommandProcessor(
     private val meditateCommand = MeditateCommand(skillCatalog, sessionManager)
     private val trackCommand = TrackCommand(movementTrailManager ?: MovementTrailManager(), worldGraph)
     private val pickLockCommand = PickLockCommand(worldGraph, sessionManager)
+    private val interactCommand = InteractCommand(worldGraph, sessionManager, npcManager, roomItemManager, lootService, lootTableCatalog)
 
     suspend fun sendCatalogSync(session: PlayerSession) {
         session.send(ServerMessage.ClassCatalogSync(classCatalog.getAllClasses()))
@@ -170,6 +172,9 @@ class CommandProcessor(
             }
             is ClientMessage.SellItem -> {
                 requireAuth(session) { vendorCommand.handleSell(session, message.itemId, message.quantity) }
+            }
+            is ClientMessage.InteractFeature -> {
+                requireAuth(session) { interactCommand.execute(session, message.featureId) }
             }
             else -> {} // Register, Login, Ping already handled in process()
         }

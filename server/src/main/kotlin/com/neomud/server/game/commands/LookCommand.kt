@@ -32,9 +32,10 @@ class LookCommand(
         val playerName = session.playerName!!
         val player = session.player
 
-        // Passive perception check for hidden exits before sending room info
+        // Passive perception check for hidden exits and interactables before sending room info
         if (player != null) {
             checkHiddenExits(session, currentRoomId)
+            checkHiddenInteractables(session, currentRoomId)
         }
 
         val filteredRoom = RoomFilter.forPlayer(room, session, worldGraph)
@@ -78,6 +79,24 @@ class LookCommand(
                         session.send(ServerMessage.SystemMessage("Your keen eyes spot ${hiddenPlayer.name} lurking in the shadows!"))
                     }
                 }
+            }
+        }
+    }
+
+    private suspend fun checkHiddenInteractables(session: PlayerSession, roomId: String) {
+        val player = session.player ?: return
+        val defs = worldGraph.getInteractableDefs(roomId).filter { it.perceptionDC > 0 }
+        if (defs.isEmpty()) return
+
+        val effStats = session.effectiveStats()
+        val bonus = StealthUtils.perceptionBonus(player.characterClass, classCatalog)
+        val roll = effStats.willpower + effStats.intellect / 2 + player.level / 2 + bonus + (1..20).random()
+
+        for (feat in defs) {
+            if (session.hasDiscoveredInteractable(roomId, feat.id)) continue
+            if (roll >= feat.perceptionDC) {
+                session.discoverInteractable(roomId, feat.id)
+                session.send(ServerMessage.SystemMessage("You notice something: ${feat.label}"))
             }
         }
     }

@@ -56,6 +56,7 @@ import com.neomud.client.ui.components.PlayerTooltip
 import com.neomud.client.viewmodel.GameViewModel
 import com.neomud.shared.model.Direction
 import com.neomud.shared.model.PlayerInfo
+import com.neomud.shared.model.RoomInteractable
 
 @Composable
 fun GameScreen(
@@ -424,8 +425,9 @@ private fun GameScreenPortrait(
                 )
             }
 
-            // Layer 3: Trainer/Vendor overlays (bottom-left of room view)
-            if (showTrainerButton || showVendorButton) {
+            // Layer 3: Trainer/Vendor/Interactable overlays (bottom-left of room view)
+            val interactables = roomInfo?.room?.interactables ?: emptyList()
+            if (showTrainerButton || showVendorButton || interactables.isNotEmpty()) {
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -446,6 +448,15 @@ private fun GameScreenPortrait(
                             label = "Shop",
                             color = Color(0xFFCC8833),
                             onClick = { gameViewModel.interactVendor() }
+                        )
+                    }
+                    for (feat in interactables) {
+                        val (icon, color) = interactableStyle(feat)
+                        RoomOverlayButton(
+                            icon = icon,
+                            label = feat.label,
+                            color = color,
+                            onClick = { gameViewModel.interactFeature(feat.id) }
                         )
                     }
                 }
@@ -635,8 +646,9 @@ private fun GameScreenLandscape(
                     )
                 }
 
-                // Layer 3: Trainer/Vendor overlays (bottom-left of room view)
-                if (showTrainerButton || showVendorButton) {
+                // Layer 3: Trainer/Vendor/Interactable overlays (bottom-left of room view)
+                val interactables = roomInfo?.room?.interactables ?: emptyList()
+                if (showTrainerButton || showVendorButton || interactables.isNotEmpty()) {
                     Column(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
@@ -657,6 +669,15 @@ private fun GameScreenLandscape(
                                 label = "Shop",
                                 color = Color(0xFFCC8833),
                                 onClick = { gameViewModel.interactVendor() }
+                            )
+                        }
+                        for (feat in interactables) {
+                            val (icon, color) = interactableStyle(feat)
+                            RoomOverlayButton(
+                                icon = icon,
+                                label = feat.label,
+                                color = color,
+                                onClick = { gameViewModel.interactFeature(feat.id) }
                             )
                         }
                     }
@@ -934,6 +955,18 @@ private fun ActionButtonRow(
         )
     }
     } // end Column
+}
+
+private fun interactableStyle(feat: RoomInteractable): Pair<String, Color> {
+    if (feat.icon.isNotEmpty()) return feat.icon to Color(0xFFAABBCC)
+    return when (feat.actionType) {
+        "EXIT_OPEN"      -> "\uD83D\uDD13" to Color(0xFFFFAA00)
+        "TREASURE_DROP"  -> "\uD83D\uDCE6" to Color(0xFFFFD700)
+        "MONSTER_SPAWN"  -> "\u26A0\uFE0F" to Color(0xFFFF4444)
+        "ROOM_EFFECT"    -> "\u2728" to Color(0xFF44DDFF)
+        "TELEPORT"       -> "\uD83C\uDF00" to Color(0xFFAA44FF)
+        else             -> "\u2699\uFE0F" to Color(0xFFAAAAAA)
+    }
 }
 
 @Composable

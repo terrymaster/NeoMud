@@ -104,15 +104,31 @@
     {
       "id": "town:cellar",
       "name": "Tavern Cellar",
-      "description": "A damp stone cellar beneath the tavern, lit by a single sputtering torch. Barrels of ale and crates of provisions line the walls. Cobwebs hang in every corner, and the air smells of old wood and stale beer. A rickety wooden ladder leads back up to the tavern above.",
+      "description": "A damp stone cellar beneath the tavern, lit by a single sputtering torch. Barrels of ale and crates of provisions line the walls. Cobwebs hang in every corner, and the air smells of old wood and stale beer. A rickety wooden ladder leads up to a heavy trapdoor in the ceiling, but it's latched shut from this side. An iron lever juts from the wall nearby.",
       "x": -1,
       "y": -1,
       "exits": {
         "UP": "town:tavern"
       },
+      "lockedExits": { "UP": 99 },
+      "unpickableExits": ["UP"],
+      "interactables": [
+        {
+          "id": "lever_trapdoor",
+          "label": "Pull Lever",
+          "description": "You heave the rusty iron lever. With a grinding clank, the trapdoor latch releases and the way up swings open.",
+          "icon": "",
+          "actionType": "EXIT_OPEN",
+          "actionData": { "direction": "UP" },
+          "perceptionDC": 0,
+          "cooldownTicks": 0,
+          "resetTicks": 6,
+          "sound": ""
+        }
+      ],
       "backgroundImage": "/assets/images/rooms/town_cellar.jpg",
       "departSound": "footstep_wood",
-      "imagePrompt": "First-person view standing in a dim stone cellar beneath a tavern. Flat flagstone floor filling the lower third. Wooden barrels and crates line both walls receding into shadow. A single sputtering torch on the left wall. Cobwebs in corners. A wooden ladder leads up through a trapdoor in the ceiling. No people or creatures.",
+      "imagePrompt": "First-person view standing in a dim stone cellar beneath a tavern. Flat flagstone floor filling the lower third. Wooden barrels and crates line both walls receding into shadow. A single sputtering torch on the left wall. Cobwebs in corners. A wooden ladder leads up through a trapdoor in the ceiling. A rusty iron lever on the stone wall near the ladder. No people or creatures.",
       "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
       "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
       "imageWidth": 1024,

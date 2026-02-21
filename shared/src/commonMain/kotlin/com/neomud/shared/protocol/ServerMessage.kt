@@ -337,4 +337,13 @@ sealed class ServerMessage {
         val updatedInventory: List<InventoryItem>,
         val equipment: Map<String, String>
     ) : ServerMessage()
+
+    @Serializable
+    @SerialName("interact_result")
+    data class InteractResult(
+        val success: Boolean,
+        val featureName: String,
+        val message: String,
+        val sound: String = ""
+    ) : ServerMessage()
 }

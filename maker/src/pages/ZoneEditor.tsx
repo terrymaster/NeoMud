@@ -46,6 +46,8 @@ interface Room {
   imagePrompt: string;
   imageStyle: string;
   imageNegativePrompt: string;
+  interactables: string;
+  unpickableExits: string;
   imageWidth: number;
   imageHeight: number;
   exits: Exit[];
@@ -56,6 +58,19 @@ interface HiddenExitData {
   lockDifficulty: number;
   hiddenResetTicks: number;
   lockResetTicks: number;
+}
+
+interface Interactable {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  actionType: string;
+  actionData: Record<string, string>;
+  perceptionDC: number;
+  cooldownTicks: number;
+  resetTicks: number;
+  sound: string;
 }
 
 interface ZoneWithRooms extends Zone {
@@ -187,6 +202,153 @@ const ALL_DIRECTIONS = [
   'NORTHEAST', 'NORTHWEST', 'SOUTHEAST', 'SOUTHWEST',
   'UP', 'DOWN',
 ];
+
+function InteractablesEditor({ roomForm, setRoomForm }: {
+  roomForm: Partial<Room>;
+  setRoomForm: React.Dispatch<React.SetStateAction<Partial<Room>>>;
+}) {
+  const interactList: Interactable[] = (() => {
+    try { return JSON.parse(roomForm.interactables || '[]'); } catch { return []; }
+  })();
+  const update = (updated: Interactable[]) =>
+    setRoomForm((f) => ({ ...f, interactables: JSON.stringify(updated) }));
+  const set = (i: number, patch: Partial<Interactable>) => {
+    const u = [...interactList];
+    u[i] = { ...u[i], ...patch };
+    update(u);
+  };
+  const setData = (i: number, patch: Record<string, string>) => {
+    const u = [...interactList];
+    u[i] = { ...u[i], actionData: { ...u[i].actionData, ...patch } };
+    update(u);
+  };
+
+  return (
+    <>
+      {interactList.map((feat, i) => (
+        <div key={i} style={{ padding: '6px 8px', backgroundColor: '#f3f0ff', borderRadius: 4, marginBottom: 4, border: '1px solid #e0d8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <strong style={{ fontSize: 11 }}>{feat.label || feat.id || `#${i}`}</strong>
+            <button
+              onClick={() => update(interactList.filter((_, j) => j !== i))}
+              style={{ background: 'none', border: 'none', color: '#d32f2f', cursor: 'pointer', fontWeight: 700, fontSize: 14, padding: '0 4px' }}
+              title="Remove interactable"
+            >x</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 10 }}>
+            <div>
+              <label style={{ color: '#666' }}>ID</label>
+              <input style={{ ...styles.input, fontSize: 11 }} value={feat.id} onChange={(e) => set(i, { id: e.target.value })} />
+            </div>
+            <div>
+              <label style={{ color: '#666' }}>Label</label>
+              <input style={{ ...styles.input, fontSize: 11 }} value={feat.label} onChange={(e) => set(i, { label: e.target.value })} />
+            </div>
+          </div>
+          <label style={{ fontSize: 10, color: '#666', marginTop: 2, display: 'block' }}>Description</label>
+          <textarea style={{ ...styles.textarea, minHeight: 30, fontSize: 11 }} value={feat.description} onChange={(e) => set(i, { description: e.target.value })} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 10, marginTop: 2 }}>
+            <div>
+              <label style={{ color: '#666' }}>Action Type</label>
+              <select style={{ ...styles.input, fontSize: 11 }} value={feat.actionType} onChange={(e) => set(i, { actionType: e.target.value, actionData: {} })}>
+                <option value="EXIT_OPEN">Open Exit</option>
+                <option value="TREASURE_DROP">Drop Treasure</option>
+                <option value="MONSTER_SPAWN">Spawn Monster</option>
+                <option value="ROOM_EFFECT">Room Effect</option>
+                <option value="TELEPORT">Teleport</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ color: '#666' }}>Perception DC</label>
+              <input type="number" style={{ ...styles.input, fontSize: 11 }} value={feat.perceptionDC} min={0} onChange={(e) => set(i, { perceptionDC: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div>
+              <label style={{ color: '#666' }}>Reset Ticks</label>
+              <input type="number" style={{ ...styles.input, fontSize: 11 }} value={feat.resetTicks} min={0} onChange={(e) => set(i, { resetTicks: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div>
+              <label style={{ color: '#666' }}>Cooldown Ticks</label>
+              <input type="number" style={{ ...styles.input, fontSize: 11 }} value={feat.cooldownTicks} min={0} onChange={(e) => set(i, { cooldownTicks: parseInt(e.target.value) || 0 })} />
+            </div>
+          </div>
+          {/* Action-specific inputs */}
+          {feat.actionType === 'EXIT_OPEN' && (
+            <div style={{ marginTop: 4, fontSize: 10 }}>
+              <label style={{ color: '#666' }}>Direction</label>
+              <select style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.direction || ''} onChange={(e) => setData(i, { direction: e.target.value })}>
+                <option value="">--</option>
+                {ALL_DIRECTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+          )}
+          {feat.actionType === 'TREASURE_DROP' && (
+            <div style={{ marginTop: 4, fontSize: 10 }}>
+              <label style={{ color: '#666' }}>Loot Table ID</label>
+              <input style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.lootTableId || ''} onChange={(e) => setData(i, { lootTableId: e.target.value })} />
+            </div>
+          )}
+          {feat.actionType === 'MONSTER_SPAWN' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 4, marginTop: 4, fontSize: 10 }}>
+              <div>
+                <label style={{ color: '#666' }}>NPC ID</label>
+                <input style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.npcId || ''} onChange={(e) => setData(i, { npcId: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ color: '#666' }}>Count</label>
+                <input type="number" style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.count || '1'} min={1} onChange={(e) => setData(i, { count: e.target.value })} />
+              </div>
+            </div>
+          )}
+          {feat.actionType === 'ROOM_EFFECT' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 4, fontSize: 10 }}>
+              <div>
+                <label style={{ color: '#666' }}>Effect Type</label>
+                <select style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.effectType || ''} onChange={(e) => setData(i, { effectType: e.target.value })}>
+                  <option value="">--</option>
+                  <option value="HEAL">HEAL</option>
+                  <option value="DAMAGE">DAMAGE</option>
+                  <option value="MANA_REGEN">MANA_REGEN</option>
+                  <option value="BUFF_STRENGTH">BUFF_STRENGTH</option>
+                  <option value="BUFF_AGILITY">BUFF_AGILITY</option>
+                  <option value="BUFF_INTELLECT">BUFF_INTELLECT</option>
+                  <option value="BUFF_WILLPOWER">BUFF_WILLPOWER</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ color: '#666' }}>Value</label>
+                <input type="number" style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.value || '0'} onChange={(e) => setData(i, { value: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ color: '#666' }}>Duration</label>
+                <input type="number" style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.durationTicks || '0'} onChange={(e) => setData(i, { durationTicks: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ color: '#666' }}>Message</label>
+                <input style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.message || ''} onChange={(e) => setData(i, { message: e.target.value })} />
+              </div>
+            </div>
+          )}
+          {feat.actionType === 'TELEPORT' && (
+            <div style={{ marginTop: 4, fontSize: 10 }}>
+              <label style={{ color: '#666' }}>Target Room ID</label>
+              <input style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.targetRoomId || ''} onChange={(e) => setData(i, { targetRoomId: e.target.value })} />
+              <label style={{ color: '#666', marginTop: 2, display: 'block' }}>Message</label>
+              <input style={{ ...styles.input, fontSize: 11 }} value={feat.actionData?.message || ''} onChange={(e) => setData(i, { message: e.target.value })} />
+            </div>
+          )}
+          <div style={{ marginTop: 4, fontSize: 10 }}>
+            <label style={{ color: '#666' }}>Icon (emoji, blank=default)</label>
+            <input style={{ ...styles.input, fontSize: 11, width: 60 }} value={feat.icon} onChange={(e) => set(i, { icon: e.target.value })} />
+          </div>
+        </div>
+      ))}
+      <button
+        style={{ ...styles.btnSmall, width: '100%' }}
+        onClick={() => update([...interactList, { id: `feat_${interactList.length + 1}`, label: 'New Feature', description: '', icon: '', actionType: 'EXIT_OPEN', actionData: {}, perceptionDC: 0, cooldownTicks: 0, resetTicks: 0, sound: '' }])}
+      >+ Add Interactable</button>
+    </>
+  );
+}
 
 interface AllRoomsGroup {
   zoneId: string;
@@ -918,6 +1080,9 @@ function ZoneEditor() {
                 </>
               );
             })()}
+            {/* ─── Interactables ──────────────────────────── */}
+            <div style={{ ...styles.sectionTitle, marginTop: 12 }}>Interactables</div>
+            <InteractablesEditor roomForm={roomForm} setRoomForm={setRoomForm} />
             <div style={{ display: 'flex', gap: 8 }}>
               <button style={styles.btnSmall} onClick={handleSaveRoom}>
                 Save Room
@@ -1021,7 +1186,29 @@ function ZoneEditor() {
                           x
                         </button>
                       </div>
-                      {/* Lock reset ticks (shown when locked) */}
+                      {/* Lock options (shown when locked) */}
+                      {lockDc > 0 && (() => {
+                        const unpickableList: string[] = (() => {
+                          try { return JSON.parse(roomForm.unpickableExits || '[]'); } catch { return []; }
+                        })();
+                        const isUnpickable = unpickableList.includes(exit.direction);
+                        return (
+                          <div style={{ marginTop: 2, marginLeft: 8 }}>
+                            <label style={{ fontSize: 10, color: '#888', cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={isUnpickable}
+                                onChange={(e) => {
+                                  const updated = e.target.checked
+                                    ? [...unpickableList, exit.direction]
+                                    : unpickableList.filter((d) => d !== exit.direction);
+                                  setRoomForm((f: any) => ({ ...f, unpickableExits: JSON.stringify(updated) }));
+                                }}
+                              />{' '}Unpickable (interaction only)
+                            </label>
+                          </div>
+                        );
+                      })()}
                       {lockDc > 0 && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2, marginLeft: 8 }}>
                           <span style={{ fontSize: 10, color: '#888' }}>Re-lock after</span>

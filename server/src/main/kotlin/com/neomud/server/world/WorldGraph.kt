@@ -4,11 +4,19 @@ import com.neomud.shared.model.Direction
 import com.neomud.shared.model.MapRoom
 import com.neomud.shared.model.Room
 import com.neomud.shared.model.RoomId
+import com.neomud.shared.model.RoomInteractable
 
 sealed class ExitResetEvent {
     data class Relocked(val roomId: RoomId, val direction: Direction, val difficulty: Int) : ExitResetEvent()
     data class Rehidden(val roomId: RoomId, val direction: Direction) : ExitResetEvent()
 }
+
+data class InteractableResetEvent(
+    val roomId: RoomId,
+    val featureId: String,
+    val featureLabel: String,
+    val actionType: String
+)
 
 class WorldGraph {
     private val rooms = HashMap<RoomId, Room>()
@@ -21,6 +29,11 @@ class WorldGraph {
     // Mutable timer state
     private val lockResetTimers = HashMap<RoomId, MutableMap<Direction, Int>>()
     private val hiddenResetTimers = HashMap<RoomId, MutableMap<Direction, Int>>()
+
+    // Interactable storage
+    private val interactableDefs = HashMap<RoomId, List<RoomInteractable>>()
+    val usedInteractables = mutableSetOf<String>()           // "roomId:featureId"
+    val interactableResetTimers = HashMap<String, Int>()     // "roomId:featureId" -> ticks remaining
 
     var defaultSpawnRoom: RoomId = ""
         private set
@@ -142,6 +155,68 @@ class WorldGraph {
 
     fun rehideExit(roomId: RoomId, direction: Direction) {
         hiddenResetTimers[roomId]?.remove(direction)
+    }
+
+    // --- Interactable management ---
+
+    fun storeInteractableDefs(roomId: RoomId, defs: List<RoomInteractable>) {
+        if (defs.isNotEmpty()) interactableDefs[roomId] = defs
+    }
+
+    fun getInteractableDefs(roomId: RoomId): List<RoomInteractable> =
+        interactableDefs[roomId] ?: emptyList()
+
+    fun isInteractableUsed(roomId: RoomId, featureId: String): Boolean =
+        "$roomId::$featureId" in usedInteractables
+
+    fun markInteractableUsed(roomId: RoomId, featureId: String, resetTicks: Int) {
+        val key = "$roomId::$featureId"
+        usedInteractables.add(key)
+        if (resetTicks > 0) {
+            interactableResetTimers[key] = resetTicks
+        }
+    }
+
+    fun resetInteractable(roomId: RoomId, featureId: String) {
+        usedInteractables.remove("$roomId::$featureId")
+    }
+
+    fun tickInteractableTimers(): List<InteractableResetEvent> {
+        val events = mutableListOf<InteractableResetEvent>()
+        val iter = interactableResetTimers.entries.iterator()
+        while (iter.hasNext()) {
+            val entry = iter.next()
+            val newVal = entry.value - 1
+            if (newVal <= 0) {
+                iter.remove()
+                val key = entry.key
+                val sepIdx = key.lastIndexOf("::")
+                if (sepIdx > 0) {
+                    val roomId = key.substring(0, sepIdx)
+                    val featureId = key.substring(sepIdx + 2)
+                    val def = getInteractableDefs(roomId).find { it.id == featureId }
+                    resetInteractable(roomId, featureId)
+                    if (def?.actionType == "EXIT_OPEN") {
+                        // Re-lock the exit
+                        val dirStr = def.actionData["direction"]
+                        if (dirStr != null) {
+                            try {
+                                relockExit(roomId, Direction.valueOf(dirStr))
+                            } catch (_: IllegalArgumentException) { }
+                        }
+                    }
+                    events.add(InteractableResetEvent(
+                        roomId = roomId,
+                        featureId = featureId,
+                        featureLabel = def?.label ?: featureId,
+                        actionType = def?.actionType ?: ""
+                    ))
+                }
+            } else {
+                entry.setValue(newVal)
+            }
+        }
+        return events
     }
 
     fun tickResetTimers(): List<ExitResetEvent> {

@@ -191,20 +191,26 @@ class NpcManager(
             val templates = zoneTemplates[zoneId] ?: continue
             if (templates.isEmpty()) continue
 
-            // Pick a random template and try to spawn at its startRoomId
+            // Pick a random template and try to spawn at a valid room
             val (template, _) = templates.random()
-            if (config.maxPerRoom > 0 && aliveNpcsInRoom(template.startRoomId) >= config.maxPerRoom) continue
+            val candidates = template.spawnPoints.ifEmpty { listOf(template.startRoomId) }
+            val spawnRoom = if (config.maxPerRoom > 0) {
+                candidates.filter { aliveNpcsInRoom(it) < config.maxPerRoom }.randomOrNull() ?: continue
+            } else {
+                candidates.random()
+            }
 
             val instanceId = "${template.id}#${nextSpawnIndex++}"
             val spawned = createNpcState(template, zoneId, instanceId)
+            spawned.currentRoomId = spawnRoom
             npcs.add(spawned)
-            logger.info("Spawned ${spawned.name} ($instanceId) at ${spawned.startRoomId}")
+            logger.info("Spawned ${spawned.name} ($instanceId) at $spawnRoom")
 
             events.add(
                 NpcEvent(
                     npcName = spawned.name,
                     fromRoomId = null,
-                    toRoomId = spawned.startRoomId,
+                    toRoomId = spawnRoom,
                     direction = null,
                     npcId = spawned.id,
                     hostile = spawned.hostile,

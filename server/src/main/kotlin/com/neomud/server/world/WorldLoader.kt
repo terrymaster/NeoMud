@@ -99,7 +99,9 @@ object WorldLoader {
                     effects = effects,
                     bgm = roomData.bgm.ifEmpty { zone.bgm },
                     departSound = roomData.departSound,
-                    lockedExits = mergedLockedExits
+                    lockedExits = mergedLockedExits,
+                    interactables = roomData.interactables,
+                    unpickableExits = roomData.unpickableExits
                 )
                 worldGraph.addRoom(room)
 
@@ -111,6 +113,8 @@ object WorldLoader {
                 worldGraph.setLockResetDurations(roomData.id, allLockResetDurations.toMap())
                 // Store hidden exit definitions
                 worldGraph.setHiddenExitDefs(roomData.id, roomData.hiddenExits)
+                // Store interactable definitions
+                worldGraph.storeInteractableDefs(roomData.id, roomData.interactables)
             }
 
             allNpcData.addAll(zone.npcs.map { it to zone.id })
@@ -174,6 +178,11 @@ object WorldLoader {
             if (worldGraph.getRoom(npcData.startRoomId) == null) {
                 logger.warn("NPC '${npcData.id}' startRoomId '${npcData.startRoomId}' not found in loaded rooms")
             }
+            for (roomId in npcData.spawnPoints) {
+                if (worldGraph.getRoom(roomId) == null) {
+                    logger.warn("NPC '${npcData.id}' spawnPoint '$roomId' not found in loaded rooms")
+                }
+            }
         }
 
         // Room data validation
@@ -183,6 +192,41 @@ object WorldLoader {
             for ((direction, targetId) in room.exits) {
                 if (worldGraph.getRoom(targetId) == null) {
                     logger.warn("Room '${room.id}' exit $direction points to unknown room '$targetId'")
+                }
+            }
+        }
+
+        // Interactable validation
+        for (room in worldGraph.getAllRooms()) {
+            val ids = mutableSetOf<String>()
+            for (feat in room.interactables) {
+                if (!ids.add(feat.id)) {
+                    logger.warn("Room '${room.id}' has duplicate interactable id '${feat.id}'")
+                }
+                when (feat.actionType) {
+                    "EXIT_OPEN" -> {
+                        val dirStr = feat.actionData["direction"]
+                        if (dirStr == null) {
+                            logger.warn("Room '${room.id}' interactable '${feat.id}' EXIT_OPEN missing 'direction'")
+                        } else {
+                            try {
+                                val dir = com.neomud.shared.model.Direction.valueOf(dirStr)
+                                if (dir !in room.exits) {
+                                    logger.warn("Room '${room.id}' interactable '${feat.id}' EXIT_OPEN direction '$dirStr' not in room exits")
+                                }
+                            } catch (_: IllegalArgumentException) {
+                                logger.warn("Room '${room.id}' interactable '${feat.id}' EXIT_OPEN invalid direction '$dirStr'")
+                            }
+                        }
+                    }
+                    "TELEPORT" -> {
+                        val targetRoomId = feat.actionData["targetRoomId"]
+                        if (targetRoomId != null && worldGraph.getRoom(targetRoomId) == null) {
+                            logger.warn("Room '${room.id}' interactable '${feat.id}' TELEPORT targetRoomId '$targetRoomId' not found")
+                        }
+                    }
+                    "TREASURE_DROP", "MONSTER_SPAWN", "ROOM_EFFECT" -> { /* validated at runtime */ }
+                    else -> logger.warn("Room '${room.id}' interactable '${feat.id}' unknown actionType '${feat.actionType}'")
                 }
             }
         }

@@ -94,6 +94,8 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
           ...(Object.keys(lockedExits).length > 0 ? { lockedExits } : {}),
           ...(Object.keys(lockResetTicks).length > 0 ? { lockResetTicks } : {}),
           ...(Object.keys(hiddenExits).length > 0 ? { hiddenExits } : {}),
+          ...((() => { const i = parseJsonField(room.interactables, []); return i.length > 0 ? { interactables: i } : {}; })()),
+          ...((() => { const u = parseJsonField(room.unpickableExits, []); return u.length > 0 ? { unpickableExits: u } : {}; })()),
         }
       }),
       npcs: zoneNpcs.map((npc) => ({
@@ -114,6 +116,7 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
         evasion: npc.evasion,
         agility: npc.agility,
         vendorItems: parseJsonField(npc.vendorItems, []),
+        spawnPoints: parseJsonField(npc.spawnPoints, []),
         attackSound: npc.attackSound,
         missSound: npc.missSound,
         deathSound: npc.deathSound,
@@ -385,6 +388,8 @@ exportRouter.get('/json', async (_req, res) => {
           ...(Object.keys(lockedExits).length > 0 ? { lockedExits } : {}),
           ...(Object.keys(lockResetTicks).length > 0 ? { lockResetTicks } : {}),
           ...(Object.keys(hiddenExits).length > 0 ? { hiddenExits } : {}),
+          ...((() => { const i = parseJsonField(room.interactables, []); return i.length > 0 ? { interactables: i } : {}; })()),
+          ...((() => { const u = parseJsonField(room.unpickableExits, []); return u.length > 0 ? { unpickableExits: u } : {}; })()),
         }
       }
 
@@ -409,6 +414,7 @@ exportRouter.get('/json', async (_req, res) => {
           evasion: npc.evasion,
           agility: npc.agility,
           vendorItems: parseJsonField(npc.vendorItems, []),
+          spawnPoints: parseJsonField(npc.spawnPoints, []),
           attackSound: npc.attackSound,
           missSound: npc.missSound,
           deathSound: npc.deathSound,

@@ -770,6 +770,39 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testInteractFeatureRoundTrip() {
+        val original = ClientMessage.InteractFeature("lever_1")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testInteractResultRoundTrip() {
+        val original = ServerMessage.InteractResult(
+            success = true,
+            featureName = "Ancient Lever",
+            message = "You pull the ancient lever...",
+            sound = "lever_pull"
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testInteractResultNoSoundRoundTrip() {
+        val original = ServerMessage.InteractResult(
+            success = false,
+            featureName = "Rusty Button",
+            message = "It doesn't seem to do anything."
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
     fun testVendorInfoWithHaggleRoundTrip() {
         val items = listOf(
             VendorItem(

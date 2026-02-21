@@ -119,4 +119,8 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("sell_item")
     data class SellItem(val itemId: String, val quantity: Int = 1) : ClientMessage()
+
+    @Serializable
+    @SerialName("interact_feature")
+    data class InteractFeature(val featureId: String) : ClientMessage()
 }

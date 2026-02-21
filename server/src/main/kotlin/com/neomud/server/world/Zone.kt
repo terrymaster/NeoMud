@@ -3,6 +3,7 @@ package com.neomud.server.world
 import com.neomud.shared.model.Direction
 import com.neomud.shared.model.RoomEffect
 import com.neomud.shared.model.RoomId
+import com.neomud.shared.model.RoomInteractable
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -55,7 +56,9 @@ data class RoomData(
     val imageStyle: String = "",
     val imageNegativePrompt: String = "",
     val imageWidth: Int = 1024,
-    val imageHeight: Int = 576
+    val imageHeight: Int = 576,
+    val interactables: List<RoomInteractable> = emptyList(),
+    val unpickableExits: Set<Direction> = emptySet()
 )
 
 @Serializable
@@ -81,6 +84,7 @@ data class NpcData(
     val missSound: String = "",
     val deathSound: String = "",
     val interactSound: String = "",
+    val spawnPoints: List<RoomId> = emptyList(),
     val imagePrompt: String = "",
     val imageStyle: String = "",
     val imageNegativePrompt: String = "",

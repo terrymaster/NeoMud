@@ -13,6 +13,20 @@ data class RoomEffect(
 )
 
 @Serializable
+data class RoomInteractable(
+    val id: String,
+    val label: String,
+    val description: String,
+    val icon: String = "",
+    val actionType: String,
+    val actionData: Map<String, String> = emptyMap(),
+    val perceptionDC: Int = 0,
+    val cooldownTicks: Int = 0,
+    val resetTicks: Int = 0,
+    val sound: String = ""
+)
+
+@Serializable
 data class Room(
     val id: RoomId,
     val name: String,
@@ -25,7 +39,9 @@ data class Room(
     val effects: List<RoomEffect> = emptyList(),
     val bgm: String = "",
     val departSound: String = "",
-    val lockedExits: Map<Direction, Int> = emptyMap()
+    val lockedExits: Map<Direction, Int> = emptyMap(),
+    val interactables: List<RoomInteractable> = emptyList(),
+    val unpickableExits: Set<Direction> = emptySet()
 )
 
 @Serializable

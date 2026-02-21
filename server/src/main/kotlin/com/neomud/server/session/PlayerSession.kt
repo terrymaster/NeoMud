@@ -21,6 +21,10 @@ class PlayerSession(
     val skillCooldowns: MutableMap<String, Int> = mutableMapOf()
     val discoveredHiddenExits: MutableSet<String> = mutableSetOf()
 
+    // Interactable state
+    val discoveredInteractables: MutableSet<String> = mutableSetOf()  // "roomId::featureId"
+    val interactableCooldowns: MutableMap<String, Int> = mutableMapOf() // "roomId::featureId" -> ticks
+
     fun hasDiscoveredExit(roomId: RoomId, direction: Direction): Boolean =
         "$roomId:$direction" in discoveredHiddenExits
 
@@ -30,6 +34,13 @@ class PlayerSession(
 
     fun forgetExit(roomId: RoomId, direction: Direction) {
         discoveredHiddenExits.remove("$roomId:$direction")
+    }
+
+    fun hasDiscoveredInteractable(roomId: RoomId, featureId: String): Boolean =
+        "$roomId::$featureId" in discoveredInteractables
+
+    fun discoverInteractable(roomId: RoomId, featureId: String) {
+        discoveredInteractables.add("$roomId::$featureId")
     }
 
     // Rate limiting (token bucket)

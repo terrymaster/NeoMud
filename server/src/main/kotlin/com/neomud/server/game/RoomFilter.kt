@@ -7,14 +7,22 @@ import com.neomud.shared.model.Room
 object RoomFilter {
     fun forPlayer(room: Room, session: PlayerSession, worldGraph: WorldGraph): Room {
         val hiddenDefs = worldGraph.getHiddenExitDefs(room.id)
-        if (hiddenDefs.isEmpty()) return room
 
-        val visibleExits = room.exits.filter { (dir, _) ->
+        val visibleExits = if (hiddenDefs.isEmpty()) room.exits else room.exits.filter { (dir, _) ->
             dir !in hiddenDefs || session.hasDiscoveredExit(room.id, dir)
         }
-        val visibleLocks = room.lockedExits.filter { (dir, _) ->
+        val visibleLocks = if (hiddenDefs.isEmpty()) room.lockedExits else room.lockedExits.filter { (dir, _) ->
             dir !in hiddenDefs || session.hasDiscoveredExit(room.id, dir)
         }
-        return room.copy(exits = visibleExits, lockedExits = visibleLocks)
+
+        val visibleInteractables = room.interactables.filter { feat ->
+            feat.perceptionDC <= 0 || session.hasDiscoveredInteractable(room.id, feat.id)
+        }
+
+        return room.copy(
+            exits = visibleExits,
+            lockedExits = visibleLocks,
+            interactables = visibleInteractables
+        )
     }
 }

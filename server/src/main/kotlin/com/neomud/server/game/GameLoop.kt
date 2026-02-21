@@ -362,6 +362,24 @@ class GameLoop(
             }
         }
 
+        // 3c. Tick interactable reset timers
+        val interactableResets = worldGraph.tickInteractableTimers()
+        for (event in interactableResets) {
+            sessionManager.broadcastToRoom(event.roomId,
+                ServerMessage.SystemMessage("The ${event.featureLabel} resets..."))
+            resendRoomInfoToPlayersInRoom(event.roomId)
+        }
+
+        // 3d. Tick per-player interactable cooldowns
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            val iter = session.interactableCooldowns.iterator()
+            while (iter.hasNext()) {
+                val entry = iter.next()
+                entry.setValue(entry.value - 1)
+                if (entry.value <= 0) iter.remove()
+            }
+        }
+
         // 4. NPC perception scans for hidden players
         npcPerceptionPhase()
 

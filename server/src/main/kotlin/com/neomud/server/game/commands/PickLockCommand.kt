@@ -31,11 +31,13 @@ class PickLockCommand(
         val room = worldGraph.getRoom(roomId) ?: return false
 
         // Build list of pickable locks: regular locked exits + discovered hidden+locked exits
+        // Exclude unpickable exits (interaction-only locks)
         val hiddenDefs = worldGraph.getHiddenExitDefs(roomId)
+        val unpickable = room.unpickableExits
         val pickableExits = room.lockedExits.filter { (dir, _) ->
             // Regular locked exit, or hidden+locked that player has discovered
             dir !in hiddenDefs || session.hasDiscoveredExit(roomId, dir)
-        }
+        }.filter { (dir, _) -> dir !in unpickable }
 
         if (pickableExits.isEmpty()) {
             session.send(ServerMessage.SystemMessage("You don't see anything locked here."))
@@ -55,6 +57,10 @@ class PickLockCommand(
             val dirName = targetId.removePrefix("exit:")
             val parsedDir = try { Direction.valueOf(dirName) } catch (_: IllegalArgumentException) {
                 session.send(ServerMessage.SystemMessage("Invalid direction: $dirName"))
+                return false
+            }
+            if (parsedDir in unpickable && parsedDir in room.lockedExits) {
+                session.send(ServerMessage.SystemMessage("This lock cannot be picked — it must be opened another way."))
                 return false
             }
             val diff = pickableExits[parsedDir]
