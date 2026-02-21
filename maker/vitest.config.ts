@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     testTimeout: 30000,
     hookTimeout: 30000,
+    globalSetup: ['./server/__tests__/globalSetup.ts'],
     environmentMatchGlobs: [
       ['src/**/*.test.tsx', 'jsdom'],
       ['src/**/*.test.ts', 'jsdom'],
