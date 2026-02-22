@@ -309,12 +309,9 @@ class GameLoop(
                         val npcsInRoom = npcManager.getNpcsInRoom(event.respawnRoomId)
                         try {
                             session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
-                            val mapRooms = worldGraph.getRoomsNear(event.respawnRoomId).map { mapRoom ->
-                                mapRoom.copy(
-                                    hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
-                                    hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
-                                )
-                            }
+                            val mapRooms = MapRoomFilter.enrichForPlayer(
+                                worldGraph.getRoomsNear(event.respawnRoomId), session, worldGraph, sessionManager, npcManager
+                            )
                             session.send(ServerMessage.MapData(mapRooms, event.respawnRoomId))
 
                             // Send ground items for respawn room
@@ -523,12 +520,9 @@ class GameLoop(
             val npcsInRoom = npcManager.getNpcsInRoom(roomId)
             try {
                 session.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
-                val mapRooms = worldGraph.getRoomsNear(roomId).map { mapRoom ->
-                    mapRoom.copy(
-                        hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
-                        hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
-                    )
-                }
+                val mapRooms = MapRoomFilter.enrichForPlayer(
+                    worldGraph.getRoomsNear(roomId), session, worldGraph, sessionManager, npcManager
+                )
                 session.send(ServerMessage.MapData(mapRooms, roomId))
             } catch (_: Exception) { }
         }

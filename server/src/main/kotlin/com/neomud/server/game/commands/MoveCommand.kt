@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.MapRoomFilter
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.RoomFilter
 import com.neomud.server.game.StealthUtils
@@ -54,6 +55,20 @@ class MoveCommand(
 
         // Check if exit is locked
         if (currentRoom.lockedExits[direction] != null) {
+            // Mark this lock as discovered so direction pad and map show it
+            if (!session.hasDiscoveredLock(currentRoomId, direction)) {
+                session.discoverLock(currentRoomId, direction)
+                // Resend room info + map so UI updates with lock indicator
+                val filteredRoom = RoomFilter.forPlayer(currentRoom, session, worldGraph)
+                val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(currentRoomId)
+                    .filter { it.name != session.playerName }
+                val npcsInRoom = npcManager.getNpcsInRoom(currentRoomId)
+                session.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
+                val mapRooms = MapRoomFilter.enrichForPlayer(
+                    worldGraph.getRoomsNear(currentRoomId), session, worldGraph, sessionManager, npcManager
+                )
+                session.send(ServerMessage.MapData(mapRooms, currentRoomId))
+            }
             session.send(ServerMessage.MoveError("The door to the ${direction.name} is locked."))
             return
         }
@@ -181,12 +196,9 @@ class MoveCommand(
 
         session.send(ServerMessage.MoveOk(direction, filteredTargetRoom, playersInRoom, npcsInRoom))
 
-        val mapRooms = worldGraph.getRoomsNear(targetRoomId).map { mapRoom ->
-            mapRoom.copy(
-                hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
-                hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
-            )
-        }
+        val mapRooms = MapRoomFilter.enrichForPlayer(
+            worldGraph.getRoomsNear(targetRoomId), session, worldGraph, sessionManager, npcManager
+        )
         session.send(ServerMessage.MapData(mapRooms, targetRoomId))
 
         // Send ground items for new room

@@ -57,5 +57,7 @@ data class MapRoom(
     val hasPlayers: Boolean = false,
     val hasNpcs: Boolean = false,
     val backgroundImage: String = "",
-    val zoneId: String = ""
+    val zoneId: String = "",
+    val lockedExits: Set<Direction> = emptySet(),
+    val hiddenExits: Set<Direction> = emptySet()
 )

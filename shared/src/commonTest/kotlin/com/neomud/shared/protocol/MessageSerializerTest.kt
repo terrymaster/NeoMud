@@ -3,6 +3,7 @@ package com.neomud.shared.protocol
 import com.neomud.shared.model.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class MessageSerializerTest {
 
@@ -127,6 +128,35 @@ class MessageSerializerTest {
         val json = MessageSerializer.encodeServerMessage(original)
         val decoded = MessageSerializer.decodeServerMessage(json)
         assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testMapDataWithLockedAndHiddenExitsRoundTrip() {
+        val rooms = listOf(
+            MapRoom(
+                "town:square", "Town Square", 0, 0,
+                mapOf(Direction.NORTH to "town:gate", Direction.EAST to "town:shop"),
+                lockedExits = setOf(Direction.NORTH),
+                hiddenExits = setOf(Direction.EAST)
+            ),
+            MapRoom("town:gate", "North Gate", 0, 1, mapOf(Direction.SOUTH to "town:square"))
+        )
+        val original = ServerMessage.MapData(rooms, "town:square")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testMapDataDefaultFieldsBackwardCompatible() {
+        // MapRoom with no lockedExits/hiddenExits should deserialize with empty defaults
+        val room = MapRoom("r1", "Room", 0, 0, mapOf(Direction.NORTH to "r2"))
+        val original = ServerMessage.MapData(listOf(room), "r1")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        val decodedMap = decoded as ServerMessage.MapData
+        assertTrue(decodedMap.rooms[0].lockedExits.isEmpty())
+        assertTrue(decodedMap.rooms[0].hiddenExits.isEmpty())
     }
 
     @Test

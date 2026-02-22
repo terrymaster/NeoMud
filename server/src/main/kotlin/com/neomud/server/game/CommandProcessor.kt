@@ -262,12 +262,9 @@ class CommandProcessor(
                     val npcsInRoom = npcManager.getNpcsInRoom(effectivePlayer.currentRoomId)
                     session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
 
-                    val mapRooms = worldGraph.getRoomsNear(effectivePlayer.currentRoomId).map { mapRoom ->
-                        mapRoom.copy(
-                            hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
-                            hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
-                        )
-                    }
+                    val mapRooms = MapRoomFilter.enrichForPlayer(
+                        worldGraph.getRoomsNear(effectivePlayer.currentRoomId), session, worldGraph, sessionManager, npcManager
+                    )
                     session.send(ServerMessage.MapData(mapRooms, effectivePlayer.currentRoomId))
 
                     // Broadcast to others in room

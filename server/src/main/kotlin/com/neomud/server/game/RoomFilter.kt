@@ -11,8 +11,10 @@ object RoomFilter {
         val visibleExits = if (hiddenDefs.isEmpty()) room.exits else room.exits.filter { (dir, _) ->
             dir !in hiddenDefs || session.hasDiscoveredExit(room.id, dir)
         }
-        val visibleLocks = if (hiddenDefs.isEmpty()) room.lockedExits else room.lockedExits.filter { (dir, _) ->
-            dir !in hiddenDefs || session.hasDiscoveredExit(room.id, dir)
+        // Only show locks the player has discovered (bumped into or tried to pick)
+        val visibleLocks = room.lockedExits.filter { (dir, _) ->
+            (dir !in hiddenDefs || session.hasDiscoveredExit(room.id, dir)) &&
+                session.hasDiscoveredLock(room.id, dir)
         }
 
         val visibleInteractables = room.interactables.filter { feat ->

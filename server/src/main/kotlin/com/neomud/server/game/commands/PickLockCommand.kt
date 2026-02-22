@@ -82,6 +82,9 @@ class PickLockCommand(
             return false
         }
 
+        // Mark lock as discovered so direction pad and map show it
+        session.discoverLock(roomId, direction)
+
         session.skillCooldowns["PICK_LOCK"] = 3
 
         val effStats = session.effectiveStats()

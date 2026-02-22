@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.MapRoomFilter
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.progression.ThresholdBonuses
@@ -218,12 +219,9 @@ class AdminCommand(
         val npcsInRoom = npcManager.getNpcsInRoom(roomId)
         target.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
 
-        val mapRooms = worldGraph.getRoomsNear(roomId).map { mapRoom ->
-            mapRoom.copy(
-                hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
-                hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
-            )
-        }
+        val mapRooms = MapRoomFilter.enrichForPlayer(
+            worldGraph.getRoomsNear(roomId), target, worldGraph, sessionManager, npcManager
+        )
         target.send(ServerMessage.MapData(mapRooms, roomId))
 
         // Send ground items

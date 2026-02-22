@@ -1,6 +1,7 @@
 package com.neomud.server.game.commands
 
 import com.neomud.server.game.EffectApplicator
+import com.neomud.server.game.MapRoomFilter
 import com.neomud.server.game.RoomFilter
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
@@ -266,12 +267,9 @@ class InteractCommand(
         val npcsInRoom = npcManager.getNpcsInRoom(targetRoomId)
         session.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
 
-        val mapRooms = worldGraph.getRoomsNear(targetRoomId).map { mapRoom ->
-            mapRoom.copy(
-                hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
-                hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
-            )
-        }
+        val mapRooms = MapRoomFilter.enrichForPlayer(
+            worldGraph.getRoomsNear(targetRoomId), session, worldGraph, sessionManager, npcManager
+        )
         session.send(ServerMessage.MapData(mapRooms, targetRoomId))
 
         // Send ground items for new room
@@ -295,12 +293,9 @@ class InteractCommand(
             val npcsInRoom = npcManager.getNpcsInRoom(roomId)
             try {
                 s.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
-                val mapRooms = worldGraph.getRoomsNear(roomId).map { mapRoom ->
-                    mapRoom.copy(
-                        hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
-                        hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
-                    )
-                }
+                val mapRooms = MapRoomFilter.enrichForPlayer(
+                    worldGraph.getRoomsNear(roomId), s, worldGraph, sessionManager, npcManager
+                )
                 s.send(ServerMessage.MapData(mapRooms, roomId))
             } catch (_: Exception) { }
         }

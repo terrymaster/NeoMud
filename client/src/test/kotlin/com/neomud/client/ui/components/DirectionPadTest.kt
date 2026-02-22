@@ -145,4 +145,81 @@ class DirectionPadTest {
         composeRule.onNodeWithText("\uD83D\uDC41").performClick() // Look 👁
         assert(looked) { "Expected look to fire" }
     }
+
+    @Test
+    fun `locked exit still fires onMove when clicked`() {
+        var moved: Direction? = null
+        composeRule.setContent {
+            TestThemeWrapper {
+                DirectionPad(
+                    availableExits = setOf(Direction.NORTH),
+                    onMove = { moved = it },
+                    onLook = {},
+                    lockedExits = setOf(Direction.NORTH)
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("\u25B2").performClick() // North
+        assert(moved == Direction.NORTH) { "Locked exit should still be clickable, got $moved" }
+    }
+
+    @Test
+    fun `locked stair buttons still fire onMove when clicked`() {
+        val moves = mutableListOf<Direction>()
+        composeRule.setContent {
+            TestThemeWrapper {
+                DirectionPad(
+                    availableExits = setOf(Direction.UP, Direction.DOWN),
+                    onMove = { moves.add(it) },
+                    onLook = {},
+                    lockedExits = setOf(Direction.UP, Direction.DOWN)
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("\u2B06").performClick() // UP
+        composeRule.onNodeWithText("\u2B07").performClick() // DOWN
+        assert(moves == listOf(Direction.UP, Direction.DOWN)) { "Locked stair exits should still be clickable, got $moves" }
+    }
+
+    @Test
+    fun `renders with mixed locked and unlocked exits`() {
+        var moved: Direction? = null
+        composeRule.setContent {
+            TestThemeWrapper {
+                DirectionPad(
+                    availableExits = setOf(Direction.NORTH, Direction.SOUTH, Direction.EAST),
+                    onMove = { moved = it },
+                    onLook = {},
+                    lockedExits = setOf(Direction.NORTH) // Only NORTH is locked
+                )
+            }
+        }
+
+        // Unlocked SOUTH should work
+        composeRule.onNodeWithText("\u25BC").performClick() // South
+        assert(moved == Direction.SOUTH) { "Unlocked exit should fire, got $moved" }
+    }
+
+    @Test
+    fun `renders with all diagonal exits locked`() {
+        val moves = mutableListOf<Direction>()
+        composeRule.setContent {
+            TestThemeWrapper {
+                DirectionPad(
+                    availableExits = setOf(Direction.NORTHWEST, Direction.NORTHEAST, Direction.SOUTHWEST, Direction.SOUTHEAST),
+                    onMove = { moves.add(it) },
+                    onLook = {},
+                    lockedExits = setOf(Direction.NORTHWEST, Direction.NORTHEAST, Direction.SOUTHWEST, Direction.SOUTHEAST)
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("\u2196").performClick() // NW
+        composeRule.onNodeWithText("\u2197").performClick() // NE
+        assert(moves == listOf(Direction.NORTHWEST, Direction.NORTHEAST)) {
+            "Locked diagonal exits should still be clickable, got $moves"
+        }
+    }
 }

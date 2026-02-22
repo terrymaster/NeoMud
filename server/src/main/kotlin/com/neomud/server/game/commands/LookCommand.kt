@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.MapRoomFilter
 import com.neomud.server.game.RoomFilter
 import com.neomud.server.game.StealthUtils
 
@@ -46,12 +47,9 @@ class LookCommand(
 
         session.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
 
-        val mapRooms = worldGraph.getRoomsNear(currentRoomId).map { mapRoom ->
-            mapRoom.copy(
-                hasPlayers = sessionManager.getPlayerNamesInRoom(mapRoom.id).isNotEmpty(),
-                hasNpcs = npcManager.getNpcsInRoom(mapRoom.id).isNotEmpty()
-            )
-        }
+        val mapRooms = MapRoomFilter.enrichForPlayer(
+            worldGraph.getRoomsNear(currentRoomId), session, worldGraph, sessionManager, npcManager
+        )
         session.send(ServerMessage.MapData(mapRooms, currentRoomId))
 
         // Send ground items

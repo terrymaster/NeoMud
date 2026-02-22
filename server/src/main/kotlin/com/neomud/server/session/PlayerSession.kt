@@ -20,6 +20,7 @@ class PlayerSession(
     var godMode: Boolean = false
     val skillCooldowns: MutableMap<String, Int> = mutableMapOf()
     val discoveredHiddenExits: MutableSet<String> = mutableSetOf()
+    val discoveredLockedExits: MutableSet<String> = mutableSetOf()
 
     // Interactable state
     val discoveredInteractables: MutableSet<String> = mutableSetOf()  // "roomId::featureId"
@@ -34,6 +35,13 @@ class PlayerSession(
 
     fun forgetExit(roomId: RoomId, direction: Direction) {
         discoveredHiddenExits.remove("$roomId:$direction")
+    }
+
+    fun hasDiscoveredLock(roomId: RoomId, direction: Direction): Boolean =
+        "$roomId:$direction" in discoveredLockedExits
+
+    fun discoverLock(roomId: RoomId, direction: Direction) {
+        discoveredLockedExits.add("$roomId:$direction")
     }
 
     fun hasDiscoveredInteractable(roomId: RoomId, featureId: String): Boolean =
