@@ -52,6 +52,7 @@ import com.neomud.client.ui.components.SpriteOverlay
 import com.neomud.client.ui.components.TrainerPanel
 import com.neomud.client.ui.components.VendorPanel
 import com.neomud.client.ui.components.LockTargetPicker
+import com.neomud.client.ui.components.MapOverlay
 import com.neomud.client.ui.components.PlayerTooltip
 import com.neomud.client.viewmodel.GameViewModel
 import com.neomud.shared.model.Direction
@@ -93,6 +94,9 @@ fun GameScreen(
     val readiedSpellId by gameViewModel.readiedSpellId.collectAsState()
     val showSpellPicker by gameViewModel.showSpellPicker.collectAsState()
     val editingSlotIndex by gameViewModel.editingSlotIndex.collectAsState()
+
+    val showMap by gameViewModel.showMap.collectAsState()
+    val visitedRooms by gameViewModel.visitedRooms.collectAsState()
 
     val showLockTargetPicker by gameViewModel.showLockTargetPicker.collectAsState()
 
@@ -263,6 +267,21 @@ fun GameScreen(
             }
         }
 
+        // Map overlay
+        if (showMap) {
+            val data = mapData
+            if (data != null) {
+                val currentRoom = roomInfo?.room
+                MapOverlay(
+                    rooms = data.rooms,
+                    playerRoomId = data.playerRoomId,
+                    visitedRoomIds = visitedRooms,
+                    currentZoneName = currentRoom?.zoneId ?: "",
+                    onClose = { gameViewModel.toggleMap() }
+                )
+            }
+        }
+
         // Lock target picker overlay
         if (showLockTargetPicker) {
             val lockedExits = roomInfo?.room?.lockedExits ?: emptyMap()
@@ -368,6 +387,8 @@ private fun GameScreenPortrait(
     val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
     val trackedDirection by gameViewModel.trackedDirection.collectAsState()
     val skillCatalog by gameViewModel.skillCatalog.collectAsState()
+    val visitedRooms by gameViewModel.visitedRooms.collectAsState()
+    val showMap by gameViewModel.showMap.collectAsState()
 
     // Determine if player has TRACK skill
     val hasTrackSkill = player?.characterClass?.let { classCatalog[it] }?.skills?.contains("TRACK") == true
@@ -419,6 +440,7 @@ private fun GameScreenPortrait(
                 FloatingMiniMap(
                     rooms = data.rooms,
                     playerRoomId = data.playerRoomId,
+                    visitedRoomIds = visitedRooms,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(end = 4.dp, top = 4.dp)
@@ -537,6 +559,10 @@ private fun GameScreenPortrait(
                 SpellUtilityButton(classCatalog, player?.characterClass) {
                     gameViewModel.openSpellPicker(0)
                 }
+                MapIconButton(
+                    active = showMap,
+                    onClick = { gameViewModel.toggleMap() }
+                )
                 InventoryIconButton(
                     active = showInventory,
                     onClick = { gameViewModel.toggleInventory() }
@@ -583,6 +609,8 @@ private fun GameScreenLandscape(
     val spellSlots by gameViewModel.spellSlots.collectAsState()
     val spellCatalogState by gameViewModel.spellCatalog.collectAsState()
     val trackedDirection by gameViewModel.trackedDirection.collectAsState()
+    val visitedRooms by gameViewModel.visitedRooms.collectAsState()
+    val showMap by gameViewModel.showMap.collectAsState()
 
     // Determine if player has TRACK skill
     val hasTrackSkill = player?.characterClass?.let { classCatalog[it] }?.skills?.contains("TRACK") == true
@@ -640,6 +668,7 @@ private fun GameScreenLandscape(
                     FloatingMiniMap(
                         rooms = data.rooms,
                         playerRoomId = data.playerRoomId,
+                        visitedRoomIds = visitedRooms,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(end = 4.dp, top = 4.dp)
@@ -765,6 +794,10 @@ private fun GameScreenLandscape(
                             SpellUtilityButton(classCatalog, player?.characterClass) {
                                 gameViewModel.openSpellPicker(0)
                             }
+                            MapIconButton(
+                                active = showMap,
+                                onClick = { gameViewModel.toggleMap() }
+                            )
                             InventoryIconButton(
                                 active = showInventory,
                                 onClick = { gameViewModel.toggleInventory() }
@@ -1067,6 +1100,25 @@ private fun EquipmentIconButton(active: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             text = "\uD83D\uDEE1\uFE0F",
+            fontSize = 16.sp,
+            color = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8)
+        )
+    }
+}
+
+@Composable
+private fun MapIconButton(active: Boolean, onClick: () -> Unit) {
+    val stoneBg = Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark))
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .background(stoneBg, RoundedCornerShape(4.dp))
+            .border(1.dp, StoneTheme.frameMid, RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "\uD83D\uDDFA\uFE0F",
             fontSize = 16.sp,
             color = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8)
         )

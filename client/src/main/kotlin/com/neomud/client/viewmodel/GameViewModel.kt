@@ -118,6 +118,14 @@ class GameViewModel(
     private val _showVendor = MutableStateFlow(false)
     val showVendor: StateFlow<Boolean> = _showVendor
 
+    // Visited rooms (fog-of-war)
+    private val _visitedRooms = MutableStateFlow<Set<RoomId>>(emptySet())
+    val visitedRooms: StateFlow<Set<RoomId>> = _visitedRooms
+
+    // Map overlay
+    private val _showMap = MutableStateFlow(false)
+    val showMap: StateFlow<Boolean> = _showMap
+
     // Tracked direction (from TRACK skill)
     private val _trackedDirection = MutableStateFlow<Direction?>(null)
     val trackedDirection: StateFlow<Direction?> = _trackedDirection
@@ -196,6 +204,7 @@ class GameViewModel(
                 _roomInfo.value = message
                 _roomEntities.value = message.npcs
                 _roomPlayers.value = message.players
+                _visitedRooms.value = _visitedRooms.value + message.room.id
                 logRoomInfo(message.room, message.players, message.npcs)
                 bgm(message.room.bgm)
             }
@@ -206,6 +215,7 @@ class GameViewModel(
                 _roomInfo.value = ServerMessage.RoomInfo(message.room, message.players, message.npcs)
                 _roomEntities.value = message.npcs
                 _roomPlayers.value = message.players
+                _visitedRooms.value = _visitedRooms.value + message.room.id
                 // Clear ground items on move (will be refreshed by RoomItemsUpdate)
                 _roomGroundItems.value = emptyList()
                 _roomGroundCoins.value = Coins()
@@ -215,7 +225,10 @@ class GameViewModel(
                 bgm(message.room.bgm)
             }
             is ServerMessage.MoveError -> addLog("Cannot move: ${message.reason}", MudColors.error)
-            is ServerMessage.MapData -> _mapData.value = message
+            is ServerMessage.MapData -> {
+                _mapData.value = message
+                _visitedRooms.value = _visitedRooms.value + message.playerRoomId
+            }
             is ServerMessage.PlayerEntered -> {
                 addLog("${message.playerName} has arrived.", MudColors.playerEvent)
                 val info = message.playerInfo
@@ -698,6 +711,14 @@ class GameViewModel(
 
     fun toggleCharacterSheet() {
         _showCharacterSheet.value = !_showCharacterSheet.value
+    }
+
+    fun toggleMap() {
+        _showMap.value = !_showMap.value
+        if (_showMap.value) {
+            _showInventory.value = false
+            _showEquipment.value = false
+        }
     }
 
     fun toggleSettings() {

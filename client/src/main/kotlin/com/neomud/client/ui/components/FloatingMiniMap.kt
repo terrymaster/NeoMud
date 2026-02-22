@@ -18,6 +18,7 @@ import com.neomud.shared.model.RoomId
 fun FloatingMiniMap(
     rooms: List<MapRoom>,
     playerRoomId: RoomId,
+    visitedRoomIds: Set<RoomId> = emptySet(),
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -30,7 +31,9 @@ fun FloatingMiniMap(
     ) {
         MiniMap(
             rooms = rooms,
-            playerRoomId = playerRoomId
+            playerRoomId = playerRoomId,
+            visitedRoomIds = visitedRoomIds,
+            fogOfWar = true
         )
     }
 }

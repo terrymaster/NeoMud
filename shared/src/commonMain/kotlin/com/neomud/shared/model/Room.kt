@@ -56,5 +56,6 @@ data class MapRoom(
     val exits: Map<Direction, RoomId>,
     val hasPlayers: Boolean = false,
     val hasNpcs: Boolean = false,
-    val backgroundImage: String = ""
+    val backgroundImage: String = "",
+    val zoneId: String = ""
 )

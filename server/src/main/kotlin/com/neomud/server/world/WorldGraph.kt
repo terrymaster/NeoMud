@@ -67,7 +67,8 @@ class WorldGraph {
                     x = room.x,
                     y = room.y,
                     exits = room.exits,
-                    backgroundImage = room.backgroundImage
+                    backgroundImage = room.backgroundImage,
+                    zoneId = room.zoneId
                 )
             )
 
