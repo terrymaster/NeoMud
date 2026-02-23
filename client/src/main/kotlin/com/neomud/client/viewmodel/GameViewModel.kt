@@ -181,6 +181,14 @@ class GameViewModel(
         bgm(roomInfo.room.bgm)
     }
 
+    fun setInitialMapData(mapData: ServerMessage.MapData) {
+        _mapData.value = mapData
+        if (mapData.visitedRooms.isNotEmpty()) {
+            _visitedRooms.value = _visitedRooms.value + mapData.visitedRooms
+        }
+        _visitedRooms.value = _visitedRooms.value + mapData.playerRoomId
+    }
+
     fun setInitialCatalogs(
         classes: List<CharacterClassDef> = emptyList(),
         items: List<Item> = emptyList(),
@@ -234,6 +242,9 @@ class GameViewModel(
             is ServerMessage.MoveError -> addLog("Cannot move: ${message.reason}", MudColors.error)
             is ServerMessage.MapData -> {
                 _mapData.value = message
+                if (message.visitedRooms.isNotEmpty()) {
+                    _visitedRooms.value = _visitedRooms.value + message.visitedRooms
+                }
                 _visitedRooms.value = _visitedRooms.value + message.playerRoomId
             }
             is ServerMessage.PlayerEntered -> {

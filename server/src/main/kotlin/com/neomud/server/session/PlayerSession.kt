@@ -19,6 +19,7 @@ class PlayerSession(
     var isMeditating: Boolean = false
     var godMode: Boolean = false
     val skillCooldowns: MutableMap<String, Int> = mutableMapOf()
+    val visitedRooms: MutableSet<String> = mutableSetOf()
     val discoveredHiddenExits: MutableSet<String> = mutableSetOf()
     val discoveredLockedExits: MutableSet<String> = mutableSetOf()
 

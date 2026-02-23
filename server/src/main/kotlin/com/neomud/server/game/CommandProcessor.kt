@@ -21,6 +21,7 @@ import com.neomud.server.game.commands.VendorCommand
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
+import com.neomud.server.persistence.repository.DiscoveryRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
@@ -56,6 +57,7 @@ class CommandProcessor(
     private val lootService: LootService,
     private val lootTableCatalog: LootTableCatalog,
     private val inventoryRepository: InventoryRepository,
+    private val discoveryRepository: DiscoveryRepository,
     private val adminUsernames: Set<String> = emptySet(),
     private val movementTrailManager: MovementTrailManager? = null
 ) {
@@ -250,6 +252,15 @@ class CommandProcessor(
                 session.player = effectivePlayer
                 session.playerName = effectivePlayer.name
                 session.currentRoomId = effectivePlayer.currentRoomId
+
+                // Load persisted discovery data
+                val discovery = discoveryRepository.loadPlayerDiscovery(effectivePlayer.name)
+                session.visitedRooms.addAll(discovery.visitedRooms)
+                session.discoveredHiddenExits.addAll(discovery.discoveredHiddenExits)
+                session.discoveredLockedExits.addAll(discovery.discoveredLockedExits)
+                session.discoveredInteractables.addAll(discovery.discoveredInteractables)
+                session.visitedRooms.add(effectivePlayer.currentRoomId)
+
                 sessionManager.addSession(effectivePlayer.name, session)
 
                 session.send(ServerMessage.LoginOk(effectivePlayer))
@@ -265,7 +276,7 @@ class CommandProcessor(
                     val mapRooms = MapRoomFilter.enrichForPlayer(
                         worldGraph.getRoomsNear(effectivePlayer.currentRoomId), session, worldGraph, sessionManager, npcManager
                     )
-                    session.send(ServerMessage.MapData(mapRooms, effectivePlayer.currentRoomId))
+                    session.send(ServerMessage.MapData(mapRooms, effectivePlayer.currentRoomId, session.visitedRooms.toSet()))
 
                     // Broadcast to others in room
                     sessionManager.broadcastToRoom(

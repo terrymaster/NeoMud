@@ -15,6 +15,7 @@ import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.persistence.DatabaseFactory
 import com.neomud.server.persistence.repository.CoinRepository
+import com.neomud.server.persistence.repository.DiscoveryRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.plugins.configureRouting
@@ -91,6 +92,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     val playerRepository = PlayerRepository()
     val inventoryRepository = InventoryRepository(itemCatalog)
     val coinRepository = CoinRepository()
+    val discoveryRepository = DiscoveryRepository()
     val lootService = LootService(itemCatalog)
     val equipmentService = EquipmentService(inventoryRepository, itemCatalog)
     val roomItemManager = RoomItemManager()
@@ -116,13 +118,13 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
         worldGraph, sessionManager, npcManager, playerRepository,
         classCatalog, itemCatalog, skillCatalog, raceCatalog, inventoryCommand, pickupCommand, roomItemManager,
         trainerCommand, spellCommand, spellCatalog, vendorCommand, lootService, lootTableCatalog,
-        inventoryRepository, adminUsernames, movementTrailManager
+        inventoryRepository, discoveryRepository, adminUsernames, movementTrailManager
     )
     val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository, skillCatalog, classCatalog, movementTrailManager)
 
     // Install plugins
     configureWebSockets()
-    configureRouting(sessionManager, commandProcessor, playerRepository, dataSource)
+    configureRouting(sessionManager, commandProcessor, playerRepository, discoveryRepository, dataSource)
 
     // Launch game loop
     launch {

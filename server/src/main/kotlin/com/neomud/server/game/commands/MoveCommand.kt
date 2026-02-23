@@ -116,6 +116,7 @@ class MoveCommand(
         }
 
         // Update session
+        session.visitedRooms.add(targetRoomId)
         session.currentRoomId = targetRoomId
         session.player = session.player?.copy(currentRoomId = targetRoomId)
 

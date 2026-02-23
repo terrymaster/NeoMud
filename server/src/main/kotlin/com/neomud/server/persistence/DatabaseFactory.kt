@@ -2,6 +2,7 @@ package com.neomud.server.persistence
 
 import com.neomud.server.persistence.tables.InventoryTable
 import com.neomud.server.persistence.tables.PlayerCoinsTable
+import com.neomud.server.persistence.tables.PlayerDiscoveryTable
 import com.neomud.server.persistence.tables.PlayersTable
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -10,7 +11,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("DatabaseFactory")
 
-private const val SCHEMA_VERSION = 5 // Added gender, image_prompt columns
+private const val SCHEMA_VERSION = 6 // Added player_discovery table
 
 object DatabaseFactory {
     fun init(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
@@ -31,10 +32,10 @@ object DatabaseFactory {
 
             if (needsFreshStart) {
                 logger.warn("Outdated schema detected — dropping all tables for fresh start")
-                SchemaUtils.drop(PlayersTable, InventoryTable, PlayerCoinsTable)
+                SchemaUtils.drop(PlayersTable, InventoryTable, PlayerCoinsTable, PlayerDiscoveryTable)
             }
 
-            SchemaUtils.create(PlayersTable, InventoryTable, PlayerCoinsTable)
+            SchemaUtils.create(PlayersTable, InventoryTable, PlayerCoinsTable, PlayerDiscoveryTable)
 
             // Incremental migration: add is_admin if missing
             try {

@@ -1,6 +1,8 @@
 package com.neomud.server.plugins
 
 import com.neomud.server.game.CommandProcessor
+import com.neomud.server.persistence.repository.DiscoveryRepository
+import com.neomud.server.persistence.repository.PlayerDiscoveryData
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
@@ -32,6 +34,7 @@ fun Application.configureRouting(
     sessionManager: SessionManager,
     commandProcessor: CommandProcessor,
     playerRepository: PlayerRepository,
+    discoveryRepository: DiscoveryRepository,
     dataSource: WorldDataSource
 ) {
     routing {
@@ -97,6 +100,19 @@ fun Application.configureRouting(
                             playerRepository.savePlayerState(player)
                         } catch (e: Exception) {
                             logger.error("Failed to save player state on disconnect: ${e.message}")
+                        }
+                        try {
+                            discoveryRepository.savePlayerDiscovery(
+                                playerName,
+                                PlayerDiscoveryData(
+                                    visitedRooms = session.visitedRooms.toSet(),
+                                    discoveredHiddenExits = session.discoveredHiddenExits.toSet(),
+                                    discoveredLockedExits = session.discoveredLockedExits.toSet(),
+                                    discoveredInteractables = session.discoveredInteractables.toSet()
+                                )
+                            )
+                        } catch (e: Exception) {
+                            logger.error("Failed to save discovery data on disconnect: ${e.message}")
                         }
                     }
                     sessionManager.removeSession(playerName)

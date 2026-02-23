@@ -46,7 +46,8 @@ sealed class ServerMessage {
     @SerialName("map_data")
     data class MapData(
         val rooms: List<MapRoom>,
-        val playerRoomId: RoomId
+        val playerRoomId: RoomId,
+        val visitedRooms: Set<RoomId> = emptySet()
     ) : ServerMessage()
 
     // Events
