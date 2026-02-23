@@ -501,7 +501,7 @@ class GameViewModel(
                         p.copy(currentMp = message.newMp, currentHp = newHp)
                     }
                 }
-                _readiedSpellId.value = null
+                // Don't clear readiedSpellId — spell persists for auto-cast loop
             }
             is ServerMessage.SpellEffect -> {
                 val impactSpell = findSpellByName(message.spellName)
@@ -513,6 +513,15 @@ class GameViewModel(
                             npc.copy(currentHp = message.targetNewHp)
                         } else npc
                     }
+                }
+            }
+            is ServerMessage.SkillEffect -> {
+                addLog(message.message, MudColors.combatYou)
+                // Update NPC HP
+                _roomEntities.value = _roomEntities.value.map { npc ->
+                    if (npc.id == message.targetId) {
+                        npc.copy(currentHp = message.targetHp)
+                    } else npc
                 }
             }
             is ServerMessage.VendorInfo -> {
@@ -649,8 +658,16 @@ class GameViewModel(
     }
 
     fun toggleAttackMode(enabled: Boolean) {
-        viewModelScope.launch {
-            wsClient.send(ClientMessage.AttackToggle(enabled))
+        if (!enabled) {
+            _readiedSpellId.value = null
+            viewModelScope.launch {
+                wsClient.send(ClientMessage.ReadySpell(null))
+                wsClient.send(ClientMessage.AttackToggle(false))
+            }
+        } else {
+            viewModelScope.launch {
+                wsClient.send(ClientMessage.AttackToggle(true))
+            }
         }
     }
 
@@ -662,7 +679,9 @@ class GameViewModel(
     }
 
     fun attackTarget(npcId: String) {
+        _readiedSpellId.value = null
         selectTarget(npcId)
+        viewModelScope.launch { wsClient.send(ClientMessage.ReadySpell(null)) }
         toggleAttackMode(true)
     }
 
@@ -857,6 +876,16 @@ class GameViewModel(
     }
 
     // Spell methods
+    fun castSpellOnTarget(spellId: String, npcId: String) {
+        _readiedSpellId.value = spellId
+        _selectedTargetId.value = npcId
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.ReadySpell(spellId))
+            wsClient.send(ClientMessage.SelectTarget(npcId))
+            wsClient.send(ClientMessage.AttackToggle(true))
+        }
+    }
+
     fun castSpell(spellId: String, targetId: String? = null) {
         viewModelScope.launch {
             wsClient.send(ClientMessage.CastSpell(spellId, targetId))
@@ -868,11 +897,26 @@ class GameViewModel(
         val spell = _spellCatalog.value[spellId] ?: return
 
         if (spell.targetType == TargetType.SELF) {
-            // Self spells cast immediately
             castSpell(spellId)
-        } else {
-            // Enemy spells enter readied state
-            _readiedSpellId.value = if (_readiedSpellId.value == spellId) null else spellId
+            return
+        }
+
+        // Toggle off if same spell
+        if (_readiedSpellId.value == spellId) {
+            _readiedSpellId.value = null
+            viewModelScope.launch { wsClient.send(ClientMessage.ReadySpell(null)) }
+            toggleAttackMode(false)
+            return
+        }
+
+        // Auto-select first hostile, engage attack
+        _readiedSpellId.value = spellId
+        val target = _roomEntities.value.firstOrNull { it.hostile }
+        if (target != null) _selectedTargetId.value = target.id
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.ReadySpell(spellId))
+            if (target != null) wsClient.send(ClientMessage.SelectTarget(target.id))
+            wsClient.send(ClientMessage.AttackToggle(true))
         }
     }
 

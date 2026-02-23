@@ -7,6 +7,13 @@ import com.neomud.shared.protocol.MessageSerializer
 import com.neomud.shared.protocol.ServerMessage
 import io.ktor.websocket.*
 
+sealed class PendingSkill {
+    data class Bash(val targetId: String?) : PendingSkill()
+    data class Kick(val targetId: String?, val direction: Direction) : PendingSkill()
+    object Meditate : PendingSkill()
+    data class Track(val targetId: String?) : PendingSkill()
+}
+
 class PlayerSession(
     val webSocketSession: WebSocketSession
 ) {
@@ -20,6 +27,8 @@ class PlayerSession(
     var isMeditating: Boolean = false
     var godMode: Boolean = false
     var combatGraceTicks: Int = 0
+    var readiedSpellId: String? = null
+    var pendingSkill: PendingSkill? = null
     val skillCooldowns: MutableMap<String, Int> = mutableMapOf()
     val visitedRooms: MutableSet<String> = mutableSetOf()
     val discoveredHiddenExits: MutableSet<String> = mutableSetOf()

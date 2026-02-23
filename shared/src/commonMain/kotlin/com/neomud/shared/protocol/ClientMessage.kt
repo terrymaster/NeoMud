@@ -123,4 +123,8 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("interact_feature")
     data class InteractFeature(val featureId: String) : ClientMessage()
+
+    @Serializable
+    @SerialName("ready_spell")
+    data class ReadySpell(val spellId: String? = null) : ClientMessage()
 }

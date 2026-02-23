@@ -12,7 +12,6 @@ import com.neomud.server.game.commands.InteractCommand
 import com.neomud.server.game.commands.PickLockCommand
 import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.commands.SayCommand
-import com.neomud.server.game.commands.SkillKillHandler
 import com.neomud.server.game.commands.SneakCommand
 import com.neomud.server.game.commands.SpellCommand
 import com.neomud.server.game.commands.TrackCommand
@@ -71,11 +70,10 @@ class CommandProcessor(
     private val sayCommand = SayCommand(sessionManager, adminCommand)
     private val attackCommand = AttackCommand(npcManager, worldGraph)
     private val sneakCommand = SneakCommand(sessionManager, npcManager, skillCatalog, classCatalog)
-    private val skillKillHandler = SkillKillHandler(npcManager, sessionManager, playerRepository, lootService, lootTableCatalog, roomItemManager)
-    private val bashCommand = BashCommand(npcManager, sessionManager, skillKillHandler)
-    private val kickCommand = KickCommand(npcManager, sessionManager, skillKillHandler, worldGraph, movementTrailManager)
-    private val meditateCommand = MeditateCommand(skillCatalog, sessionManager)
-    private val trackCommand = TrackCommand(movementTrailManager ?: MovementTrailManager(), worldGraph)
+    private val bashCommand = BashCommand(npcManager)
+    private val kickCommand = KickCommand(npcManager)
+    private val meditateCommand = MeditateCommand()
+    private val trackCommand = TrackCommand()
     private val pickLockCommand = PickLockCommand(worldGraph, sessionManager, npcManager)
     private val interactCommand = InteractCommand(worldGraph, sessionManager, npcManager, roomItemManager, lootService, lootTableCatalog)
 
@@ -164,7 +162,9 @@ class CommandProcessor(
                 requireAuth(session) { trainerCommand.handleAllocateTrainedStats(session, message.stats) }
             }
             is ClientMessage.CastSpell -> {
-                requireAuth(session) { spellCommand.execute(session, message.spellId, message.targetId) }
+                requireAuth(session) {
+                    spellCommand.execute(session, message.spellId, message.targetId)
+                }
             }
             is ClientMessage.InteractVendor -> {
                 requireAuth(session) { vendorCommand.handleInteract(session) }
@@ -177,6 +177,9 @@ class CommandProcessor(
             }
             is ClientMessage.InteractFeature -> {
                 requireAuth(session) { interactCommand.execute(session, message.featureId) }
+            }
+            is ClientMessage.ReadySpell -> {
+                requireAuth(session) { handleReadySpell(session, message) }
             }
             else -> {} // Register, Login, Ping already handled in process()
         }
@@ -301,6 +304,35 @@ class CommandProcessor(
                 session.send(ServerMessage.AuthError(it.message ?: "Login failed"))
             }
         )
+    }
+
+    private suspend fun handleReadySpell(session: PlayerSession, msg: ClientMessage.ReadySpell) {
+        val player = session.player ?: return
+        val spellId = msg.spellId
+
+        if (spellId == null) {
+            session.readiedSpellId = null
+            return
+        }
+
+        val spell = spellCatalog.getSpell(spellId)
+        if (spell == null) {
+            session.send(ServerMessage.SystemMessage("Unknown spell."))
+            return
+        }
+
+        val classDef = classCatalog.getClass(player.characterClass)
+        if (classDef == null || !classDef.magicSchools.containsKey(spell.school)) {
+            session.send(ServerMessage.SystemMessage("Your class cannot cast ${spell.school} spells."))
+            return
+        }
+
+        session.readiedSpellId = spellId
+
+        // Entering spell combat breaks meditation, stealth, and grace period
+        MeditationUtils.breakMeditation(session, "You stop meditating.")
+        StealthUtils.breakStealth(session, sessionManager, "Casting a spell reveals your presence!")
+        session.combatGraceTicks = 0
     }
 
     private suspend inline fun requireAuth(session: PlayerSession, block: () -> Unit) {

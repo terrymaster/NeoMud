@@ -2,25 +2,25 @@ package com.neomud.server.game
 
 import com.neomud.server.game.combat.CombatEvent
 import com.neomud.server.game.combat.CombatManager
-
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
+import com.neomud.server.game.npc.NpcState
 import com.neomud.server.game.progression.XpCalculator
+import com.neomud.server.game.skills.SkillCheck
 import com.neomud.server.persistence.repository.PlayerRepository
+import com.neomud.server.session.PendingSkill
+import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ClassCatalog
 import com.neomud.server.world.LootTableCatalog
 import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.WorldGraph
-import com.neomud.server.game.npc.NpcState
-import com.neomud.server.session.PlayerSession
 import com.neomud.shared.model.ActiveEffect
 import com.neomud.shared.model.GroundItem
 import com.neomud.shared.model.RoomId
 import com.neomud.shared.protocol.ServerMessage
 import kotlinx.coroutines.delay
-
 import org.slf4j.LoggerFactory
 
 class GameLoop(
@@ -57,6 +57,8 @@ class GameLoop(
 
                 session.attackMode = false
                 session.selectedTargetId = null
+                session.readiedSpellId = null
+                session.pendingSkill = null
                 session.isHidden = false
                 session.isMeditating = false
                 session.activeEffects.clear()
@@ -151,6 +153,21 @@ class GameLoop(
         for (session in sessionManager.getAllAuthenticatedSessions()) {
             if (session.combatGraceTicks > 0) {
                 session.combatGraceTicks--
+            }
+        }
+
+        // 1c. Resolve non-combat pending skills
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            when (val skill = session.pendingSkill) {
+                is PendingSkill.Meditate -> {
+                    session.pendingSkill = null
+                    resolveMeditate(session)
+                }
+                is PendingSkill.Track -> {
+                    session.pendingSkill = null
+                    resolveTrack(session, skill.targetId)
+                }
+                else -> {} // Bash/Kick handled by CombatManager
             }
         }
 
@@ -255,6 +272,7 @@ class GameLoop(
                             if (remaining.isEmpty()) {
                                 session.attackMode = false
                                 session.selectedTargetId = null
+                                session.readiedSpellId = null
                                 try {
                                     session.send(ServerMessage.AttackModeUpdate(false))
                                 } catch (_: Exception) { }
@@ -263,6 +281,42 @@ class GameLoop(
                             }
                         }
                     }
+                }
+                is CombatEvent.NpcKnockedBack -> {
+                    // Broadcast NPC left old room
+                    sessionManager.broadcastToRoom(
+                        event.fromRoomId,
+                        ServerMessage.NpcLeft(event.npcName, event.fromRoomId, event.direction, event.npcId)
+                    )
+
+                    // Auto-disable attack mode for players who lost their target in old room
+                    for (session in sessionManager.getSessionsInRoom(event.fromRoomId)) {
+                        if (session.attackMode && session.selectedTargetId == event.npcId) {
+                            session.selectedTargetId = null
+                            val remaining = npcManager.getLivingHostileNpcsInRoom(event.fromRoomId)
+                            if (remaining.isEmpty()) {
+                                session.attackMode = false
+                                session.selectedTargetId = null
+                                session.readiedSpellId = null
+                                try { session.send(ServerMessage.AttackModeUpdate(false)) } catch (_: Exception) {}
+                            }
+                        }
+                    }
+
+                    // Broadcast NPC entered new room
+                    sessionManager.broadcastToRoom(
+                        event.toRoomId,
+                        ServerMessage.NpcEntered(
+                            event.npcName, event.toRoomId,
+                            event.npcId, event.hostile, event.npcCurrentHp, event.npcMaxHp,
+                            spawned = false,
+                            templateId = event.templateId
+                        )
+                    )
+
+                    // Update map data for players in both rooms
+                    updateMapForPlayersInRoom(event.fromRoomId)
+                    updateMapForPlayersInRoom(event.toRoomId)
                 }
                 is CombatEvent.PlayerKilled -> {
                     val session = event.playerSession
@@ -274,9 +328,11 @@ class GameLoop(
                         session.send(ServerMessage.PlayerDied(event.killerName, event.respawnRoomId, event.respawnHp, event.respawnMp))
                     } catch (_: Exception) { }
 
-                    // Disable attack mode, stealth, and meditation
+                    // Disable attack mode, stealth, meditation, readied spell, and pending skill
                     session.attackMode = false
                     session.selectedTargetId = null
+                    session.readiedSpellId = null
+                    session.pendingSkill = null
                     session.isHidden = false
                     session.isMeditating = false
 
@@ -532,6 +588,109 @@ class GameLoop(
                 )
                 session.send(ServerMessage.MapData(mapRooms, roomId))
             } catch (_: Exception) { }
+        }
+    }
+
+    private suspend fun resolveMeditate(session: PlayerSession) {
+        val player = session.player ?: return
+
+        // Cooldown applies regardless of pass/fail
+        session.skillCooldowns["MEDITATE"] = 6
+
+        // Break stealth if hidden
+        StealthUtils.breakStealth(session, sessionManager, "Meditating reveals your presence!")
+
+        // Skill check: WIL + INT/2 + level/2 + d20 vs difficulty
+        val skillDef = skillCatalog.getSkill("MEDITATE")
+        if (skillDef == null) {
+            try { session.send(ServerMessage.SystemMessage("Meditate skill not found.")) } catch (_: Exception) {}
+            return
+        }
+
+        val effStats = session.effectiveStats()
+        val result = SkillCheck.check(skillDef, effStats, player.level)
+
+        if (!result.success) {
+            try { session.send(ServerMessage.MeditateUpdate(false, "You fail to focus your mind. (roll: ${result.roll})")) } catch (_: Exception) {}
+            return
+        }
+
+        session.isMeditating = true
+        try { session.send(ServerMessage.MeditateUpdate(true, "You enter a meditative state. (roll: ${result.roll})")) } catch (_: Exception) {}
+    }
+
+    private suspend fun resolveTrack(session: PlayerSession, targetId: String?) {
+        val roomId = session.currentRoomId ?: return
+        val player = session.player ?: return
+        val trailMgr = movementTrailManager ?: return
+
+        session.skillCooldowns["TRACK"] = 4
+
+        // Skill check: willpower + agility/2 + level/2 + d20
+        val effStats = session.effectiveStats()
+        val roll = (1..20).random()
+        val check = effStats.willpower + effStats.agility / 2 + player.level / 2 + roll
+
+        // Get trails in current room (optionally filtered by target)
+        val trails = trailMgr.getTrails(roomId, targetId)
+
+        if (trails.isEmpty()) {
+            if (check >= 13) {
+                try { session.send(ServerMessage.TrackResult(success = false, message = "You don't find any tracks here.")) } catch (_: Exception) {}
+            } else {
+                try { session.send(ServerMessage.TrackResult(success = false, message = "You fail to find any tracks.")) } catch (_: Exception) {}
+            }
+            checkHiddenExits(session, roomId, check)
+            return
+        }
+
+        // Use freshest trail
+        val freshest = trails.first()
+        val penalty = trailMgr.stalenessPenalty(freshest)
+        val difficulty = 13 + penalty
+
+        if (check >= difficulty) {
+            val dirName = freshest.direction.name.lowercase()
+            try { session.send(ServerMessage.TrackResult(success = true, direction = freshest.direction, targetName = freshest.entityName, message = "You find tracks left by ${freshest.entityName} leading $dirName.")) } catch (_: Exception) {}
+        } else {
+            try { session.send(ServerMessage.TrackResult(success = false, message = "You find faint tracks but cannot make them out.")) } catch (_: Exception) {}
+        }
+
+        checkHiddenExits(session, roomId, check)
+    }
+
+    private suspend fun checkHiddenExits(session: PlayerSession, roomId: String, check: Int) {
+        val hiddenDefs = worldGraph.getHiddenExitDefs(roomId)
+        if (hiddenDefs.isEmpty()) return
+
+        val trackRoll = check + 5 // reuse the TRACK roll with a bonus
+        var found = false
+        for ((dir, data) in hiddenDefs) {
+            if (session.hasDiscoveredExit(roomId, dir)) continue
+            if (trackRoll >= data.perceptionDC) {
+                session.discoverExit(roomId, dir)
+                worldGraph.revealHiddenExit(roomId, dir)
+                try { session.send(ServerMessage.SystemMessage("Your tracking skills reveal a hidden passage to the ${dir.name.lowercase()}!")) } catch (_: Exception) {}
+                found = true
+            }
+        }
+        if (found) {
+            val room = worldGraph.getRoom(roomId)
+            if (room != null) {
+                val filteredRoom = RoomFilter.forPlayer(room, session, worldGraph)
+                try { session.send(ServerMessage.RoomInfo(filteredRoom, emptyList(), emptyList())) } catch (_: Exception) {}
+            }
+        }
+    }
+
+    private suspend fun updateMapForPlayersInRoom(roomId: RoomId) {
+        for (s in sessionManager.getSessionsInRoom(roomId)) {
+            try {
+                val mapRooms = MapRoomFilter.enrichForPlayer(
+                    worldGraph.getRoomsNear(roomId), s, worldGraph, sessionManager, npcManager
+                )
+                s.send(ServerMessage.MapData(mapRooms, roomId))
+            } catch (_: Exception) {}
         }
     }
 

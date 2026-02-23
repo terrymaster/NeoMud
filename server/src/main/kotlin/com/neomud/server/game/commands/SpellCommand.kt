@@ -3,9 +3,8 @@ package com.neomud.server.game.commands
 import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
-
 import com.neomud.server.game.npc.NpcManager
-import com.neomud.server.game.progression.XpCalculator
+import com.neomud.server.game.npc.NpcState
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
@@ -21,45 +20,29 @@ class SpellCommand(
     private val sessionManager: SessionManager,
     private val playerRepository: PlayerRepository
 ) {
-    suspend fun execute(session: PlayerSession, spellId: String, targetId: String?) {
-        val roomId = session.currentRoomId ?: return
-        val playerName = session.playerName ?: return
-        val player = session.player ?: return
+    /**
+     * Auto-cast a readied spell during the combat tick.
+     * Returns true if the spell was cast, false if skipped (cooldown/no target).
+     * Clears readiedSpellId if out of mana.
+     */
+    suspend fun autoCast(session: PlayerSession, spellId: String, targetId: String?, roomId: String): Boolean {
+        val player = session.player ?: return false
+        val playerName = session.playerName ?: return false
 
-        // Casting a spell breaks meditation and stealth
-        MeditationUtils.breakMeditation(session, "You stop meditating.")
-        StealthUtils.breakStealth(session, sessionManager, "Casting a spell reveals your presence!")
-
-        val spell = spellCatalog.getSpell(spellId)
-        if (spell == null) {
-            session.send(ServerMessage.SpellCastResult(false, spellId, "Unknown spell.", player.currentMp))
-            return
+        val spell = spellCatalog.getSpell(spellId) ?: run {
+            session.readiedSpellId = null
+            return false
         }
 
-        // Validate class has school access
-        val classDef = classCatalog.getClass(player.characterClass)
-        if (classDef == null || !classDef.magicSchools.containsKey(spell.school)) {
-            session.send(ServerMessage.SpellCastResult(false, spell.name, "Your class cannot cast ${spell.school} spells.", player.currentMp))
-            return
-        }
+        // Cooldown — silently skip, wait for next tick
+        val cooldown = session.skillCooldowns[spellId]
+        if (cooldown != null && cooldown > 0) return false
 
-        // Validate level
-        if (player.level < spell.levelRequired) {
-            session.send(ServerMessage.SpellCastResult(false, spell.name, "You need level ${spell.levelRequired} to cast ${spell.name}.", player.currentMp))
-            return
-        }
-
-        // Validate MP
+        // MP check — clear readied spell if out of mana
         if (player.currentMp < spell.manaCost) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "Not enough mana! (need ${spell.manaCost}, have ${player.currentMp})", player.currentMp))
-            return
-        }
-
-        // Validate cooldown
-        val cooldown = session.skillCooldowns[spellId]
-        if (cooldown != null && cooldown > 0) {
-            session.send(ServerMessage.SpellCastResult(false, spell.name, "${spell.name} is on cooldown ($cooldown ticks remaining).", player.currentMp))
-            return
+            session.readiedSpellId = null
+            return false
         }
 
         // Deduct MP
@@ -85,26 +68,105 @@ class SpellCommand(
 
         when (spell.spellType) {
             SpellType.DAMAGE -> handleDamage(session, spell, power, targetId, roomId, playerName)
+            SpellType.DOT -> handleDot(session, spell, power, targetId, roomId, playerName)
             SpellType.HEAL -> handleHeal(session, spell, power, playerName)
             SpellType.BUFF -> handleBuff(session, spell, power, playerName)
-            SpellType.DOT -> handleDot(session, spell, power, targetId, roomId, playerName)
             SpellType.HOT -> handleHot(session, spell, power, playerName)
+        }
+
+        session.player?.let { playerRepository.savePlayerState(it) }
+        return true
+    }
+
+    /**
+     * Execute a manually-cast spell. Returns the NPC target state if an offensive spell
+     * was cast against one (caller should check target.currentHp <= 0 for kill handling).
+     */
+    suspend fun execute(session: PlayerSession, spellId: String, targetId: String?): NpcState? {
+        val roomId = session.currentRoomId ?: return null
+        val playerName = session.playerName ?: return null
+        val player = session.player ?: return null
+
+        // Casting a spell breaks meditation and stealth
+        MeditationUtils.breakMeditation(session, "You stop meditating.")
+        StealthUtils.breakStealth(session, sessionManager, "Casting a spell reveals your presence!")
+
+        val spell = spellCatalog.getSpell(spellId)
+        if (spell == null) {
+            session.send(ServerMessage.SpellCastResult(false, spellId, "Unknown spell.", player.currentMp))
+            return null
+        }
+
+        // Validate class has school access
+        val classDef = classCatalog.getClass(player.characterClass)
+        if (classDef == null || !classDef.magicSchools.containsKey(spell.school)) {
+            session.send(ServerMessage.SpellCastResult(false, spell.name, "Your class cannot cast ${spell.school} spells.", player.currentMp))
+            return null
+        }
+
+        // Validate level
+        if (player.level < spell.levelRequired) {
+            session.send(ServerMessage.SpellCastResult(false, spell.name, "You need level ${spell.levelRequired} to cast ${spell.name}.", player.currentMp))
+            return null
+        }
+
+        // Validate MP
+        if (player.currentMp < spell.manaCost) {
+            session.send(ServerMessage.SpellCastResult(false, spell.name, "Not enough mana! (need ${spell.manaCost}, have ${player.currentMp})", player.currentMp))
+            return null
+        }
+
+        // Validate cooldown
+        val cooldown = session.skillCooldowns[spellId]
+        if (cooldown != null && cooldown > 0) {
+            session.send(ServerMessage.SpellCastResult(false, spell.name, "${spell.name} is on cooldown ($cooldown ticks remaining).", player.currentMp))
+            return null
+        }
+
+        // Deduct MP
+        val newMp = player.currentMp - spell.manaCost
+        session.player = player.copy(currentMp = newMp)
+
+        // Set cooldown
+        if (spell.cooldownTicks > 0) {
+            session.skillCooldowns[spellId] = spell.cooldownTicks
+        }
+
+        // Calculate spell power using buffed stats
+        val effStats = session.effectiveStats()
+        val statValue = when (spell.primaryStat) {
+            "intellect" -> effStats.intellect
+            "willpower" -> effStats.willpower
+            "charm" -> effStats.charm
+            "strength" -> effStats.strength
+            "agility" -> effStats.agility
+            else -> effStats.intellect
+        }
+        val power = spell.basePower + statValue / GameConfig.Skills.SPELL_POWER_STAT_DIVISOR + player.level / GameConfig.Skills.SPELL_POWER_LEVEL_DIVISOR + (1..GameConfig.Skills.SPELL_POWER_DICE_SIZE).random()
+
+        val target = when (spell.spellType) {
+            SpellType.DAMAGE -> handleDamage(session, spell, power, targetId, roomId, playerName)
+            SpellType.DOT -> handleDot(session, spell, power, targetId, roomId, playerName)
+            SpellType.HEAL -> { handleHeal(session, spell, power, playerName); null }
+            SpellType.BUFF -> { handleBuff(session, spell, power, playerName); null }
+            SpellType.HOT -> { handleHot(session, spell, power, playerName); null }
         }
 
         // Persist player state
         session.player?.let { playerRepository.savePlayerState(it) }
+        return target
     }
 
     private suspend fun handleDamage(
         session: PlayerSession, spell: SpellDef, power: Int,
         targetId: String?, roomId: String, playerName: String
-    ) {
+    ): NpcState? {
         // Offensive spell breaks grace period
         session.combatGraceTicks = 0
         val target = resolveTarget(session, targetId, roomId)
         if (target == null) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "No valid target.", session.player!!.currentMp))
-            return
+            return null
         }
 
         target.engagedPlayerIds.add(playerName)
@@ -126,21 +188,19 @@ class SpellCommand(
             )
         )
 
-        if (target.currentHp <= 0) {
-            handleNpcKill(target, playerName, roomId, session)
-        }
+        return target
     }
 
     private suspend fun handleDot(
         session: PlayerSession, spell: SpellDef, power: Int,
         targetId: String?, roomId: String, playerName: String
-    ) {
+    ): NpcState? {
         // Offensive spell breaks grace period
         session.combatGraceTicks = 0
         val target = resolveTarget(session, targetId, roomId)
         if (target == null) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "No valid target.", session.player!!.currentMp))
-            return
+            return null
         }
 
         target.engagedPlayerIds.add(playerName)
@@ -164,9 +224,7 @@ class SpellCommand(
             )
         )
 
-        if (target.currentHp <= 0) {
-            handleNpcKill(target, playerName, roomId, session)
-        }
+        return target
     }
 
     private suspend fun handleHeal(session: PlayerSession, spell: SpellDef, power: Int, playerName: String) {
@@ -234,35 +292,13 @@ class SpellCommand(
         session.send(ServerMessage.ActiveEffectsUpdate(session.activeEffects.toList()))
     }
 
-    private fun resolveTarget(session: PlayerSession, targetId: String?, roomId: String): com.neomud.server.game.npc.NpcState? {
+    private fun resolveTarget(session: PlayerSession, targetId: String?, roomId: String): NpcState? {
         val resolvedId = targetId ?: session.selectedTargetId
         return if (resolvedId != null) {
             val npc = npcManager.getNpcState(resolvedId)
             if (npc != null && npc.currentRoomId == roomId && npc.isAlive) npc else null
         } else {
             npcManager.getLivingHostileNpcsInRoom(roomId).firstOrNull()
-        }
-    }
-
-    private suspend fun handleNpcKill(target: com.neomud.server.game.npc.NpcState, killerName: String, roomId: String, session: PlayerSession) {
-        if (!npcManager.markDead(target.id)) return
-        sessionManager.broadcastToRoom(
-            roomId,
-            ServerMessage.NpcDied(target.id, target.name, killerName, roomId)
-        )
-
-        // Award XP
-        if (target.xpReward > 0) {
-            val player = session.player ?: return
-            val xpGained = XpCalculator.xpForKill(target.level, player.level, target.xpReward)
-            val newXp = player.currentXp + xpGained
-            session.player = player.copy(currentXp = newXp)
-            try {
-                session.send(ServerMessage.XpGained(xpGained, newXp, player.xpToNextLevel))
-                if (XpCalculator.isReadyToLevel(newXp, player.xpToNextLevel, player.level)) {
-                    session.send(ServerMessage.SystemMessage("You have enough experience to level up! Visit a trainer."))
-                }
-            } catch (_: Exception) { }
         }
     }
 }

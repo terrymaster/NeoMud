@@ -295,6 +295,19 @@ sealed class ServerMessage {
     ) : ServerMessage()
 
     @Serializable
+    @SerialName("skill_effect")
+    data class SkillEffect(
+        val userName: String,
+        val skillName: String,
+        val targetName: String,
+        val targetId: String,
+        val damage: Int,
+        val targetHp: Int,
+        val targetMaxHp: Int,
+        val message: String
+    ) : ServerMessage()
+
+    @Serializable
     @SerialName("spell_effect")
     data class SpellEffect(
         val casterName: String,

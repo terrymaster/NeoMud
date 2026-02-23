@@ -698,6 +698,22 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testSkillEffectRoundTrip() {
+        val original = ServerMessage.SkillEffect("Hero", "BASH", "Shadow Wolf", "npc_1", 15, 35, 50, "Hero bashes Shadow Wolf for 15 damage, stunning them!")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testSkillEffectKickRoundTrip() {
+        val original = ServerMessage.SkillEffect("Hero", "KICK", "Goblin", "npc_2", 8, 0, 30, "Hero kicks Goblin for 8 damage, finishing them off!")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
     fun testRaceDefRoundTrip() {
         val raceDef = RaceDef(
             id = "HUMAN",
@@ -856,6 +872,22 @@ class MessageSerializerTest {
         )
         val json = MessageSerializer.encodeServerMessage(original)
         val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testReadySpellRoundTrip() {
+        val original = ClientMessage.ReadySpell("FIREBALL")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testReadySpellClearRoundTrip() {
+        val original = ClientMessage.ReadySpell(null)
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
         assertEquals(original, decoded)
     }
 
