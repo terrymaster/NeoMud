@@ -74,7 +74,7 @@ class CommandProcessor(
     private val kickCommand = KickCommand(npcManager, sessionManager, skillKillHandler, worldGraph, movementTrailManager)
     private val meditateCommand = MeditateCommand(skillCatalog, sessionManager)
     private val trackCommand = TrackCommand(movementTrailManager ?: MovementTrailManager(), worldGraph)
-    private val pickLockCommand = PickLockCommand(worldGraph, sessionManager)
+    private val pickLockCommand = PickLockCommand(worldGraph, sessionManager, npcManager)
     private val interactCommand = InteractCommand(worldGraph, sessionManager, npcManager, roomItemManager, lootService, lootTableCatalog)
 
     suspend fun sendCatalogSync(session: PlayerSession) {

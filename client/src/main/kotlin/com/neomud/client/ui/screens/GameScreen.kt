@@ -287,10 +287,16 @@ fun GameScreen(
 
         // Lock target picker overlay
         if (showLockTargetPicker) {
-            val lockedExits = roomInfo?.room?.lockedExits ?: emptyMap()
-            if (lockedExits.isNotEmpty()) {
+            val currentRoom = roomInfo?.room
+            val lockedExits = currentRoom?.lockedExits ?: emptyMap()
+            val unpickable = currentRoom?.unpickableExits ?: emptySet()
+            val lockedInteractables = (currentRoom?.interactables ?: emptyList())
+                .filter { it.difficulty > 0 && it.difficultyCheck.isNotEmpty() }
+            if (lockedExits.isNotEmpty() || lockedInteractables.isNotEmpty()) {
                 LockTargetPicker(
                     lockedExits = lockedExits,
+                    unpickableExits = unpickable,
+                    lockedInteractables = lockedInteractables,
                     onSelect = { targetId -> gameViewModel.pickLockTarget(targetId) },
                     onDismiss = { gameViewModel.dismissLockTargetPicker() }
                 )

@@ -792,14 +792,19 @@ class GameViewModel(
 
     // Lock target picker methods
     fun showLockTargetPicker() {
-        val lockedExits = _roomInfo.value?.room?.lockedExits ?: emptyMap()
-        when (lockedExits.size) {
-            0 -> useSkill("PICK_LOCK") // Let server handle "nothing locked" message
-            1 -> {
-                val dir = lockedExits.keys.first()
-                useSkill("PICK_LOCK", "exit:${dir.name}")
-            }
-            else -> _showLockTargetPicker.value = true
+        val room = _roomInfo.value?.room
+        val lockedExits = room?.lockedExits ?: emptyMap()
+        val unpickable = room?.unpickableExits ?: emptySet()
+        val pickableExits = lockedExits.filterKeys { it !in unpickable }
+        val lockedInteractables = (room?.interactables ?: emptyList())
+            .filter { it.difficulty > 0 && it.difficultyCheck.isNotEmpty() }
+        val totalTargets = pickableExits.size + lockedInteractables.size
+
+        if (totalTargets <= 1) {
+            // Let server discover all locks and resend RoomInfo — client may not see them all yet
+            useSkill("PICK_LOCK")
+        } else {
+            _showLockTargetPicker.value = true
         }
     }
 

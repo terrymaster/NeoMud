@@ -3,8 +3,10 @@ package com.neomud.server.game.commands
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
 
+import com.neomud.server.game.RoomFilter
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
+import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
 import com.neomud.shared.protocol.ServerMessage
@@ -12,7 +14,8 @@ import com.neomud.shared.protocol.ServerMessage
 // TODO: Consider lockable containers/chests as future pickable targets
 class PickLockCommand(
     private val worldGraph: WorldGraph,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val npcManager: NpcManager
 ) {
     suspend fun execute(session: PlayerSession, targetId: String? = null): Boolean {
         val roomId = session.currentRoomId ?: return false
@@ -44,7 +47,37 @@ class PickLockCommand(
             return false
         }
 
+        // Build list of pickable interactables (features with difficulty checks)
+        val interactableDefs = worldGraph.getInteractableDefs(roomId)
+        val pickableFeatures = interactableDefs.filter { it.difficulty > 0 && it.difficultyCheck.isNotEmpty() }
+
         // Resolve target
+        if (targetId != null && targetId.startsWith("feature:")) {
+            // Picking an interactable lock
+            val featureId = targetId.removePrefix("feature:")
+            val feat = pickableFeatures.find { it.id == featureId }
+            if (feat == null) {
+                session.send(ServerMessage.SystemMessage("You don't see anything like that to pick."))
+                return false
+            }
+
+            session.skillCooldowns["PICK_LOCK"] = 3
+
+            val effStats = session.effectiveStats()
+            val roll = (1..20).random()
+            val check = effStats.agility + effStats.intellect / 2 + roll
+
+            if (check >= feat.difficulty) {
+                session.send(ServerMessage.SystemMessage("You successfully pick the lock on the ${feat.label}."))
+                // Trigger the interactable's action (e.g. EXIT_OPEN)
+                return true
+            } else {
+                val failMsg = feat.failureMessage.ifEmpty { "You fail to pick the lock on the ${feat.label}." }
+                session.send(ServerMessage.SystemMessage(failMsg))
+                return false
+            }
+        }
+
         val direction: Direction
         val difficulty: Int
 
@@ -70,16 +103,44 @@ class PickLockCommand(
             }
             direction = parsedDir
             difficulty = diff
-        } else if (pickableExits.size == 1) {
-            // Auto-pick the only target
-            val entry = pickableExits.entries.first()
-            direction = entry.key
-            difficulty = entry.value
         } else {
-            // Multiple targets — list them for the player
-            val listing = pickableExits.keys.joinToString(", ") { "exit:${it.name}" }
-            session.send(ServerMessage.SystemMessage("Multiple locked exits: $listing. Specify a target."))
-            return false
+            // No target specified — discover all locks for the client
+            for (dir in pickableExits.keys) {
+                session.discoverLock(roomId, dir)
+            }
+
+            val totalTargets = pickableExits.size + pickableFeatures.size
+            if (totalTargets == 1) {
+                // Only one target exists — auto-pick it
+                if (pickableExits.size == 1) {
+                    val entry = pickableExits.entries.first()
+                    direction = entry.key
+                    difficulty = entry.value
+                } else {
+                    val feat = pickableFeatures.first()
+                    session.skillCooldowns["PICK_LOCK"] = 3
+                    val effStats = session.effectiveStats()
+                    val roll = (1..20).random()
+                    val check = effStats.agility + effStats.intellect / 2 + roll
+                    if (check >= feat.difficulty) {
+                        session.send(ServerMessage.SystemMessage("You successfully pick the lock on the ${feat.label}."))
+                        return true
+                    } else {
+                        val failMsg = feat.failureMessage.ifEmpty { "You fail to pick the lock on the ${feat.label}." }
+                        session.send(ServerMessage.SystemMessage(failMsg))
+                        return false
+                    }
+                }
+            } else {
+                // Multiple targets — resend RoomInfo with newly discovered locks and prompt
+                val filteredRoom = RoomFilter.forPlayer(room, session, worldGraph)
+                val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(roomId)
+                    .filter { it.name != player.name }
+                val npcsInRoom = npcManager.getNpcsInRoom(roomId)
+                session.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
+                session.send(ServerMessage.SystemMessage("You notice several locks here. Choose a target."))
+                return false
+            }
         }
 
         // Mark lock as discovered so direction pad and map show it
