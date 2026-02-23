@@ -51,6 +51,7 @@ import com.neomud.client.ui.components.SpellPicker
 import com.neomud.client.ui.components.SpriteOverlay
 import com.neomud.client.ui.components.TrainerPanel
 import com.neomud.client.ui.components.VendorPanel
+import com.neomud.client.ui.components.KickDirectionPicker
 import com.neomud.client.ui.components.LockTargetPicker
 import com.neomud.client.ui.components.MapOverlay
 import com.neomud.client.ui.components.PlayerTooltip
@@ -99,6 +100,8 @@ fun GameScreen(
     val visitedRooms by gameViewModel.visitedRooms.collectAsState()
 
     val showLockTargetPicker by gameViewModel.showLockTargetPicker.collectAsState()
+    val showKickDirectionPicker by gameViewModel.showKickDirectionPicker.collectAsState()
+    val kickPendingNpcId by gameViewModel.kickPendingNpcId.collectAsState()
 
     val roomPlayers by gameViewModel.roomPlayers.collectAsState()
     var tooltipPlayer by remember { mutableStateOf<PlayerInfo?>(null) }
@@ -294,6 +297,22 @@ fun GameScreen(
             }
         }
 
+        // Kick direction picker overlay
+        if (showKickDirectionPicker) {
+            val exits = roomInfo?.room?.exits?.keys ?: emptySet()
+            val locked = roomInfo?.room?.lockedExits?.keys ?: emptySet()
+            val npcName = kickPendingNpcId?.let { id ->
+                roomEntities.find { it.id == id }?.name
+            } ?: "target"
+            KickDirectionPicker(
+                availableExits = exits,
+                lockedExits = locked,
+                npcName = npcName,
+                onSelect = { direction -> gameViewModel.kickWithDirection(direction) },
+                onDismiss = { gameViewModel.dismissKickDirectionPicker() }
+            )
+        }
+
         // Player tooltip overlay
         if (tooltipPlayer != null) {
             PlayerTooltip(
@@ -390,8 +409,9 @@ private fun GameScreenPortrait(
     val visitedRooms by gameViewModel.visitedRooms.collectAsState()
     val showMap by gameViewModel.showMap.collectAsState()
 
-    // Determine if player has TRACK skill
+    // Determine if player has TRACK / KICK skills
     val hasTrackSkill = player?.characterClass?.let { classCatalog[it] }?.skills?.contains("TRACK") == true
+    val hasKickSkill = player?.characterClass?.let { classCatalog[it] }?.skills?.contains("KICK") == true
 
     Column(modifier = Modifier.fillMaxSize().background(StoneTheme.panelBg)) {
         // Top: Room background + sidebars + floating minimap (~35%)
@@ -430,7 +450,8 @@ private fun GameScreenPortrait(
                 classCatalog = classCatalog,
                 playerCharacterClass = player?.characterClass,
                 onAttackTarget = { gameViewModel.attackTarget(it) },
-                onTrackTarget = if (hasTrackSkill) { npcId -> gameViewModel.useSkill("TRACK", npcId) } else null,
+                onTrackTarget = if (hasTrackSkill) { npcId: String -> gameViewModel.useSkill("TRACK", npcId) } else null,
+                onKickTarget = if (hasKickSkill) { npcId: String -> gameViewModel.showKickDirectionPicker(npcId) } else null,
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -612,8 +633,9 @@ private fun GameScreenLandscape(
     val visitedRooms by gameViewModel.visitedRooms.collectAsState()
     val showMap by gameViewModel.showMap.collectAsState()
 
-    // Determine if player has TRACK skill
+    // Determine if player has TRACK / KICK skills
     val hasTrackSkill = player?.characterClass?.let { classCatalog[it] }?.skills?.contains("TRACK") == true
+    val hasKickSkill = player?.characterClass?.let { classCatalog[it] }?.skills?.contains("KICK") == true
 
     Column(modifier = Modifier.fillMaxSize().background(StoneTheme.panelBg)) {
         // Top row (~55%): Map area + Controls side-by-side
@@ -658,7 +680,8 @@ private fun GameScreenLandscape(
                     classCatalog = classCatalog,
                     playerCharacterClass = player?.characterClass,
                     onAttackTarget = { gameViewModel.attackTarget(it) },
-                    onTrackTarget = if (hasTrackSkill) { npcId -> gameViewModel.useSkill("TRACK", npcId) } else null,
+                    onTrackTarget = if (hasTrackSkill) { npcId: String -> gameViewModel.useSkill("TRACK", npcId) } else null,
+                    onKickTarget = if (hasKickSkill) { npcId: String -> gameViewModel.showKickDirectionPicker(npcId) } else null,
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -950,6 +973,12 @@ private fun ActionButtonRow(
                     icon = btnInfo.icon,
                     color = btnInfo.activeColor,
                     onClick = { gameViewModel.showLockTargetPicker() }
+                )
+            } else if (skillId == "KICK") {
+                ActionButton(
+                    icon = btnInfo.icon,
+                    color = btnInfo.activeColor,
+                    onClick = { gameViewModel.showKickDirectionPicker() }
                 )
             } else {
                 ActionButton(

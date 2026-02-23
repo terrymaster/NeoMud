@@ -1,10 +1,13 @@
 package com.neomud.server.game.npc
 
+import com.neomud.server.game.MovementTrailManager
 import com.neomud.server.game.npc.behavior.BehaviorNode
 import com.neomud.server.game.npc.behavior.IdleBehavior
 import com.neomud.server.game.npc.behavior.NpcAction
 import com.neomud.server.game.npc.behavior.PatrolBehavior
+import com.neomud.server.game.npc.behavior.PursuitBehavior
 import com.neomud.server.game.npc.behavior.WanderBehavior
+import com.neomud.server.session.SessionManager
 import com.neomud.server.world.NpcData
 import com.neomud.server.world.SpawnConfig
 import com.neomud.server.world.WorldGraph
@@ -17,7 +20,7 @@ data class NpcState(
     val name: String,
     val description: String,
     var currentRoomId: RoomId,
-    val behavior: BehaviorNode,
+    var behavior: BehaviorNode,
     val hostile: Boolean = false,
     val maxHp: Int = 0,
     var currentHp: Int = 0,
@@ -44,6 +47,10 @@ data class NpcState(
     /** When > 0, NPC skips attack ticks (decremented each combat tick). */
     var stunTicks: Int = 0
     val isAlive: Boolean get() = !deathProcessed && (maxHp == 0 || currentHp > 0)
+    /** Stores pre-pursuit behavior for restoration when pursuit ends. */
+    var originalBehavior: BehaviorNode? = null
+    /** Tracks all players who have engaged this NPC in combat. */
+    val engagedPlayerIds: MutableSet<String> = mutableSetOf()
 }
 
 data class NpcEvent(
@@ -171,6 +178,12 @@ class NpcManager(
                 }
                 is NpcAction.None -> { /* do nothing */ }
             }
+
+            // Check if pursuit behavior has ended and restore original
+            val behavior = npc.behavior
+            if (behavior is PursuitBehavior && behavior.pursuitEnded) {
+                endPursuit(npc.id)
+            }
         }
 
         // 2. Clean up dead NPCs (remove from list)
@@ -280,5 +293,60 @@ class NpcManager(
         npcs.add(spawned)
         logger.info("Admin spawned ${spawned.name} ($instanceId) at $roomId")
         return spawned
+    }
+
+    /**
+     * Moves an NPC to a new room and returns an [NpcEvent] for broadcasting.
+     */
+    fun moveNpc(npcId: String, toRoomId: RoomId): NpcEvent? {
+        val npc = npcs.find { it.id == npcId && it.isAlive } ?: return null
+        val oldRoom = npc.currentRoomId
+        val room = worldGraph.getRoom(oldRoom)
+        val direction = room?.exits?.entries?.find { it.value == toRoomId }?.key
+        npc.currentRoomId = toRoomId
+        return NpcEvent(
+            npcName = npc.name,
+            fromRoomId = oldRoom,
+            toRoomId = toRoomId,
+            direction = direction,
+            npcId = npc.id,
+            hostile = npc.hostile,
+            currentHp = npc.currentHp,
+            maxHp = npc.maxHp,
+            templateId = npc.templateId
+        )
+    }
+
+    /**
+     * Switches an NPC to pursuit behavior targeting the given player.
+     * Does nothing if the NPC is already pursuing someone.
+     */
+    fun engagePursuit(
+        npcId: String,
+        targetPlayerId: String,
+        trailManager: MovementTrailManager,
+        sessionManager: SessionManager
+    ) {
+        val npc = npcs.find { it.id == npcId && it.isAlive } ?: return
+        if (npc.originalBehavior != null) return // already pursuing
+        npc.originalBehavior = npc.behavior
+        npc.behavior = PursuitBehavior(
+            targetPlayerId = targetPlayerId,
+            trailManager = trailManager,
+            sessionManager = sessionManager
+        )
+        logger.info("${npc.name} ($npcId) begins pursuing $targetPlayerId")
+    }
+
+    /**
+     * Ends pursuit for an NPC, restoring its original behavior.
+     */
+    fun endPursuit(npcId: String) {
+        val npc = npcs.find { it.id == npcId } ?: return
+        val original = npc.originalBehavior ?: return
+        npc.behavior = original
+        npc.originalBehavior = null
+        npc.engagedPlayerIds.clear()
+        logger.info("${npc.name} ($npcId) ends pursuit, reverting to ${npc.behaviorType}")
     }
 }

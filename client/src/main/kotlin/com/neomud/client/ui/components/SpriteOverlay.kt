@@ -79,6 +79,7 @@ fun SpriteOverlay(
     playerCharacterClass: String? = null,
     onAttackTarget: ((String) -> Unit)? = null,
     onTrackTarget: ((String) -> Unit)? = null,
+    onKickTarget: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val serverBaseUrl = LocalServerBaseUrl.current
@@ -136,6 +137,7 @@ fun SpriteOverlay(
                             playerCharacterClass = playerCharacterClass,
                             onAttackTarget = onAttackTarget,
                             onTrackTarget = onTrackTarget,
+                            onKickTarget = onKickTarget,
                             scale = 0.75f,
                             modifier = Modifier
                                 .weight(1f, fill = false)
@@ -175,6 +177,7 @@ fun SpriteOverlay(
                             playerCharacterClass = playerCharacterClass,
                             onAttackTarget = onAttackTarget,
                             onTrackTarget = onTrackTarget,
+                            onKickTarget = onKickTarget,
                             scale = 1.0f,
                             modifier = Modifier
                                 .weight(1f, fill = false)
@@ -268,6 +271,7 @@ private fun EntitySprite(
     playerCharacterClass: String?,
     onAttackTarget: ((String) -> Unit)?,
     onTrackTarget: ((String) -> Unit)?,
+    onKickTarget: ((String) -> Unit)?,
     scale: Float,
     modifier: Modifier = Modifier
 ) {
@@ -321,6 +325,12 @@ private fun EntitySprite(
                         onTrackTarget = if (onTrackTarget != null) {
                             {
                                 onTrackTarget.invoke(npc.id)
+                                contextMenuNpcId.value = null
+                            }
+                        } else null,
+                        onKickTarget = if (onKickTarget != null) {
+                            {
+                                onKickTarget.invoke(npc.id)
                                 contextMenuNpcId.value = null
                             }
                         } else null,
@@ -425,6 +435,7 @@ private fun NpcContextMenu(
     onAttackTarget: () -> Unit,
     onCastSpell: (String) -> Unit,
     onTrackTarget: (() -> Unit)? = null,
+    onKickTarget: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val offensiveSpells = targetableSlottedSpells(
@@ -463,6 +474,20 @@ private fun NpcContextMenu(
                 contentAlignment = Alignment.Center
             ) {
                 Text(text = "\uD83D\uDC3E", fontSize = 14.sp)
+            }
+        }
+
+        // Kick button
+        if (onKickTarget != null) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(stoneBg, CircleShape)
+                    .border(1.dp, Color(0xFFFF5533).copy(alpha = 0.7f), CircleShape)
+                    .clickable { onKickTarget() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "\uD83E\uDDB6", fontSize = 14.sp)
             }
         }
 

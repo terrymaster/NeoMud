@@ -134,6 +134,13 @@ class GameViewModel(
     private val _showLockTargetPicker = MutableStateFlow(false)
     val showLockTargetPicker: StateFlow<Boolean> = _showLockTargetPicker
 
+    // Kick direction picker
+    private val _showKickDirectionPicker = MutableStateFlow(false)
+    val showKickDirectionPicker: StateFlow<Boolean> = _showKickDirectionPicker
+
+    private val _kickPendingNpcId = MutableStateFlow<String?>(null)
+    val kickPendingNpcId: StateFlow<String?> = _kickPendingNpcId
+
     // Death notification
     private val _deathMessage = MutableStateFlow<String?>(null)
     val deathMessage: StateFlow<String?> = _deathMessage
@@ -803,6 +810,31 @@ class GameViewModel(
     fun pickLockTarget(targetId: String) {
         _showLockTargetPicker.value = false
         useSkill("PICK_LOCK", targetId)
+    }
+
+    // Kick direction picker methods
+    fun showKickDirectionPicker(npcId: String? = null) {
+        val targetId = npcId ?: _selectedTargetId.value
+            ?: _roomEntities.value.firstOrNull { it.hostile }?.id
+        if (targetId == null) {
+            // No target — let server handle the error
+            useSkill("KICK")
+            return
+        }
+        _kickPendingNpcId.value = targetId
+        _showKickDirectionPicker.value = true
+    }
+
+    fun dismissKickDirectionPicker() {
+        _showKickDirectionPicker.value = false
+        _kickPendingNpcId.value = null
+    }
+
+    fun kickWithDirection(direction: Direction) {
+        val npcId = _kickPendingNpcId.value ?: return
+        _showKickDirectionPicker.value = false
+        _kickPendingNpcId.value = null
+        useSkill("KICK", "$npcId:${direction.name}")
     }
 
     // Spell methods

@@ -104,6 +104,7 @@ class SpellCommand(
             return
         }
 
+        target.engagedPlayerIds.add(playerName)
         target.currentHp -= power
         val castMsg = "$playerName ${spell.castMessage} ${target.name} for $power damage!"
 
@@ -137,6 +138,7 @@ class SpellCommand(
             return
         }
 
+        target.engagedPlayerIds.add(playerName)
         // Apply initial damage
         val initialDmg = power / 2
         target.currentHp -= initialDmg

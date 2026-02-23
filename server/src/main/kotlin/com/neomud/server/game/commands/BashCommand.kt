@@ -43,6 +43,9 @@ class BashCommand(
             session.send(ServerMessage.AttackModeUpdate(true))
         }
 
+        // Track engagement for pursuit
+        target.engagedPlayerIds.add(playerName)
+
         val effStats = session.effectiveStats()
         val damage = effStats.strength + (1..4).random()
         target.currentHp -= damage

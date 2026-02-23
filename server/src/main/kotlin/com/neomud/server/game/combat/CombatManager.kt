@@ -186,6 +186,9 @@ class CombatManager(
 
                     target.currentHp -= damage
 
+                    // Track engagement for pursuit
+                    target.engagedPlayerIds.add(player.name)
+
                     events.add(CombatEvent.Hit(
                         attackerName = player.name,
                         defenderName = target.name,

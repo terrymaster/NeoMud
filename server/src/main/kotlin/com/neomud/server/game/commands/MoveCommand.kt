@@ -126,6 +126,15 @@ class MoveCommand(
             session.send(ServerMessage.AttackModeUpdate(false))
         }
 
+        // Trigger pursuit: hostile NPCs engaged with this player chase them
+        if (!sneaking && movementTrailManager != null) {
+            val engagedHostiles = npcManager.getLivingHostileNpcsInRoom(currentRoomId)
+                .filter { playerName in it.engagedPlayerIds && it.originalBehavior == null }
+            for (npc in engagedHostiles) {
+                npcManager.engagePursuit(npc.id, playerName, movementTrailManager, sessionManager)
+            }
+        }
+
         // Broadcast enter to new room (only if not sneaking)
         if (!sneaking) {
             sessionManager.broadcastToRoom(

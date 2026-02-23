@@ -71,7 +71,7 @@ class CommandProcessor(
     private val sneakCommand = SneakCommand(sessionManager, npcManager, skillCatalog, classCatalog)
     private val skillKillHandler = SkillKillHandler(npcManager, sessionManager, playerRepository, lootService, lootTableCatalog, roomItemManager)
     private val bashCommand = BashCommand(npcManager, sessionManager, skillKillHandler)
-    private val kickCommand = KickCommand(npcManager, sessionManager, skillKillHandler)
+    private val kickCommand = KickCommand(npcManager, sessionManager, skillKillHandler, worldGraph, movementTrailManager)
     private val meditateCommand = MeditateCommand(skillCatalog, sessionManager)
     private val trackCommand = TrackCommand(movementTrailManager ?: MovementTrailManager(), worldGraph)
     private val pickLockCommand = PickLockCommand(worldGraph, sessionManager)

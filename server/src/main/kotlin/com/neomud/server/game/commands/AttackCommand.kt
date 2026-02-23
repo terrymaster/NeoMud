@@ -54,6 +54,10 @@ class AttackCommand(
 
         if (npc != null && npc.currentRoomId == roomId && npc.hostile) {
             session.selectedTargetId = npcId
+            val playerName = session.playerName
+            if (playerName != null && session.attackMode) {
+                npc.engagedPlayerIds.add(playerName)
+            }
         } else {
             session.selectedTargetId = null
             session.send(ServerMessage.SystemMessage("Invalid target."))
