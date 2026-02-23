@@ -426,6 +426,64 @@ class IntegrationTest {
         }
     }
 
+    @Test
+    fun testDiscoveryPersistedAcrossSessions() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        // Register
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("explorer", "pass123", "Explorer", "WARRIOR",
+                    allocatedStats = Stats(strength = 30, agility = 22, intellect = 18, willpower = 18, health = 30, charm = 18))
+            )))
+            receiveServerMessage() // RegisterOk
+        }
+
+        // Session 1: Login, move north, disconnect
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Login("explorer", "pass123")
+            )))
+            receiveServerMessage() // LoginOk
+            receiveServerMessage() // RoomInfo
+            val initialMap = receiveServerMessage()
+            assertIs<ServerMessage.MapData>(initialMap)
+            // First login — visitedRooms should contain at least the spawn room
+            assertTrue(initialMap.visitedRooms.contains("town:temple"))
+            receiveServerMessage() // InventoryUpdate
+            receiveServerMessage() // RoomItemsUpdate
+
+            // Move north to town square
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Move(Direction.NORTH)
+            )))
+            receiveServerMessage() // MoveOk
+            receiveServerMessage() // MapData
+            receiveServerMessage() // RoomItemsUpdate
+        }
+        // WebSocket close triggers disconnect save
+
+        // Session 2: Login again — visitedRooms should include both rooms
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Login("explorer", "pass123")
+            )))
+            receiveServerMessage() // LoginOk
+            receiveServerMessage() // RoomInfo
+            val mapData = receiveServerMessage()
+            assertIs<ServerMessage.MapData>(mapData)
+
+            // Should have both the spawn room and the room we moved to
+            assertTrue(mapData.visitedRooms.contains("town:temple"), "Should remember spawn room")
+            assertTrue(mapData.visitedRooms.contains("town:square"), "Should remember visited room from previous session")
+        }
+    }
+
     private suspend fun DefaultClientWebSocketSession.receiveServerMessage(): ServerMessage {
         val frame = incoming.receive()
         assertTrue(frame is Frame.Text, "Expected text frame")

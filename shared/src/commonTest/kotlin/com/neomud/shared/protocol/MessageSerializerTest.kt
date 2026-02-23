@@ -148,6 +148,33 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testMapDataWithVisitedRoomsRoundTrip() {
+        val rooms = listOf(
+            MapRoom("town:square", "Town Square", 0, 0, mapOf(Direction.NORTH to "town:gate")),
+            MapRoom("town:gate", "North Gate", 0, 1, mapOf(Direction.SOUTH to "town:square"))
+        )
+        val visited = setOf("town:square", "town:gate", "town:market")
+        val original = ServerMessage.MapData(rooms, "town:square", visited)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+        val decodedMap = decoded as ServerMessage.MapData
+        assertEquals(visited, decodedMap.visitedRooms)
+    }
+
+    @Test
+    fun testMapDataVisitedRoomsDefaultEmpty() {
+        val rooms = listOf(
+            MapRoom("town:square", "Town Square", 0, 0, mapOf(Direction.NORTH to "town:gate"))
+        )
+        val original = ServerMessage.MapData(rooms, "town:square")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        val decodedMap = decoded as ServerMessage.MapData
+        assertTrue(decodedMap.visitedRooms.isEmpty())
+    }
+
+    @Test
     fun testMapDataDefaultFieldsBackwardCompatible() {
         // MapRoom with no lockedExits/hiddenExits should deserialize with empty defaults
         val room = MapRoom("r1", "Room", 0, 0, mapOf(Direction.NORTH to "r2"))
