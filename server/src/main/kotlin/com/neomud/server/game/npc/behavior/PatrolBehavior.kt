@@ -1,12 +1,13 @@
 package com.neomud.server.game.npc.behavior
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.npc.NpcState
 import com.neomud.shared.model.RoomId
 import com.neomud.server.world.WorldGraph
 
 class PatrolBehavior(
     private val route: List<String>,
-    private val moveEveryNTicks: Int = 20
+    private val moveEveryNTicks: Int = GameConfig.Npc.PATROL_MOVE_TICKS
 ) : BehaviorNode {
     private var routeIndex = 0
     private var tickCounter = 0

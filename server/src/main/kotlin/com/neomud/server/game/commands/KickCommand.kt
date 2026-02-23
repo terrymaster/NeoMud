@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MapRoomFilter
 import com.neomud.server.game.MovementTrailManager
 import com.neomud.server.game.npc.NpcManager
@@ -69,15 +70,18 @@ class KickCommand(
             session.send(ServerMessage.AttackModeUpdate(true))
         }
 
+        // Aggressive action breaks grace period
+        session.combatGraceTicks = 0
+
         // Track engagement
         target.engagedPlayerIds.add(playerName)
 
         // Damage always applies
         val effStats = session.effectiveStats()
-        val damage = effStats.strength / 4 + effStats.agility / 4 + (1..4).random()
+        val damage = effStats.strength / 4 + effStats.agility / 4 + (1..GameConfig.Skills.KICK_DAMAGE_RANGE).random()
         target.currentHp -= damage
 
-        session.skillCooldowns["KICK"] = 2
+        session.skillCooldowns["KICK"] = GameConfig.Skills.KICK_COOLDOWN_TICKS
 
         // Check for kill before knockback
         if (target.currentHp <= 0) {
@@ -156,8 +160,7 @@ class KickCommand(
                 updateMapForPlayersInRoom(roomId)
                 updateMapForPlayersInRoom(targetRoomId)
 
-                // 1 stun tick — dazed from being kicked
-                target.stunTicks = 1
+                target.stunTicks = GameConfig.Skills.KICK_KNOCKBACK_STUN_TICKS
 
                 // Trigger pursuit: NPC was forcibly separated from combat
                 val trailMgr = movementTrailManager

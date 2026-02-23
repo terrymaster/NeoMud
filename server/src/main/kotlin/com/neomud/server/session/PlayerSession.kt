@@ -1,5 +1,6 @@
 package com.neomud.server.session
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.shared.model.*
 import com.neomud.shared.protocol.MessageSerializer
@@ -18,6 +19,7 @@ class PlayerSession(
     var isHidden: Boolean = false
     var isMeditating: Boolean = false
     var godMode: Boolean = false
+    var combatGraceTicks: Int = 0
     val skillCooldowns: MutableMap<String, Int> = mutableMapOf()
     val visitedRooms: MutableSet<String> = mutableSetOf()
     val discoveredHiddenExits: MutableSet<String> = mutableSetOf()
@@ -53,15 +55,15 @@ class PlayerSession(
     }
 
     // Rate limiting (token bucket)
-    private var messageTokens: Double = BURST_CAPACITY.toDouble()
+    private var messageTokens: Double = GameConfig.RateLimit.BURST_CAPACITY.toDouble()
     private var lastRefillTime: Long = System.currentTimeMillis()
 
     fun tryConsumeMessage(): Boolean {
         val now = System.currentTimeMillis()
         val elapsed = (now - lastRefillTime) / 1000.0
         lastRefillTime = now
-        messageTokens = (messageTokens + elapsed * MAX_MESSAGES_PER_SECOND)
-            .coerceAtMost(BURST_CAPACITY.toDouble())
+        messageTokens = (messageTokens + elapsed * GameConfig.RateLimit.MAX_MESSAGES_PER_SECOND)
+            .coerceAtMost(GameConfig.RateLimit.BURST_CAPACITY.toDouble())
         return if (messageTokens >= 1.0) {
             messageTokens -= 1.0
             true
@@ -107,7 +109,7 @@ class PlayerSession(
     }
 
     companion object {
-        const val MAX_MESSAGES_PER_SECOND = 10
-        const val BURST_CAPACITY = 20
+        val MAX_MESSAGES_PER_SECOND = GameConfig.RateLimit.MAX_MESSAGES_PER_SECOND
+        val BURST_CAPACITY = GameConfig.RateLimit.BURST_CAPACITY
     }
 }

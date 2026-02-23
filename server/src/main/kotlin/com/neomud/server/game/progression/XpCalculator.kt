@@ -1,41 +1,40 @@
 package com.neomud.server.game.progression
 
+import com.neomud.server.game.GameConfig
 import kotlin.math.pow
 import kotlin.math.roundToLong
 
 object XpCalculator {
 
-    private const val MAX_LEVEL = 30
-
     fun xpForLevel(level: Int): Long {
-        return (100 * level.toDouble().pow(2.2)).roundToLong().coerceAtLeast(100)
+        return (GameConfig.Progression.XP_BASE_MULTIPLIER * level.toDouble().pow(GameConfig.Progression.XP_CURVE_EXPONENT)).roundToLong().coerceAtLeast(GameConfig.Progression.XP_MINIMUM)
     }
 
     fun xpForKill(npcLevel: Int, playerLevel: Int, baseXp: Long): Long {
         val diff = npcLevel - playerLevel
         val modifier = when {
-            diff >= 5 -> 1.5
-            diff >= 3 -> 1.25
-            diff >= 1 -> 1.1
-            diff == 0 -> 1.0
-            diff >= -2 -> 0.75
-            diff >= -4 -> 0.5
-            else -> 0.1 // 5+ below
+            diff >= 5 -> GameConfig.Progression.XP_MOD_5_ABOVE
+            diff >= 3 -> GameConfig.Progression.XP_MOD_3_ABOVE
+            diff >= 1 -> GameConfig.Progression.XP_MOD_1_ABOVE
+            diff == 0 -> GameConfig.Progression.XP_MOD_SAME
+            diff >= -2 -> GameConfig.Progression.XP_MOD_2_BELOW
+            diff >= -4 -> GameConfig.Progression.XP_MOD_4_BELOW
+            else -> GameConfig.Progression.XP_MOD_5_PLUS_BELOW
         }
         return (baseXp * modifier).roundToLong().coerceAtLeast(1)
     }
 
     fun adjustedXpForLevel(level: Int, raceXpMod: Double, classXpMod: Double): Long {
-        return (xpForLevel(level) * raceXpMod * classXpMod).roundToLong().coerceAtLeast(100)
+        return (xpForLevel(level) * raceXpMod * classXpMod).roundToLong().coerceAtLeast(GameConfig.Progression.XP_MINIMUM)
     }
 
     fun cpForLevel(level: Int): Int = when {
-        level <= 10 -> 10
-        level <= 20 -> 15
-        else -> 20
+        level <= GameConfig.Progression.CP_TIER_2_LEVEL -> GameConfig.Progression.CP_PER_LEVEL_LOW
+        level <= GameConfig.Progression.CP_TIER_3_LEVEL -> GameConfig.Progression.CP_PER_LEVEL_MID
+        else -> GameConfig.Progression.CP_PER_LEVEL_HIGH
     }
 
     fun isReadyToLevel(currentXp: Long, xpToNextLevel: Long, level: Int): Boolean {
-        return level < MAX_LEVEL && currentXp >= xpToNextLevel
+        return level < GameConfig.Progression.MAX_LEVEL && currentXp >= xpToNextLevel
     }
 }

@@ -262,6 +262,7 @@ class CommandProcessor(
                 session.visitedRooms.add(effectivePlayer.currentRoomId)
 
                 sessionManager.addSession(effectivePlayer.name, session)
+                session.combatGraceTicks = GameConfig.Combat.GRACE_TICKS
 
                 session.send(ServerMessage.LoginOk(effectivePlayer))
 

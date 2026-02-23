@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
 
@@ -80,7 +81,7 @@ class SpellCommand(
             "agility" -> effStats.agility
             else -> effStats.intellect
         }
-        val power = spell.basePower + statValue / 3 + player.level / 2 + (1..6).random()
+        val power = spell.basePower + statValue / GameConfig.Skills.SPELL_POWER_STAT_DIVISOR + player.level / GameConfig.Skills.SPELL_POWER_LEVEL_DIVISOR + (1..GameConfig.Skills.SPELL_POWER_DICE_SIZE).random()
 
         when (spell.spellType) {
             SpellType.DAMAGE -> handleDamage(session, spell, power, targetId, roomId, playerName)
@@ -98,6 +99,8 @@ class SpellCommand(
         session: PlayerSession, spell: SpellDef, power: Int,
         targetId: String?, roomId: String, playerName: String
     ) {
+        // Offensive spell breaks grace period
+        session.combatGraceTicks = 0
         val target = resolveTarget(session, targetId, roomId)
         if (target == null) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "No valid target.", session.player!!.currentMp))
@@ -132,6 +135,8 @@ class SpellCommand(
         session: PlayerSession, spell: SpellDef, power: Int,
         targetId: String?, roomId: String, playerName: String
     ) {
+        // Offensive spell breaks grace period
+        session.combatGraceTicks = 0
         val target = resolveTarget(session, targetId, roomId)
         if (target == null) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "No valid target.", session.player!!.currentMp))
@@ -140,7 +145,7 @@ class SpellCommand(
 
         target.engagedPlayerIds.add(playerName)
         // Apply initial damage
-        val initialDmg = power / 2
+        val initialDmg = power / GameConfig.Skills.DOT_INITIAL_DAMAGE_DIVISOR
         target.currentHp -= initialDmg
         val castMsg = "$playerName ${spell.castMessage} ${target.name}! ($initialDmg initial damage)"
 

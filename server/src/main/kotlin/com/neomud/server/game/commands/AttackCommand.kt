@@ -31,8 +31,9 @@ class AttackCommand(
                 return
             }
 
-            // Entering attack mode breaks meditation
+            // Entering attack mode breaks meditation and grace period
             MeditationUtils.breakMeditation(session, "You stop meditating.")
+            session.combatGraceTicks = 0
 
             session.attackMode = true
             session.send(ServerMessage.AttackModeUpdate(true))

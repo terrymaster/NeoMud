@@ -1,5 +1,6 @@
 package com.neomud.server.game.npc.behavior
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MovementTrailManager
 import com.neomud.server.game.npc.NpcState
 import com.neomud.server.session.SessionManager
@@ -10,8 +11,8 @@ class PursuitBehavior(
     private val targetPlayerId: String,
     private val trailManager: MovementTrailManager,
     private val sessionManager: SessionManager,
-    private val maxPursuitTicks: Int = 40,
-    private val moveEveryNTicks: Int = 5
+    private val maxPursuitTicks: Int = GameConfig.Npc.PURSUIT_MAX_TICKS,
+    private val moveEveryNTicks: Int = GameConfig.Npc.PURSUIT_MOVE_TICKS
 ) : BehaviorNode {
     private var ticksInPursuit = 0
     private var moveTickCounter = 0
@@ -67,7 +68,7 @@ class PursuitBehavior(
             }
         } else {
             lostCounter++
-            if (lostCounter >= 3) {
+            if (lostCounter >= GameConfig.Npc.PURSUIT_LOST_TRAIL_TICKS) {
                 pursuitEnded = true
                 return NpcAction.None
             }

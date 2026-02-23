@@ -12,8 +12,8 @@ data class TrailEntry(
 )
 
 class MovementTrailManager(
-    private val maxEntriesPerRoom: Int = 20,
-    private val trailLifetimeMs: Long = 90_000
+    private val maxEntriesPerRoom: Int = GameConfig.Trails.MAX_ENTRIES_PER_ROOM,
+    private val trailLifetimeMs: Long = GameConfig.Trails.LIFETIME_MS
 ) {
     private val trails = HashMap<RoomId, MutableList<TrailEntry>>()
 
@@ -34,13 +34,13 @@ class MovementTrailManager(
     }
 
     /**
-     * Returns a staleness penalty from 0 (fresh) to 5 (near expiry) based on age.
+     * Returns a staleness penalty from 0 (fresh) to max based on age.
      */
     fun stalenessPenalty(entry: TrailEntry, now: Long = System.currentTimeMillis()): Int {
         val age = now - entry.timestamp
         if (age <= 0) return 0
         val ratio = age.toDouble() / trailLifetimeMs
-        return (ratio * 5).toInt().coerceIn(0, 5)
+        return (ratio * GameConfig.Trails.STALENESS_PENALTY_MAX).toInt().coerceIn(0, GameConfig.Trails.STALENESS_PENALTY_MAX)
     }
 
     fun pruneStale(now: Long = System.currentTimeMillis()) {

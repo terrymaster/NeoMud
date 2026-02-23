@@ -1,5 +1,6 @@
 package com.neomud.server.persistence.repository
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.persistence.tables.PlayersTable
 import com.neomud.server.world.ClassCatalog
 import com.neomud.server.world.RaceCatalog
@@ -68,9 +69,9 @@ class PlayerRepository {
             val stats = allocatedStats
 
             // Level 1 gets max HP roll for fairness
-            val maxHp = classDef.hpPerLevelMax + (stats.health / 10) * 4
-            val maxMp = if (classDef.mpPerLevelMax > 0) classDef.mpPerLevelMax + (stats.willpower / 10) * 2 else 0
-            val initialXpToNext = (100 * Math.pow(1.0, 2.2)).toLong().coerceAtLeast(100)
+            val maxHp = classDef.hpPerLevelMax + (stats.health / GameConfig.PlayerCreation.HP_HEALTH_DIVISOR) * GameConfig.PlayerCreation.HP_HEALTH_MULTIPLIER
+            val maxMp = if (classDef.mpPerLevelMax > 0) classDef.mpPerLevelMax + (stats.willpower / GameConfig.PlayerCreation.MP_WILLPOWER_DIVISOR) * GameConfig.PlayerCreation.MP_WILLPOWER_MULTIPLIER else 0
+            val initialXpToNext = (GameConfig.Progression.XP_BASE_MULTIPLIER * Math.pow(1.0, GameConfig.Progression.XP_CURVE_EXPONENT)).toLong().coerceAtLeast(GameConfig.Progression.XP_MINIMUM)
 
             val initialImagePrompt = "A $gender ${race.lowercase()} ${characterClass.lowercase()}, fantasy RPG character portrait, full body, facing forward"
 

@@ -1,11 +1,12 @@
 package com.neomud.server.game.npc.behavior
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.npc.NpcState
 import com.neomud.shared.model.RoomId
 import com.neomud.server.world.WorldGraph
 
 class WanderBehavior(
-    private val moveEveryNTicks: Int = 15
+    private val moveEveryNTicks: Int = GameConfig.Npc.WANDER_MOVE_TICKS
 ) : BehaviorNode {
     private var tickCounter = 0
 

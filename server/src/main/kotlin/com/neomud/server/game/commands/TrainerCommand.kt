@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.npc.NpcManager
@@ -62,7 +63,7 @@ class TrainerCommand(
             return
         }
 
-        if (player.level >= 30) {
+        if (player.level >= GameConfig.Progression.MAX_LEVEL) {
             session.send(ServerMessage.SystemMessage("You have reached the maximum level."))
             return
         }

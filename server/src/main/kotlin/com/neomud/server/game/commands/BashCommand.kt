@@ -1,6 +1,7 @@
 package com.neomud.server.game.commands
 
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
@@ -46,17 +47,19 @@ class BashCommand(
         // Track engagement for pursuit
         target.engagedPlayerIds.add(playerName)
 
+        // Aggressive action breaks grace period
+        session.combatGraceTicks = 0
+
         val effStats = session.effectiveStats()
-        val damage = effStats.strength + (1..4).random()
+        val damage = effStats.strength + (1..GameConfig.Skills.BASH_DAMAGE_RANGE).random()
         target.currentHp -= damage
 
-        // 30% chance to stun
-        val stunned = (1..100).random() <= 30
+        val stunned = (1..100).random() <= GameConfig.Skills.BASH_STUN_CHANCE
         if (stunned) {
-            target.stunTicks = 1
+            target.stunTicks = GameConfig.Skills.BASH_STUN_TICKS
         }
 
-        session.skillCooldowns["BASH"] = 3
+        session.skillCooldowns["BASH"] = GameConfig.Skills.BASH_COOLDOWN_TICKS
 
         val message = if (stunned) {
             "You bash ${target.name} for $damage damage, stunning them!"

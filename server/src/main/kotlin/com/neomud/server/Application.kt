@@ -34,10 +34,11 @@ import java.io.File
 import java.net.BindException
 import java.net.ServerSocket
 import java.util.zip.ZipFile
+import com.neomud.server.game.GameConfig
 import kotlin.system.exitProcess
 
 private val logger = LoggerFactory.getLogger("NeoMud")
-private const val PORT = 8080
+private val PORT = GameConfig.Server.PORT
 
 fun checkPortAvailable(port: Int): Boolean {
     return try {

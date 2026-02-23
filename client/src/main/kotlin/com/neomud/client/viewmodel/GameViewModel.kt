@@ -235,6 +235,8 @@ class GameViewModel(
                 _roomGroundItems.value = emptyList()
                 _roomGroundCoins.value = Coins()
                 _trackedDirection.value = null
+                _readiedSpellId.value = null
+                _selectedTargetId.value = null
                 addLog("You move ${message.direction.name.lowercase()}.", MudColors.selfAction)
                 logRoomInfo(message.room, message.players, message.npcs)
                 bgm(message.room.bgm)
@@ -358,6 +360,7 @@ class GameViewModel(
                 )
                 _attackMode.value = false
                 _selectedTargetId.value = null
+                _readiedSpellId.value = null
                 _activeEffects.value = emptyList()
                 _isHidden.value = false
                 _isMeditating.value = false

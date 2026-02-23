@@ -1,5 +1,6 @@
 package com.neomud.server.game.progression
 
+import com.neomud.server.game.GameConfig
 import com.neomud.shared.model.Stats
 
 data class ThresholdBonuses(
@@ -18,26 +19,26 @@ data class ThresholdBonuses(
             var mp = 0
 
             // STR thresholds: melee damage + hit
-            if (stats.strength >= 90) { meleeDmg += 5; hit += 3 }
-            else if (stats.strength >= 75) { meleeDmg += 3; hit += 2 }
-            else if (stats.strength >= 60) { meleeDmg += 2; hit += 1 }
-            else if (stats.strength >= 40) { meleeDmg += 1 }
+            if (stats.strength >= 90) { meleeDmg += GameConfig.Thresholds.STR_90_MELEE_DAMAGE; hit += GameConfig.Thresholds.STR_90_HIT_BONUS }
+            else if (stats.strength >= 75) { meleeDmg += GameConfig.Thresholds.STR_75_MELEE_DAMAGE; hit += GameConfig.Thresholds.STR_75_HIT_BONUS }
+            else if (stats.strength >= 60) { meleeDmg += GameConfig.Thresholds.STR_60_MELEE_DAMAGE; hit += GameConfig.Thresholds.STR_60_HIT_BONUS }
+            else if (stats.strength >= 40) { meleeDmg += GameConfig.Thresholds.STR_40_MELEE_DAMAGE }
 
             // AGI thresholds: crit
-            if (stats.agility >= 90) { crit += 0.05 }
+            if (stats.agility >= 90) { crit += GameConfig.Thresholds.AGI_90_CRIT_CHANCE }
 
             // INT thresholds: crit
-            if (stats.intellect >= 75) { crit += 0.05 }
+            if (stats.intellect >= 75) { crit += GameConfig.Thresholds.INT_75_CRIT_CHANCE }
 
             // HEA thresholds: HP
-            if (stats.health >= 90) { hp += 50 }
-            else if (stats.health >= 75) { hp += 25 }
-            else if (stats.health >= 60) { hp += 15 }
+            if (stats.health >= 90) { hp += GameConfig.Thresholds.HEA_90_HP_BONUS }
+            else if (stats.health >= 75) { hp += GameConfig.Thresholds.HEA_75_HP_BONUS }
+            else if (stats.health >= 60) { hp += GameConfig.Thresholds.HEA_60_HP_BONUS }
 
             // WIL thresholds: MP
-            if (stats.willpower >= 90) { mp += 25 }
-            else if (stats.willpower >= 75) { mp += 15 }
-            else if (stats.willpower >= 60) { mp += 10 }
+            if (stats.willpower >= 90) { mp += GameConfig.Thresholds.WIL_90_MP_BONUS }
+            else if (stats.willpower >= 75) { mp += GameConfig.Thresholds.WIL_75_MP_BONUS }
+            else if (stats.willpower >= 60) { mp += GameConfig.Thresholds.WIL_60_MP_BONUS }
 
             return ThresholdBonuses(
                 meleeDamageBonus = meleeDmg,

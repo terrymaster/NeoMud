@@ -1,5 +1,6 @@
 package com.neomud.server.game.combat
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.inventory.EquipmentService
 import com.neomud.server.game.npc.NpcManager
@@ -171,16 +172,16 @@ class CombatManager(
                     var damage = if (bonuses.weaponDamageRange > 0) {
                         effStats.strength + bonuses.totalDamageBonus + thresholds.meleeDamageBonus + (1..bonuses.weaponDamageRange).random()
                     } else {
-                        effStats.strength + thresholds.meleeDamageBonus + (1..3).random()
+                        effStats.strength + thresholds.meleeDamageBonus + (1..GameConfig.Combat.UNARMED_DAMAGE_RANGE).random()
                     }
 
                     if (thresholds.critChance > 0 && Math.random() < thresholds.critChance) {
-                        damage = (damage * 1.5).toInt()
+                        damage = (damage * GameConfig.Combat.CRIT_DAMAGE_MULTIPLIER).toInt()
                         logger.info("${player.name} crits for $damage damage!")
                     }
 
                     if (isBackstab) {
-                        damage *= 3
+                        damage *= GameConfig.Combat.BACKSTAB_DAMAGE_MULTIPLIER
                         logger.info("${player.name} backstabs ${target.name} for $damage damage in $roomId")
                     }
 
@@ -227,7 +228,7 @@ class CombatManager(
 
                     val roomId = combatant.roomId
                     val playersInRoom = playersByRoom[roomId] ?: continue
-                    val visiblePlayers = playersInRoom.filter { !it.isHidden && !it.godMode && (it.player?.currentHp ?: 0) > 0 }
+                    val visiblePlayers = playersInRoom.filter { !it.isHidden && !it.godMode && (it.player?.currentHp ?: 0) > 0 && it.combatGraceTicks <= 0 }
                     val targetSession = visiblePlayers.randomOrNull() ?: continue
                     val targetPlayer = targetSession.player ?: continue
 
@@ -281,7 +282,7 @@ class CombatManager(
                         parryChance > 0 && CombatUtils.rollParry(parryChance)
                     } else false
 
-                    val variance = maxOf(npc.damage / 3, 1)
+                    val variance = maxOf(npc.damage / GameConfig.Combat.NPC_VARIANCE_DIVISOR, 1)
                     val rawDamage = npc.damage + (1..variance).random()
                     val parryReduction = if (isParry) CombatUtils.parryReduction(effStats) else 0
                     val damage = (rawDamage - playerBonuses.totalArmorValue - parryReduction).coerceAtLeast(1)

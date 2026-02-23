@@ -71,7 +71,7 @@
       "name": "Mage",
       "description": "A scholarly mage whose power comes from arcane study",
       "minimumStats": { "strength": 6, "agility": 8, "intellect": 22, "willpower": 15, "health": 8, "charm": 10 },
-      "hpPerLevelMin": 3, "hpPerLevelMax": 6,
+      "hpPerLevelMin": 5, "hpPerLevelMax": 8,
       "mpPerLevelMin": 5, "mpPerLevelMax": 12,
       "xpModifier": 1.2,
       "magicSchools": { "mage": 3 },

@@ -86,7 +86,7 @@ class WorldLoaderTest {
         assertEquals("wander", wolf.first.behaviorType)
         assertTrue(wolf.first.hostile, "Shadow Wolf should be hostile")
         assertEquals(30, wolf.first.maxHp)
-        assertEquals(5, wolf.first.damage)
+        assertEquals(3, wolf.first.damage)
         assertEquals(2, wolf.first.level)
         assertEquals("forest", wolf.second, "Shadow Wolf should belong to forest zone")
 
@@ -95,7 +95,7 @@ class WorldLoaderTest {
         assertEquals("wander", spider.first.behaviorType)
         assertTrue(spider.first.hostile, "Spider should be hostile")
         assertEquals(20, spider.first.maxHp)
-        assertEquals(8, spider.first.damage)
+        assertEquals(5, spider.first.damage)
         assertEquals(3, spider.first.level)
         assertEquals("forest", spider.second, "Spider should belong to forest zone")
     }

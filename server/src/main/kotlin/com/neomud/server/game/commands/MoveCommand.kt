@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MapRoomFilter
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.RoomFilter
@@ -86,9 +87,9 @@ class MoveCommand(
         var sneaking = false
         if (session.isHidden && player != null) {
             val stats = session.effectiveStats()
-            val roll = (1..20).random()
-            val check = stats.agility + stats.willpower / 2 + player.level / 2 + roll
-            val difficulty = 15
+            val roll = (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
+            val check = stats.agility + stats.willpower / GameConfig.Stealth.DC_WIL_DIVISOR + player.level / GameConfig.Stealth.DC_LEVEL_DIVISOR + roll
+            val difficulty = GameConfig.Stealth.SNEAK_DIFFICULTY
 
             if (check >= difficulty) {
                 // Sneak successful - stay hidden, no broadcasts
@@ -119,6 +120,7 @@ class MoveCommand(
         session.visitedRooms.add(targetRoomId)
         session.currentRoomId = targetRoomId
         session.player = session.player?.copy(currentRoomId = targetRoomId)
+        session.combatGraceTicks = GameConfig.Combat.GRACE_TICKS
 
         // Cancel attack mode on move
         if (session.attackMode) {
@@ -147,12 +149,12 @@ class MoveCommand(
             // Even if the player's sneak check passed, NPCs in the new room get perception rolls
             if (player != null) {
                 val stats = session.effectiveStats()
-                val stealthDc = stats.agility + stats.willpower / 2 + player.level / 2 + 10
+                val stealthDc = stats.agility + stats.willpower / GameConfig.Stealth.DC_WIL_DIVISOR + player.level / GameConfig.Stealth.DC_LEVEL_DIVISOR + GameConfig.Stealth.DC_BASE
 
                 val npcsHere = npcManager.getLivingNpcsInRoom(targetRoomId)
                 for (npc in npcsHere) {
                     if (!session.isHidden) break
-                    val npcRoll = npc.perception + npc.level + (1..20).random()
+                    val npcRoll = npc.perception + npc.level + (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
                     if (npcRoll >= stealthDc) {
                         session.isHidden = false
                         sneaking = false
@@ -174,7 +176,7 @@ class MoveCommand(
                         val otherPlayer = otherSession.player ?: continue
                         val otherStats = otherSession.effectiveStats()
                         val bonus = StealthUtils.perceptionBonus(otherPlayer.characterClass, classCatalog)
-                        val observerRoll = otherStats.willpower + otherStats.intellect / 2 + otherPlayer.level / 2 + bonus + (1..20).random()
+                        val observerRoll = otherStats.willpower + otherStats.intellect / GameConfig.Stealth.PERCEPTION_INT_DIVISOR + otherPlayer.level / GameConfig.Stealth.PERCEPTION_LEVEL_DIVISOR + bonus + (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
                         if (observerRoll >= stealthDc) {
                             session.isHidden = false
                             sneaking = false
@@ -243,7 +245,7 @@ class MoveCommand(
 
         val effStats = session.effectiveStats()
         val bonus = StealthUtils.perceptionBonus(player.characterClass, classCatalog)
-        val roll = effStats.willpower + effStats.intellect / 2 + player.level / 2 + bonus + (1..20).random()
+        val roll = effStats.willpower + effStats.intellect / GameConfig.Stealth.PERCEPTION_INT_DIVISOR + player.level / GameConfig.Stealth.PERCEPTION_LEVEL_DIVISOR + bonus + (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
 
         for ((dir, data) in hiddenDefs) {
             if (session.hasDiscoveredExit(roomId, dir)) continue

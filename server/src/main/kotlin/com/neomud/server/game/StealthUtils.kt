@@ -23,6 +23,6 @@ object StealthUtils {
 
     fun perceptionBonus(playerClass: String, classCatalog: ClassCatalog): Int {
         val classDef = classCatalog.getClass(playerClass) ?: return 0
-        return if ("PERCEPTION" in classDef.skills) 3 else 0
+        return if ("PERCEPTION" in classDef.skills) GameConfig.Stealth.PERCEPTION_SKILL_BONUS else 0
     }
 }

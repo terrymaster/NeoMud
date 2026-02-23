@@ -39,9 +39,9 @@ class GameLoop(
     private val logger = LoggerFactory.getLogger(GameLoop::class.java)
 
     suspend fun run() {
-        logger.info("Game loop started (1.5s ticks)")
+        logger.info("Game loop started (${GameConfig.Tick.INTERVAL_MS}ms ticks)")
         while (true) {
-            delay(1500)
+            delay(GameConfig.Tick.INTERVAL_MS)
             tick()
         }
     }
@@ -144,6 +144,13 @@ class GameLoop(
                 if (npc != null) {
                     npcPerceptionScan(npc, event.toRoomId)
                 }
+            }
+        }
+
+        // 1b. Decrement combat grace ticks
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            if (session.combatGraceTicks > 0) {
+                session.combatGraceTicks--
             }
         }
 
@@ -280,9 +287,9 @@ class GameLoop(
                         exclude = playerName
                     )
 
-                    // XP penalty: lose 10% of current XP on death
+                    // XP penalty on death
                     val player = session.player
-                    val xpPenalty = if (player != null) (player.currentXp * 0.10).toLong() else 0L
+                    val xpPenalty = if (player != null) (player.currentXp * GameConfig.Progression.DEATH_XP_LOSS_PERCENT).toLong() else 0L
 
                     // Respawn
                     session.currentRoomId = event.respawnRoomId
@@ -490,9 +497,9 @@ class GameLoop(
         val player = session.player ?: return
         val playerName = session.playerName ?: return
 
-        val npcRoll = npc.perception + npc.level + (1..20).random()
+        val npcRoll = npc.perception + npc.level + (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
         val effStats = session.effectiveStats()
-        val stealthDc = effStats.agility + effStats.willpower / 2 + player.level / 2 + 10
+        val stealthDc = effStats.agility + effStats.willpower / GameConfig.Stealth.DC_WIL_DIVISOR + player.level / GameConfig.Stealth.DC_LEVEL_DIVISOR + GameConfig.Stealth.DC_BASE
 
         if (npcRoll >= stealthDc) {
             // Detected!
@@ -534,7 +541,7 @@ class GameLoop(
             val player = session.player ?: continue
 
             val effStats = session.effectiveStats()
-            val restore = maxOf(effStats.willpower / 10 + 2, 1)
+            val restore = maxOf(effStats.willpower / GameConfig.Meditation.WIL_DIVISOR + GameConfig.Meditation.RESTORE_BASE, 1)
             val newMp = minOf(player.currentMp + restore, player.maxMp)
             val restored = newMp - player.currentMp
             session.player = player.copy(currentMp = newMp)
@@ -577,7 +584,7 @@ class GameLoop(
                 val observerPlayer = observer.player ?: continue
                 val obsStats = observer.effectiveStats()
                 val bonus = StealthUtils.perceptionBonus(observerPlayer.characterClass, classCatalog)
-                val observerRoll = obsStats.willpower + obsStats.intellect / 2 + observerPlayer.level / 2 + bonus + (1..20).random()
+                val observerRoll = obsStats.willpower + obsStats.intellect / GameConfig.Stealth.PERCEPTION_INT_DIVISOR + observerPlayer.level / GameConfig.Stealth.PERCEPTION_LEVEL_DIVISOR + bonus + (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
 
                 for (hiddenSession in hiddenPlayers) {
                     if (!hiddenSession.isHidden) continue
