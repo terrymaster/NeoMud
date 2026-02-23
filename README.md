@@ -37,7 +37,7 @@ NeoMud/
 └── maker/      React + Express — web-based world editor and GM toolkit
 ```
 
-**Server** runs a 1.5-second tick-based game loop. NPCs wander, patrol, and attack. Combat resolves each tick. Loot drops. Spells cool down. The world turns.
+**Server** runs a 1.5-second tick-based game loop. All combat actions — melee, spells, bash, kick — resolve in initiative order each tick. Non-combat skills (meditate, track) resolve in a pre-combat phase. All NPC kills flow through a single handler for loot, XP, and state cleanup. NPCs wander, patrol, pursue, and attack. The world turns.
 
 **Client** connects over WebSocket and renders the game as a layered scene: room background, NPC and item sprites, floating minimap, game log, and controls.
 
@@ -71,15 +71,19 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 
 **Combat & NPCs**
 - Tick-based (1.5s) combat — weapon damage = Strength + bonus + random roll; armor reduces incoming
+- Unified tick-based skill resolution — all combat skills (bash, kick, spells) queue on the session and resolve during the game tick in initiative order, ensuring consistent kill handling for loot, XP, and state cleanup
+- Spell auto-cast loop — ready a spell once and it repeats each tick until cancelled, interrupted, or out of MP
 - Parry system — class-gated (Warrior, Paladin, Witch Hunter), STR-scaled chance to reduce incoming damage
 - Dodge system — class-gated (Warrior, Thief, Ninja, Mystic, Ranger), AGI-scaled chance to avoid attacks entirely
 - 6 NPCs across both zones (guards, vendors, trainers, hostile creatures)
 - NPCs attack on sight if hostile; perception checks reveal hidden players
-- Backstab from stealth for bonus damage
-- Kick knockback — kicks NPCs into adjacent rooms with direction picker
+- Server-authoritative backstab — stealth state tracked entirely server-side; first attack from stealth deals bonus damage and breaks hidden status
+- Kick knockback — kicks NPCs into adjacent rooms with direction picker; room-wide SkillEffect broadcasts so all players see the action
+- Bash stun — chance to stun the target for multiple ticks; dedicated SkillEffect flavor text broadcast to room
 - Hostile NPC pursuit — engaged NPCs chase players who flee
-- Death respawns at the Temple of the Dawn with 10% XP penalty
+- Death respawns at the Temple of the Dawn with 10% XP penalty; clears all combat state (attack mode, readied spell, pending skill, stealth, meditation)
 - Continuous NPC spawn system per zone with configurable rates
+- Combat grace period — brief window after entering a room before NPCs attack
 
 **Items & Economy**
 - 18 data-driven items: weapons, armor, consumables, crafting materials
@@ -113,8 +117,9 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 - 20 spells across 5 magic schools (Mage, Priest, Druid, Kai, Bard) are defined in data
 - 12 skills (Bash, Kick, Backstab, Parry, Dodge, Hide, Sneak, Meditate, Perception, Pick Lock, Track, Haggle) are defined
 - Parry, Dodge, and Haggle are passive skills that scale linearly with their primary stat
-- Spell bar UI exists with drag-to-assign slots
-- The spell quick-cast menu is **not yet implemented** — spells currently fire from the spell bar only
+- Spell bar UI exists with drag-to-assign slots and tap-to-ready auto-cast toggle
+- Skill cooldown system — per-skill tick counters prevent spam; cooldowns tick down each game loop cycle
+- Commands are validation-only — bash, kick, meditate, and track validate prereqs and queue a pending action; the game tick resolves everything uniformly
 - Most of the extended skill tree has **not been playtested** — expect balance issues
 
 **Multiplayer**
@@ -183,6 +188,7 @@ Opens the world editor at `http://localhost:5173`. On first run, it auto-imports
 ## Roadmap
 
 ### Near Term
+- [x] **Spell Auto-Cast** — ready a spell from the spell bar and it auto-casts each tick until cancelled
 - [ ] **Spell Quick-Cast Menu** — tap-to-cast from a radial or list menu, not just the spell bar
 - [ ] **Game Balance Pass** — rebalance combat, XP curves, item stats, and NPC difficulty with actual playtesting
 - [ ] **Multiplayer Stress Testing** — test concurrent players, combat interactions, reconnection edge cases
