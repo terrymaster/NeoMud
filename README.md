@@ -56,6 +56,9 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 - 10 rooms total with AI-generated background art (WebP)
 - JSON-driven room definitions with coordinates, exits, and background images
 - BFS-based minimap showing nearby rooms with player/NPC presence
+- Persistent map overlay with fog-of-war — visited rooms revealed, unvisited rooms dimmed
+- Zone color-coding on the map for visual distinction between areas
+- Map exit indicators — locked exits, hidden passages, and interactables shown on the map
 - Temple of the Dawn healing aura — passively restores HP each tick
 - `.nmd` world bundles — self-contained ZIP archives with zone data, catalogs, and assets
 
@@ -73,6 +76,8 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 - 6 NPCs across both zones (guards, vendors, trainers, hostile creatures)
 - NPCs attack on sight if hostile; perception checks reveal hidden players
 - Backstab from stealth for bonus damage
+- Kick knockback — kicks NPCs into adjacent rooms with direction picker
+- Hostile NPC pursuit — engaged NPCs chase players who flee
 - Death respawns at the Temple of the Dawn with 10% XP penalty
 - Continuous NPC spawn system per zone with configurable rates
 
@@ -97,8 +102,9 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 
 **Client**
 - 10-direction navigation pad (cardinal, diagonal, vertical)
-- Minimap with clickable room navigation
+- Persistent minimap with clickable room navigation and fog-of-war
 - Game log, character sheet, spell bar
+- Kick direction picker and lock target picker UIs
 - Dark fantasy stone UI theme
 
 ### What Exists But Needs Work
@@ -114,7 +120,7 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 **Multiplayer**
 - Real-time WebSocket sessions work for basic gameplay
 - Room-based chat, player presence, one session per account
-- Player state persists across sessions
+- Player state persists across sessions (stats, position, inventory, map discovery)
 - Server has a game state mutex and rate limiter
 - **Needs significant stress testing** — concurrent player interactions, edge cases around combat with multiple players, reconnection handling are all lightly tested at best
 
