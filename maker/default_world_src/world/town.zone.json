@@ -55,7 +55,8 @@
       "x": 1,
       "y": 0,
       "exits": {
-        "WEST": "town:square"
+        "WEST": "town:square",
+        "EAST": "town:magic_shop"
       },
       "backgroundImage": "/assets/images/rooms/town_market.webp",
       "departSound": "footstep_cobblestone",
@@ -134,6 +135,23 @@
       "imageWidth": 1024,
       "imageHeight": 576
     }
+    ,{
+      "id": "town:magic_shop",
+      "name": "The Enchanted Emporium",
+      "description": "A narrow shop crammed with arcane curiosities. Crystal orbs float lazily near the ceiling, casting prismatic light across shelves overflowing with scrolls, wands, and bubbling potions. The air hums with latent magic, and faint runes glow on the doorframe. A glass display case holds enchanted rings and amulets on velvet cushions.",
+      "x": 2,
+      "y": 0,
+      "exits": {
+        "WEST": "town:market"
+      },
+      "backgroundImage": "/assets/images/rooms/town_magic_shop.webp",
+      "departSound": "footstep_wood",
+      "imagePrompt": "First-person view standing inside a narrow arcane magic shop. Flat dark wooden floor filling the lower third. Shelves overflowing with scrolls, potions, and crystal orbs lining both walls. Floating crystals casting prismatic light near the ceiling. A glass display case ahead with glowing rings and amulets. Runes glowing on the doorframe. No people or creatures.",
+      "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
+      "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
+      "imageWidth": 1024,
+      "imageHeight": 576
+    }
   ],
   "npcs": [
     {
@@ -154,7 +172,14 @@
       "name": "Barkeep Grom",
       "description": "A barrel-chested dwarf with a magnificent braided beard and arms like tree trunks. He moves behind the bar with surprising grace, simultaneously serving three customers and keeping an eye on the rowdy corner table.",
       "startRoomId": "town:tavern",
-      "behaviorType": "idle",
+      "behaviorType": "vendor",
+      "interactSound": "vendor_greet",
+      "vendorItems": [
+        "item:health_potion",
+        "item:mana_potion",
+        "item:ale",
+        "item:bread_loaf"
+      ],
       "imagePrompt": "Full-body stout dwarf barkeep standing upright facing the viewer, barrel chest, magnificent braided beard, leather apron, holding a tankard. Single character, isolated on solid transparent background, no ground, no scenery.",
       "imageStyle": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
@@ -167,7 +192,12 @@
       "description": "A weathered veteran in ornate armor, bearing the scars of countless battles. His keen eyes assess you with the practiced gaze of someone who has trained hundreds of warriors. He serves as the guild trainer for all adventurers.",
       "startRoomId": "town:square",
       "behaviorType": "trainer",
-      "interactSound": "trainer_greet"
+      "interactSound": "trainer_greet",
+      "imagePrompt": "Full-body weathered veteran warrior standing upright facing the viewer, ornate plate armor with battle scars, keen assessing eyes, short grey hair, broad shoulders, guild emblem on breastplate. Single character, isolated on solid transparent background, no ground, no scenery.",
+      "imageStyle": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
+      "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
+      "imageWidth": 384,
+      "imageHeight": 512
     },
     {
       "id": "npc:blacksmith",
@@ -195,6 +225,31 @@
         "item:mana_potion"
       ],
       "imagePrompt": "Full-body brawny human blacksmith standing upright facing the viewer, muscular arms, soot-stained leather apron, holding a forge hammer in one hand and tongs in the other, short dark hair. Single character, isolated on solid transparent background, no ground, no scenery.",
+      "imageStyle": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
+      "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
+      "imageWidth": 384,
+      "imageHeight": 512
+    },
+    {
+      "id": "npc:enchantress",
+      "name": "Enchantress Lyra",
+      "description": "A slender half-elf woman with silver-streaked hair and eyes that shimmer like opals. She moves through her cluttered shop with fluid grace, occasionally murmuring incantations over her wares. Arcane tattoos trace intricate patterns up her forearms.",
+      "startRoomId": "town:magic_shop",
+      "behaviorType": "vendor",
+      "interactSound": "vendor_greet",
+      "vendorItems": [
+        "item:health_potion",
+        "item:mana_potion",
+        "item:greater_health_potion",
+        "item:greater_mana_potion",
+        "item:scroll_of_fireball",
+        "item:scroll_of_healing",
+        "item:amulet_of_warding",
+        "item:ring_of_intellect",
+        "item:enchanted_robes",
+        "item:mystic_staff"
+      ],
+      "imagePrompt": "Full-body slender half-elf enchantress standing upright facing the viewer, silver-streaked hair, opalescent eyes, flowing robes with arcane tattoos on forearms, holding a glowing crystal. Single character, isolated on solid transparent background, no ground, no scenery.",
       "imageStyle": "fantasy character sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple characters, portrait crop, bust only, modern, sci-fi, anime",
       "imageWidth": 384,

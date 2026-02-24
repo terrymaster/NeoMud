@@ -74,11 +74,21 @@
         "NORTH": "forest:ruins",
         "WEST": "forest:cave"
       },
-      "lockedExits": { "EAST": 14, "NORTH": 16 },
-      "lockResetTicks": { "EAST": 40 },
       "hiddenExits": {
+        "EAST": {
+          "perceptionDC": 75,
+          "lockDifficulty": 14,
+          "hiddenResetTicks": 40,
+          "lockResetTicks": 40
+        },
+        "NORTH": {
+          "perceptionDC": 82,
+          "lockDifficulty": 16,
+          "hiddenResetTicks": 50,
+          "lockResetTicks": 0
+        },
         "WEST": {
-          "perceptionDC": 18,
+          "perceptionDC": 88,
           "lockDifficulty": 12,
           "hiddenResetTicks": 60,
           "lockResetTicks": 40

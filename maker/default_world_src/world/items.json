@@ -126,7 +126,10 @@
       "weight": 1,
       "stackable": true,
       "maxStack": 10,
-      "useSound": "potion_drink"
+      "useSound": "potion_drink",
+      "imagePrompt": "A single small glass vial filled with swirling blue liquid, corked and sealed, magical mana potion with faint arcane shimmer. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:chain_coif",
@@ -137,7 +140,10 @@
       "armorValue": 3,
       "value": 45,
       "weight": 3,
-      "levelRequirement": 3
+      "levelRequirement": 3,
+      "imagePrompt": "A single hood of interlocking iron chain rings, medieval coif armor for the head, silvery metal mesh. Isolated object centered, no surface, no head or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, head, mannequin, multiple items, modern, sci-fi"
     },
     {
       "id": "item:chainmail_vest",
@@ -148,7 +154,10 @@
       "armorValue": 7,
       "value": 120,
       "weight": 8,
-      "levelRequirement": 3
+      "levelRequirement": 3,
+      "imagePrompt": "A single vest of interlocking iron chain rings, medieval chainmail torso armor with short sleeves, silvery metal mesh. Isolated object centered, no surface, no body or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, body, mannequin, multiple items, modern, sci-fi"
     },
     {
       "id": "item:chain_leggings",
@@ -159,7 +168,10 @@
       "armorValue": 5,
       "value": 75,
       "weight": 5,
-      "levelRequirement": 3
+      "levelRequirement": 3,
+      "imagePrompt": "A single pair of leggings reinforced with iron chain links, medieval leg armor, silvery metal mesh over leather. Isolated object centered, no surface, no legs or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, legs, mannequin, multiple items, modern, sci-fi"
     },
     {
       "id": "item:iron_boots",
@@ -170,7 +182,10 @@
       "armorValue": 3,
       "value": 45,
       "weight": 4,
-      "levelRequirement": 3
+      "levelRequirement": 3,
+      "imagePrompt": "A single pair of heavy boots with iron plating over leather, medieval foot armor with metal toe caps. Isolated object centered, no surface, no feet.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, feet, multiple items, modern, sci-fi"
     },
     {
       "id": "item:iron_gauntlets",
@@ -181,7 +196,10 @@
       "armorValue": 2,
       "value": 35,
       "weight": 2,
-      "levelRequirement": 3
+      "levelRequirement": 3,
+      "imagePrompt": "A single pair of sturdy gauntlets of hammered iron, medieval hand armor with articulated fingers. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:iron_shield",
@@ -192,7 +210,10 @@
       "armorValue": 4,
       "value": 80,
       "weight": 6,
-      "levelRequirement": 3
+      "levelRequirement": 3,
+      "imagePrompt": "A single solid iron-banded kite shield with riveted iron bands and a central boss, battle-worn but sturdy. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:steel_longsword",
@@ -206,7 +227,10 @@
       "weight": 6,
       "levelRequirement": 3,
       "attackSound": "sword_swing",
-      "missSound": "sword_miss"
+      "missSound": "sword_miss",
+      "imagePrompt": "A single finely forged steel longsword with a keen edge, polished blade, leather-wrapped grip, ornate crossguard. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:steel_greatsword",
@@ -220,7 +244,10 @@
       "weight": 8,
       "levelRequirement": 6,
       "attackSound": "sword_swing",
-      "missSound": "sword_miss"
+      "missSound": "sword_miss",
+      "imagePrompt": "A single massive two-handed steel greatsword with a wide blade, long grip wrapped in dark leather, heavy crossguard. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:plated_helm",
@@ -231,7 +258,10 @@
       "armorValue": 5,
       "value": 100,
       "weight": 4,
-      "levelRequirement": 6
+      "levelRequirement": 6,
+      "imagePrompt": "A single steel helm with reinforced plating, medieval full-face visor helmet with rivets and a crest. Isolated object centered, no surface, no head or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, head, mannequin, multiple items, modern, sci-fi"
     },
     {
       "id": "item:plated_chest",
@@ -242,7 +272,10 @@
       "armorValue": 12,
       "value": 280,
       "weight": 12,
-      "levelRequirement": 6
+      "levelRequirement": 6,
+      "imagePrompt": "A single heavy steel plate chestguard riveted onto chain backing, medieval torso armor with polished plates and leather straps. Isolated object centered, no surface, no body or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, body, mannequin, multiple items, modern, sci-fi"
     },
     {
       "id": "item:plated_legs",
@@ -253,7 +286,10 @@
       "armorValue": 8,
       "value": 180,
       "weight": 8,
-      "levelRequirement": 6
+      "levelRequirement": 6,
+      "imagePrompt": "A single pair of steel plate greaves, medieval leg armor with articulated knee joints protecting from hip to shin. Isolated object centered, no surface, no legs or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, legs, mannequin, multiple items, modern, sci-fi"
     },
     {
       "id": "item:plated_boots",
@@ -264,7 +300,10 @@
       "armorValue": 5,
       "value": 100,
       "weight": 5,
-      "levelRequirement": 6
+      "levelRequirement": 6,
+      "imagePrompt": "A single pair of heavy steel sabatons, medieval articulated plate boots with segmented toe and ankle guards. Isolated object centered, no surface, no feet.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, feet, multiple items, modern, sci-fi"
     },
     {
       "id": "item:plated_gauntlets",
@@ -275,7 +314,10 @@
       "armorValue": 4,
       "value": 80,
       "weight": 3,
-      "levelRequirement": 6
+      "levelRequirement": 6,
+      "imagePrompt": "A single pair of articulated gauntlets of polished steel, medieval hand armor with segmented finger plates. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:tower_shield",
@@ -286,7 +328,161 @@
       "armorValue": 6,
       "value": 180,
       "weight": 10,
-      "levelRequirement": 6
+      "levelRequirement": 6,
+      "imagePrompt": "A single massive tower shield of steel with reinforced edges, tall rectangular shape with a heraldic emblem embossed on the front. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:ale",
+      "name": "Grom's Stout Ale",
+      "description": "A frothy mug of dark ale brewed by Grom himself. Warms the belly and steadies the nerves.",
+      "type": "consumable",
+      "useEffect": "heal:10",
+      "value": 5,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "useSound": "potion_drink",
+      "imagePrompt": "A single frothy mug of dark stout ale, wooden tankard with foam overflowing, warm tavern drink. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:bread_loaf",
+      "name": "Hearty Bread Loaf",
+      "description": "A thick loaf of crusty bread, still warm from the oven. Simple but filling.",
+      "type": "consumable",
+      "useEffect": "heal:15",
+      "value": 12,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "useSound": "potion_drink",
+      "imagePrompt": "A single thick loaf of crusty bread, golden-brown crust with flour dusting, fresh baked hearty tavern food. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:greater_health_potion",
+      "name": "Greater Health Potion",
+      "description": "A large vial of deep crimson liquid that pulses with restorative magic.",
+      "type": "consumable",
+      "useEffect": "heal:60",
+      "value": 70,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 10,
+      "useSound": "potion_drink",
+      "imagePrompt": "A single large glass vial filled with deep crimson liquid that pulses with inner light, magical greater healing potion with golden swirls. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:greater_mana_potion",
+      "name": "Greater Mana Potion",
+      "description": "A large vial of swirling azure liquid crackling with arcane energy.",
+      "type": "consumable",
+      "useEffect": "mana:50",
+      "value": 75,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 10,
+      "useSound": "potion_drink",
+      "imagePrompt": "A single large glass vial filled with swirling azure liquid crackling with tiny arcane lightning, magical greater mana potion with electric blue glow. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:scroll_of_fireball",
+      "name": "Scroll of Fireball",
+      "description": "A tightly rolled parchment inscribed with glowing runes. Unleashes a burst of flame when read aloud.",
+      "type": "consumable",
+      "useEffect": "damage:35",
+      "value": 120,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "useSound": "spell_cast",
+      "imagePrompt": "A single tightly rolled parchment scroll with glowing orange-red runes, sealed with a wax sigil, fire magic scroll with faint ember glow at the edges. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:scroll_of_healing",
+      "name": "Scroll of Healing",
+      "description": "A parchment etched with sacred glyphs. Reading it channels divine energy to mend wounds.",
+      "type": "consumable",
+      "useEffect": "heal:40",
+      "value": 45,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 5,
+      "useSound": "spell_cast",
+      "imagePrompt": "A single parchment scroll etched with glowing golden sacred glyphs, sealed with a white wax sigil, divine healing magic scroll with soft radiant light. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:amulet_of_warding",
+      "name": "Amulet of Warding",
+      "description": "A silver amulet set with a pale sapphire that glows faintly. It deflects a measure of incoming harm.",
+      "type": "armor",
+      "slot": "neck",
+      "armorValue": 3,
+      "value": 120,
+      "weight": 1,
+      "levelRequirement": 3,
+      "imagePrompt": "A single silver amulet on a delicate chain, set with a pale sapphire that glows faintly with protective magic, ornate filigree border. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, neck, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:ring_of_intellect",
+      "name": "Ring of Intellect",
+      "description": "A thin gold band engraved with tiny runes. Sharpens the mind and enhances spellcasting focus.",
+      "type": "armor",
+      "slot": "ring",
+      "armorValue": 0,
+      "damageBonus": 2,
+      "value": 150,
+      "weight": 0,
+      "levelRequirement": 3,
+      "imagePrompt": "A single thin gold ring engraved with tiny glowing arcane runes, magical ring of intellect with faint blue shimmer. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, finger, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:enchanted_robes",
+      "name": "Enchanted Robes",
+      "description": "Flowing robes of deep violet silk, woven through with threads of silver. Arcane sigils shimmer faintly across the fabric.",
+      "type": "armor",
+      "slot": "chest",
+      "armorValue": 4,
+      "damageBonus": 2,
+      "value": 200,
+      "weight": 3,
+      "levelRequirement": 5,
+      "imagePrompt": "A single set of flowing robes of deep violet silk woven with silver threads, arcane sigils shimmering faintly across the fabric, enchanted mage armor. Isolated object centered, no surface, no body or mannequin.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, body, mannequin, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:mystic_staff",
+      "name": "Mystic Staff",
+      "description": "A gnarled oak staff crowned with a softly glowing amethyst crystal. Channels arcane energy with devastating efficiency.",
+      "type": "weapon",
+      "slot": "weapon",
+      "damageBonus": 7,
+      "damageRange": 6,
+      "value": 220,
+      "weight": 4,
+      "levelRequirement": 5,
+      "attackSound": "staff_swing",
+      "missSound": "staff_miss",
+      "imagePrompt": "A single gnarled oak staff crowned with a softly glowing amethyst crystal, magical wizard staff with arcane energy wisps, twisted wood grain. Isolated object centered, no surface, no hands.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, magical glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     },
     {
       "id": "item:spider_fang",
