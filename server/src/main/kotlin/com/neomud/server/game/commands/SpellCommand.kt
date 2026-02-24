@@ -97,10 +97,15 @@ class SpellCommand(
             return null
         }
 
-        // Validate class has school access
+        // Validate class has school access at required tier
         val classDef = classCatalog.getClass(player.characterClass)
-        if (classDef == null || !classDef.magicSchools.containsKey(spell.school)) {
+        val schoolLevel = classDef?.magicSchools?.get(spell.school)
+        if (schoolLevel == null) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "Your class cannot cast ${spell.school} spells.", player.currentMp))
+            return null
+        }
+        if (schoolLevel < spell.schoolLevel) {
+            session.send(ServerMessage.SpellCastResult(false, spell.name, "Your training in ${spell.school} magic is not advanced enough.", player.currentMp))
             return null
         }
 

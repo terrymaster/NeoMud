@@ -24,6 +24,7 @@ data class SpellDef(
     val levelRequired: Int = 1,
     val primaryStat: String = "intellect",
     val basePower: Int = 0,
+    val schoolLevel: Int = 1,
     val targetType: TargetType = TargetType.ENEMY,
     val effectType: String = "",
     val effectDuration: Int = 0,

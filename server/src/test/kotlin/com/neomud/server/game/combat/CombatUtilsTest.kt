@@ -1,5 +1,6 @@
 package com.neomud.server.game.combat
 
+import com.neomud.server.game.GameConfig
 import com.neomud.shared.model.ActiveEffect
 import com.neomud.shared.model.EffectType
 import com.neomud.shared.model.Stats
@@ -8,6 +9,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class CombatUtilsTest {
+
+    private val parryMax = GameConfig.Combat.PARRY_MAX_CHANCE
+    private val parryDiv = GameConfig.Combat.PARRY_STAT_DIVISOR
+    private val dodgeMax = GameConfig.Combat.DODGE_MAX_CHANCE
+    private val dodgeDiv = GameConfig.Combat.DODGE_STAT_DIVISOR
+    private val parryRedBase = GameConfig.Combat.PARRY_REDUCTION_BASE
+    private val parryRedDiv = GameConfig.Combat.PARRY_REDUCTION_STR_DIVISOR
 
     // ─── playerParry (STR-scaled, class-gated upstream) ────────────
 
@@ -19,23 +27,23 @@ class CombatUtilsTest {
 
     @Test
     fun testPlayerParryWarriorMinStrength() {
-        // Warrior min STR = 20 → 20/100 * 0.15 = 0.03 (3%)
         val stats = Stats(strength = 20, agility = 30, intellect = 30, willpower = 30, health = 30, charm = 30)
-        assertTrue(kotlin.math.abs(CombatUtils.playerParry(stats) - 0.03) < 1e-9)
+        val expected = 20.0 / parryDiv * parryMax
+        assertTrue(kotlin.math.abs(CombatUtils.playerParry(stats) - expected) < 1e-9)
     }
 
     @Test
     fun testPlayerParryMidStrength() {
-        // STR 50 → 50/100 * 0.15 = 0.075 (7.5%)
         val stats = Stats(strength = 50, agility = 30, intellect = 30, willpower = 30, health = 30, charm = 30)
-        assertTrue(kotlin.math.abs(CombatUtils.playerParry(stats) - 0.075) < 1e-9)
+        val expected = 50.0 / parryDiv * parryMax
+        assertTrue(kotlin.math.abs(CombatUtils.playerParry(stats) - expected) < 1e-9)
     }
 
     @Test
     fun testPlayerParryMaxStrength() {
-        // STR 100 → 100/100 * 0.15 = 0.15 (15%)
         val stats = Stats(strength = 100, agility = 30, intellect = 30, willpower = 30, health = 30, charm = 30)
-        assertTrue(kotlin.math.abs(CombatUtils.playerParry(stats) - 0.15) < 1e-9)
+        val expected = parryMax
+        assertTrue(kotlin.math.abs(CombatUtils.playerParry(stats) - expected) < 1e-9)
     }
 
     @Test
@@ -51,13 +59,12 @@ class CombatUtilsTest {
 
     @Test
     fun testPlayerParryWithBuffedStats() {
-        // Buffs are baked into effectiveStats before calling playerParry
         val base = Stats(strength = 40, agility = 30, intellect = 30, willpower = 30, health = 30, charm = 30)
         val buffed = CombatUtils.effectiveStats(base, listOf(
             ActiveEffect("Str Buff", EffectType.BUFF_STRENGTH, 10, magnitude = 10)
         ))
-        // Effective STR = 50 → 0.075
-        assertTrue(kotlin.math.abs(CombatUtils.playerParry(buffed) - 0.075) < 1e-9)
+        val expected = 50.0 / parryDiv * parryMax
+        assertTrue(kotlin.math.abs(CombatUtils.playerParry(buffed) - expected) < 1e-9)
     }
 
     // ─── parryReduction ─────────────────────────────────────────
@@ -65,22 +72,19 @@ class CombatUtilsTest {
     @Test
     fun testParryReductionLowStrength() {
         val stats = Stats(strength = 20, agility = 30, intellect = 30, willpower = 30, health = 30, charm = 30)
-        // 2 + 20/20 = 3
-        assertEquals(3, CombatUtils.parryReduction(stats))
+        assertEquals(parryRedBase + 20 / parryRedDiv, CombatUtils.parryReduction(stats))
     }
 
     @Test
     fun testParryReductionHighStrength() {
         val stats = Stats(strength = 100, agility = 30, intellect = 30, willpower = 30, health = 30, charm = 30)
-        // 2 + 100/20 = 7
-        assertEquals(7, CombatUtils.parryReduction(stats))
+        assertEquals(parryRedBase + 100 / parryRedDiv, CombatUtils.parryReduction(stats))
     }
 
     @Test
     fun testParryReductionMinimumStrength() {
         val stats = Stats(strength = 0, agility = 30, intellect = 30, willpower = 30, health = 30, charm = 30)
-        // 2 + 0/20 = 2
-        assertEquals(2, CombatUtils.parryReduction(stats))
+        assertEquals(parryRedBase, CombatUtils.parryReduction(stats))
     }
 
     // ─── playerEvasion (AGI-scaled, class-gated upstream) ───────
@@ -93,23 +97,23 @@ class CombatUtilsTest {
 
     @Test
     fun testPlayerEvasionLowAgility() {
-        // AGI 20 → 20/100 * 0.15 = 0.03 (3%)
         val stats = Stats(strength = 30, agility = 20, intellect = 30, willpower = 30, health = 30, charm = 30)
-        assertTrue(kotlin.math.abs(CombatUtils.playerEvasion(stats) - 0.03) < 1e-9)
+        val expected = 20.0 / dodgeDiv * dodgeMax
+        assertTrue(kotlin.math.abs(CombatUtils.playerEvasion(stats) - expected) < 1e-9)
     }
 
     @Test
     fun testPlayerEvasionMidAgility() {
-        // AGI 50 → 50/100 * 0.15 = 0.075 (7.5%)
         val stats = Stats(strength = 30, agility = 50, intellect = 30, willpower = 30, health = 30, charm = 30)
-        assertTrue(kotlin.math.abs(CombatUtils.playerEvasion(stats) - 0.075) < 1e-9)
+        val expected = 50.0 / dodgeDiv * dodgeMax
+        assertTrue(kotlin.math.abs(CombatUtils.playerEvasion(stats) - expected) < 1e-9)
     }
 
     @Test
     fun testPlayerEvasionMaxAgility() {
-        // AGI 100 → 100/100 * 0.15 = 0.15 (15%)
         val stats = Stats(strength = 30, agility = 100, intellect = 30, willpower = 30, health = 30, charm = 30)
-        assertTrue(kotlin.math.abs(CombatUtils.playerEvasion(stats) - 0.15) < 1e-9)
+        val expected = dodgeMax
+        assertTrue(kotlin.math.abs(CombatUtils.playerEvasion(stats) - expected) < 1e-9)
     }
 
     @Test
@@ -118,8 +122,8 @@ class CombatUtilsTest {
         val buffed = CombatUtils.effectiveStats(base, listOf(
             ActiveEffect("Agi Buff", EffectType.BUFF_AGILITY, 10, magnitude = 10)
         ))
-        // Effective AGI = 50 → 0.075
-        assertTrue(kotlin.math.abs(CombatUtils.playerEvasion(buffed) - 0.075) < 1e-9)
+        val expected = 50.0 / dodgeDiv * dodgeMax
+        assertTrue(kotlin.math.abs(CombatUtils.playerEvasion(buffed) - expected) < 1e-9)
     }
 
     // ─── effectiveStats ─────────────────────────────────────────

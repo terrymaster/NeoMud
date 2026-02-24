@@ -1,6 +1,7 @@
 package com.neomud.server.world
 
 import com.neomud.server.defaultWorldSource
+import com.neomud.server.game.GameConfig
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -75,6 +76,6 @@ class SkillCatalogTest {
         assertNotNull(sneak)
         assertEquals(false, sneak.isPassive)
         assertEquals(2, sneak.cooldownTicks)
-        assertEquals(15, sneak.difficulty)
+        assertEquals(GameConfig.Stealth.SNEAK_DIFFICULTY, sneak.difficulty)
     }
 }

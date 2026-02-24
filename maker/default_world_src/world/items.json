@@ -209,6 +209,86 @@
       "missSound": "sword_miss"
     },
     {
+      "id": "item:steel_greatsword",
+      "name": "Steel Greatsword",
+      "description": "A massive two-handed steel blade that cleaves through armor.",
+      "type": "weapon",
+      "slot": "weapon",
+      "damageBonus": 8,
+      "damageRange": 10,
+      "value": 350,
+      "weight": 8,
+      "levelRequirement": 6,
+      "attackSound": "sword_swing",
+      "missSound": "sword_miss"
+    },
+    {
+      "id": "item:plated_helm",
+      "name": "Plated Helm",
+      "description": "A steel helm with reinforced plating.",
+      "type": "armor",
+      "slot": "head",
+      "armorValue": 5,
+      "value": 100,
+      "weight": 4,
+      "levelRequirement": 6
+    },
+    {
+      "id": "item:plated_chest",
+      "name": "Plated Chestguard",
+      "description": "Heavy steel plates riveted onto a chain backing.",
+      "type": "armor",
+      "slot": "chest",
+      "armorValue": 12,
+      "value": 280,
+      "weight": 12,
+      "levelRequirement": 6
+    },
+    {
+      "id": "item:plated_legs",
+      "name": "Plated Greaves",
+      "description": "Steel leg plates that protect from hip to shin.",
+      "type": "armor",
+      "slot": "legs",
+      "armorValue": 8,
+      "value": 180,
+      "weight": 8,
+      "levelRequirement": 6
+    },
+    {
+      "id": "item:plated_boots",
+      "name": "Steel Sabatons",
+      "description": "Heavy boots of articulated steel plates.",
+      "type": "armor",
+      "slot": "feet",
+      "armorValue": 5,
+      "value": 100,
+      "weight": 5,
+      "levelRequirement": 6
+    },
+    {
+      "id": "item:plated_gauntlets",
+      "name": "Steel Gauntlets",
+      "description": "Articulated gauntlets of polished steel.",
+      "type": "armor",
+      "slot": "hands",
+      "armorValue": 4,
+      "value": 80,
+      "weight": 3,
+      "levelRequirement": 6
+    },
+    {
+      "id": "item:tower_shield",
+      "name": "Tower Shield",
+      "description": "A massive steel shield that provides excellent protection.",
+      "type": "armor",
+      "slot": "shield",
+      "armorValue": 6,
+      "value": 180,
+      "weight": 10,
+      "levelRequirement": 6
+    },
+    {
       "id": "item:spider_fang",
       "name": "Spider Fang",
       "description": "A venomous fang from a giant forest spider.",

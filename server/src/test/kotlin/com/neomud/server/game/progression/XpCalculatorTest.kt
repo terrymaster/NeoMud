@@ -1,5 +1,7 @@
 package com.neomud.server.game.progression
 
+import com.neomud.server.game.GameConfig
+import kotlin.math.roundToLong
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -7,10 +9,24 @@ import kotlin.test.assertTrue
 
 class XpCalculatorTest {
 
+    private val xpBase = GameConfig.Progression.XP_BASE_MULTIPLIER
+    private val xpMin = GameConfig.Progression.XP_MINIMUM
+    private val maxLevel = GameConfig.Progression.MAX_LEVEL
+
+    private val mod5Above = GameConfig.Progression.XP_MOD_5_ABOVE
+    private val modSame = GameConfig.Progression.XP_MOD_SAME
+    private val mod5PlusBelow = GameConfig.Progression.XP_MOD_5_PLUS_BELOW
+
+    private val cpLow = GameConfig.Progression.CP_PER_LEVEL_LOW
+    private val cpMid = GameConfig.Progression.CP_PER_LEVEL_MID
+    private val cpHigh = GameConfig.Progression.CP_PER_LEVEL_HIGH
+    private val cpTier2 = GameConfig.Progression.CP_TIER_2_LEVEL
+    private val cpTier3 = GameConfig.Progression.CP_TIER_3_LEVEL
+
     @Test
     fun testXpForLevel1() {
         val xp = XpCalculator.xpForLevel(1)
-        assertEquals(100, xp)
+        assertEquals(xpMin, xp)
     }
 
     @Test
@@ -26,20 +42,23 @@ class XpCalculatorTest {
 
     @Test
     fun testKillXpSameLevel() {
-        val xp = XpCalculator.xpForKill(5, 5, 50)
-        assertEquals(50, xp)
+        val baseXp = 50L
+        val xp = XpCalculator.xpForKill(5, 5, baseXp)
+        assertEquals((baseXp * modSame).roundToLong(), xp)
     }
 
     @Test
     fun testKillXpHigherNpc() {
-        val xp = XpCalculator.xpForKill(10, 5, 50)
-        assertEquals(75, xp) // 1.5x for 5+ above
+        val baseXp = 50L
+        val xp = XpCalculator.xpForKill(10, 5, baseXp)
+        assertEquals((baseXp * mod5Above).roundToLong(), xp)
     }
 
     @Test
     fun testKillXpLowerNpc() {
-        val xp = XpCalculator.xpForKill(1, 10, 50)
-        assertEquals(5, xp) // 0.1x for 5+ below
+        val baseXp = 50L
+        val xp = XpCalculator.xpForKill(1, 10, baseXp)
+        assertEquals((baseXp * mod5PlusBelow).roundToLong().coerceAtLeast(1), xp)
     }
 
     @Test
@@ -57,12 +76,12 @@ class XpCalculatorTest {
 
     @Test
     fun testCpTiers() {
-        assertEquals(10, XpCalculator.cpForLevel(1))
-        assertEquals(10, XpCalculator.cpForLevel(10))
-        assertEquals(15, XpCalculator.cpForLevel(11))
-        assertEquals(15, XpCalculator.cpForLevel(20))
-        assertEquals(20, XpCalculator.cpForLevel(21))
-        assertEquals(20, XpCalculator.cpForLevel(30))
+        assertEquals(cpLow, XpCalculator.cpForLevel(1))
+        assertEquals(cpLow, XpCalculator.cpForLevel(cpTier2))
+        assertEquals(cpMid, XpCalculator.cpForLevel(cpTier2 + 1))
+        assertEquals(cpMid, XpCalculator.cpForLevel(cpTier3))
+        assertEquals(cpHigh, XpCalculator.cpForLevel(cpTier3 + 1))
+        assertEquals(cpHigh, XpCalculator.cpForLevel(maxLevel))
     }
 
     @Test
@@ -74,6 +93,6 @@ class XpCalculatorTest {
 
     @Test
     fun testCannotExceedMaxLevel() {
-        assertFalse(XpCalculator.isReadyToLevel(999999, 100, 30))
+        assertFalse(XpCalculator.isReadyToLevel(999999, 100, maxLevel))
     }
 }

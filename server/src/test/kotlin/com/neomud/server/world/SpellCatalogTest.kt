@@ -14,7 +14,7 @@ class SpellCatalogTest {
     @Test
     fun testLoadSpellCatalog() {
         val catalog = load()
-        assertTrue(catalog.spellCount >= 20, "Should load at least 20 spells, got ${catalog.spellCount}")
+        assertTrue(catalog.spellCount >= 22, "Should load at least 22 spells, got ${catalog.spellCount}")
     }
 
     @Test
@@ -50,7 +50,7 @@ class SpellCatalogTest {
         assertTrue(mageSpells.all { it.school == "mage" })
 
         val priestSpells = catalog.getSpellsForSchool("priest")
-        assertEquals(4, priestSpells.size)
+        assertEquals(5, priestSpells.size)
 
         val druidSpells = catalog.getSpellsForSchool("druid")
         assertEquals(4, druidSpells.size)
@@ -59,7 +59,7 @@ class SpellCatalogTest {
         assertEquals(4, kaiSpells.size)
 
         val bardSpells = catalog.getSpellsForSchool("bard")
-        assertEquals(4, bardSpells.size)
+        assertEquals(5, bardSpells.size)
     }
 
     @Test
@@ -69,7 +69,7 @@ class SpellCatalogTest {
         assertNotNull(fireball)
         assertEquals(18, fireball.manaCost)
         assertEquals(5, fireball.levelRequired)
-        assertEquals(22, fireball.basePower)
+        assertEquals(30, fireball.basePower)
         assertEquals("intellect", fireball.primaryStat)
     }
 }

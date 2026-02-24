@@ -322,8 +322,13 @@ class CommandProcessor(
         }
 
         val classDef = classCatalog.getClass(player.characterClass)
-        if (classDef == null || !classDef.magicSchools.containsKey(spell.school)) {
+        val schoolLevel = classDef?.magicSchools?.get(spell.school)
+        if (schoolLevel == null) {
             session.send(ServerMessage.SystemMessage("Your class cannot cast ${spell.school} spells."))
+            return
+        }
+        if (schoolLevel < spell.schoolLevel) {
+            session.send(ServerMessage.SystemMessage("Your training in ${spell.school} magic is not advanced enough."))
             return
         }
 

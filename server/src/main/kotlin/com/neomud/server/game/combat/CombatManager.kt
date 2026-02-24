@@ -410,7 +410,8 @@ class CombatManager(
         }
 
         val effStats = session.effectiveStats()
-        val damage = effStats.strength + (1..GameConfig.Skills.BASH_DAMAGE_RANGE).random()
+        val bonuses = equipmentService.getCombatBonuses(playerName)
+        val damage = effStats.strength + bonuses.totalDamageBonus + (1..GameConfig.Skills.BASH_DAMAGE_RANGE).random()
         target.currentHp -= damage
 
         val stunned = (1..100).random() <= GameConfig.Skills.BASH_STUN_CHANCE

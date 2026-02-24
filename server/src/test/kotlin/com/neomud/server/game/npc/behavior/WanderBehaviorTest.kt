@@ -1,5 +1,6 @@
 package com.neomud.server.game.npc.behavior
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.npc.NpcState
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
@@ -10,6 +11,8 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class WanderBehaviorTest {
+
+    private val wanderTicks = GameConfig.Npc.WANDER_MOVE_TICKS
 
     private fun buildTestWorld(): WorldGraph {
         val world = WorldGraph()
@@ -39,12 +42,12 @@ class WanderBehaviorTest {
 
     @Test
     fun testWanderDoesNotMoveBeforeInterval() {
-        val behavior = WanderBehavior(moveEveryNTicks = 15)
+        val behavior = WanderBehavior(moveEveryNTicks = wanderTicks)
         val world = buildTestWorld()
         val npc = makeNpc(behavior)
 
-        // Ticks 1-14 should all produce None
-        for (i in 1..14) {
+        // All ticks before the interval should produce None
+        for (i in 1 until wanderTicks) {
             val action = behavior.tick(npc, world)
             assertIs<NpcAction.None>(action, "Tick $i should be None")
         }
@@ -52,25 +55,23 @@ class WanderBehaviorTest {
 
     @Test
     fun testWanderMovesAtInterval() {
-        val behavior = WanderBehavior(moveEveryNTicks = 15)
+        val behavior = WanderBehavior(moveEveryNTicks = wanderTicks)
         val world = buildTestWorld()
         val npc = makeNpc(behavior)
 
-        // Tick 14 times (no move)
-        repeat(14) { behavior.tick(npc, world) }
+        // Tick (wanderTicks - 1) times (no move)
+        repeat(wanderTicks - 1) { behavior.tick(npc, world) }
 
-        // Tick 15 should move
+        // Next tick should move
         val action = behavior.tick(npc, world)
-        assertIs<NpcAction.MoveTo>(action, "Should move on tick 15")
+        assertIs<NpcAction.MoveTo>(action, "Should move on tick $wanderTicks")
     }
 
     @Test
     fun testWanderStaysInSameZone() {
         val behavior = WanderBehavior(moveEveryNTicks = 1)
         val world = buildTestWorld()
-        // Start at forest:path which has exits to forest:deep, forest:clearing, and (via town:gate's exit) no direct town exit
-        // But forest:path itself doesn't have a direct exit to town, so we need to test with a room that does
-        // Let's add a forest room adjacent to town
+        // Add a forest room adjacent to town
         world.addRoom(Room("forest:edge", "Edge", "Forest edge.", mapOf(Direction.SOUTH to "town:gate", Direction.NORTH to "forest:path"), "forest", 0, 2))
 
         val npc = makeNpc(behavior, roomId = "forest:edge")

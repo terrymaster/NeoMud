@@ -22,10 +22,10 @@ object GameConfig {
         const val DEFENSE_AGI_DIVISOR = 2
         const val DEFENSE_ARMOR_DIVISOR = 2
         const val NPC_DEFENSE_LEVEL_MULTIPLIER = 1
-        const val DODGE_MAX_CHANCE = 0.15
+        const val DODGE_MAX_CHANCE = 0.25
         const val DODGE_STAT_DIVISOR = 100.0
         const val NPC_EVASION_DIVISOR = 100.0
-        const val PARRY_MAX_CHANCE = 0.15
+        const val PARRY_MAX_CHANCE = 0.25
         const val PARRY_STAT_DIVISOR = 100.0
         const val PARRY_REDUCTION_BASE = 2
         const val PARRY_REDUCTION_STR_DIVISOR = 20
@@ -67,13 +67,13 @@ object GameConfig {
         const val XP_MOD_SAME = 1.0
         const val XP_MOD_2_BELOW = 0.75
         const val XP_MOD_4_BELOW = 0.5
-        const val XP_MOD_5_PLUS_BELOW = 0.1
+        const val XP_MOD_5_PLUS_BELOW = 0.25
         const val CP_PER_LEVEL_LOW = 10
         const val CP_PER_LEVEL_MID = 15
         const val CP_PER_LEVEL_HIGH = 20
         const val CP_TIER_2_LEVEL = 10
         const val CP_TIER_3_LEVEL = 20
-        const val DEATH_XP_LOSS_PERCENT = 0.10
+        const val DEATH_XP_LOSS_PERCENT = 0.05
     }
     object PlayerCreation {
         const val HP_HEALTH_DIVISOR = 10
@@ -83,12 +83,12 @@ object GameConfig {
     }
     object Skills {
         const val BASH_DAMAGE_RANGE = 4
-        const val BASH_STUN_CHANCE = 30
-        const val BASH_STUN_TICKS = 1
+        const val BASH_STUN_CHANCE = 50
+        const val BASH_STUN_TICKS = 2
         const val BASH_COOLDOWN_TICKS = 3
         const val KICK_DAMAGE_RANGE = 4
         const val KICK_COOLDOWN_TICKS = 2
-        const val KICK_KNOCKBACK_STUN_TICKS = 1
+        const val KICK_KNOCKBACK_STUN_TICKS = 2
         const val SPELL_POWER_STAT_DIVISOR = 3
         const val SPELL_POWER_LEVEL_DIVISOR = 2
         const val SPELL_POWER_DICE_SIZE = 6

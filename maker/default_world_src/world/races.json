@@ -19,13 +19,13 @@
       "name": "Elf",
       "description": "Graceful and perceptive, elves excel at magic and stealth.",
       "statModifiers": { "strength": -5, "agility": 5, "intellect": 5, "willpower": 0, "health": -5, "charm": 5 },
-      "xpModifier": 1.15
+      "xpModifier": 1.10
     },
     {
       "id": "HALFLING",
       "name": "Halfling",
       "description": "Small but nimble, halflings make excellent thieves and bards.",
-      "statModifiers": { "strength": -5, "agility": 5, "intellect": 0, "willpower": 0, "health": 0, "charm": 5 },
+      "statModifiers": { "strength": -5, "agility": 5, "intellect": 0, "willpower": 0, "health": 0, "charm": 0 },
       "xpModifier": 1.05
     },
     {

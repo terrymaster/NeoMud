@@ -18,7 +18,7 @@
       "minimumStats": { "strength": 18, "agility": 10, "intellect": 10, "willpower": 15, "health": 18, "charm": 15 },
       "hpPerLevelMin": 5, "hpPerLevelMax": 9,
       "mpPerLevelMin": 1, "mpPerLevelMax": 4,
-      "xpModifier": 1.15,
+      "xpModifier": 1.05,
       "magicSchools": { "priest": 1 },
       "skills": ["BASH", "PARRY", "MEDITATE"]
     },
@@ -51,7 +51,7 @@
       "minimumStats": { "strength": 8, "agility": 8, "intellect": 12, "willpower": 20, "health": 10, "charm": 15 },
       "hpPerLevelMin": 3, "hpPerLevelMax": 6,
       "mpPerLevelMin": 4, "mpPerLevelMax": 10,
-      "xpModifier": 1.2,
+      "xpModifier": 1.1,
       "magicSchools": { "priest": 3 },
       "skills": ["MEDITATE", "PERCEPTION"]
     },
@@ -64,7 +64,7 @@
       "mpPerLevelMin": 2, "mpPerLevelMax": 5,
       "xpModifier": 1.15,
       "magicSchools": { "priest": 2 },
-      "skills": ["SNEAK", "PICK_LOCK", "MEDITATE"]
+      "skills": ["SNEAK", "BACKSTAB", "PICK_LOCK", "MEDITATE"]
     },
     {
       "id": "MAGE",
@@ -140,7 +140,7 @@
       "hpPerLevelMin": 4, "hpPerLevelMax": 8,
       "mpPerLevelMin": 1, "mpPerLevelMax": 4,
       "xpModifier": 1.1,
-      "magicSchools": { "kai": 1 },
+      "magicSchools": { "kai": 2 },
       "skills": ["KICK", "DODGE", "SNEAK", "PERCEPTION", "MEDITATE"]
     },
     {

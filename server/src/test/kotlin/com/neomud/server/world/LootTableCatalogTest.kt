@@ -62,10 +62,10 @@ class LootTableCatalogTest {
         val catalog = load()
         val coinDrop = catalog.getCoinDrop("npc:forest_spider")
         assertNotNull(coinDrop)
-        assertEquals(2, coinDrop.minCopper)
-        assertEquals(10, coinDrop.maxCopper)
-        assertEquals(0, coinDrop.minGold)
-        assertEquals(0, coinDrop.maxGold)
+        assertEquals(10, coinDrop.minCopper)
+        assertEquals(35, coinDrop.maxCopper)
+        assertEquals(0, coinDrop.minSilver)
+        assertEquals(1, coinDrop.maxSilver)
     }
 
     @Test

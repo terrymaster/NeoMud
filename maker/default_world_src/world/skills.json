@@ -11,7 +11,7 @@
       "manaCost": 0,
       "difficulty": 15,
       "isPassive": false,
-      "classRestrictions": ["THIEF", "NINJA", "RANGER", "BARD", "GYPSY", "MYSTIC"],
+      "classRestrictions": ["THIEF", "NINJA", "RANGER", "BARD", "GYPSY", "MYSTIC", "MISSIONARY"],
       "properties": {}
     },
     {
@@ -25,7 +25,7 @@
       "manaCost": 0,
       "difficulty": 13,
       "isPassive": true,
-      "classRestrictions": ["THIEF", "NINJA"],
+      "classRestrictions": ["THIEF", "NINJA", "MISSIONARY"],
       "properties": {"damageMultiplier": "3"}
     },
     {
@@ -39,7 +39,7 @@
       "manaCost": 0,
       "difficulty": 12,
       "isPassive": false,
-      "classRestrictions": ["WARRIOR", "PALADIN", "WITCHHUNTER"],
+      "classRestrictions": ["WARRIOR", "PALADIN", "WITCHHUNTER", "CLERIC", "WARLOCK"],
       "properties": {"stunChance": "0.3"}
     },
     {
@@ -53,7 +53,7 @@
       "manaCost": 0,
       "difficulty": 10,
       "isPassive": false,
-      "classRestrictions": ["WARRIOR", "MYSTIC", "RANGER", "WITCHHUNTER"],
+      "classRestrictions": ["WARRIOR", "MYSTIC", "RANGER", "WITCHHUNTER", "NINJA"],
       "properties": {"bonusDamage": "5"}
     },
     {
@@ -109,7 +109,7 @@
       "manaCost": 0,
       "difficulty": 15,
       "isPassive": false,
-      "classRestrictions": ["CLERIC", "PRIEST", "MAGE", "WARLOCK", "DRUID", "MYSTIC"],
+      "classRestrictions": ["CLERIC", "PRIEST", "MAGE", "WARLOCK", "DRUID", "MYSTIC", "PALADIN", "MISSIONARY", "BARD", "GYPSY"],
       "properties": {}
     },
     {
@@ -123,7 +123,7 @@
       "manaCost": 0,
       "difficulty": 14,
       "isPassive": false,
-      "classRestrictions": ["THIEF", "NINJA", "BARD", "GYPSY", "MISSIONARY"],
+      "classRestrictions": ["THIEF", "BARD", "GYPSY", "MISSIONARY"],
       "properties": {}
     },
     {

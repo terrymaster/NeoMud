@@ -8,6 +8,9 @@ import kotlin.test.assertTrue
 
 class MovementTrailManagerTest {
 
+    private val defaultLifetimeMs = GameConfig.Trails.LIFETIME_MS
+    private val maxStaleness = GameConfig.Trails.STALENESS_PENALTY_MAX
+
     @Test
     fun `recordTrail stores and retrieves trail`() {
         val mgr = MovementTrailManager()
@@ -75,7 +78,7 @@ class MovementTrailManagerTest {
 
     @Test
     fun `stalenessPenalty is 0 for fresh trails`() {
-        val mgr = MovementTrailManager(trailLifetimeMs = 90_000)
+        val mgr = MovementTrailManager(trailLifetimeMs = defaultLifetimeMs)
         val entry = TrailEntry("Wolf", "npc:wolf", Direction.NORTH, 1000L, false)
         assertEquals(0, mgr.stalenessPenalty(entry, now = 1000L))
     }
@@ -84,17 +87,18 @@ class MovementTrailManagerTest {
     fun `stalenessPenalty increases with age`() {
         val mgr = MovementTrailManager(trailLifetimeMs = 100_000)
         val entry = TrailEntry("Wolf", "npc:wolf", Direction.NORTH, 0L, false)
-        // At 50% age (50000ms / 100000ms) -> penalty ~2
+        // At 50% age (50000ms / 100000ms) -> penalty = (0.5 * maxStaleness).toInt()
         val penalty = mgr.stalenessPenalty(entry, now = 50_000L)
-        assertTrue(penalty in 2..3)
+        val expectedPenalty = (0.5 * maxStaleness).toInt()
+        assertTrue(penalty in expectedPenalty..(expectedPenalty + 1))
     }
 
     @Test
-    fun `stalenessPenalty caps at 5`() {
+    fun `stalenessPenalty caps at max`() {
         val mgr = MovementTrailManager(trailLifetimeMs = 10_000)
         val entry = TrailEntry("Wolf", "npc:wolf", Direction.NORTH, 0L, false)
         val penalty = mgr.stalenessPenalty(entry, now = 20_000L)
-        assertEquals(5, penalty)
+        assertEquals(maxStaleness, penalty)
     }
 
     @Test
