@@ -594,9 +594,6 @@ class GameLoop(
     private suspend fun resolveMeditate(session: PlayerSession) {
         val player = session.player ?: return
 
-        // Cooldown applies regardless of pass/fail
-        session.skillCooldowns["MEDITATE"] = 6
-
         // Break stealth if hidden
         StealthUtils.breakStealth(session, sessionManager, "Meditating reveals your presence!")
 
@@ -606,6 +603,9 @@ class GameLoop(
             try { session.send(ServerMessage.SystemMessage("Meditate skill not found.")) } catch (_: Exception) {}
             return
         }
+
+        // Cooldown applies regardless of pass/fail
+        session.skillCooldowns["MEDITATE"] = skillDef.cooldownTicks
 
         val effStats = session.effectiveStats()
         val result = SkillCheck.check(skillDef, effStats, player.level)
@@ -624,18 +624,20 @@ class GameLoop(
         val player = session.player ?: return
         val trailMgr = movementTrailManager ?: return
 
-        session.skillCooldowns["TRACK"] = 4
+        val trackSkill = skillCatalog.getSkill("TRACK")
+        session.skillCooldowns["TRACK"] = trackSkill?.cooldownTicks ?: 4
 
         // Skill check: willpower + agility/2 + level/2 + d20
         val effStats = session.effectiveStats()
-        val roll = (1..20).random()
-        val check = effStats.willpower + effStats.agility / 2 + player.level / 2 + roll
+        val roll = (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
+        val check = effStats.willpower + effStats.agility / GameConfig.Stealth.DC_WIL_DIVISOR + player.level / GameConfig.Stealth.DC_LEVEL_DIVISOR + roll
 
         // Get trails in current room (optionally filtered by target)
         val trails = trailMgr.getTrails(roomId, targetId)
 
+        val trackBaseDifficulty = GameConfig.Trails.TRACK_BASE_DIFFICULTY
         if (trails.isEmpty()) {
-            if (check >= 13) {
+            if (check >= trackBaseDifficulty) {
                 try { session.send(ServerMessage.TrackResult(success = false, message = "You don't find any tracks here.")) } catch (_: Exception) {}
             } else {
                 try { session.send(ServerMessage.TrackResult(success = false, message = "You fail to find any tracks.")) } catch (_: Exception) {}
@@ -647,7 +649,7 @@ class GameLoop(
         // Use freshest trail
         val freshest = trails.first()
         val penalty = trailMgr.stalenessPenalty(freshest)
-        val difficulty = 13 + penalty
+        val difficulty = trackBaseDifficulty + penalty
 
         if (check >= difficulty) {
             val dirName = freshest.direction.name.lowercase()
@@ -663,7 +665,7 @@ class GameLoop(
         val hiddenDefs = worldGraph.getHiddenExitDefs(roomId)
         if (hiddenDefs.isEmpty()) return
 
-        val trackRoll = check + 5 // reuse the TRACK roll with a bonus
+        val trackRoll = check + GameConfig.Trails.TRACK_HIDDEN_EXIT_BONUS
         var found = false
         for ((dir, data) in hiddenDefs) {
             if (session.hasDiscoveredExit(roomId, dir)) continue
@@ -749,7 +751,7 @@ class GameLoop(
                     if (!hiddenSession.isHidden) continue
                     val hiddenPlayer = hiddenSession.player ?: continue
                     val hiddenStats = hiddenSession.effectiveStats()
-                    val stealthDc = hiddenStats.agility + hiddenStats.willpower / 2 + hiddenPlayer.level / 2 + 10
+                    val stealthDc = hiddenStats.agility + hiddenStats.willpower / GameConfig.Stealth.DC_WIL_DIVISOR + hiddenPlayer.level / GameConfig.Stealth.DC_LEVEL_DIVISOR + GameConfig.Stealth.DC_BASE
 
                     if (observerRoll >= stealthDc) {
                         StealthUtils.breakStealth(hiddenSession, sessionManager, "${observerPlayer.name} spots you lurking in the shadows!")

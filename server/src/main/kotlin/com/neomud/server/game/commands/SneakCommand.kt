@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
 
@@ -58,13 +59,14 @@ class SneakCommand(
             return
         }
 
-        // Skill check: AGI + WIL/2 + level/2 + d20 vs 15 (using buffed stats)
+        // Skill check: AGI + WIL/2 + level/2 + d20 vs SNEAK_DIFFICULTY (using buffed stats)
         val stats = session.effectiveStats()
-        val roll = (1..20).random()
-        val check = stats.agility + stats.willpower / 2 + player.level / 2 + roll
-        val difficulty = 15
+        val roll = (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
+        val check = stats.agility + stats.willpower / GameConfig.Stealth.DC_WIL_DIVISOR + player.level / GameConfig.Stealth.DC_LEVEL_DIVISOR + roll
+        val difficulty = GameConfig.Stealth.SNEAK_DIFFICULTY
 
-        session.skillCooldowns["SNEAK"] = 2
+        val sneakSkill = skillCatalog.getSkill("SNEAK")
+        session.skillCooldowns["SNEAK"] = sneakSkill?.cooldownTicks ?: 2
 
         if (check < difficulty) {
             session.send(ServerMessage.StealthUpdate(false, "You fail to find cover! (roll: $roll)"))
@@ -72,13 +74,13 @@ class SneakCommand(
         }
 
         // Stealth check passed - NPCs in the room get a perception check
-        val stealthDc = stats.agility + stats.willpower / 2 + player.level / 2 + 10
+        val stealthDc = stats.agility + stats.willpower / GameConfig.Stealth.DC_WIL_DIVISOR + player.level / GameConfig.Stealth.DC_LEVEL_DIVISOR + GameConfig.Stealth.DC_BASE
         val npcsInRoom = npcManager.getLivingNpcsInRoom(roomId)
         var detected = false
         var detectorName = ""
 
         for (npc in npcsInRoom) {
-            val npcRoll = npc.perception + npc.level + (1..20).random()
+            val npcRoll = npc.perception + npc.level + (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
             if (npcRoll >= stealthDc) {
                 detected = true
                 detectorName = npc.name
@@ -93,7 +95,7 @@ class SneakCommand(
                 val otherPlayer = otherSession.player ?: continue
                 val otherStats = otherSession.effectiveStats()
                 val bonus = StealthUtils.perceptionBonus(otherPlayer.characterClass, classCatalog)
-                val observerRoll = otherStats.willpower + otherStats.intellect / 2 + otherPlayer.level / 2 + bonus + (1..20).random()
+                val observerRoll = otherStats.willpower + otherStats.intellect / GameConfig.Stealth.PERCEPTION_INT_DIVISOR + otherPlayer.level / GameConfig.Stealth.PERCEPTION_LEVEL_DIVISOR + bonus + (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
                 if (observerRoll >= stealthDc) {
                     detected = true
                     detectorName = otherPlayer.name

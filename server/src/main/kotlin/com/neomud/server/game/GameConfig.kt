@@ -119,5 +119,7 @@ object GameConfig {
         const val MAX_ENTRIES_PER_ROOM = 20
         const val LIFETIME_MS = 90_000L
         const val STALENESS_PENALTY_MAX = 5
+        const val TRACK_BASE_DIFFICULTY = 13
+        const val TRACK_HIDDEN_EXIT_BONUS = 5
     }
 }
