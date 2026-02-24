@@ -14,10 +14,15 @@ const fields: FieldConfig[] = [
   { key: 'skills', label: 'Skills (JSON)', type: 'json', rows: 3, help: 'Array of skill IDs, e.g. ["slash","parry"]' },
   { key: 'properties', label: 'Properties (JSON)', type: 'json', rows: 4, help: 'Arbitrary class properties object' },
   { key: 'magicSchools', label: 'Magic Schools (JSON)', type: 'json', rows: 3, help: 'e.g. {"fire":true,"ice":false}' },
+  { key: 'imagePrompt', label: 'Image Prompt', type: 'textarea', rows: 3 },
+  { key: 'imageStyle', label: 'Image Style', type: 'text' },
+  { key: 'imageNegativePrompt', label: 'Negative Prompt', type: 'text' },
+  { key: 'imageWidth', label: 'Image Width', type: 'number' },
+  { key: 'imageHeight', label: 'Image Height', type: 'number' },
 ];
 
 function ClassEditor() {
-  return <GenericCrudEditor entityName="Class" apiPath="/character-classes" fields={fields} />;
+  return <GenericCrudEditor entityName="Class" apiPath="/character-classes" fields={fields} imagePreview={{ entityType: 'character-class', maxWidth: 256, maxHeight: 256 }} />;
 }
 
 export default ClassEditor;

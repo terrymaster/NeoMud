@@ -35,10 +35,15 @@ const fields: FieldConfig[] = [
   { key: 'isPassive', label: 'Passive', type: 'checkbox', placeholder: 'Is a passive skill' },
   { key: 'classRestrictions', label: 'Class Restrictions (JSON)', type: 'json', rows: 2, help: 'Array of class IDs, e.g. ["warrior","paladin"]' },
   { key: 'properties', label: 'Properties (JSON)', type: 'json', rows: 4, help: 'Arbitrary skill properties object' },
+  { key: 'imagePrompt', label: 'Image Prompt', type: 'textarea', rows: 3 },
+  { key: 'imageStyle', label: 'Image Style', type: 'text' },
+  { key: 'imageNegativePrompt', label: 'Negative Prompt', type: 'text' },
+  { key: 'imageWidth', label: 'Image Width', type: 'number' },
+  { key: 'imageHeight', label: 'Image Height', type: 'number' },
 ];
 
 function SkillEditor() {
-  return <GenericCrudEditor entityName="Skill" apiPath="/skills" fields={fields} />;
+  return <GenericCrudEditor entityName="Skill" apiPath="/skills" fields={fields} imagePreview={{ entityType: 'skill', maxWidth: 256, maxHeight: 256 }} />;
 }
 
 export default SkillEditor;

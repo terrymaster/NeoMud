@@ -367,7 +367,7 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                 entityType={imagePreview.entityType}
                 entityId={selectedId}
                 description={form.description}
-                assetPath={`images/rooms/${selectedId.replace(':', '_')}.webp`}
+                assetPath={imagePreview.entityType === 'room' ? `images/rooms/${selectedId.replace(':', '_')}.webp` : undefined}
                 imagePrompt={form.imagePrompt}
                 imageStyle={form.imageStyle}
                 imageNegativePrompt={form.imageNegativePrompt}

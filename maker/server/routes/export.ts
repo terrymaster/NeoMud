@@ -188,6 +188,11 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
             mpPerLevelMax: cls.mpPerLevelMax,
             xpModifier: cls.xpModifier,
             magicSchools: parseJsonField(cls.magicSchools),
+            imagePrompt: cls.imagePrompt,
+            imageStyle: cls.imageStyle,
+            imageNegativePrompt: cls.imageNegativePrompt,
+            imageWidth: cls.imageWidth,
+            imageHeight: cls.imageHeight,
           })),
         },
         null,
@@ -208,6 +213,11 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
             description: race.description,
             statModifiers: parseJsonField(race.statModifiers),
             xpModifier: race.xpModifier,
+            imagePrompt: race.imagePrompt,
+            imageStyle: race.imageStyle,
+            imageNegativePrompt: race.imageNegativePrompt,
+            imageWidth: race.imageWidth,
+            imageHeight: race.imageHeight,
           })),
         },
         null,
@@ -235,6 +245,11 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
             isPassive: skill.isPassive,
             classRestrictions: parseJsonField(skill.classRestrictions, []),
             properties: parseJsonField(skill.properties),
+            imagePrompt: skill.imagePrompt,
+            imageStyle: skill.imageStyle,
+            imageNegativePrompt: skill.imageNegativePrompt,
+            imageWidth: skill.imageWidth,
+            imageHeight: skill.imageHeight,
           })),
         },
         null,
@@ -267,6 +282,11 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
             castSound: spell.castSound,
             impactSound: spell.impactSound,
             missSound: spell.missSound,
+            imagePrompt: spell.imagePrompt,
+            imageStyle: spell.imageStyle,
+            imageNegativePrompt: spell.imageNegativePrompt,
+            imageWidth: spell.imageWidth,
+            imageHeight: spell.imageHeight,
           })),
         },
         null,
@@ -490,6 +510,11 @@ exportRouter.get('/json', async (_req, res) => {
         mpPerLevelMax: cls.mpPerLevelMax,
         xpModifier: cls.xpModifier,
         magicSchools: parseJsonField(cls.magicSchools),
+        imagePrompt: cls.imagePrompt,
+        imageStyle: cls.imageStyle,
+        imageNegativePrompt: cls.imageNegativePrompt,
+        imageWidth: cls.imageWidth,
+        imageHeight: cls.imageHeight,
       }
     }
 
@@ -501,6 +526,11 @@ exportRouter.get('/json', async (_req, res) => {
         description: race.description,
         statModifiers: parseJsonField(race.statModifiers),
         xpModifier: race.xpModifier,
+        imagePrompt: race.imagePrompt,
+        imageStyle: race.imageStyle,
+        imageNegativePrompt: race.imageNegativePrompt,
+        imageWidth: race.imageWidth,
+        imageHeight: race.imageHeight,
       }
     }
 
@@ -519,6 +549,11 @@ exportRouter.get('/json', async (_req, res) => {
         isPassive: skill.isPassive,
         classRestrictions: parseJsonField(skill.classRestrictions, []),
         properties: parseJsonField(skill.properties),
+        imagePrompt: skill.imagePrompt,
+        imageStyle: skill.imageStyle,
+        imageNegativePrompt: skill.imageNegativePrompt,
+        imageWidth: skill.imageWidth,
+        imageHeight: skill.imageHeight,
       }
     }
 
@@ -542,6 +577,11 @@ exportRouter.get('/json', async (_req, res) => {
         castSound: spell.castSound,
         impactSound: spell.impactSound,
         missSound: spell.missSound,
+        imagePrompt: spell.imagePrompt,
+        imageStyle: spell.imageStyle,
+        imageNegativePrompt: spell.imageNegativePrompt,
+        imageWidth: spell.imageWidth,
+        imageHeight: spell.imageHeight,
       }
     }
 

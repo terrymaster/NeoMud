@@ -35,10 +35,15 @@ const fields: FieldConfig[] = [
   { key: 'castSound', label: 'Cast Sound', type: 'sfx' },
   { key: 'impactSound', label: 'Impact Sound', type: 'sfx' },
   { key: 'missSound', label: 'Miss Sound', type: 'sfx' },
+  { key: 'imagePrompt', label: 'Image Prompt', type: 'textarea', rows: 3 },
+  { key: 'imageStyle', label: 'Image Style', type: 'text' },
+  { key: 'imageNegativePrompt', label: 'Negative Prompt', type: 'text' },
+  { key: 'imageWidth', label: 'Image Width', type: 'number' },
+  { key: 'imageHeight', label: 'Image Height', type: 'number' },
 ];
 
 function SpellEditor() {
-  return <GenericCrudEditor entityName="Spell" apiPath="/spells" fields={fields} />;
+  return <GenericCrudEditor entityName="Spell" apiPath="/spells" fields={fields} imagePreview={{ entityType: 'spell', maxWidth: 256, maxHeight: 256 }} />;
 }
 
 export default SpellEditor;

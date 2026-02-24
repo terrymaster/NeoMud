@@ -64,6 +64,11 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           mpPerLevelMax: cls.mpPerLevelMax ?? 0,
           xpModifier: cls.xpModifier ?? 1.0,
           magicSchools: JSON.stringify(cls.magicSchools ?? {}),
+          imagePrompt: cls.imagePrompt ?? '',
+          imageStyle: cls.imageStyle ?? '',
+          imageNegativePrompt: cls.imageNegativePrompt ?? '',
+          imageWidth: cls.imageWidth ?? 256,
+          imageHeight: cls.imageHeight ?? 256,
         },
       })
     }
@@ -81,6 +86,11 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           description: race.description ?? '',
           statModifiers: JSON.stringify(race.statModifiers ?? {}),
           xpModifier: race.xpModifier ?? 1.0,
+          imagePrompt: race.imagePrompt ?? '',
+          imageStyle: race.imageStyle ?? '',
+          imageNegativePrompt: race.imageNegativePrompt ?? '',
+          imageWidth: race.imageWidth ?? 256,
+          imageHeight: race.imageHeight ?? 256,
         },
       })
     }
@@ -141,6 +151,11 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           isPassive: skill.isPassive ?? false,
           classRestrictions: JSON.stringify(skill.classRestrictions ?? []),
           properties: JSON.stringify(skill.properties ?? {}),
+          imagePrompt: skill.imagePrompt ?? '',
+          imageStyle: skill.imageStyle ?? '',
+          imageNegativePrompt: skill.imageNegativePrompt ?? '',
+          imageWidth: skill.imageWidth ?? 256,
+          imageHeight: skill.imageHeight ?? 256,
         },
       })
     }
@@ -170,6 +185,11 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           castSound: spell.castSound ?? '',
           impactSound: spell.impactSound ?? '',
           missSound: spell.missSound ?? '',
+          imagePrompt: spell.imagePrompt ?? '',
+          imageStyle: spell.imageStyle ?? '',
+          imageNegativePrompt: spell.imageNegativePrompt ?? '',
+          imageWidth: spell.imageWidth ?? 256,
+          imageHeight: spell.imageHeight ?? 256,
         },
       })
     }

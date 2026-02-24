@@ -133,7 +133,12 @@ model CharacterClass {
   mpPerLevelMin Int    @default(0)
   mpPerLevelMax Int    @default(0)
   xpModifier    Float  @default(1.0)
-  magicSchools  String @default("{}")
+  magicSchools        String @default("{}")
+  imagePrompt         String @default("")
+  imageStyle          String @default("")
+  imageNegativePrompt String @default("")
+  imageWidth          Int    @default(256)
+  imageHeight         Int    @default(256)
 }
 
 model Race {
@@ -141,7 +146,12 @@ model Race {
   name          String
   description   String
   statModifiers String
-  xpModifier    Float  @default(1.0)
+  xpModifier          Float  @default(1.0)
+  imagePrompt         String @default("")
+  imageStyle          String @default("")
+  imageNegativePrompt String @default("")
+  imageWidth          Int    @default(256)
+  imageHeight         Int    @default(256)
 }
 
 model Skill {
@@ -156,7 +166,12 @@ model Skill {
   difficulty        Int     @default(15)
   isPassive         Boolean @default(false)
   classRestrictions String  @default("[]")
-  properties        String  @default("{}")
+  properties          String  @default("{}")
+  imagePrompt         String  @default("")
+  imageStyle          String  @default("")
+  imageNegativePrompt String  @default("")
+  imageWidth          Int     @default(256)
+  imageHeight         Int     @default(256)
 }
 
 model Spell {
@@ -176,7 +191,12 @@ model Spell {
   castMessage    String @default("")
   castSound      String @default("")
   impactSound    String @default("")
-  missSound      String @default("")
+  missSound           String @default("")
+  imagePrompt         String @default("")
+  imageStyle          String @default("")
+  imageNegativePrompt String @default("")
+  imageWidth          Int    @default(256)
+  imageHeight         Int    @default(256)
 }
 
 model LootTable {
