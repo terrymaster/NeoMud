@@ -21,7 +21,7 @@
     "rebuild-world": "tsx scripts/rebuild-default-world.ts"
   },
   "dependencies": {
-    "@prisma/adapter-better-sqlite3": "^7.4.0",
+    "@prisma/adapter-better-sqlite3": "^7.4.1",
     "@prisma/client": "^7.4.0",
     "@types/multer": "^2.0.0",
     "adm-zip": "^0.5.16",
