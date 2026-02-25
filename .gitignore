@@ -44,3 +44,9 @@ maker/default_world.nmd
 
 # Claude
 .claude/
+
+# MCP config (contains API keys)
+.mcp.json
+
+# Nano Banana image generation output
+nanobanana-output/

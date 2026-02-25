@@ -39,9 +39,11 @@ import com.neomud.shared.model.TargetType
 private val SelectedGlow = Color(0xFFFF3333)
 
 fun spriteUrl(serverBaseUrl: String, entityId: String): String {
-    val baseId = entityId.substringBefore('#').replace(':', '_')
-    val filename = "$baseId.webp"
-    return "$serverBaseUrl/assets/images/rooms/$filename"
+    val baseId = entityId.substringBefore('#')
+    val prefix = baseId.substringBefore(':')
+    val filename = baseId.replace(':', '_') + ".webp"
+    val folder = "${prefix}s" // npc -> npcs, item -> items
+    return "$serverBaseUrl/assets/images/$folder/$filename"
 }
 
 fun pcSpriteUrl(serverBaseUrl: String, info: PlayerInfo): String {
@@ -49,7 +51,7 @@ fun pcSpriteUrl(serverBaseUrl: String, info: PlayerInfo): String {
 }
 
 private fun coinSpriteUrl(serverBaseUrl: String, coinType: String): String {
-    return "$serverBaseUrl/assets/images/rooms/coin_${coinType}.webp"
+    return "$serverBaseUrl/assets/images/coins/coin_${coinType}.webp"
 }
 
 private sealed class RoomEntity {

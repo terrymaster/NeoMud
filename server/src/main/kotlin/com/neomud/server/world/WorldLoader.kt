@@ -1,5 +1,6 @@
 package com.neomud.server.world
 
+import com.neomud.shared.model.EquipmentSlots
 import com.neomud.shared.model.Room
 import com.neomud.shared.model.RoomEffect
 import kotlinx.serialization.json.Json
@@ -132,13 +133,14 @@ object WorldLoader {
         logger.info("World loaded: ${worldGraph.roomCount} rooms, ${allNpcData.size} NPCs")
 
         // Item data validation
-        val validSlots = setOf("weapon", "head", "chest", "legs", "feet", "shield", "hands")
+        val validSlots = EquipmentSlots.DEFAULT_SLOTS.toSet()
         for (item in itemCatalog.getAllItems()) {
             if (item.type == "weapon") {
                 if (item.slot.isBlank()) logger.warn("Weapon '${item.id}' missing slot (should be \"weapon\")")
                 if (item.damageBonus == 0 && item.damageRange == 0) logger.warn("Weapon '${item.id}' has zero damageBonus and zero damageRange")
             }
-            if (item.type == "armor" && item.armorValue == 0) {
+            val accessorySlots = setOf("neck", "ring")
+            if (item.type == "armor" && item.armorValue == 0 && item.slot !in accessorySlots) {
                 logger.warn("Armor '${item.id}' has zero armorValue")
             }
             if (item.type == "consumable" && item.useEffect.isBlank()) {
@@ -273,7 +275,11 @@ object WorldLoader {
 
         // Asset file existence validation
         fun assetExists(path: String): Boolean = source.openStream(path)?.use { true } ?: false
-        fun spritePathFor(entityId: String) = "assets/images/rooms/${entityId.replace(':', '_')}.webp"
+        fun spritePathFor(entityId: String): String {
+            val prefix = entityId.substringBefore(':')
+            val folder = "${prefix}s" // npc -> npcs, item -> items
+            return "assets/images/$folder/${entityId.replace(':', '_')}.webp"
+        }
         fun sfxPathFor(soundId: String) = "assets/audio/sfx/$soundId.ogg"
         fun bgmPathFor(trackId: String) = "assets/audio/bgm/$trackId.ogg"
 

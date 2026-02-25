@@ -49,7 +49,7 @@ object CombatUtils {
         bonuses: CombatBonuses,
         level: Int
     ): Int =
-        stats.agility / GameConfig.Combat.DEFENSE_AGI_DIVISOR + bonuses.totalArmorValue / GameConfig.Combat.DEFENSE_ARMOR_DIVISOR + level + bonuses.shieldBonus
+        stats.agility / GameConfig.Combat.DEFENSE_AGI_DIVISOR + bonuses.totalArmorValue / GameConfig.Combat.DEFENSE_ARMOR_DIVISOR + level
 
     fun computeNpcDefense(npc: NpcState): Int =
         npc.defense + npc.level * GameConfig.Combat.NPC_DEFENSE_LEVEL_MULTIPLIER
