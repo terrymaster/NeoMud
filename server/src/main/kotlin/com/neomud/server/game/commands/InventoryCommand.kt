@@ -9,6 +9,7 @@ import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ItemCatalog
 import com.neomud.server.world.WorldGraph
+import com.neomud.shared.model.EquipmentSlots
 import com.neomud.shared.protocol.ServerMessage
 
 class InventoryCommand(
@@ -19,7 +20,7 @@ class InventoryCommand(
     private val sessionManager: SessionManager
 ) {
     companion object {
-        private val VALID_SLOTS = setOf("weapon", "shield", "head", "chest", "legs", "feet", "hands")
+        private val VALID_SLOTS = EquipmentSlots.DEFAULT_SLOTS.toSet()
     }
 
     suspend fun handleViewInventory(session: PlayerSession) {

@@ -15,7 +15,9 @@ function parseJsonField(value: string, fallback: any = {}): any {
 }
 
 function spritePathFor(entityId: string): string {
-  return `assets/images/rooms/${entityId.replace(':', '_')}.webp`
+  const prefix = entityId.split(':')[0]
+  const folder = `${prefix}s` // npc -> npcs, item -> items
+  return `assets/images/${folder}/${entityId.replace(':', '_')}.webp`
 }
 
 function sfxPathFor(soundId: string): string {
@@ -59,14 +61,15 @@ export async function validateProject(
   }
 
   // ─── Item validation ─────────────────────────────────
-  const validSlots = new Set(['weapon', 'head', 'chest', 'legs', 'feet', 'shield', 'hands'])
+  const validSlots = new Set(['weapon', 'head', 'chest', 'legs', 'feet', 'shield', 'hands', 'neck', 'ring'])
   for (const item of items) {
     if (item.type === 'weapon') {
       if (!item.slot) warnings.push(`Weapon '${item.id}' missing slot (should be "weapon")`)
       if (item.damageBonus === 0 && item.damageRange === 0)
         warnings.push(`Weapon '${item.id}' has zero damageBonus and zero damageRange`)
     }
-    if (item.type === 'armor' && item.armorValue === 0) {
+    const accessorySlots = new Set(['neck', 'ring'])
+    if (item.type === 'armor' && item.armorValue === 0 && !accessorySlots.has(item.slot)) {
       warnings.push(`Armor '${item.id}' has zero armorValue`)
     }
     if (item.type === 'consumable' && !item.useEffect) {

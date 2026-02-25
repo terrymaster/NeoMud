@@ -102,6 +102,17 @@ fun EquipmentPanel(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                // Neck
+                EquipmentSlotBox(
+                    slot = EquipmentSlots.NECK,
+                    equippedItemId = equipment[EquipmentSlots.NECK],
+                    itemCatalog = itemCatalog,
+
+                    onUnequipItem = onUnequipItem
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
                 // Weapon / Chest / Shield
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -136,6 +147,17 @@ fun EquipmentPanel(
                 EquipmentSlotBox(
                     slot = EquipmentSlots.HANDS,
                     equippedItemId = equipment[EquipmentSlots.HANDS],
+                    itemCatalog = itemCatalog,
+
+                    onUnequipItem = onUnequipItem
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Ring
+                EquipmentSlotBox(
+                    slot = EquipmentSlots.RING,
+                    equippedItemId = equipment[EquipmentSlots.RING],
                     itemCatalog = itemCatalog,
 
                     onUnequipItem = onUnequipItem
