@@ -1,5 +1,6 @@
 package com.neomud.server.game.inventory
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.world.ItemCatalog
 
@@ -29,7 +30,7 @@ class EquipmentService(
             }
             totalArmorValue += item.armorValue
             if (slot == "shield" && item.armorValue > 0) {
-                shieldBonus = 5
+                shieldBonus = GameConfig.Combat.SHIELD_DEFENSE_BONUS
             }
         }
 

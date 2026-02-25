@@ -1,5 +1,6 @@
 package com.neomud.server.game.inventory
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.world.ItemCatalog
 import com.neomud.shared.model.Item
 import kotlin.test.Test
@@ -33,7 +34,7 @@ class EquipmentServiceTest {
             }
             totalArmorValue += item.armorValue
             if (slot == "shield" && item.armorValue > 0) {
-                shieldBonus = 5
+                shieldBonus = GameConfig.Combat.SHIELD_DEFENSE_BONUS
             }
         }
 
