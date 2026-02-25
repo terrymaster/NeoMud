@@ -1,14 +1,12 @@
 package com.neomud.server.game.inventory
 
-import com.neomud.server.game.GameConfig
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.world.ItemCatalog
 
 data class CombatBonuses(
     val totalDamageBonus: Int = 0,
     val weaponDamageRange: Int = 0,
-    val totalArmorValue: Int = 0,
-    val shieldBonus: Int = 0
+    val totalArmorValue: Int = 0
 )
 
 class EquipmentService(
@@ -20,7 +18,6 @@ class EquipmentService(
         var totalDamageBonus = 0
         var weaponDamageRange = 0
         var totalArmorValue = 0
-        var shieldBonus = 0
 
         for ((slot, itemId) in equipped) {
             val item = itemCatalog.getItem(itemId) ?: continue
@@ -29,11 +26,8 @@ class EquipmentService(
                 weaponDamageRange = item.damageRange
             }
             totalArmorValue += item.armorValue
-            if (slot == "shield" && item.armorValue > 0) {
-                shieldBonus = GameConfig.Combat.SHIELD_DEFENSE_BONUS
-            }
         }
 
-        return CombatBonuses(totalDamageBonus, weaponDamageRange, totalArmorValue, shieldBonus)
+        return CombatBonuses(totalDamageBonus, weaponDamageRange, totalArmorValue)
     }
 }

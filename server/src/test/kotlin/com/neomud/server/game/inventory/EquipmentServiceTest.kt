@@ -1,6 +1,5 @@
 package com.neomud.server.game.inventory
 
-import com.neomud.server.game.GameConfig
 import com.neomud.server.world.ItemCatalog
 import com.neomud.shared.model.Item
 import kotlin.test.Test
@@ -24,7 +23,6 @@ class EquipmentServiceTest {
         var totalDamageBonus = 0
         var weaponDamageRange = 0
         var totalArmorValue = 0
-        var shieldBonus = 0
 
         for ((slot, itemId) in equipped) {
             val item = catalog.getItem(itemId) ?: continue
@@ -33,12 +31,9 @@ class EquipmentServiceTest {
                 weaponDamageRange = item.damageRange
             }
             totalArmorValue += item.armorValue
-            if (slot == "shield" && item.armorValue > 0) {
-                shieldBonus = GameConfig.Combat.SHIELD_DEFENSE_BONUS
-            }
         }
 
-        return CombatBonuses(totalDamageBonus, weaponDamageRange, totalArmorValue, shieldBonus)
+        return CombatBonuses(totalDamageBonus, weaponDamageRange, totalArmorValue)
     }
 
     private fun catalogOf(vararg items: Item) = ItemCatalog(items.toList())
@@ -99,7 +94,16 @@ class EquipmentServiceTest {
         )
         val bonuses = computeBonuses(mapOf("neck" to "item:amulet"), catalogOf(amulet))
         assertEquals(3, bonuses.totalArmorValue)
-        assertEquals(0, bonuses.shieldBonus, "Neck slot should not grant shield bonus")
+    }
+
+    @Test
+    fun testShieldArmorValueContributesToTotalArmor() {
+        val shield = Item(
+            id = "item:wooden_shield", name = "Wooden Shield", description = "A shield",
+            type = "armor", slot = "shield", armorValue = 4
+        )
+        val bonuses = computeBonuses(mapOf("shield" to "item:wooden_shield"), catalogOf(shield))
+        assertEquals(4, bonuses.totalArmorValue, "Shield armorValue should contribute to totalArmorValue")
     }
 
     @Test
@@ -108,6 +112,5 @@ class EquipmentServiceTest {
         assertEquals(0, bonuses.totalDamageBonus)
         assertEquals(0, bonuses.weaponDamageRange)
         assertEquals(0, bonuses.totalArmorValue)
-        assertEquals(0, bonuses.shieldBonus)
     }
 }

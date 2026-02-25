@@ -33,7 +33,6 @@ object GameConfig {
         const val CRIT_DAMAGE_MULTIPLIER = 1.5
         const val BACKSTAB_DAMAGE_MULTIPLIER = 3
         const val NPC_VARIANCE_DIVISOR = 3
-        const val SHIELD_DEFENSE_BONUS = 5
     }
     object Thresholds {
         // STR thresholds
