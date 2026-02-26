@@ -33,9 +33,7 @@ case "${1}" in
     screenshot)
         if [ -z "$2" ]; then echo "Error: output path required"; exit 1; fi
         OUTPUT="$2"
-        $ADB shell screencap -p /sdcard/screenshot.png
-        $ADB pull /sdcard/screenshot.png "$OUTPUT" 2>/dev/null
-        $ADB shell rm /sdcard/screenshot.png
+        $ADB exec-out screencap -p > "$OUTPUT"
         echo "$OUTPUT"
         ;;
     start-recording)
@@ -55,16 +53,14 @@ case "${1}" in
         echo "Recording saved to $OUTPUT"
         ;;
     burst)
-        # Rapid-fire screenshots at ~500ms intervals for observing fast gameplay
+        # Rapid-fire screenshots at ~180ms intervals for observing fast gameplay
         if [ -z "$2" ]; then echo "Error: output directory required"; exit 1; fi
         OUTDIR="$2"
         COUNT="${3:-10}"
         mkdir -p "$OUTDIR"
         for i in $(seq 1 "$COUNT"); do
             FNAME="$OUTDIR/burst_$(printf '%03d' $i).png"
-            $ADB shell screencap -p /sdcard/screenshot.png
-            $ADB pull /sdcard/screenshot.png "$FNAME" 2>/dev/null
-            $ADB shell rm /sdcard/screenshot.png
+            $ADB exec-out screencap -p > "$FNAME"
         done
         echo "Captured $COUNT frames to $OUTDIR"
         ;;
