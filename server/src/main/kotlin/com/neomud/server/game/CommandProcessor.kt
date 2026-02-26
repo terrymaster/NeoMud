@@ -20,9 +20,11 @@ import com.neomud.server.game.commands.VendorCommand
 import com.neomud.server.game.inventory.LootService
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
+import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.DiscoveryRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.persistence.repository.PlayerRepository
+import com.neomud.shared.model.Coins
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ClassCatalog
@@ -56,6 +58,7 @@ class CommandProcessor(
     private val lootService: LootService,
     private val lootTableCatalog: LootTableCatalog,
     private val inventoryRepository: InventoryRepository,
+    private val coinRepository: CoinRepository,
     private val discoveryRepository: DiscoveryRepository,
     private val adminUsernames: Set<String> = emptySet(),
     private val movementTrailManager: MovementTrailManager? = null
@@ -220,6 +223,15 @@ class CommandProcessor(
 
         result.fold(
             onSuccess = {
+                // Grant starter equipment
+                val starterWeapon = GameConfig.StarterEquipment.weaponForClass(msg.characterClass)
+                inventoryRepository.addItem(msg.characterName, starterWeapon)
+                inventoryRepository.equipItem(msg.characterName, starterWeapon, "weapon")
+                inventoryRepository.addItem(msg.characterName, GameConfig.StarterEquipment.ARMOR_ITEM_ID)
+                inventoryRepository.equipItem(msg.characterName, GameConfig.StarterEquipment.ARMOR_ITEM_ID, GameConfig.StarterEquipment.ARMOR_SLOT)
+                coinRepository.addCoins(msg.characterName, Coins(copper = GameConfig.StarterEquipment.STARTING_COPPER))
+                logger.info("Granted starter equipment to ${msg.characterName}: $starterWeapon + ${GameConfig.StarterEquipment.ARMOR_ITEM_ID} + ${GameConfig.StarterEquipment.STARTING_COPPER} copper")
+
                 session.send(ServerMessage.RegisterOk)
                 logger.info("Player registered: ${msg.characterName}")
             },

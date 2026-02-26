@@ -1,5 +1,6 @@
 package com.neomud.server
 
+import com.neomud.server.game.GameConfig
 import com.neomud.shared.model.Direction
 import com.neomud.shared.model.PlayerInfo
 import com.neomud.shared.model.Stats
@@ -104,6 +105,87 @@ class IntegrationTest {
             // Should receive RoomItemsUpdate (ground items for current room)
             val roomItems = receiveServerMessage()
             assertIs<ServerMessage.RoomItemsUpdate>(roomItems)
+        }
+    }
+
+    @Test
+    fun testStarterEquipmentGrantedOnRegister() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        // Register a MAGE (should get wooden_staff + leather_chest + 25 copper)
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("starter_mage", "pass123", "StarterMage", "MAGE", race = "ELF", gender = "male",
+                    allocatedStats = Stats(strength = 11, agility = 23, intellect = 37, willpower = 25, health = 13, charm = 25))
+            )))
+            val reg = receiveServerMessage()
+            assertIs<ServerMessage.RegisterOk>(reg)
+        }
+
+        // Login and verify inventory contains starter equipment
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Login("starter_mage", "pass123")
+            )))
+            receiveServerMessage() // LoginOk
+            receiveServerMessage() // RoomInfo
+            receiveServerMessage() // MapData
+
+            val invUpdate = receiveServerMessage()
+            assertIs<ServerMessage.InventoryUpdate>(invUpdate)
+
+            // Should have starter weapon equipped
+            val expectedWeapon = GameConfig.StarterEquipment.weaponForClass("MAGE")
+            assertEquals(expectedWeapon, invUpdate.equipment["weapon"], "Starter weapon should be equipped")
+
+            // Should have leather chest equipped
+            assertEquals(GameConfig.StarterEquipment.ARMOR_ITEM_ID, invUpdate.equipment["chest"], "Starter armor should be equipped")
+
+            // Should have starting copper
+            assertEquals(GameConfig.StarterEquipment.STARTING_COPPER, invUpdate.coins.copper, "Should have starting copper")
+
+            // Inventory should contain both items
+            val itemIds = invUpdate.inventory.map { it.itemId }
+            assertTrue(expectedWeapon in itemIds, "Inventory should contain starter weapon")
+            assertTrue(GameConfig.StarterEquipment.ARMOR_ITEM_ID in itemIds, "Inventory should contain starter armor")
+        }
+    }
+
+    @Test
+    fun testStarterEquipmentWarriorGetsSword() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        // Register a WARRIOR (should get iron_sword)
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("starter_warrior", "pass123", "StarterWarrior", "WARRIOR",
+                    allocatedStats = Stats(strength = 30, agility = 22, intellect = 18, willpower = 18, health = 30, charm = 18))
+            )))
+            assertIs<ServerMessage.RegisterOk>(receiveServerMessage())
+        }
+
+        // Login and verify
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Login("starter_warrior", "pass123")
+            )))
+            receiveServerMessage() // LoginOk
+            receiveServerMessage() // RoomInfo
+            receiveServerMessage() // MapData
+
+            val invUpdate = receiveServerMessage()
+            assertIs<ServerMessage.InventoryUpdate>(invUpdate)
+            assertEquals("item:iron_sword", invUpdate.equipment["weapon"], "Warrior should get iron_sword")
+            assertEquals(GameConfig.StarterEquipment.ARMOR_ITEM_ID, invUpdate.equipment["chest"])
+            assertEquals(GameConfig.StarterEquipment.STARTING_COPPER, invUpdate.coins.copper)
         }
     }
 

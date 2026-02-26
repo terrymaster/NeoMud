@@ -115,6 +115,27 @@ object GameConfig {
         const val PURSUIT_MOVE_TICKS = 5
         const val PURSUIT_LOST_TRAIL_TICKS = 3
     }
+    object StarterEquipment {
+        const val STARTING_COPPER = 25
+        const val ARMOR_ITEM_ID = "item:leather_chest"
+        const val ARMOR_SLOT = "chest"
+
+        private val SWORD_CLASSES = setOf("WARRIOR", "PALADIN", "WITCHHUNTER", "CLERIC", "WARLOCK")
+        private val DAGGER_CLASSES = setOf("THIEF", "NINJA", "MISSIONARY", "BARD", "GYPSY")
+        private val STAFF_CLASSES = setOf("MAGE", "DRUID", "PRIEST", "MYSTIC")
+        private val BOW_CLASSES = setOf("RANGER")
+
+        fun weaponForClass(classId: String): String {
+            val upper = classId.uppercase()
+            return when {
+                upper in SWORD_CLASSES -> "item:iron_sword"
+                upper in DAGGER_CLASSES -> "item:rustic_dagger"
+                upper in STAFF_CLASSES -> "item:wooden_staff"
+                upper in BOW_CLASSES -> "item:short_bow"
+                else -> "item:rustic_dagger" // fallback
+            }
+        }
+    }
     object Trails {
         const val MAX_ENTRIES_PER_ROOM = 20
         const val LIFETIME_MS = 90_000L

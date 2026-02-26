@@ -65,6 +65,49 @@ class GameConfigTest {
     }
 
     @Test
+    fun testStarterEquipmentWeaponMapping() {
+        // Sword classes
+        assertEquals("item:iron_sword", GameConfig.StarterEquipment.weaponForClass("WARRIOR"))
+        assertEquals("item:iron_sword", GameConfig.StarterEquipment.weaponForClass("PALADIN"))
+        assertEquals("item:iron_sword", GameConfig.StarterEquipment.weaponForClass("WITCHHUNTER"))
+        assertEquals("item:iron_sword", GameConfig.StarterEquipment.weaponForClass("CLERIC"))
+        assertEquals("item:iron_sword", GameConfig.StarterEquipment.weaponForClass("WARLOCK"))
+        // Dagger classes
+        assertEquals("item:rustic_dagger", GameConfig.StarterEquipment.weaponForClass("THIEF"))
+        assertEquals("item:rustic_dagger", GameConfig.StarterEquipment.weaponForClass("NINJA"))
+        assertEquals("item:rustic_dagger", GameConfig.StarterEquipment.weaponForClass("MISSIONARY"))
+        assertEquals("item:rustic_dagger", GameConfig.StarterEquipment.weaponForClass("BARD"))
+        assertEquals("item:rustic_dagger", GameConfig.StarterEquipment.weaponForClass("GYPSY"))
+        // Staff classes
+        assertEquals("item:wooden_staff", GameConfig.StarterEquipment.weaponForClass("MAGE"))
+        assertEquals("item:wooden_staff", GameConfig.StarterEquipment.weaponForClass("DRUID"))
+        assertEquals("item:wooden_staff", GameConfig.StarterEquipment.weaponForClass("PRIEST"))
+        assertEquals("item:wooden_staff", GameConfig.StarterEquipment.weaponForClass("MYSTIC"))
+        // Bow classes
+        assertEquals("item:short_bow", GameConfig.StarterEquipment.weaponForClass("RANGER"))
+    }
+
+    @Test
+    fun testStarterEquipmentCaseInsensitive() {
+        assertEquals("item:iron_sword", GameConfig.StarterEquipment.weaponForClass("warrior"))
+        assertEquals("item:rustic_dagger", GameConfig.StarterEquipment.weaponForClass("Thief"))
+        assertEquals("item:wooden_staff", GameConfig.StarterEquipment.weaponForClass("mage"))
+    }
+
+    @Test
+    fun testStarterEquipmentFallback() {
+        // Unknown class gets dagger as fallback
+        assertEquals("item:rustic_dagger", GameConfig.StarterEquipment.weaponForClass("UNKNOWN"))
+    }
+
+    @Test
+    fun testStarterEquipmentConstants() {
+        assertEquals(25, GameConfig.StarterEquipment.STARTING_COPPER)
+        assertEquals("item:leather_chest", GameConfig.StarterEquipment.ARMOR_ITEM_ID)
+        assertEquals("chest", GameConfig.StarterEquipment.ARMOR_SLOT)
+    }
+
+    @Test
     fun testCpTierProgression() {
         assertTrue(GameConfig.Progression.CP_PER_LEVEL_LOW < GameConfig.Progression.CP_PER_LEVEL_MID)
         assertTrue(GameConfig.Progression.CP_PER_LEVEL_MID < GameConfig.Progression.CP_PER_LEVEL_HIGH)
