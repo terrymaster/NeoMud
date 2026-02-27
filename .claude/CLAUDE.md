@@ -1,0 +1,222 @@
+# NeoMud — Project Instructions
+
+A multiplayer dungeon game (MUD) inspired by '90s text MUDs like MajorMUD, built with Kotlin Multiplatform, Ktor, Jetpack Compose, and a React-based world editor.
+
+## Repository Layout
+
+```
+NeoMud/
+├── shared/     KMP module — models, protocol, shared between client and server
+├── server/     Ktor 3.x + Netty — WebSocket game server, SQLite persistence
+├── client/     Jetpack Compose — Android client with sprite rendering
+├── maker/      React 18 + Express — web-based world editor (Vite dev server)
+├── docs/       Screenshots and assets
+└── scripts/    Utility scripts
+```
+
+## Build & Run
+
+**Prerequisites**: JDK 21 (Corretto), Android SDK platform 34+, Node.js 18+
+
+```bash
+# Server
+export JAVA_HOME=/c/Users/lbarnes/.jdks/corretto-21.0.5
+./gradlew :server:run          # Starts on :8080, WebSocket at /game, health at /health
+
+# Client
+./gradlew :client:installDebug  # Android emulator connects to 10.0.2.2:8080
+
+# Maker
+cd maker && npm install && npm run dev  # http://localhost:5173
+
+# Tests
+export JAVA_HOME=/c/Users/lbarnes/.jdks/corretto-21.0.5
+./gradlew :shared:jvmTest :server:test  # All server + shared tests
+./gradlew :client:compileDebugKotlin    # Client compile check (no runtime tests yet)
+```
+
+**Gradle notes**: Configuration cache is enabled. `JAVA_HOME` must be exported before any gradlew command (not set system-wide).
+
+## Architecture Overview
+
+### Protocol
+- `shared/.../protocol/ClientMessage.kt` — all client-to-server messages (sealed class)
+- `shared/.../protocol/ServerMessage.kt` — all server-to-client messages (sealed class)
+- `shared/.../protocol/MessageSerializer.kt` — kotlinx.serialization with `classDiscriminator = "type"`
+- Wire format is JSON over WebSocket. Both sides share the same Kotlin types at compile time.
+
+### Server Core Loop
+The server runs a **1.5-second tick-based game loop** (`GameLoop.kt`). Each tick:
+
+1. **Grace period tick-down** — newly-arrived players get a brief combat grace window
+2. **Cooldown tick-down** — per-skill cooldown counters decrement each tick
+3. **Non-combat skill resolution** — meditate and track resolve before combat
+4. **Combat resolution** (`CombatManager.processCombatTick()`) — for each player in attack mode, resolves in priority order:
+   - Pending Bash → Pending Kick → Readied Spell (auto-cast) → Melee attack
+5. **NPC behaviors** — wander, patrol, pursuit, attack (strategy pattern via `BehaviorNode`)
+6. **Meditation regen** — MP restored for meditating players
+7. **NPC spawning** — continuous spawn system per zone
+
+### Command → Queue → Tick Pattern
+**Commands are validation-only.** When a player sends a combat skill (bash, kick, spell, meditate, track), the corresponding command:
+1. Validates prerequisites (cooldown, target exists, mana, etc.)
+2. Queues the action on the session (`session.pendingSkill` or `session.readiedSpellId`)
+3. Returns immediately — NO damage, NO kill handling, NO cooldown setting
+
+The **game tick** resolves everything uniformly. This ensures:
+- All kills flow through ONE handler in GameLoop (loot, XP, attack-mode-disable, broadcasts)
+- No duplicate kill processing
+- Consistent initiative ordering
+
+### Key Server Types
+- `PlayerSession` — per-connection state: player data, combat state, pending skill, readied spell, cooldowns, stealth, meditation
+- `PendingSkill` — sealed class: `Bash(targetId)`, `Kick(targetId, direction)`, `Meditate`, `Track(targetId)`
+- `CombatEvent` — sealed class: `Hit`, `NpcKilled`, `NpcKnockedBack`, `PlayerKilled`
+- `CombatManager` — resolves combat actions each tick, broadcasts `SkillEffect`/`SpellEffect`/`CombatHit` to rooms
+- `GameLoop` — orchestrates the tick, handles all `CombatEvent`s, manages NPC spawns and behaviors
+- `CommandProcessor` — routes `ClientMessage` to command handlers
+- `NpcManager` — NPC state, movement, spawning
+- `WorldGraph` — in-memory room graph with BFS for minimap/nearby rooms
+- `GameConfig` — all tuning constants (damage, cooldowns, thresholds, etc.)
+
+### Data-Driven Design
+Everything is JSON-defined, loaded into catalogs at startup:
+- `ClassCatalog` — 15 character classes with stat minimums, allowed skills/spells
+- `RaceCatalog` — 6 races with stat modifiers and XP scaling
+- `ItemCatalog` — weapons, armor, consumables, crafting materials
+- `SpellCatalog` — 20 spells across 5 schools (damage, heal, buff, DoT, HoT)
+- `SkillCatalog` — 12 skills (active and passive)
+- `LootTableCatalog` — drop tables per NPC type
+- Zone JSON files — rooms, exits, coordinates, backgrounds
+
+### Persistence
+- SQLite + Exposed ORM
+- Tables: `PlayersTable`, `InventoryTable`, `PlayerCoinsTable`, `PlayerDiscoveryTable`
+- Repositories: `PlayerRepository`, `InventoryRepository`, `CoinRepository`, `DiscoveryRepository`
+- SHA-256 password hashing (MVP, not production-grade)
+
+### Client
+- Jetpack Compose + Material 3
+- Ktor OkHttp WebSocket client
+- Room rendering: background art, NPC/item sprites, floating minimap with fog-of-war
+- On connect: server sends `ClassCatalogSync` + `ItemCatalogSync`; on login: `InventoryUpdate`
+
+### Maker (World Editor)
+- React 18 frontend + Express API backend
+- Prisma ORM with SQLite
+- Visual zone editor with drag-and-drop room placement
+- Full CRUD for all entity types
+- Import/export `.nmd` bundles (ZIP archives with zone data + catalogs + assets)
+- Vite dev server on port 5173
+
+## Testing Policy
+
+**Every new feature or significant bugfix MUST include relevant tests — no exceptions, no need to ask.** If tests are forgotten, prompt the user before moving on.
+
+### Test Locations
+- **Shared**: `shared/src/commonTest/kotlin/com/neomud/shared/` — protocol serialization, model tests
+- **Server**: `server/src/test/kotlin/com/neomud/server/` — unit tests, integration tests, catalog tests, combat tests
+
+### Running Tests
+```bash
+export JAVA_HOME=/c/Users/lbarnes/.jdks/corretto-21.0.5
+./gradlew :shared:jvmTest :server:test
+```
+
+### Test Principles
+- Test behavioral contracts, not trivial getters/setters
+- Prefer focused tests that verify one thing
+- Use `createTestSession()` helper for PlayerSession tests (mock WebSocketSession)
+- `TestWorldSource` provides test fixtures for integration tests
+
+## Conventions
+
+### No Magic Numbers
+- **All tuning constants belong in `GameConfig`** (or equivalent config object) — never hardcode numeric values inline in game logic or tests
+- Tests must reference `GameConfig` constants (e.g., `GameConfig.Combat.DODGE_MAX_CHANCE`) rather than duplicating raw values
+- If a hardcoded constant is truly necessary, it requires a comment explaining why and must be flagged for review
+- When you encounter an existing magic number that should be in config, flag it to the user before proceeding
+
+### Kotlin
+- kotlinx.serialization for all wire types — `@Serializable`, `@SerialName("snake_case")`
+- Sealed classes for protocol messages and internal events
+- `object` for singletons and constants (`GameConfig`)
+- Constructor injection — no DI framework, wired manually in `Application.kt`
+
+### Naming
+- Server messages use `snake_case` SerialNames: `combat_hit`, `spell_effect`, `skill_effect`, `npc_killed`
+- Client messages use `snake_case` SerialNames: `move`, `attack`, `cast_spell`, `ready_spell`, `use_skill`
+- Kotlin code uses standard `camelCase` for properties and functions
+- Room IDs follow `zone:room` format (e.g., `millhaven:town_square`)
+
+### Broadcasts
+- Combat actions (bash, kick) broadcast `SkillEffect` to all players in the room — dedicated flavor text, NOT flags on `CombatHit`
+- Spells broadcast `SpellEffect` to all players in the room
+- Melee attacks broadcast `CombatHit` to all players in the room
+- Room presence changes broadcast `NpcEntered`/`NpcLeft`/`PlayerEntered`/`PlayerLeft`
+
+### Server-Authoritative State
+- **All game state is server-authoritative** — the client is a thin renderer
+- Stealth/backstab: `session.isHidden` set only by server-side `SneakCommand`, checked by `CombatManager`
+- Combat: damage, kills, loot, XP all resolved server-side in the game tick
+- The client never determines whether an attack is a backstab, whether a skill succeeds, or what damage is dealt
+
+## Asset Image Pipeline
+
+**All sprite images (NPCs, items, coins, players) MUST go through background removal after generation.** AI image models cannot produce true alpha transparency — they render a visual checkerboard or white background that must be post-processed.
+
+### Pipeline Steps (mandatory for every sprite generation)
+
+1. **Generate** via nano-banana MCP (`generate_image`), using the `imagePrompt` + `imageStyle` + `imageNegativePrompt` from the relevant JSON data file
+2. **Convert** from PNG to WebP: `npx sharp-cli -i input.png -o output.webp --format webp`
+3. **Remove background**: `node scripts/remove-bg.mjs output.webp`
+4. **Verify** the result visually — check that the subject is intact (light-colored subjects like silver blades are vulnerable to over-removal)
+5. **Clean up** intermediate PNGs and the `nanobanana-output/` directory
+
+### Batch background removal
+```bash
+node scripts/remove-bg.mjs --batch maker/default_world_src/assets/images/npcs
+node scripts/remove-bg.mjs --batch maker/default_world_src/assets/images/items
+node scripts/remove-bg.mjs --batch maker/default_world_src/assets/images/coins
+```
+
+### Asset naming conventions and directories
+
+| Asset Type | Directory | Filename Pattern | Dimensions |
+|---|---|---|---|
+| NPC sprites (humanoid) | `images/npcs/` | `npc_{npc_id}.webp` | 384×512 |
+| NPC sprites (creature) | `images/npcs/` | `npc_{npc_id}.webp` | 512×384 |
+| Item sprites | `images/items/` | `item_{item_id}.webp` | 256×256 |
+| Coin sprites | `images/coins/` | `coin_{denomination}.webp` | 256×256 |
+| Player sprites | `images/players/` | `{race}_{gender}_{class}.webp` | 384×512 |
+| Room backgrounds | `images/rooms/` | `{zone}_{room}.webp` | 1024×576 |
+
+All paths are relative to `maker/default_world_src/assets/`. The `npc_id` and `item_id` strip the `npc:` / `item:` prefix (e.g., `npc:guildmaster` → `npc_guildmaster.webp`).
+
+### Image prompts
+
+Image generation prompts are stored in the data files:
+- **NPCs**: `imagePrompt`, `imageStyle`, `imageNegativePrompt`, `imageWidth`, `imageHeight` fields in zone JSON files
+- **Items**: `imagePrompt`, `imageStyle`, `imageNegativePrompt` fields in `items.json` (dimensions default to 256×256)
+- **Players**: `imagePrompt`, `imageStyle`, `imageNegativePrompt`, `imageWidth`, `imageHeight` fields in `pc_sprites.json`
+- **Rooms**: `imagePrompt`, `imageStyle`, `imageNegativePrompt`, `imageWidth`, `imageHeight` fields in zone JSON files
+
+### Important notes
+- **Room backgrounds do NOT need background removal** — they are full-bleed images, not sprites
+- The `remove-bg.mjs` script samples corner pixels to detect background colors, so it safely skips images with dark/complex backgrounds
+- `nanobanana-output/` is gitignored — always clean it up after generation
+
+## Maker Dev Server Gotchas
+
+- **ALWAYS kill stale Vite dev server before rebuilding/testing maker UI changes**
+  - Check: `netstat -ano | grep -E "LISTENING" | grep -E ":5173"`
+  - Kill: `taskkill //PID <pid> //F`
+- **After any change to `default_world_src/` or `prisma/schema.prisma`**: kill Vite first, then `cd maker && npm run rebuild-world`
+- SQLite DB will be EBUSY if Vite is running during rebuild
+
+## Environment Notes
+
+- Windows 11, Git Bash shell — use Unix shell syntax (forward slashes, `/dev/null`)
+- No Python on this machine — use `jar` CLI or Node for ZIP/archive inspection
+- `.nmd` bundles are ZIP files — inspect with `jar tf file.nmd`
+- `packageWorld` Gradle task builds `default_world.nmd` from `server/src/main/resources/`

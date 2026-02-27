@@ -42,8 +42,8 @@ maker/test-results/
 maker/server/generated/
 maker/default_world.nmd
 
-# Claude
-.claude/
+# Claude (track agents, skills, memory — exclude local settings)
+.claude/settings.local.json
 
 # MCP config (contains API keys)
 .mcp.json
