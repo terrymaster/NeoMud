@@ -419,7 +419,11 @@ const handlers = {
     if (state.player) {
       state.player.level = msg.newLevel;
       state.player.maxHp = msg.newMaxHp;
+      state.player.hp = msg.newMaxHp;      // Full heal on level up
       state.player.maxMp = msg.newMaxMp;
+      state.player.mp = msg.newMaxMp;      // Full mana on level up
+      state.player.unspentCp = msg.totalUnspentCp;
+      state.player.xpToNextLevel = msg.xpToNextLevel;
     }
     pushEvent('level_up', `LEVEL UP! Now level ${msg.newLevel} (+${msg.hpRoll} HP, +${msg.mpRoll} MP, +${msg.cpGained} CP)`);
   },
