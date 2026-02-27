@@ -34,7 +34,8 @@ NeoMud/
 ├── shared/     Kotlin Multiplatform — models and protocol shared between client and server
 ├── server/     Ktor + Netty — WebSocket game server with SQLite persistence
 ├── client/     Jetpack Compose — Android client with sprite rendering
-└── maker/      React + Express — web-based world editor and GM toolkit
+├── maker/      React + Express — web-based world editor and GM toolkit
+└── .claude/    Agents, skills, and memory for Claude Code AI tooling
 ```
 
 **Server** runs a 1.5-second tick-based game loop. All combat actions — melee, spells, bash, kick — resolve in initiative order each tick. Non-combat skills (meditate, track) resolve in a pre-combat phase. All NPC kills flow through a single handler for loot, XP, and state cleanup. NPCs wander, patrol, pursue, and attack. The world turns.
@@ -47,61 +48,68 @@ NeoMud/
 
 ## Current State
 
-This is an early-stage hobby project. A lot of the systems exist but are lightly tested and need real playtesting to shake out balance issues and bugs. Here's an honest breakdown.
+This is an early-stage hobby project. The core systems work and there's enough content for a real play session, but balance is rough and many features need playtesting. Here's an honest breakdown.
 
 ### What Works
 
 **The World**
-- 2 zones: Millhaven (safe town) and the Whispering Forest (hostile)
-- 10 rooms total with AI-generated background art (WebP)
+- 4 zones with 25 rooms: Millhaven (safe town, 7 rooms), Whispering Forest (L1-3, 7 rooms), Thornveil Marsh (L4-5, 6 rooms), Blackstone Gorge (L6-7, 5 rooms)
+- AI-generated background art for every room (WebP)
 - JSON-driven room definitions with coordinates, exits, and background images
-- BFS-based minimap showing nearby rooms with player/NPC presence
-- Persistent map overlay with fog-of-war — visited rooms revealed, unvisited rooms dimmed
-- Zone color-coding on the map for visual distinction between areas
-- Map exit indicators — locked exits, hidden passages, and interactables shown on the map
-- Temple of the Dawn healing aura — passively restores HP each tick
+- Room effects — healing aura (Temple of the Dawn), poison, mana drain, sanctuary
+- Hidden exits and interactable objects (levers, chests, altars) with skill-check gating
+- BFS-based minimap with fog-of-war, zone color-coding, and exit indicators (locked, hidden, interactable)
 - `.nmd` world bundles — self-contained ZIP archives with zone data, catalogs, and assets
 
 **Characters**
 - 6 races: Human, Dwarf, Elf, Halfling, Gnome, Half-Orc — each with stat modifiers and XP scaling
 - 15 character classes: Warrior, Paladin, Witch Hunter, Cleric, Priest, Missionary, Mage, Warlock, Druid, Ranger, Thief, Ninja, Mystic, Bard, Gypsy
 - 6-stat system: Strength, Agility, Intellect, Willpower, Health, Charm
-- 60 CP stat allocation at character creation with escalating costs above class minimums
-- Equipment slots: weapon, shield, head, chest, hands, legs, feet
+- 60 CP stat allocation at creation with escalating costs above class minimums
+- 9 equipment slots: weapon, shield, head, chest, hands, legs, feet, neck, ring
+- Starter equipment granted on character creation (class-appropriate weapon + armor)
+- 270 unique player sprites (race/gender/class combinations)
 
 **Combat & NPCs**
 - Tick-based (1.5s) combat — weapon damage = Strength + bonus + random roll; armor reduces incoming
-- Unified tick-based skill resolution — all combat skills (bash, kick, spells) queue on the session and resolve during the game tick in initiative order, ensuring consistent kill handling for loot, XP, and state cleanup
-- Spell auto-cast loop — ready a spell once and it repeats each tick until cancelled, interrupted, or out of MP
-- Parry system — class-gated (Warrior, Paladin, Witch Hunter), STR-scaled chance to reduce incoming damage
-- Dodge system — class-gated (Warrior, Thief, Ninja, Mystic, Ranger), AGI-scaled chance to avoid attacks entirely
-- 6 NPCs across both zones (guards, vendors, trainers, hostile creatures)
-- NPCs attack on sight if hostile; perception checks reveal hidden players
-- Server-authoritative backstab — stealth state tracked entirely server-side; first attack from stealth deals bonus damage and breaks hidden status
-- Kick knockback — kicks NPCs into adjacent rooms with direction picker; room-wide SkillEffect broadcasts so all players see the action
-- Bash stun — chance to stun the target for multiple ticks; dedicated SkillEffect flavor text broadcast to room
-- Hostile NPC pursuit — engaged NPCs chase players who flee
-- Death respawns at the Temple of the Dawn with 10% XP penalty; clears all combat state (attack mode, readied spell, pending skill, stealth, meditation)
+- Unified tick-based skill resolution — bash, kick, spells queue on the session and resolve each tick in initiative order
+- Spell auto-cast — ready a spell once, it repeats each tick until cancelled, interrupted, or out of MP
+- 12 hostile NPC types across 3 combat zones scaling from L1 (15 HP, 2 dmg) to L7 (220 HP, 32 dmg)
+- 5 town NPCs: guards, vendors, trainers
+- Parry (STR-scaled, class-gated) and Dodge (AGI-scaled, class-gated)
+- Backstab from stealth — server-authoritative, bonus damage on first hit
+- Kick knockback into adjacent rooms with direction picker
+- Bash stun for multiple ticks
+- Hostile NPC pursuit — engaged NPCs chase fleeing players
+- Combat grace period on room entry
+- Death respawns at temple with 10% XP penalty
 - Continuous NPC spawn system per zone with configurable rates
-- Combat grace period — brief window after entering a room before NPCs attack
 
 **Items & Economy**
-- 18 data-driven items: weapons, armor, consumables, crafting materials
-- 2 loot tables (wolf and spider drops)
+- 41 data-driven items: 7 weapons (L1-6), leather/chain/plate armor sets, consumables, scrolls, crafting materials
+- 12 loot tables across all hostile NPC types
+- 3 vendors in town: tavern (potions, food), blacksmith (weapons, armor), enchantress (scrolls, enchanted gear)
 - Four-tier coin system: Copper, Silver, Gold, Platinum
 - Vendor buy/sell with charm-based pricing and Haggle skill discounts
 - Ground loot rendered as clickable sprites
 
 **Progression**
 - 30 level cap with XP from combat (scaled by level difference)
-- CP gains per level for stat training
+- CP gains per level (10/15/20 at L1-10/11-20/21-30) for stat training via trainer NPC
+- Equipment progression through 4 tiers: leather (L1) → chain/iron (L3) → enchanted (L5) → plate (L6)
 - Inventory icon grid with item sprites and tap-to-use consumables
 - Paperdoll equipment screen with slot-based equip/unequip
+
+**Spells & Skills**
+- 20 spells across 5 magic schools (Mage, Priest, Druid, Kai, Bard) — damage, heal, buff, DoT, HoT
+- 12 skills: Bash, Kick, Backstab, Parry, Dodge, Hide, Sneak, Meditate, Perception, Pick Lock, Track, Haggle
+- Spell bar with drag-to-assign slots and tap-to-ready auto-cast toggle
+- Skill cooldown system — per-skill tick counters prevent spam
+- Commands are validation-only; the game tick resolves everything uniformly
 
 **Audio**
 - Per-zone background music with crossfade on zone transitions
 - Sound effects for combat, movement, spells, and item interactions
-- NPC interact sounds
 - Configurable volume controls for BGM and SFX independently
 
 **Client**
@@ -111,35 +119,29 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 - Kick direction picker and lock target picker UIs
 - Dark fantasy stone UI theme
 
-### What Exists But Needs Work
+### What Needs Work
 
-**Spells & Skills**
-- 20 spells across 5 magic schools (Mage, Priest, Druid, Kai, Bard) are defined in data
-- 12 skills (Bash, Kick, Backstab, Parry, Dodge, Hide, Sneak, Meditate, Perception, Pick Lock, Track, Haggle) are defined
-- Parry, Dodge, and Haggle are passive skills that scale linearly with their primary stat
-- Spell bar UI exists with drag-to-assign slots and tap-to-ready auto-cast toggle
-- Skill cooldown system — per-skill tick counters prevent spam; cooldowns tick down each game loop cycle
-- Commands are validation-only — bash, kick, meditate, and track validate prereqs and queue a pending action; the game tick resolves everything uniformly
-- Most of the extended skill tree has **not been playtested** — expect balance issues
+**Balance**
+- Melee DPS is 3-5x higher than spell DPS — casters are underpowered
+- Large difficulty jump between Forest (L1-3, max 5 dmg) and Marsh (L4-5, 15+ dmg) with no transitional content
+- Some classes are barely viable solo (Priest has no damage spells and worst HP)
+- Parry/Dodge proc rates are 5-6% at typical L1 stats — too low to notice
+- Magic school level restrictions are not enforced — all classes with any school access can cast every spell in that school
+- Several skill classRestriction mismatches in the data files
+- No passive HP regeneration outside combat
 
 **Multiplayer**
 - Real-time WebSocket sessions work for basic gameplay
 - Room-based chat, player presence, one session per account
-- Player state persists across sessions (stats, position, inventory, map discovery)
-- Server has a game state mutex and rate limiter
-- **Needs significant stress testing** — concurrent player interactions, edge cases around combat with multiple players, reconnection handling are all lightly tested at best
+- Player state persists across sessions
+- **Needs significant stress testing** — concurrent combat, reconnection, edge cases
 
 **Maker (World Editor)**
-- Full CRUD for all entity types: zones, rooms, NPCs, items, classes, races, skills, spells, loot tables
+- Full CRUD for zones, rooms, NPCs, items, classes, races, skills, spells, loot tables
 - Visual zone editor with drag-and-drop room placement and click-to-connect exits
-- Room zone assignment — editable zone dropdown in room properties with cross-zone move support
-- Default SFX editor — browse, preview, and regenerate system sound effects (dodge, parry, footsteps, etc.)
-- Default player sprite editor — manage race/gender/class sprite combinations
-- Import/export of `.nmd` bundles
-- Default world auto-import with read-only projects and fork workflow
-- **AI generation pipeline is early-stage** — image and audio generation endpoints exist, provider configuration works, but the pipeline needs more testing with real providers and error handling improvements
-- Provider status now persists across page reloads
-- Asset management with upload, undo history, and clear
+- Default SFX editor and player sprite editor
+- Import/export of `.nmd` bundles with default world auto-import
+- AI generation pipeline exists but needs testing with real providers
 
 ## Tech Stack
 
@@ -149,18 +151,18 @@ This is an early-stage hobby project. A lot of the systems exist but are lightly
 | Server | Ktor 3.4 + Netty |
 | Database | SQLite + Exposed ORM |
 | Client | Jetpack Compose + Material 3 |
-| Images | Coil 2.7 (WebP with transparency) |
+| Images | Coil 3 (WebP with transparency) |
 | Audio | Android MediaPlayer + SoundPool |
 | Protocol | kotlinx.serialization over WebSocket |
 | Shared Code | Kotlin Multiplatform |
-| Build | Gradle 8.11 with configuration cache |
-| Maker | React 18 + Express + SQLite |
+| Build | Gradle 9.2 with configuration cache |
+| Maker | React 19 + Express + Prisma 7 + SQLite |
 
 ## Running It
 
 ### Prerequisites
 - JDK 21 (e.g., Amazon Corretto)
-- Android SDK with platform 36
+- Android SDK with platform 34+
 - Android emulator or device (min SDK 26)
 - Node.js 18+ (for the Maker)
 
@@ -185,44 +187,48 @@ npm run dev
 ```
 Opens the world editor at `http://localhost:5173`. On first run, it auto-imports the default world if `server/build/worlds/default-world.nmd` exists.
 
+### Tests
+```bash
+export JAVA_HOME=/path/to/jdk21
+./gradlew :shared:jvmTest :server:test   # Server + shared tests
+./gradlew :client:compileDebugKotlin     # Client compile check
+cd maker && npm test                     # Maker tests
+```
+
 ## Roadmap
 
 ### Near Term
-- [x] **Spell Auto-Cast** — ready a spell from the spell bar and it auto-casts each tick until cancelled
-- [ ] **Spell Quick-Cast Menu** — tap-to-cast from a radial or list menu, not just the spell bar
-- [ ] **Game Balance Pass** — rebalance combat, XP curves, item stats, and NPC difficulty with actual playtesting
-- [ ] **Multiplayer Stress Testing** — test concurrent players, combat interactions, reconnection edge cases
-- [ ] **AI Pipeline Hardening** — improve error handling, test with real Stable Diffusion / ElevenLabs / OpenAI providers
-- [ ] **Missing Item Art** — add icons for items without sprites
-- [ ] **More Content** — the 10-room world is a proof of concept; needs more zones, NPCs, and items to be fun
+- [ ] **Game Balance Pass** — address melee vs. magic disparity, Forest→Marsh difficulty gap, class viability
+- [ ] **HP Regeneration** — passive HP regen outside combat so players don't have to buy potions constantly
+- [ ] **Spell School Level Enforcement** — classes should only cast spells at or below their school level
+- [ ] **UX Polish** — zone danger warnings, trainer guidance for new players, vendor message improvements
 
 ### Medium Term
-- [ ] **Equipment Upgrades** — tiered gear, enchantments, item rarity
-- [ ] **NPC Dialogue** — conversation trees, quest givers, lore NPCs
+- [ ] **Transitional Content** — L3-4 zone or sub-zone to bridge Forest and Marsh difficulty
 - [ ] **Quest System** — kill quests, fetch quests, quest log, rewards
-- [ ] **Maker Live Preview** — test your world in-client without restarting the server
-- [ ] **Player Status Condensing** — compact the HP/MP/XP status panel
+- [ ] **NPC Dialogue** — conversation trees, quest givers, lore NPCs
+- [ ] **Crafting System** — use the 5 crafting materials that currently drop with no purpose
+- [ ] **Equipment Upgrades** — item rarity tiers, enchantments
+- [ ] **Player Status Condensing** — compact HP/MP/XP bars for more game log space
+- [ ] **Multiplayer Stress Testing** — concurrent players, combat interactions, reconnection
 
 ### Future Vision
-- [ ] More zones — dungeons, caves, swamps, castles
-- [ ] Crafting system
+- [ ] Boss encounters with special mechanics
 - [ ] Party system with shared XP and group combat
 - [ ] PvP — dueling, arenas, or PvP zones
 - [ ] Guilds/clans
-- [ ] Boss encounters with special mechanics
-- [ ] Status effects expansion — poison, stun, bleed, buffs/debuffs
 - [ ] Emotes and social features
 - [ ] World events — timed spawns, invasions
-- [ ] iOS client
 - [ ] Web client
+- [ ] iOS client
 
-### Someday/Maybe
-- [ ] Procedural zone generation
-- [ ] Player housing
-- [ ] Economy simulation (supply/demand pricing)
-- [ ] Achievement system
-- [ ] Leaderboards
-- [ ] LLM-powered NPC conversation
+## AI Tooling
+
+This project uses [Claude Code](https://claude.com/claude-code) for development, with custom agents and skills in the `.claude/` directory:
+
+- **`/game-designer`** — launches an RPG systems design session to analyze balance, model combat math, and propose data file changes
+- **`/playtest`** — launches an AI playtester that plays the game via WebSocket relay and files GitHub issues for bugs and UX problems
+- Agent memory in `.claude/agent-memory/` persists balance audit findings and world state across sessions
 
 ## The Spirit of the Thing
 

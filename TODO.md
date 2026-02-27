@@ -4,113 +4,82 @@ Active work items and known issues, ordered roughly by priority.
 
 ## High Priority
 
-### ~~Client UI Testing Framework~~ ✓
-- ~~Robolectric + Compose UI tests (50 tests) covering all major components~~
-- ~~Paparazzi screenshot regression tests (13 golden images)~~
-- ~~Instrumented smoke test stubs for emulator~~
-- ~~Maker: RTL component tests (25), Playwright E2E (11), server validation tests (3)~~
+### Game Balance (#40, #41)
+- Melee DPS is 3-5x higher than spell DPS — casters are underpowered at all levels
+- No passive HP regeneration outside combat (#41) — forces excessive potion purchases
+- Large difficulty jump between Forest (L1-3, max 5 dmg) and Marsh (L4-5, 15+ dmg) — no L3-4 transitional content
+- Priest class is unviable solo (no damage spells, worst HP, 1.2x XP penalty)
+- Parry/Dodge proc rates too low at typical L1 stats (5-6%) — feels like they don't exist
+- No zone danger warning when entering areas above player level (#40)
 
-### Room Effects — Future Work
-- ~~HEAL, POISON, DAMAGE, MANA_REGEN, MANA_DRAIN, SANCTUARY implemented~~ ✓
-- Effects should respect immunities or resistances if added later
-- Consider room-based stat buff/debuff effects
+### Spell & Skill Bugs
+- Magic school level number (1/2/3 in classes.json) is never enforced — all classes with any school access can cast ALL spells of that school (Ranger casts Nature's Wrath, Gypsy casts Fireball)
+- Skill classRestriction mismatches: BASH missing CLERIC/WARLOCK, SNEAK missing MISSIONARY, MEDITATE missing PALADIN/MISSIONARY/BARD/GYPSY, KICK missing NINJA
+- DoT/HoT tick application to NPCs needs verification — EffectApplicator uses Player object
 
-### Game Balance Pass
-- Rebalance combat damage, armor values, and HP pools across all NPC tiers
-- Review XP curves — leveling may be too fast or too slow in the forest zone
-- Adjust item stat budgets (weapon damage, armor values) for a smoother progression
-- Tune NPC spawn rates and respawn timers
-- Validate spell damage/healing scaling vs. melee at equivalent levels
+### UX Issues (#33, #35, #42)
+- Kick error message doesn't explain expected direction format (#33)
+- Trainer interaction lacks context for new players (#35)
+- Vendor bulk sale messages don't show quantity (#42)
+- Consumable items UX — polish tap-to-use flow, add cooldown indicator
 
-### Missing Assets in Default World
-- `item:leather_chest` (Leather Vest) has no sprite
-- Audit all items in `items.json` for missing icons and generate/add them
-- Audit sound effects — identify missing SFX referenced in zone data
-- Generate/source missing assets
-
-### Consumable Items UX
-- Healing potion works from inventory but UI is janky — polish the tap-to-use flow
-- Add confirmation or cooldown indicator for consumable use
-- Scrolls and other single-use items should work the same way
-
-### Sound Effects System
-- ~~Combat hits~~ ✓
-- ~~Item pickup~~ ✓
-- ~~Parry SFX~~ ✓
-- ~~Default SFX editor in maker (browse, preview, regenerate 16 system sounds)~~ ✓
-- Equip/unequip sounds
-- Spell casting, potion use sounds
-- Death sound and respawn chime
-- UI feedback sounds: button taps, panel open/close, error buzzes
-- Volume controls in settings panel
-
-### Dependency Upgrades
-- ~~**Coil 2 → 3**: Package rename `coil` → `coil3`, maven coords change, ~6 files. 25-40% Compose perf gain.~~ ✓
-- ~~**AGP 8.9 → 8.13.2 + Gradle 8.11.1 → 9.2.1**: Upgraded for Paparazzi 2.0.0-alpha04 compatibility. Kotlin 2.3.10 on Gradle 9.2.1 works with deprecation warnings.~~ ✓
-- ~~**Exposed 0.57 → 1.0**: Full package rename to v1 namespace across 8 files.~~ ✓
-- ~~**React 18 → 19**: Bumped react, react-dom, @types/react, @types/react-dom + types codemod.~~ ✓
-- ~~**Prisma 6 → 7**: Migrated to driver adapter pattern (better-sqlite3), new client output path, prisma.config.ts.~~ ✓
+### Asset Pipeline (#36)
+- `remove-bg.mjs` needs overhaul (#36) — flood fill can't reach enclosed background regions (e.g., between NPC legs), mid-tone backgrounds are skipped entirely, no matting/feathering for soft edges
+- Audit items for missing sprites — most are covered after batch generation but some may remain
 
 ## Medium Priority
 
+### Content Gaps
+- Need L3-4 transitional zone or sub-zone bridging Forest and Marsh
+- Dead-end rooms in Forest (cave, ruins, stream) have zero reward — add hidden items or encounters
+- 5 crafting materials drop (Wolf Pelt, Spider Fang, Marsh Hide, Wraith Essence, Obsidian Shard) but no crafting system exists
+- No quests, no boss encounters, no group incentives
+
 ### Skills System
-- ~~Parry: class-gated passive, STR-scaled damage reduction~~ ✓
-- ~~Dodge: class-gated passive, AGI-scaled full avoidance~~ ✓
-- ~~Haggle: class-gated passive, charm-scaled vendor price adjustments~~ ✓
-- Expand active skills beyond current implementation
-- Skill cooldowns, resource costs, and scaling
-- Additional passive skills and skill trees
+- Expand active skills beyond current set
 - Class-specific skill unlocks at level thresholds
+- Additional passive skills and skill trees
 
 ### Hidden Content
 - Hidden items in rooms (discoverable via search/perception)
-- ~~Hidden pathways / secret exits~~ ✓
-- ~~Room-based interactive objects (levers, chests, altars, etc.)~~ ✓
 - Traps (room traps, trapped locked doors, trapped objects)
-- ~~Detection mechanics (class abilities, item bonuses, skill checks)~~ ✓
-- Trap disarm mechanics (rogue/thief class abilities, items)
+- Trap disarm mechanics (rogue/thief class abilities)
 
 ### Maker Tool
-- ~~Default SFX editor with category filtering, playback, and AI generation~~ ✓
-- ~~Room depart sound dropdown (constrained to movement SFX set)~~ ✓
-- ~~Room zone assignment — editable zone dropdown with cross-zone move~~ ✓
-- **Spells/Skills icon parity**: Maker spell & skill editors should show a 1:1 preview of how each spell/skill icon appears in the client's quick spell bar and skill action buttons. Currently icons are hardcoded by school/id in the client (`schoolIcon()` in SpellBar, `SKILL_BUTTON_MAP` in GameScreen). Add an `icon` field to `SpellDef` and `SkillDef` models, add icon picker/input to the maker editors, and update client to prefer the model field with hardcoded fallback.
-- **Custom world build**: verify end-to-end export → server load of a non-default world
-- **AI generation integrations**: verify 3rd party API connections (image gen, text gen)
-- **Generation UI**: incorporate buttons/workflows for AI-generated room art, descriptions, NPC dialogue
-- NPC editor improvements
-- Item editor improvements
-- Loot table editor improvements
-- Asset management UI (upload, preview, organize)
+- **Spells/Skills icon parity**: add `icon` field to SpellDef/SkillDef, add icon picker to maker editors, update client to prefer model field over hardcoded fallback
+- **Cross-zone exit indicators**: visual map editor doesn't show when a room has an exit to another zone
+- Custom world build: verify end-to-end export → server load of a non-default world
+- AI generation integrations: verify 3rd party API connections
+- NPC, item, and loot table editor improvements
 - Validation coverage for all entity types
 
-### Player Status Panel Condensing
-- The HP/MP/XP bars take up significant vertical space in portrait mode
-- Explore a horizontal/compact layout for the status section
-- Consider collapsing XP bar into a smaller indicator (level badge + progress arc?)
-- Status panel should leave more room for the game log and controls
+### Client UI
+- Player status panel condensing — HP/MP/XP bars take too much vertical space in portrait mode
+- Action panel reorganization — separate permanent actions (attack, hide, spell bar) from contextual ones (trainer, vendor, settings)
+- Sound effects gaps: equip/unequip, spell cast, potion use, death, respawn, UI feedback sounds
 
-### Action Panel Reorganization
-- **Permanent class actions**: attack toggle, hide/stealth, spell bar — always visible
-- **Contextual actions**: trainer (star), vendor (shop), settings (gear) — only when relevant NPCs are present
-- Currently all buttons compete for the same row; separate into tiers
-- Contextual buttons could appear as floating prompts near the room view or in a secondary row
-- Equipment and bag buttons should remain permanently accessible
+### Multiplayer
+- Stress testing — concurrent player interactions, combat with multiple players, reconnection handling
+- Edge cases around shared combat (multiple players attacking same NPC, kill credit, loot distribution)
 
 ## Lower Priority
 
-### Equipment Upgrades
-- Tiered gear (common → uncommon → rare → epic)
+### Equipment & Economy
+- Item rarity tiers (common → uncommon → rare → epic) with color coding
 - Enchantments or item modifiers
-- Item rarity color coding in inventory and equipment panels
+- Money sinks beyond gear purchase — no economic drain after mid-game
+
+### Quest System
+- Kill quests, fetch quests, escort quests
+- Quest log UI panel
+- Quest rewards (XP, items, coins)
+- Quest-gating for zone access
 
 ### NPC Dialogue
 - Conversation trees for friendly NPCs
 - Quest givers with dialogue-driven quest acceptance
 - Lore NPCs that expand world-building
 
-### Quest System
-- Kill quests, fetch quests, escort quests
-- Quest log UI panel
-- Quest rewards (XP, items, coins)
-- Quest-gating for zone access or item availability
+### Future Platforms
+- Web client
+- iOS client
