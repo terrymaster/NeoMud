@@ -372,6 +372,7 @@ class GameViewModel(
             is ServerMessage.AttackModeUpdate -> {
                 _attackMode.value = message.enabled
                 if (!message.enabled) {
+                    _readiedSpellId.value = null
                     addLog("Attack mode disabled.", MudColors.system)
                 } else {
                     addLog("Attack mode enabled!", MudColors.combatYou)

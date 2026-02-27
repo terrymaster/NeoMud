@@ -121,6 +121,7 @@ class GameLoop(
                         if (remaining.isEmpty()) {
                             session.attackMode = false
                             session.selectedTargetId = null
+                            session.readiedSpellId = null
                             try {
                                 session.send(ServerMessage.AttackModeUpdate(false))
                             } catch (_: Exception) { }
