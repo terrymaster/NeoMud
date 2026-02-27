@@ -20,6 +20,13 @@ interface VerticalExit {
   direction: string;
 }
 
+interface CrossZoneExit {
+  roomId: string;
+  direction: string;     // NORTH, SOUTH, EAST, WEST
+  targetZone: string;    // display name, e.g. "Thornveil Marsh"
+  targetZoneId: string;  // e.g. "marsh"
+}
+
 interface MapCanvasProps {
   rooms: RoomNode[];
   exits: ExitEdge[];
@@ -28,6 +35,7 @@ interface MapCanvasProps {
   onCreateRoom: (x: number, y: number) => void;
   onCreateExit: (fromId: string, toId: string) => void;
   verticalExits?: VerticalExit[];
+  crossZoneExits?: CrossZoneExit[];
 }
 
 const CELL_SIZE = 80;
@@ -43,6 +51,7 @@ function MapCanvas({
   onCreateRoom,
   onCreateExit,
   verticalExits = [],
+  crossZoneExits = [],
 }: MapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -79,17 +88,31 @@ function MapCanvas({
     return () => ro.disconnect();
   }, []);
 
-  // Center view initially — put grid (0,0) room center at canvas center
-  const initializedRef = useRef(false);
+  // Center view on rooms' bounding-box center whenever the room set changes
+  const prevRoomKey = useRef('');
   useEffect(() => {
-    if (!initializedRef.current && canvasSize.w > 0 && canvasSize.h > 0) {
-      initializedRef.current = true;
+    if (canvasSize.w <= 0 || canvasSize.h <= 0) return;
+    const key = rooms.map((r) => r.id).sort().join(',');
+    if (key === prevRoomKey.current) return;
+    prevRoomKey.current = key;
+
+    if (rooms.length === 0) {
       setOffset({
         x: Math.floor(canvasSize.w / 2 - STRIDE / 2),
         y: Math.floor(canvasSize.h / 2 - STRIDE / 2),
       });
+      return;
     }
-  }, [canvasSize.w, canvasSize.h]);
+
+    const xs = rooms.map((r) => r.x);
+    const ys = rooms.map((r) => r.y);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    setOffset({
+      x: Math.floor(canvasSize.w / 2 - cx * STRIDE - STRIDE / 2),
+      y: Math.floor(canvasSize.h / 2 + cy * STRIDE - STRIDE / 2),
+    });
+  }, [rooms, canvasSize.w, canvasSize.h]);
 
   // Convert grid coords to pixel coords (center of cell, centered within stride)
   const gridToPixel = useCallback(
@@ -324,7 +347,80 @@ function MapCanvas({
         ctx.fill();
       }
     }
-  }, [rooms, exits, selectedRoomId, offset, canvasSize, gridToPixel, dragPreview, roomAtPixel, verticalExits]);
+
+    // Draw cross-zone exit indicators (portal arrows with zone labels)
+    const CHEVRON_SIZE = 7;
+    const PORTAL_COLOR = '#ef6c00';
+    for (const cze of crossZoneExits) {
+      const room = roomMap.get(cze.roomId);
+      if (!room) continue;
+      const { px, py } = gridToPixel(room.x, room.y);
+      const half = CELL_SIZE / 2;
+
+      let tipX = px, tipY = py;
+      let angle = 0; // radians, direction the chevron points
+      let labelX = px, labelY = py;
+      let labelAngle = 0;
+
+      switch (cze.direction) {
+        case 'NORTH':
+          tipX = px; tipY = py - half - 6;
+          angle = -Math.PI / 2;
+          labelX = px; labelY = tipY - CHEVRON_SIZE - 4;
+          labelAngle = 0;
+          break;
+        case 'SOUTH':
+          tipX = px; tipY = py + half + 6;
+          angle = Math.PI / 2;
+          labelX = px; labelY = tipY + CHEVRON_SIZE + 10;
+          labelAngle = 0;
+          break;
+        case 'EAST':
+          tipX = px + half + 6; tipY = py;
+          angle = 0;
+          labelX = tipX + CHEVRON_SIZE + 4; labelY = py;
+          labelAngle = -Math.PI / 2;
+          break;
+        case 'WEST':
+          tipX = px - half - 6; tipY = py;
+          angle = Math.PI;
+          labelX = tipX - CHEVRON_SIZE - 4; labelY = py;
+          labelAngle = Math.PI / 2;
+          break;
+      }
+
+      // Draw chevron (double arrowhead)
+      ctx.fillStyle = PORTAL_COLOR;
+      for (let i = 0; i < 2; i++) {
+        const offsetDist = i * (CHEVRON_SIZE + 1);
+        const cx = tipX + Math.cos(angle) * offsetDist;
+        const cy = tipY + Math.sin(angle) * offsetDist;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle) * CHEVRON_SIZE, cy + Math.sin(angle) * CHEVRON_SIZE);
+        ctx.lineTo(
+          cx + Math.cos(angle + 2.4) * CHEVRON_SIZE,
+          cy + Math.sin(angle + 2.4) * CHEVRON_SIZE
+        );
+        ctx.lineTo(
+          cx + Math.cos(angle - 2.4) * CHEVRON_SIZE,
+          cy + Math.sin(angle - 2.4) * CHEVRON_SIZE
+        );
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Draw zone label
+      ctx.save();
+      ctx.translate(labelX, labelY);
+      ctx.rotate(labelAngle);
+      ctx.fillStyle = PORTAL_COLOR;
+      ctx.font = 'bold 9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cze.targetZone, 0, 0);
+      ctx.restore();
+    }
+  }, [rooms, exits, selectedRoomId, offset, canvasSize, gridToPixel, dragPreview, roomAtPixel, verticalExits, crossZoneExits]);
 
   // Mouse handlers
   const handleMouseDown = useCallback(

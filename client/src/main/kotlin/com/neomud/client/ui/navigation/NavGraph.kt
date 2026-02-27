@@ -94,12 +94,13 @@ fun NeoMudNavGraph(authViewModel: AuthViewModel) {
             val initialClasses = authViewModel.availableClasses.value
             val initialItems = authViewModel.availableItems.value
             val initialSpells = authViewModel.availableSpells.value
+            val initialSkills = authViewModel.availableSkills.value
             val initialRoomInfo = authViewModel.initialRoomInfo.value
             val initialMapData = authViewModel.initialMapData.value
             val gameViewModel = remember {
                 GameViewModel(authViewModel.wsClient, serverBaseUrl, audioManager).also {
                     if (initialPlayer != null) it.setInitialPlayer(initialPlayer)
-                    it.setInitialCatalogs(classes = initialClasses, items = initialItems, spells = initialSpells)
+                    it.setInitialCatalogs(classes = initialClasses, items = initialItems, spells = initialSpells, skills = initialSkills)
                     if (initialRoomInfo != null) it.setInitialRoomInfo(initialRoomInfo)
                     if (initialMapData != null) it.setInitialMapData(initialMapData)
                     it.startCollecting()

@@ -50,3 +50,7 @@ maker/default_world.nmd
 
 # Nano Banana image generation output
 nanobanana-output/
+
+# Game relay (Claude playtesting)
+scripts/relay-state.json
+scripts/relay-command.json

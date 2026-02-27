@@ -20,5 +20,7 @@ data class Player(
     val unspentCp: Int = 0,
     val totalCpEarned: Int = 0,
     val isAdmin: Boolean = false,
-    val imagePrompt: String = ""
+    val imagePrompt: String = "",
+    val imageStyle: String = "",
+    val imageNegativePrompt: String = ""
 )

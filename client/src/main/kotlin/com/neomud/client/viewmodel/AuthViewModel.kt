@@ -8,6 +8,7 @@ import com.neomud.shared.model.CharacterClassDef
 import com.neomud.shared.model.Item
 import com.neomud.shared.model.Player
 import com.neomud.shared.model.RaceDef
+import com.neomud.shared.model.SkillDef
 import com.neomud.shared.model.SpellDef
 import com.neomud.shared.model.Stats
 import com.neomud.shared.protocol.ClientMessage
@@ -36,6 +37,9 @@ class AuthViewModel : ViewModel() {
 
     private val _availableItems = MutableStateFlow<List<Item>>(emptyList())
     val availableItems: StateFlow<List<Item>> = _availableItems
+
+    private val _availableSkills = MutableStateFlow<List<SkillDef>>(emptyList())
+    val availableSkills: StateFlow<List<SkillDef>> = _availableSkills
 
     private var pendingLoginUsername: String? = null
     private var pendingLoginPassword: String? = null
@@ -100,6 +104,9 @@ class AuthViewModel : ViewModel() {
                         }
                         is ServerMessage.ItemCatalogSync -> {
                             _availableItems.value = message.items
+                        }
+                        is ServerMessage.SkillCatalogSync -> {
+                            _availableSkills.value = message.skills
                         }
                         else -> { /* handled by GameViewModel */ }
                     }

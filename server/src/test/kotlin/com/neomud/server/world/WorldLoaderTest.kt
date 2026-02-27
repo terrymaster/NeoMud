@@ -15,7 +15,7 @@ class WorldLoaderTest {
         val result = load()
         val world = result.worldGraph
 
-        assertTrue(world.roomCount >= 14, "Should load at least 14 rooms (7 town + 7 forest)")
+        assertTrue(world.roomCount >= 25, "Should load at least 25 rooms (7 town + 7 forest + 6 marsh + 5 gorge)")
     }
 
     @Test
@@ -65,7 +65,7 @@ class WorldLoaderTest {
     fun testNpcsLoaded() {
         val result = load()
         assertTrue(result.npcDataList.isNotEmpty(), "Should load NPCs")
-        assertTrue(result.npcDataList.size >= 9, "Should load at least 9 NPCs (5 town + 4 forest)")
+        assertTrue(result.npcDataList.size >= 17, "Should load at least 17 NPCs (5 town + 4 forest + 4 marsh + 4 gorge)")
 
         val guard = result.npcDataList.find { it.first.id == "npc:town_guard" }
         assertNotNull(guard, "Town guard NPC should be loaded")
@@ -215,6 +215,104 @@ class WorldLoaderTest {
     }
 
     @Test
+    fun testMarshRoomsLoaded() {
+        val result = load()
+        val world = result.worldGraph
+
+        assertNotNull(world.getRoom("marsh:edge"), "marsh:edge should exist")
+        assertNotNull(world.getRoom("marsh:trail"), "marsh:trail should exist")
+        assertNotNull(world.getRoom("marsh:shallows"), "marsh:shallows should exist")
+        assertNotNull(world.getRoom("marsh:hollow"), "marsh:hollow should exist")
+        assertNotNull(world.getRoom("marsh:island"), "marsh:island should exist")
+        assertNotNull(world.getRoom("marsh:heart"), "marsh:heart should exist")
+    }
+
+    @Test
+    fun testGorgeRoomsLoaded() {
+        val result = load()
+        val world = result.worldGraph
+
+        assertNotNull(world.getRoom("gorge:mouth"), "gorge:mouth should exist")
+        assertNotNull(world.getRoom("gorge:ledge"), "gorge:ledge should exist")
+        assertNotNull(world.getRoom("gorge:fissure"), "gorge:fissure should exist")
+        assertNotNull(world.getRoom("gorge:alcove"), "gorge:alcove should exist")
+        assertNotNull(world.getRoom("gorge:depths"), "gorge:depths should exist")
+    }
+
+    @Test
+    fun testForestToMarshCrossZoneExits() {
+        val result = load()
+        val world = result.worldGraph
+
+        val ruins = world.getRoom("forest:ruins")
+        assertNotNull(ruins)
+        assertEquals("marsh:edge", ruins.exits[com.neomud.shared.model.Direction.NORTH],
+            "forest:ruins should exit north to marsh:edge")
+
+        val marshEdge = world.getRoom("marsh:edge")
+        assertNotNull(marshEdge)
+        assertEquals("forest:ruins", marshEdge.exits[com.neomud.shared.model.Direction.SOUTH],
+            "marsh:edge should exit south to forest:ruins")
+    }
+
+    @Test
+    fun testMarshToGorgeCrossZoneExits() {
+        val result = load()
+        val world = result.worldGraph
+
+        val heart = world.getRoom("marsh:heart")
+        assertNotNull(heart)
+        assertEquals("gorge:mouth", heart.exits[com.neomud.shared.model.Direction.NORTH],
+            "marsh:heart should exit north to gorge:mouth")
+
+        val gorgeMouth = world.getRoom("gorge:mouth")
+        assertNotNull(gorgeMouth)
+        assertEquals("marsh:heart", gorgeMouth.exits[com.neomud.shared.model.Direction.SOUTH],
+            "gorge:mouth should exit south to marsh:heart")
+    }
+
+    @Test
+    fun testMarshNpcsLoaded() {
+        val result = load()
+
+        val lurker = result.npcDataList.find { it.first.id == "npc:bog_lurker" }
+        assertNotNull(lurker, "Bog Lurker should be loaded")
+        assertEquals("wander", lurker.first.behaviorType)
+        assertTrue(lurker.first.hostile)
+        assertEquals(95, lurker.first.maxHp)
+        assertEquals(18, lurker.first.damage)
+        assertEquals(4, lurker.first.level)
+        assertEquals("marsh", lurker.second, "Bog Lurker should belong to marsh zone")
+
+        val hag = result.npcDataList.find { it.first.id == "npc:mire_hag" }
+        assertNotNull(hag, "Mire Hag should be loaded")
+        assertEquals("idle", hag.first.behaviorType)
+        assertEquals(180, hag.first.maxHp)
+        assertEquals(5, hag.first.level)
+        assertEquals("marsh", hag.second)
+    }
+
+    @Test
+    fun testGorgeNpcsLoaded() {
+        val result = load()
+
+        val stalker = result.npcDataList.find { it.first.id == "npc:gorge_stalker" }
+        assertNotNull(stalker, "Gorge Stalker should be loaded")
+        assertEquals("patrol", stalker.first.behaviorType)
+        assertTrue(stalker.first.patrolRoute.isNotEmpty(), "Gorge Stalker should have patrol route")
+        assertEquals(130, stalker.first.maxHp)
+        assertEquals(6, stalker.first.level)
+        assertEquals("gorge", stalker.second)
+
+        val warden = result.npcDataList.find { it.first.id == "npc:gorge_warden" }
+        assertNotNull(warden, "Gorge Warden should be loaded")
+        assertEquals("idle", warden.first.behaviorType)
+        assertEquals(220, warden.first.maxHp)
+        assertEquals(7, warden.first.level)
+        assertEquals("gorge", warden.second)
+    }
+
+    @Test
     fun testDefaultSpawnRoom() {
         val result = load()
         assertEquals("town:temple", result.worldGraph.defaultSpawnRoom)
@@ -229,12 +327,12 @@ class WorldLoaderTest {
     @Test
     fun testItemCatalogLoaded() {
         val result = load()
-        assertTrue(result.itemCatalog.itemCount >= 35, "Should load at least 35 items")
+        assertTrue(result.itemCatalog.itemCount >= 38, "Should load at least 38 items")
     }
 
     @Test
     fun testLootTableCatalogLoaded() {
         val result = load()
-        assertTrue(result.lootTableCatalog.tableCount >= 2, "Should load at least 2 loot tables")
+        assertTrue(result.lootTableCatalog.tableCount >= 12, "Should load at least 12 loot tables (4 forest + 4 marsh + 4 gorge)")
     }
 }

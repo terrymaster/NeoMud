@@ -14,7 +14,7 @@ class ItemCatalogTest {
     @Test
     fun testLoadItemsFromJson() {
         val catalog = load()
-        assertTrue(catalog.itemCount >= 35, "Should load at least 35 items")
+        assertTrue(catalog.itemCount >= 38, "Should load at least 38 items")
     }
 
     @Test
@@ -143,10 +143,35 @@ class ItemCatalogTest {
     }
 
     @Test
+    fun testLookupCraftingMaterials() {
+        val catalog = load()
+
+        val hide = catalog.getItem("item:marsh_hide")
+        assertNotNull(hide)
+        assertEquals("Marsh Hide", hide.name)
+        assertEquals("crafting", hide.type)
+        assertEquals(12, hide.value)
+        assertTrue(hide.stackable)
+        assertEquals(20, hide.maxStack)
+
+        val essence = catalog.getItem("item:wraith_essence")
+        assertNotNull(essence)
+        assertEquals("Wraith Essence", essence.name)
+        assertEquals("crafting", essence.type)
+        assertEquals(18, essence.value)
+
+        val shard = catalog.getItem("item:obsidian_shard")
+        assertNotNull(shard)
+        assertEquals("Obsidian Shard", shard.name)
+        assertEquals("crafting", shard.type)
+        assertEquals(25, shard.value)
+    }
+
+    @Test
     fun testGetAllItems() {
         val catalog = load()
         val all = catalog.getAllItems()
-        assertTrue(all.size >= 35)
+        assertTrue(all.size >= 38)
         val ids = all.map { it.id }.toSet()
         assertTrue("item:iron_sword" in ids)
         assertTrue("item:health_potion" in ids)

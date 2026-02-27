@@ -634,6 +634,27 @@ function ZoneEditor() {
     return result;
   }, [allExits, layerRoomIds]);
 
+  // Cross-zone exit indicators for rooms on the current layer
+  const crossZoneExits = useMemo(() => {
+    if (!selectedZoneId) return [];
+    const zoneNameMap = new Map(zones.map((z) => [z.id, z.name]));
+    const result: { roomId: string; direction: string; targetZone: string; targetZoneId: string }[] = [];
+    for (const exit of allExits) {
+      if (!layerRoomIds.has(exit.fromRoomId)) continue;
+      const targetZoneId = exit.toRoomId.split(':')[0];
+      if (targetZoneId === selectedZoneId) continue;
+      // Only cardinal directions (not UP/DOWN)
+      if (exit.direction === 'UP' || exit.direction === 'DOWN') continue;
+      result.push({
+        roomId: exit.fromRoomId,
+        direction: exit.direction,
+        targetZone: zoneNameMap.get(targetZoneId) || targetZoneId,
+        targetZoneId,
+      });
+    }
+    return result;
+  }, [allExits, layerRoomIds, selectedZoneId, zones]);
+
   const layerLabel = (layer: number) => {
     if (layer === 0) return 'Ground';
     if (layer > 0) return `Above +${layer}`;
@@ -1022,6 +1043,7 @@ function ZoneEditor() {
               onCreateRoom={handleCreateRoom}
               onCreateExit={handleCreateExit}
               verticalExits={verticalExits}
+              crossZoneExits={crossZoneExits}
             />
           </>
         ) : (

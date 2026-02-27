@@ -192,11 +192,13 @@ class GameViewModel(
     fun setInitialCatalogs(
         classes: List<CharacterClassDef> = emptyList(),
         items: List<Item> = emptyList(),
-        spells: List<SpellDef> = emptyList()
+        spells: List<SpellDef> = emptyList(),
+        skills: List<SkillDef> = emptyList()
     ) {
         if (classes.isNotEmpty()) _classCatalog.value = classes.associateBy { it.id }
         if (items.isNotEmpty()) _itemCatalog.value = items.associateBy { it.id }
         if (spells.isNotEmpty()) _spellCatalog.value = spells.associateBy { it.id }
+        if (skills.isNotEmpty()) _skillCatalog.value = skills.associateBy { it.id }
         autoAssignSpells()
     }
 

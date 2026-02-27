@@ -560,6 +560,45 @@
       "imagePrompt": "A single dark luxurious fur pelt from a shadow wolf, midnight black with a slight shimmer. Isolated object centered, no surface.",
       "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
       "imageNegativePrompt": "background, surface, table, hands, person, wolf, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:marsh_hide",
+      "name": "Marsh Hide",
+      "description": "A tough, scaly hide stripped from a bog lurker. Valued by leatherworkers for its water-resistant properties.",
+      "type": "crafting",
+      "value": 12,
+      "weight": 2,
+      "stackable": true,
+      "maxStack": 20,
+      "imagePrompt": "A single piece of tough scaly amphibian hide, greenish-brown with a wet sheen, water-resistant swamp creature leather. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, creature, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:wraith_essence",
+      "name": "Wraith Essence",
+      "description": "A shimmering vial of ectoplasmic residue collected from a destroyed marsh wraith. It pulses with faint necrotic energy.",
+      "type": "crafting",
+      "value": 18,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 20,
+      "imagePrompt": "A single small glass vial filled with swirling ghostly ectoplasmic residue, pale blue-green glow, necrotic wraith essence with wisps of spectral energy. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed, ethereal glow",
+      "imageNegativePrompt": "background, surface, table, hands, person, ghost, multiple items, modern, sci-fi"
+    },
+    {
+      "id": "item:obsidian_shard",
+      "name": "Obsidian Shard",
+      "description": "A razor-sharp fragment of volcanic glass, still warm to the touch. Prized by weaponsmiths for its ability to hold an impossibly keen edge.",
+      "type": "crafting",
+      "value": 25,
+      "weight": 1,
+      "stackable": true,
+      "maxStack": 20,
+      "imagePrompt": "A single razor-sharp shard of volcanic obsidian glass, jet black with glossy reflective surface, faintly glowing orange at the edges from residual heat. Isolated object centered, no surface.",
+      "imageStyle": "fantasy item sprite, game icon, clean edges, transparent background, PNG cutout, detailed",
+      "imageNegativePrompt": "background, surface, table, hands, person, multiple items, modern, sci-fi"
     }
   ]
 }

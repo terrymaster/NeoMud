@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("DatabaseFactory")
 
-private const val SCHEMA_VERSION = 6 // Added player_discovery table
+private const val SCHEMA_VERSION = 7 // Added image_style and image_negative_prompt columns
 
 object DatabaseFactory {
     fun init(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
@@ -59,6 +59,15 @@ object DatabaseFactory {
             } catch (_: Exception) {
                 logger.info("Migrating schema: adding image_prompt column")
                 exec("ALTER TABLE players ADD COLUMN image_prompt TEXT NOT NULL DEFAULT ''")
+            }
+
+            // Incremental migration: add image_style and image_negative_prompt if missing
+            try {
+                exec("SELECT image_style FROM players LIMIT 1") { true }
+            } catch (_: Exception) {
+                logger.info("Migrating schema: adding image_style and image_negative_prompt columns")
+                exec("ALTER TABLE players ADD COLUMN image_style TEXT NOT NULL DEFAULT ''")
+                exec("ALTER TABLE players ADD COLUMN image_negative_prompt TEXT NOT NULL DEFAULT ''")
             }
         }
 

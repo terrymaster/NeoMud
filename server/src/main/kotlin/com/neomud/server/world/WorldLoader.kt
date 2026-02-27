@@ -20,6 +20,7 @@ object WorldLoader {
         val skillCatalog: SkillCatalog,
         val raceCatalog: RaceCatalog,
         val spellCatalog: SpellCatalog,
+        val pcSpriteCatalog: PcSpriteCatalog,
         val zoneSpawnConfigs: Map<String, SpawnConfig>,
         val manifest: WorldManifest? = null
     )
@@ -41,6 +42,7 @@ object WorldLoader {
         val skillCatalog = SkillCatalog.load(source)
         val raceCatalog = RaceCatalog.load(source)
         val spellCatalog = SpellCatalog.load(source)
+        val pcSpriteCatalog = PcSpriteCatalog.load(source)
         val worldGraph = WorldGraph()
         val allNpcData = mutableListOf<Pair<NpcData, String>>()
         val zoneSpawnConfigs = mutableMapOf<String, SpawnConfig>()
@@ -338,6 +340,6 @@ object WorldLoader {
             }
         }
 
-        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, skillCatalog, raceCatalog, spellCatalog, zoneSpawnConfigs, manifest)
+        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, skillCatalog, raceCatalog, spellCatalog, pcSpriteCatalog, zoneSpawnConfigs, manifest)
     }
 }

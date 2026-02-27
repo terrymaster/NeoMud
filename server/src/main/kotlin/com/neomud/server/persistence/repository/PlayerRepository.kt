@@ -3,6 +3,7 @@ package com.neomud.server.persistence.repository
 import com.neomud.server.game.GameConfig
 import com.neomud.server.persistence.tables.PlayersTable
 import com.neomud.server.world.ClassCatalog
+import com.neomud.server.world.PcSpriteCatalog
 import com.neomud.server.world.RaceCatalog
 import com.neomud.shared.model.Player
 import com.neomud.shared.model.RoomId
@@ -27,7 +28,8 @@ class PlayerRepository {
         allocatedStats: Stats,
         spawnRoomId: RoomId,
         classCatalog: ClassCatalog,
-        raceCatalog: RaceCatalog?
+        raceCatalog: RaceCatalog?,
+        pcSpriteCatalog: PcSpriteCatalog? = null
     ): Result<Player> = runCatching {
         transaction {
             val existing = PlayersTable.selectAll().where {
@@ -73,7 +75,11 @@ class PlayerRepository {
             val maxMp = if (classDef.mpPerLevelMax > 0) classDef.mpPerLevelMax + (stats.willpower / GameConfig.PlayerCreation.MP_WILLPOWER_DIVISOR) * GameConfig.PlayerCreation.MP_WILLPOWER_MULTIPLIER else 0
             val initialXpToNext = (GameConfig.Progression.XP_BASE_MULTIPLIER * Math.pow(1.0, GameConfig.Progression.XP_CURVE_EXPONENT)).toLong().coerceAtLeast(GameConfig.Progression.XP_MINIMUM)
 
-            val initialImagePrompt = "A $gender ${race.lowercase()} ${characterClass.lowercase()}, fantasy RPG character portrait, full body, facing forward"
+            val spriteDef = pcSpriteCatalog?.getSpriteFor(race, gender, characterClass)
+            val initialImagePrompt = spriteDef?.imagePrompt
+                ?: "A $gender ${race.lowercase()} ${characterClass.lowercase()}, fantasy RPG character portrait, full body, facing forward"
+            val initialImageStyle = spriteDef?.imageStyle ?: ""
+            val initialImageNegativePrompt = spriteDef?.imageNegativePrompt ?: ""
 
             PlayersTable.insert {
                 it[PlayersTable.username] = username
@@ -83,6 +89,8 @@ class PlayerRepository {
                 it[PlayersTable.race] = race
                 it[PlayersTable.gender] = gender
                 it[PlayersTable.imagePrompt] = initialImagePrompt
+                it[PlayersTable.imageStyle] = initialImageStyle
+                it[PlayersTable.imageNegativePrompt] = initialImageNegativePrompt
                 it[strength] = stats.strength
                 it[agility] = stats.agility
                 it[intellect] = stats.intellect
@@ -123,7 +131,9 @@ class PlayerRepository {
                 xpToNextLevel = initialXpToNext,
                 unspentCp = 0,
                 totalCpEarned = StatAllocator.CP_POOL,
-                imagePrompt = initialImagePrompt
+                imagePrompt = initialImagePrompt,
+                imageStyle = initialImageStyle,
+                imageNegativePrompt = initialImageNegativePrompt
             )
         }
     }
@@ -165,7 +175,9 @@ class PlayerRepository {
                 unspentCp = row[PlayersTable.unspentCp],
                 totalCpEarned = row[PlayersTable.totalCpEarned],
                 isAdmin = row[PlayersTable.isAdmin],
-                imagePrompt = row[PlayersTable.imagePrompt]
+                imagePrompt = row[PlayersTable.imagePrompt],
+                imageStyle = row[PlayersTable.imageStyle],
+                imageNegativePrompt = row[PlayersTable.imageNegativePrompt]
             )
         }
     }

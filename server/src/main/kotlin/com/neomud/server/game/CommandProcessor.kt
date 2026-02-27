@@ -32,6 +32,7 @@ import com.neomud.server.world.ItemCatalog
 import com.neomud.server.world.LootTableCatalog
 import com.neomud.server.world.RaceCatalog
 import com.neomud.server.world.SkillCatalog
+import com.neomud.server.world.PcSpriteCatalog
 import com.neomud.server.world.SpellCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.protocol.ClientMessage
@@ -61,7 +62,8 @@ class CommandProcessor(
     private val coinRepository: CoinRepository,
     private val discoveryRepository: DiscoveryRepository,
     private val adminUsernames: Set<String> = emptySet(),
-    private val movementTrailManager: MovementTrailManager? = null
+    private val movementTrailManager: MovementTrailManager? = null,
+    private val pcSpriteCatalog: PcSpriteCatalog? = null
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
     private val adminCommand = AdminCommand(
@@ -218,7 +220,8 @@ class CommandProcessor(
             allocatedStats = msg.allocatedStats,
             spawnRoomId = worldGraph.defaultSpawnRoom,
             classCatalog = classCatalog,
-            raceCatalog = raceCatalog
+            raceCatalog = raceCatalog,
+            pcSpriteCatalog = pcSpriteCatalog
         )
 
         result.fold(

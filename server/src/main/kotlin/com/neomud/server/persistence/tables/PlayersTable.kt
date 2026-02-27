@@ -34,6 +34,8 @@ object PlayersTable : Table("players") {
     val isAdmin = bool("is_admin").default(false)
     val gender = varchar("gender", 20).default("neutral")
     val imagePrompt = text("image_prompt").default("")
+    val imageStyle = text("image_style").default("")
+    val imageNegativePrompt = text("image_negative_prompt").default("")
 
     override val primaryKey = PrimaryKey(id)
 }

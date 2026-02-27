@@ -29,6 +29,80 @@
         { "itemId": "item:leather_boots", "chance": 0.08, "minQuantity": 1, "maxQuantity": 1 }
       ],
       "coinDrop": { "minCopper": 8, "maxCopper": 25 }
+    },
+    "npc:bog_lurker": {
+      "items": [
+        { "itemId": "item:marsh_hide", "chance": 0.7, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:health_potion", "chance": 0.2, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:chain_leggings", "chance": 0.06, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 15, "maxCopper": 40, "minSilver": 0, "maxSilver": 2 }
+    },
+    "npc:bog_toad": {
+      "items": [
+        { "itemId": "item:marsh_hide", "chance": 0.5, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:health_potion", "chance": 0.15, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:iron_boots", "chance": 0.04, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 10, "maxCopper": 30, "minSilver": 0, "maxSilver": 1 }
+    },
+    "npc:marsh_wraith": {
+      "items": [
+        { "itemId": "item:wraith_essence", "chance": 0.9, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:mana_potion", "chance": 0.2, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:chainmail_vest", "chance": 0.08, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:scroll_of_healing", "chance": 0.1, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 20, "maxCopper": 50, "minSilver": 1, "maxSilver": 3 }
+    },
+    "npc:mire_hag": {
+      "items": [
+        { "itemId": "item:wraith_essence", "chance": 0.9, "minQuantity": 1, "maxQuantity": 3 },
+        { "itemId": "item:marsh_hide", "chance": 0.6, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:amulet_of_warding", "chance": 0.12, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:iron_shield", "chance": 0.08, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:greater_health_potion", "chance": 0.2, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 30, "maxCopper": 70, "minSilver": 2, "maxSilver": 5 }
+    },
+    "npc:gorge_stalker": {
+      "items": [
+        { "itemId": "item:obsidian_shard", "chance": 0.6, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:health_potion", "chance": 0.2, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:plated_boots", "chance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:scroll_of_fireball", "chance": 0.06, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 25, "maxCopper": 60, "minSilver": 1, "maxSilver": 3 }
+    },
+    "npc:volcanic_basilisk": {
+      "items": [
+        { "itemId": "item:obsidian_shard", "chance": 0.9, "minQuantity": 1, "maxQuantity": 3 },
+        { "itemId": "item:plated_helm", "chance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:greater_health_potion", "chance": 0.15, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:scroll_of_fireball", "chance": 0.08, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 30, "maxCopper": 70, "minSilver": 2, "maxSilver": 4 }
+    },
+    "npc:blackstone_marauder": {
+      "items": [
+        { "itemId": "item:obsidian_shard", "chance": 0.5, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:plated_gauntlets", "chance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:plated_legs", "chance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:greater_mana_potion", "chance": 0.1, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:scroll_of_healing", "chance": 0.08, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 30, "maxCopper": 80, "minSilver": 2, "maxSilver": 5 }
+    },
+    "npc:gorge_warden": {
+      "items": [
+        { "itemId": "item:obsidian_shard", "chance": 0.9, "minQuantity": 2, "maxQuantity": 4 },
+        { "itemId": "item:steel_greatsword", "chance": 0.06, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:tower_shield", "chance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:plated_chest", "chance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:greater_health_potion", "chance": 0.25, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:scroll_of_fireball", "chance": 0.1, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 50, "maxCopper": 99, "minSilver": 3, "maxSilver": 8, "minGold": 0, "maxGold": 1 }
     }
   }
 }
