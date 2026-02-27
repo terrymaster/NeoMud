@@ -18,7 +18,8 @@ import { join, extname, basename } from 'path';
 const COLOR_TOLERANCE = 30;   // max distance from sampled bg colors to count as bg
 const CORNER_SAMPLE = 8;      // sample NxN pixels from each corner
 const FRINGE_PASSES = 1;      // erosion passes to clean edges
-const FRINGE_THRESHOLD = 220; // only erode fringe pixels lighter than this
+const FRINGE_THRESHOLD = 220; // only erode fringe pixels lighter than this (light bg)
+const DARK_FRINGE_THRESHOLD = 35; // only erode fringe pixels darker than this (dark bg)
 const ALPHA_CLAMP_THRESHOLD = 10; // pixels with alpha <= this are clamped to fully transparent
 
 async function removeBackground(inputPath, outputPath) {
@@ -158,7 +159,12 @@ async function removeBackground(inputPath, outputPath) {
         if (bordersTrans) {
           const idx = pos * 4;
           const r = pixels[idx], g = pixels[idx + 1], b = pixels[idx + 2];
+          // Erode light fringe (white/gray remnants from light bg)
           if (r >= FRINGE_THRESHOLD && g >= FRINGE_THRESHOLD && b >= FRINGE_THRESHOLD) {
+            pixels[idx + 3] = 0;
+          }
+          // Erode dark fringe (black remnants from dark bg)
+          if (r <= DARK_FRINGE_THRESHOLD && g <= DARK_FRINGE_THRESHOLD && b <= DARK_FRINGE_THRESHOLD) {
             pixels[idx + 3] = 0;
           }
         }
@@ -194,6 +200,7 @@ async function removeBackground(inputPath, outputPath) {
  * Sample corner regions to find the dominant background color(s).
  * Returns an array of {r,g,b} colors that represent the background.
  * For checkerboard patterns, this typically returns two colors.
+ * Detects both light backgrounds (white/gray) and dark backgrounds (black/near-black).
  */
 function sampleBackgroundColors(pixels, w, h) {
   const n = CORNER_SAMPLE;
@@ -230,19 +237,22 @@ function sampleBackgroundColors(pixels, w, h) {
   const bgColors = [];
   let accounted = 0;
 
+  // Helper: check if a color is "light" (potential white/gray background)
+  const isLight = (r, g, b) => r >= 180 && g >= 180 && b >= 180;
+  // Helper: check if a color is "dark" (potential black/near-black background)
+  const isDark = (r, g, b) => r <= 50 && g <= 50 && b <= 50;
+
   for (const [key, count] of sorted) {
     if (accounted >= totalSampled * 0.8) break; // stop once we've accounted for 80%
     if (bgColors.length >= 3) break; // at most 3 bg colors
     const [r, g, b] = key.split(',').map(Number);
-    // Only consider light colors as potential background (R,G,B all >= 180)
-    if (r >= 180 && g >= 180 && b >= 180) {
+    if (isLight(r, g, b) || isDark(r, g, b)) {
       bgColors.push({ r, g, b });
       accounted += count;
     } else {
-      // If corners contain dark pixels, the background isn't light
-      // Only skip if this dark color is dominant
+      // Mid-tone dominant color in corners — ambiguous, skip if dominant
       if (count > totalSampled * 0.3) {
-        return []; // dark background — don't process
+        return []; // mid-tone background — don't process (could damage subject)
       }
     }
   }

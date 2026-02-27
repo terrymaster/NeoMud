@@ -77,21 +77,21 @@
       "hiddenExits": {
         "EAST": {
           "perceptionDC": 75,
-          "lockDifficulty": 14,
+          "lockDifficulty": 0,
           "hiddenResetTicks": 40,
-          "lockResetTicks": 40
+          "lockResetTicks": 0
         },
         "NORTH": {
           "perceptionDC": 25,
-          "lockDifficulty": 16,
+          "lockDifficulty": 0,
           "hiddenResetTicks": 50,
           "lockResetTicks": 0
         },
         "WEST": {
           "perceptionDC": 88,
-          "lockDifficulty": 12,
+          "lockDifficulty": 0,
           "hiddenResetTicks": 60,
-          "lockResetTicks": 40
+          "lockResetTicks": 0
         }
       },
       "backgroundImage": "/assets/images/rooms/forest_deep.webp",
