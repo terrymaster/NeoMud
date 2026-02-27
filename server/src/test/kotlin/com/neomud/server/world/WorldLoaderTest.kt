@@ -175,7 +175,7 @@ class WorldLoaderTest {
 
         val northDef = hiddenDefs[com.neomud.shared.model.Direction.NORTH]
         assertNotNull(northDef)
-        assertEquals(82, northDef.perceptionDC)
+        assertEquals(25, northDef.perceptionDC)
         assertEquals(16, northDef.lockDifficulty)
         assertEquals(50, northDef.hiddenResetTicks)
         assertEquals(0, northDef.lockResetTicks)

@@ -16,6 +16,13 @@ enum class Direction {
     @SerialName("SOUTHEAST") SOUTHEAST,
     @SerialName("SOUTHWEST") SOUTHWEST;
 
+    /** Human-readable phrase for locked exit messages, e.g. "the door to the north" or "the way up". */
+    val lockedExitPhrase: String get() = when (this) {
+        UP -> "the way up"
+        DOWN -> "the way down"
+        else -> "the door to the ${name.lowercase()}"
+    }
+
     fun opposite(): Direction = when (this) {
         NORTH -> SOUTH
         SOUTH -> NORTH

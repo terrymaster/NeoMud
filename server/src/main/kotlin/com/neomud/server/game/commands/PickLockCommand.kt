@@ -98,7 +98,7 @@ class PickLockCommand(
             }
             val diff = pickableExits[parsedDir]
             if (diff == null) {
-                session.send(ServerMessage.SystemMessage("The door to the ${parsedDir.name} is not locked."))
+                session.send(ServerMessage.SystemMessage("${parsedDir.lockedExitPhrase.replaceFirstChar { it.uppercase() }} is not locked."))
                 return false
             }
             direction = parsedDir
@@ -154,7 +154,7 @@ class PickLockCommand(
 
         if (check >= difficulty) {
             worldGraph.unlockExit(roomId, direction)
-            session.send(ServerMessage.SystemMessage("You pick the lock on the door to the ${direction.name}."))
+            session.send(ServerMessage.SystemMessage("You pick the lock on ${direction.lockedExitPhrase}."))
             return true
         } else {
             session.send(ServerMessage.SystemMessage("You fail to pick the lock."))

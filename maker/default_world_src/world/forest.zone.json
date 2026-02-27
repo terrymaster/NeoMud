@@ -82,7 +82,7 @@
           "lockResetTicks": 40
         },
         "NORTH": {
-          "perceptionDC": 82,
+          "perceptionDC": 25,
           "lockDifficulty": 16,
           "hiddenResetTicks": 50,
           "lockResetTicks": 0

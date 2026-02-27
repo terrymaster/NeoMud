@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.npc.NpcManager
@@ -46,7 +47,7 @@ class VendorCommand(
         val charm = player.stats.charm
         val vendorItems = vendor.vendorItems.mapNotNull { itemId ->
             val item = itemCatalog.getItem(itemId) ?: return@mapNotNull null
-            val buyPrice = Coins.buyPriceCopper(item.value, 1, charm, hasHaggle)
+            val buyPrice = Coins.buyPriceCopper(item.value, 1, charm, hasHaggle, GameConfig.Vendor.BUY_HAGGLE_MAX_DISCOUNT)
             VendorItem(item = item, price = Coins.fromCopper(buyPrice))
         }
 
@@ -95,7 +96,7 @@ class VendorCommand(
         val hasHaggle = skillCatalog.getSkill("HAGGLE")?.let { skill ->
             skill.classRestrictions.isEmpty() || player.characterClass in skill.classRestrictions
         } ?: false
-        val totalCost = Coins.fromCopper(Coins.buyPriceCopper(item.value, quantity, player.stats.charm, hasHaggle))
+        val totalCost = Coins.fromCopper(Coins.buyPriceCopper(item.value, quantity, player.stats.charm, hasHaggle, GameConfig.Vendor.BUY_HAGGLE_MAX_DISCOUNT))
         val success = coinRepository.subtractCoins(playerName, totalCost)
         if (!success) {
             session.send(ServerMessage.Error("You can't afford ${item.name}. It costs ${totalCost.displayString()}."))
@@ -153,7 +154,13 @@ class VendorCommand(
         val hasHaggle = skillCatalog.getSkill("HAGGLE")?.let { skill ->
             skill.classRestrictions.isEmpty() || player.characterClass in skill.classRestrictions
         } ?: false
-        val sellPriceCopper = Coins.sellPriceCopper(item.value, quantity, player.stats.charm, hasHaggle)
+        val sellPriceCopper = Coins.sellPriceCopper(
+            item.value, quantity, player.stats.charm, hasHaggle,
+            basePercent = GameConfig.Vendor.SELL_BASE_PERCENT,
+            charmScale = GameConfig.Vendor.SELL_CHARM_SCALE,
+            haggleBonusScale = GameConfig.Vendor.SELL_HAGGLE_BONUS_SCALE,
+            maxPercent = GameConfig.Vendor.SELL_MAX_PERCENT
+        )
         val sellPrice = Coins.fromCopper(sellPriceCopper)
         coinRepository.addCoins(playerName, sellPrice)
         logger.info("$playerName sold ${item.name} x$quantity for ${sellPrice.displayString()}")

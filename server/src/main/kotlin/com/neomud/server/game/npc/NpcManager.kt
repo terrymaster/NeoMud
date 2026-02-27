@@ -136,12 +136,22 @@ class NpcManager(
     private fun aliveNpcsInZone(zoneId: String): Int =
         npcs.count { it.zoneId == zoneId && it.isAlive }
 
-    fun tick(): List<NpcEvent> {
+    /**
+     * @param roomsWithVisiblePlayers rooms containing non-hidden, alive players past grace period.
+     *        Hostile NPCs in these rooms skip wander/patrol to stay and fight.
+     */
+    fun tick(roomsWithVisiblePlayers: Set<RoomId> = emptySet()): List<NpcEvent> {
         val events = mutableListOf<NpcEvent>()
 
         // 1. Process living NPC behaviors
         for (npc in npcs) {
             if (!npc.isAlive) continue
+
+            // Hostile NPCs that detect a player stay to fight — skip wander/patrol
+            if (npc.hostile && npc.currentRoomId in roomsWithVisiblePlayers
+                && (npc.behavior is WanderBehavior || npc.behavior is PatrolBehavior)) {
+                continue
+            }
 
             val spawnConfig = zoneSpawnConfigs[npc.zoneId]
             val maxPerRoom = spawnConfig?.maxPerRoom ?: 0

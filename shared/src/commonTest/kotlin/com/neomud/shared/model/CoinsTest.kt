@@ -81,29 +81,30 @@ class CoinsTest {
     }
 
     // ─── sellPriceCopper ────────────────────────────────────────
+    // Default formula: sellPercent = 50 + charm * 49 / 100, capped at 99%
 
     @Test
     fun testSellPriceBasicNoHaggle() {
-        // charm=0 → sellPercent = 25 + 0 = 25 (clamped to 25..99)
-        // 100 * 1 * 25 / 100 = 25
-        assertEquals(25L, Coins.sellPriceCopper(100, 1, 0, hasHaggle = false))
+        // charm=0 → sellPercent = 50 + 0 = 50
+        // 100 * 1 * 50 / 100 = 50
+        assertEquals(50L, Coins.sellPriceCopper(100, 1, 0, hasHaggle = false))
     }
 
     @Test
     fun testSellPriceHighCharmNoHaggle() {
-        // charm=100 → sellPercent = 25 + 100*74/100 = 25 + 74 = 99
+        // charm=100 → sellPercent = 50 + 100*49/100 = 50 + 49 = 99
         assertEquals(99L, Coins.sellPriceCopper(100, 1, 100, hasHaggle = false))
     }
 
     @Test
     fun testSellPriceWithHaggleBonus() {
-        // charm=50, no haggle → sellPercent = 25 + 50*74/100 = 25 + 37 = 62
+        // charm=50, no haggle → sellPercent = 50 + 50*49/100 = 50 + 24 = 74
         val noHaggle = Coins.sellPriceCopper(100, 1, 50, hasHaggle = false)
-        // charm=50, haggle → sellPercent = 25 + 37 + 50*10/100 = 25 + 37 + 5 = 67
+        // charm=50, haggle → sellPercent = 50 + 24 + 50*10/100 = 50 + 24 + 5 = 79
         val withHaggle = Coins.sellPriceCopper(100, 1, 50, hasHaggle = true)
         assertTrue(withHaggle > noHaggle)
-        assertEquals(62L, noHaggle)
-        assertEquals(67L, withHaggle)
+        assertEquals(74L, noHaggle)
+        assertEquals(79L, withHaggle)
     }
 
     @Test
@@ -123,5 +124,12 @@ class CoinsTest {
         val single = Coins.sellPriceCopper(100, 1, 50)
         val triple = Coins.sellPriceCopper(100, 3, 50)
         assertEquals(single * 3, triple)
+    }
+
+    @Test
+    fun testSellPriceCustomBasePercent() {
+        // Verify custom parameters override defaults
+        val price = Coins.sellPriceCopper(100, 1, 0, basePercent = 30, charmScale = 70)
+        assertEquals(30L, price)
     }
 }

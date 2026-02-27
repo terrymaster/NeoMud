@@ -97,7 +97,12 @@ class GameLoop(
         }
 
         // 1. NPC behavior
-        val npcEvents = npcManager.tick()
+        // Collect rooms with visible players so hostile NPCs stay to fight
+        val roomsWithVisiblePlayers = sessionManager.getAllAuthenticatedSessions()
+            .filter { !it.isHidden && it.combatGraceTicks <= 0 && (it.player?.currentHp ?: 0) > 0 }
+            .mapNotNull { it.currentRoomId }
+            .toSet()
+        val npcEvents = npcManager.tick(roomsWithVisiblePlayers)
         for (event in npcEvents) {
             // Record NPC movement trail
             if (event.fromRoomId != null && event.direction != null) {

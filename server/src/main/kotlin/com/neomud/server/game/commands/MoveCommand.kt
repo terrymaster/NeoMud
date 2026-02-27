@@ -70,7 +70,7 @@ class MoveCommand(
                 )
                 session.send(ServerMessage.MapData(mapRooms, currentRoomId))
             }
-            session.send(ServerMessage.MoveError("The door to the ${direction.name} is locked."))
+            session.send(ServerMessage.MoveError("${direction.lockedExitPhrase.replaceFirstChar { it.uppercase() }} is locked."))
             return
         }
 

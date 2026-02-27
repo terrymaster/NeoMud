@@ -136,6 +136,13 @@ object GameConfig {
             }
         }
     }
+    object Vendor {
+        const val SELL_BASE_PERCENT = 50
+        const val SELL_CHARM_SCALE = 49 // charm contribution: charm * scale / 100
+        const val SELL_HAGGLE_BONUS_SCALE = 10
+        const val SELL_MAX_PERCENT = 99
+        const val BUY_HAGGLE_MAX_DISCOUNT = 15 // max charm-based buy discount percent
+    }
     object Trails {
         const val MAX_ENTRIES_PER_ROOM = 20
         const val LIFETIME_MS = 90_000L
