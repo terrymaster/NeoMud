@@ -54,3 +54,4 @@ nanobanana-output/
 # Game relay (Claude playtesting)
 scripts/relay-state.json
 scripts/relay-command.json
+scripts/relay.lock

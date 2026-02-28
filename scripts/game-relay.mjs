@@ -18,6 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATE_FILE = path.join(__dirname, 'relay-state.json');
 const COMMAND_FILE = path.join(__dirname, 'relay-command.json');
 const TEMP_STATE_FILE = path.join(__dirname, '.relay-state.tmp');
+const LOCK_FILE = path.join(__dirname, 'relay.lock');
 
 const SERVER_URL = process.env.NEOMUD_URL || 'ws://localhost:8080/game';
 const COMMAND_POLL_MS = 250;
@@ -741,10 +742,50 @@ function sleep(ms) {
 }
 
 // ---------------------------------------------------------------------------
+// PID lockfile — prevent multiple relay instances
+// ---------------------------------------------------------------------------
+function isProcessRunning(pid) {
+  try {
+    process.kill(pid, 0); // signal 0 = existence check, doesn't kill
+    return true;
+  } catch {
+    return false; // ESRCH = no such process
+  }
+}
+
+function acquireLock() {
+  try {
+    const existing = fs.readFileSync(LOCK_FILE, 'utf8').trim();
+    const pid = parseInt(existing, 10);
+    if (!isNaN(pid) && pid !== process.pid && isProcessRunning(pid)) {
+      console.error(`[relay] Another relay is already running (PID ${pid}).`);
+      console.error('[relay] Kill it first or delete scripts/relay.lock to override.');
+      process.exit(1);
+    }
+    // Stale lock from a dead process — reclaim it
+    console.log(`[relay] Removing stale lock (PID ${pid})`);
+  } catch {
+    // No lock file exists — fine
+  }
+  fs.writeFileSync(LOCK_FILE, String(process.pid), 'utf8');
+}
+
+function releaseLock() {
+  try {
+    const contents = fs.readFileSync(LOCK_FILE, 'utf8').trim();
+    if (contents === String(process.pid)) {
+      fs.unlinkSync(LOCK_FILE);
+    }
+  } catch {}
+}
+
+// ---------------------------------------------------------------------------
 // Startup
 // ---------------------------------------------------------------------------
 console.log('[relay] NeoMud Game Relay');
 console.log(`[relay] User: ${username}, Mode: ${registerMode ? 'register' : 'login'}`);
+
+acquireLock();
 
 // Clean up stale files
 try { fs.unlinkSync(STATE_FILE); } catch {}
@@ -762,5 +803,6 @@ process.on('SIGINT', () => {
   if (ws) ws.close();
   try { fs.unlinkSync(STATE_FILE); } catch {}
   try { fs.unlinkSync(TEMP_STATE_FILE); } catch {}
+  releaseLock();
   process.exit(0);
 });
