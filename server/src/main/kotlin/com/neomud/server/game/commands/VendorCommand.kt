@@ -96,6 +96,8 @@ class VendorCommand(
         val hasHaggle = skillCatalog.getSkill("HAGGLE")?.let { skill ->
             skill.classRestrictions.isEmpty() || player.characterClass in skill.classRestrictions
         } ?: false
+        val unitPriceCopper = Coins.buyPriceCopper(item.value, 1, player.stats.charm, hasHaggle, GameConfig.Vendor.BUY_HAGGLE_MAX_DISCOUNT)
+        val unitPrice = Coins.fromCopper(unitPriceCopper)
         val totalCost = Coins.fromCopper(Coins.buyPriceCopper(item.value, quantity, player.stats.charm, hasHaggle, GameConfig.Vendor.BUY_HAGGLE_MAX_DISCOUNT))
         val success = coinRepository.subtractCoins(playerName, totalCost)
         if (!success) {
@@ -112,7 +114,8 @@ class VendorCommand(
 
         session.send(ServerMessage.BuyResult(
             success = true,
-            message = "You bought ${item.name} for ${totalCost.displayString()}.",
+            message = if (quantity > 1) "You bought ${item.name} x$quantity for ${totalCost.displayString()} (${unitPrice.displayString()} each)."
+                      else "You bought ${item.name} for ${totalCost.displayString()}.",
             updatedCoins = updatedCoins,
             updatedInventory = updatedInventory,
             equipment = equipment
@@ -154,6 +157,14 @@ class VendorCommand(
         val hasHaggle = skillCatalog.getSkill("HAGGLE")?.let { skill ->
             skill.classRestrictions.isEmpty() || player.characterClass in skill.classRestrictions
         } ?: false
+        val unitSellCopper = Coins.sellPriceCopper(
+            item.value, 1, player.stats.charm, hasHaggle,
+            basePercent = GameConfig.Vendor.SELL_BASE_PERCENT,
+            charmScale = GameConfig.Vendor.SELL_CHARM_SCALE,
+            haggleBonusScale = GameConfig.Vendor.SELL_HAGGLE_BONUS_SCALE,
+            maxPercent = GameConfig.Vendor.SELL_MAX_PERCENT
+        )
+        val unitSellPrice = Coins.fromCopper(unitSellCopper)
         val sellPriceCopper = Coins.sellPriceCopper(
             item.value, quantity, player.stats.charm, hasHaggle,
             basePercent = GameConfig.Vendor.SELL_BASE_PERCENT,
@@ -171,7 +182,8 @@ class VendorCommand(
 
         session.send(ServerMessage.SellResult(
             success = true,
-            message = "You sold ${item.name} for ${sellPrice.displayString()}.",
+            message = if (quantity > 1) "You sold ${item.name} x$quantity for ${sellPrice.displayString()} (${unitSellPrice.displayString()} each)."
+                      else "You sold ${item.name} for ${sellPrice.displayString()}.",
             updatedCoins = updatedCoins,
             updatedInventory = updatedInventory,
             equipment = equipment
