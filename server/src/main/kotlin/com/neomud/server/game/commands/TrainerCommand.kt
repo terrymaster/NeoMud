@@ -44,7 +44,8 @@ class TrainerCommand(
             totalCpEarned = player.totalCpEarned,
             baseStats = baseStats,
             currentStats = player.stats,
-            interactSound = trainer.interactSound
+            interactSound = trainer.interactSound,
+            exitSound = trainer.exitSound
         ))
     }
 
@@ -256,7 +257,8 @@ class TrainerCommand(
             totalCpEarned = updatedPlayer.totalCpEarned,
             baseStats = baseStats,
             currentStats = updatedPlayer.stats,
-            interactSound = trainer.interactSound
+            interactSound = trainer.interactSound,
+            exitSound = trainer.exitSound
         ))
     }
 }

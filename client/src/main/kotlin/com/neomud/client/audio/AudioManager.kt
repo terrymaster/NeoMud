@@ -62,8 +62,8 @@ class AudioManager(context: Context) {
 
         scope.launch {
             try {
-                val url = "$serverBaseUrl/assets/audio/sfx/$soundId.ogg"
-                val tempFile = File(appContext.cacheDir, "sfx_$soundId.ogg")
+                val url = "$serverBaseUrl/assets/audio/sfx/$soundId.mp3"
+                val tempFile = File(appContext.cacheDir, "sfx_$soundId.mp3")
                 if (!tempFile.exists()) {
                     URL(url).openStream().use { input ->
                         tempFile.outputStream().use { output ->
@@ -100,7 +100,7 @@ class AudioManager(context: Context) {
 
         scope.launch {
             try {
-                val url = "$serverBaseUrl/assets/audio/bgm/$trackId.ogg"
+                val url = "$serverBaseUrl/assets/audio/bgm/$trackId.mp3"
                 withContext(Dispatchers.Main) {
                     val mp = MediaPlayer()
                     mp.setAudioAttributes(

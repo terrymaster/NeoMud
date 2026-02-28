@@ -121,7 +121,7 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel, initialPrompt, init
     if (initialDuration !== undefined) setDuration(initialDuration);
   }, [initialDuration]);
 
-  const assetPath = soundId ? `audio/sfx/${soundId}.ogg` : '';
+  const assetPath = soundId ? `audio/sfx/${soundId}.mp3` : '';
 
   useEffect(() => {
     if (!assetPath) { setUndoDepth(0); return; }
@@ -161,7 +161,7 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel, initialPrompt, init
     }
     if (!effectiveSoundId || !prompt) return;
 
-    const effectiveAssetPath = `audio/sfx/${effectiveSoundId}.ogg`;
+    const effectiveAssetPath = `audio/sfx/${effectiveSoundId}.mp3`;
     setGenerating(true);
     try {
       await api.post('/generate/sound', {
@@ -185,7 +185,7 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel, initialPrompt, init
       effectiveSoundId = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
       onSoundIdChange(effectiveSoundId);
     }
-    const effectiveAssetPath = `audio/sfx/${effectiveSoundId}.ogg`;
+    const effectiveAssetPath = `audio/sfx/${effectiveSoundId}.mp3`;
     try {
       await api.upload('/asset-mgmt/upload', file, { assetPath: effectiveAssetPath });
     } catch (err: any) {

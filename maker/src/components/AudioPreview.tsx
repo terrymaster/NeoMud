@@ -163,7 +163,7 @@ function AudioPreview({ entityType, entityId, bgm, bgmPrompt, bgmDuration, defau
   const [undoDepth, setUndoDepth] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const assetPath = bgm ? `audio/bgm/${bgm}.ogg` : '';
+  const assetPath = bgm ? `audio/bgm/${bgm}.mp3` : '';
 
   useEffect(() => {
     setLocalPrompt(bgmPrompt || '');
@@ -269,7 +269,7 @@ function AudioPreview({ entityType, entityId, bgm, bgmPrompt, bgmDuration, defau
         {bgm ? (
           <>
             <audio controls src={audioUrl} key={audioUrl} style={{ width: '100%', maxWidth: 280 }} />
-            <div style={styles.trackId}>{bgm}.ogg</div>
+            <div style={styles.trackId}>{bgm}.mp3</div>
           </>
         ) : (
           <div style={styles.placeholder}>

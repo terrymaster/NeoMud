@@ -114,6 +114,7 @@ model Npc {
   missSound    String  @default("")
   deathSound   String  @default("")
   interactSound       String @default("")
+  exitSound           String @default("")
   imagePrompt         String @default("")
   imageStyle          String @default("")
   imageNegativePrompt String @default("")

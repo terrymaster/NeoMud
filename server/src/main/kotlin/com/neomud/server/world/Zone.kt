@@ -84,6 +84,7 @@ data class NpcData(
     val missSound: String = "",
     val deathSound: String = "",
     val interactSound: String = "",
+    val exitSound: String = "",
     val spawnPoints: List<RoomId> = emptyList(),
     val imagePrompt: String = "",
     val imageStyle: String = "",

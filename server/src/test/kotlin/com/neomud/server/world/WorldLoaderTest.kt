@@ -308,6 +308,31 @@ class WorldLoaderTest {
     }
 
     @Test
+    fun testNpcExitSoundLoaded() {
+        val result = load()
+
+        val barkeep = result.npcDataList.find { it.first.id == "npc:barkeep" }
+        assertNotNull(barkeep, "Barkeep NPC should be loaded")
+        assertEquals("barkeep_intro", barkeep.first.interactSound, "Barkeep should have barkeep_intro interactSound")
+        assertEquals("barkeep_exit", barkeep.first.exitSound, "Barkeep should have barkeep_exit exitSound")
+
+        val guildmaster = result.npcDataList.find { it.first.id == "npc:guildmaster" }
+        assertNotNull(guildmaster, "Guildmaster NPC should be loaded")
+        assertEquals("guildmaster_intro", guildmaster.first.interactSound, "Guildmaster should have guildmaster_intro interactSound")
+        assertEquals("guildmaster_exit", guildmaster.first.exitSound, "Guildmaster should have guildmaster_exit exitSound")
+
+        val blacksmith = result.npcDataList.find { it.first.id == "npc:blacksmith" }
+        assertNotNull(blacksmith, "Blacksmith NPC should be loaded")
+        assertEquals("blacksmith_intro", blacksmith.first.interactSound, "Blacksmith should have blacksmith_intro interactSound")
+        assertEquals("blacksmith_exit", blacksmith.first.exitSound, "Blacksmith should have blacksmith_exit exitSound")
+
+        val enchantress = result.npcDataList.find { it.first.id == "npc:enchantress" }
+        assertNotNull(enchantress, "Enchantress NPC should be loaded")
+        assertEquals("enchantress_intro", enchantress.first.interactSound, "Enchantress should have enchantress_intro interactSound")
+        assertEquals("enchantress_exit", enchantress.first.exitSound, "Enchantress should have enchantress_exit exitSound")
+    }
+
+    @Test
     fun testDefaultSpawnRoom() {
         val result = load()
         assertEquals("town:temple", result.worldGraph.defaultSpawnRoom)

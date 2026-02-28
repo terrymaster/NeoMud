@@ -793,6 +793,7 @@ class GameViewModel(
     }
 
     fun dismissTrainer() {
+        _trainerInfo.value?.exitSound?.let { if (it.isNotBlank()) sfx(it) }
         _showTrainer.value = false
         _trainerInfo.value = null
     }
@@ -816,6 +817,7 @@ class GameViewModel(
     }
 
     fun dismissVendor() {
+        _vendorInfo.value?.exitSound?.let { if (it.isNotBlank()) sfx(it) }
         _showVendor.value = false
         _vendorInfo.value = null
     }

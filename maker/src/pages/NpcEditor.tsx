@@ -66,6 +66,7 @@ function NpcEditor() {
     { key: 'missSound', label: 'Miss Sound', type: 'sfx' },
     { key: 'deathSound', label: 'Death Sound', type: 'sfx' },
     { key: 'interactSound', label: 'Interact Sound', type: 'sfx' },
+    { key: 'exitSound', label: 'Exit Sound', type: 'sfx' },
     { key: 'imagePrompt', label: 'Image Prompt', type: 'textarea', rows: 3 },
     { key: 'imageStyle', label: 'Image Style', type: 'text' },
     { key: 'imageNegativePrompt', label: 'Image Negative Prompt', type: 'text' },

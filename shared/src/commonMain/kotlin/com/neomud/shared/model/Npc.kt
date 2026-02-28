@@ -15,5 +15,6 @@ data class Npc(
     val attackSound: String = "",
     val missSound: String = "",
     val deathSound: String = "",
-    val interactSound: String = ""
+    val interactSound: String = "",
+    val exitSound: String = ""
 )

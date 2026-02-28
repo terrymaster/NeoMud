@@ -61,6 +61,7 @@ class VendorCommand(
             playerInventory = playerInventory,
             playerCharm = charm,
             interactSound = vendor.interactSound,
+            exitSound = vendor.exitSound,
             hasHaggle = hasHaggle
         ))
     }

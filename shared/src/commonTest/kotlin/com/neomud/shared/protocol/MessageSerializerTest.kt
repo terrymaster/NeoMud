@@ -911,4 +911,37 @@ class MessageSerializerTest {
         val decoded = MessageSerializer.decodeServerMessage(json)
         assertEquals(original, decoded)
     }
+
+    @Test
+    fun testVendorInfoWithExitSoundRoundTrip() {
+        val original = ServerMessage.VendorInfo(
+            vendorName = "Barkeep Grom",
+            items = emptyList(),
+            playerCoins = Coins(),
+            playerInventory = emptyList(),
+            interactSound = "barkeep_intro",
+            exitSound = "barkeep_exit"
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+        assertTrue(json.contains("barkeep_exit"), "JSON should contain exitSound value")
+    }
+
+    @Test
+    fun testTrainerInfoWithExitSoundRoundTrip() {
+        val original = ServerMessage.TrainerInfo(
+            canLevelUp = false,
+            unspentCp = 5,
+            totalCpEarned = 10,
+            baseStats = Stats(),
+            currentStats = Stats(),
+            interactSound = "guildmaster_intro",
+            exitSound = "guildmaster_exit"
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+        assertTrue(json.contains("guildmaster_exit"), "JSON should contain exitSound value")
+    }
 }

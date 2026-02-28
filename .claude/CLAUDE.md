@@ -217,9 +217,9 @@ Image generation prompts are stored in the data files:
 
 ### SFX Conventions
 
-- **Format**: OGG Vorbis (`.ogg`), 0.5–3 seconds for SFX, 30–120 seconds for BGM
+- **Format**: MP3 (`.mp3`), 0.5–3 seconds for SFX, 30–120 seconds for BGM
 - **Directory**: `maker/default_world_src/assets/audio/sfx/` (SFX) and `audio/bgm/` (BGM)
-- **Sound IDs**: Referenced by filename without extension or path prefix (e.g., `sword_swing` → `audio/sfx/sword_swing.ogg`)
+- **Sound IDs**: Referenced by filename without extension or path prefix (e.g., `sword_swing` → `audio/sfx/sword_swing.mp3`)
 
 ### Where Sounds Are Referenced
 

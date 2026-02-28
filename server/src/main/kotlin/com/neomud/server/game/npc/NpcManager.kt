@@ -40,7 +40,8 @@ data class NpcState(
     val attackSound: String = "",
     val missSound: String = "",
     val deathSound: String = "",
-    val interactSound: String = ""
+    val interactSound: String = "",
+    val exitSound: String = ""
 ) {
     /** Set by [NpcManager.markDead] to prevent double-processing kills. */
     var deathProcessed: Boolean = false
@@ -126,7 +127,8 @@ class NpcManager(
             attackSound = data.attackSound,
             missSound = data.missSound,
             deathSound = data.deathSound,
-            interactSound = data.interactSound
+            interactSound = data.interactSound,
+            exitSound = data.exitSound
         )
     }
 
@@ -266,7 +268,8 @@ class NpcManager(
                 attackSound = npcState.attackSound,
                 missSound = npcState.missSound,
                 deathSound = npcState.deathSound,
-                interactSound = npcState.interactSound
+                interactSound = npcState.interactSound,
+                exitSound = npcState.exitSound
             )
         }
     }

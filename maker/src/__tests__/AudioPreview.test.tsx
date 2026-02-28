@@ -12,14 +12,14 @@ describe('AudioPreview', () => {
 
   it('shows track ID when bgm is provided', () => {
     render(<AudioPreview entityType="zone" entityId="test_zone" bgm="town_peaceful" />)
-    expect(screen.getByText('town_peaceful.ogg')).toBeInTheDocument()
+    expect(screen.getByText('town_peaceful.mp3')).toBeInTheDocument()
   })
 
   it('renders audio element when bgm track is provided', () => {
     render(<AudioPreview entityType="zone" entityId="test_zone" bgm="town_peaceful" />)
     const audio = document.querySelector('audio')
     expect(audio).not.toBeNull()
-    expect(audio!.src).toContain('/api/assets/audio/bgm/town_peaceful.ogg')
+    expect(audio!.src).toContain('/api/assets/audio/bgm/town_peaceful.mp3')
   })
 
   it('shows prompt fields with correct labels', () => {

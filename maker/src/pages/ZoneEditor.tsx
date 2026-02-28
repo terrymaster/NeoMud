@@ -1239,7 +1239,7 @@ function ZoneEditor() {
                 disabled={!roomForm.departSound}
                 onClick={() => {
                   if (roomForm.departSound) {
-                    const audio = new Audio(`/api/assets/audio/sfx/${roomForm.departSound}.ogg`);
+                    const audio = new Audio(`/api/assets/audio/sfx/${roomForm.departSound}.mp3`);
                     audio.play().catch(() => {});
                   }
                 }}

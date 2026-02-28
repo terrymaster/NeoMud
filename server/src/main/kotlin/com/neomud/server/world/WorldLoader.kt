@@ -263,6 +263,9 @@ object WorldLoader {
             if (npcData.interactSound.isBlank() && npcData.behaviorType in listOf("vendor", "trainer")) {
                 logger.warn("NPC '${npcData.id}' (${npcData.behaviorType}) missing interactSound")
             }
+            if (npcData.exitSound.isBlank() && npcData.behaviorType in listOf("vendor", "trainer")) {
+                logger.warn("NPC '${npcData.id}' (${npcData.behaviorType}) missing exitSound")
+            }
         }
         for (spell in spellCatalog.getAllSpells()) {
             if (spell.castSound.isBlank()) logger.warn("Spell '${spell.id}' missing castSound")
@@ -282,8 +285,8 @@ object WorldLoader {
             val folder = "${prefix}s" // npc -> npcs, item -> items
             return "assets/images/$folder/${entityId.replace(':', '_')}.webp"
         }
-        fun sfxPathFor(soundId: String) = "assets/audio/sfx/$soundId.ogg"
-        fun bgmPathFor(trackId: String) = "assets/audio/bgm/$trackId.ogg"
+        fun sfxPathFor(soundId: String) = "assets/audio/sfx/$soundId.mp3"
+        fun bgmPathFor(trackId: String) = "assets/audio/bgm/$trackId.mp3"
 
         // Item sprites
         for (item in itemCatalog.getAllItems()) {
@@ -312,7 +315,7 @@ object WorldLoader {
             }
         }
         for ((npcData, _) in allNpcData) {
-            for (sound in listOf(npcData.attackSound, npcData.missSound, npcData.deathSound, npcData.interactSound)) {
+            for (sound in listOf(npcData.attackSound, npcData.missSound, npcData.deathSound, npcData.interactSound, npcData.exitSound)) {
                 if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
                     logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by NPC '${npcData.id}')")
                 }

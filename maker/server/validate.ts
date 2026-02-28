@@ -21,11 +21,11 @@ function spritePathFor(entityId: string): string {
 }
 
 function sfxPathFor(soundId: string): string {
-  return `assets/audio/sfx/${soundId}.ogg`
+  return `assets/audio/sfx/${soundId}.mp3`
 }
 
 function bgmPathFor(trackId: string): string {
-  return `assets/audio/bgm/${trackId}.ogg`
+  return `assets/audio/bgm/${trackId}.mp3`
 }
 
 export async function validateProject(
@@ -116,6 +116,9 @@ export async function validateProject(
     }
     if (['vendor', 'trainer'].includes(npc.behaviorType) && !npc.interactSound) {
       warnings.push(`NPC '${npc.id}' (${npc.behaviorType}) missing interactSound`)
+    }
+    if (['vendor', 'trainer'].includes(npc.behaviorType) && !npc.exitSound) {
+      warnings.push(`NPC '${npc.id}' (${npc.behaviorType}) missing exitSound`)
     }
   }
 
@@ -220,7 +223,7 @@ export async function validateProject(
     }
   }
   for (const npc of npcs) {
-    for (const sound of [npc.attackSound, npc.missSound, npc.deathSound, npc.interactSound]) {
+    for (const sound of [npc.attackSound, npc.missSound, npc.deathSound, npc.interactSound, npc.exitSound]) {
       if (sound && !checkedSfx.has(sound)) {
         checkedSfx.add(sound)
         if (!assetExists(sfxPathFor(sound))) {

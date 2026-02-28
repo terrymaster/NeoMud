@@ -268,7 +268,8 @@ sealed class ServerMessage {
         val totalCpEarned: Int,
         val baseStats: Stats,
         val currentStats: Stats,
-        val interactSound: String = ""
+        val interactSound: String = "",
+        val exitSound: String = ""
     ) : ServerMessage()
 
     @Serializable
@@ -329,6 +330,7 @@ sealed class ServerMessage {
         val playerInventory: List<InventoryItem>,
         val playerCharm: Int = 0,
         val interactSound: String = "",
+        val exitSound: String = "",
         val hasHaggle: Boolean = false
     ) : ServerMessage()
 

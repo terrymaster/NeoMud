@@ -335,6 +335,7 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           missSound: npc.missSound ?? '',
           deathSound: npc.deathSound ?? '',
           interactSound: npc.interactSound ?? '',
+          exitSound: npc.exitSound ?? '',
           imagePrompt: npc.imagePrompt ?? legacyNpc?.prompt ?? '',
           imageStyle: npc.imageStyle ?? legacyNpc?.style ?? '',
           imageNegativePrompt: npc.imageNegativePrompt ?? legacyNpc?.negativePrompt ?? '',

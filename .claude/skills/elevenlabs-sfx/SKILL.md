@@ -3,7 +3,7 @@ name: elevenlabs-sfx
 description: >
   Generate sound effects for NeoMud using ElevenLabs AI. Use when creating or regenerating
   SFX for combat, spells, footsteps, NPC interactions, item pickups, or ambient sounds.
-  Handles generation, format conversion to OGG, and placement in the asset directory.
+  Handles generation and placement in the asset directory.
 ---
 
 # ElevenLabs SFX Generator
@@ -21,23 +21,17 @@ Use the `mcp__elevenlabs-sfx__text_to_sound_effects` tool to generate SFX direct
 **Parameters:**
 - `text` (required): Descriptive prompt for the sound effect
 - `duration_seconds` (optional): 0.5–5.0 seconds (default varies by sound type)
-- `output_format` (optional): `mp3_44100_128` (default) — will need conversion to OGG
+- `output_format` (optional): `mp3_44100_128` (default)
 - `loop` (optional): Whether the sound should loop seamlessly
 
-**After generation**, convert to OGG for the game client:
-```bash
-npx sharp-cli  # N/A for audio — use ffmpeg or the maker upload endpoint
-node -e "..." # Or use the maker's /generate/sound endpoint which outputs OGG directly
-```
+### Path 2: Maker Backend
 
-### Path 2: Maker Backend (recommended for OGG output)
-
-The maker's Express backend has a `/generate/sound` endpoint that calls ElevenLabs and saves directly as OGG:
+The maker's Express backend has a `/generate/sound` endpoint that calls ElevenLabs and saves directly:
 
 ```bash
 curl -X POST http://localhost:5173/api/generate/sound \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "metallic sword clash", "duration": 2, "assetPath": "audio/sfx/sword_swing.ogg"}'
+  -d '{"prompt": "metallic sword clash", "duration": 2, "assetPath": "audio/sfx/sword_swing.mp3"}'
 ```
 
 This requires the maker dev server to be running (`cd maker && npm run dev`).
@@ -49,19 +43,19 @@ This requires the maker dev server to be running (`cd maker && npm run dev`).
 ### Directory Structure
 ```
 maker/default_world_src/assets/audio/
-├── bgm/              Background music (OGG, 1-2 MB, looping)
-└── sfx/              Sound effects (OGG, 8-24 KB, short)
+├── bgm/              Background music (MP3, 1-2 MB, looping)
+└── sfx/              Sound effects (MP3, 8-24 KB, short)
 ```
 
 ### File Format
-- **Format**: OGG Vorbis (`.ogg`)
+- **Format**: MP3 (`.mp3`)
 - **SFX Duration**: 0.5–3 seconds typically
 - **BGM Duration**: 30–120 seconds, looping
 
 ### Sound ID Naming
 Sound IDs are referenced by name (no extension, no path prefix) in JSON data files:
-- `sword_swing` → `audio/sfx/sword_swing.ogg`
-- `town_peaceful` → `audio/bgm/town_peaceful.ogg`
+- `sword_swing` → `audio/sfx/sword_swing.mp3`
+- `town_peaceful` → `audio/bgm/town_peaceful.mp3`
 
 ### Where Sounds Are Referenced
 
@@ -145,7 +139,7 @@ ElevenLabs sound effects work best with descriptive, evocative prompts:
 3. Optionally generate a unique `missSound` (or reuse `spell_fizzle`)
 
 ### For a new zone:
-1. Generate zone BGM → `audio/bgm/{zone_id}_{mood}.ogg`
+1. Generate zone BGM → `audio/bgm/{zone_id}_{mood}.mp3`
 2. Generate room `departSound` variants for different terrain
 3. Generate any room effect sounds
 
@@ -162,6 +156,6 @@ $ARGUMENTS
 1. **Identify** what sounds are needed (read relevant JSON data files)
 2. **Check** what SFX already exist in `maker/default_world_src/assets/audio/sfx/`
 3. **Generate** missing sounds using `text_to_sound_effects` MCP tool
-4. **Convert** if needed (MCP outputs MP3; maker endpoint outputs OGG directly)
+4. **Rename** MCP output files to match the expected naming convention
 5. **Update** JSON data files with sound IDs if they're currently empty
 6. **Rebuild** world bundle
