@@ -236,9 +236,9 @@ class CombatManager(
                     }
 
                     var damage = if (bonuses.weaponDamageRange > 0) {
-                        effStats.strength + bonuses.totalDamageBonus + thresholds.meleeDamageBonus + (1..bonuses.weaponDamageRange).random()
+                        effStats.strength / GameConfig.Combat.MELEE_STR_DIVISOR + bonuses.totalDamageBonus + thresholds.meleeDamageBonus + (1..bonuses.weaponDamageRange).random()
                     } else {
-                        effStats.strength + thresholds.meleeDamageBonus + (1..GameConfig.Combat.UNARMED_DAMAGE_RANGE).random()
+                        effStats.strength / GameConfig.Combat.MELEE_STR_DIVISOR + thresholds.meleeDamageBonus + (1..GameConfig.Combat.UNARMED_DAMAGE_RANGE).random()
                     }
 
                     if (thresholds.critChance > 0 && Math.random() < thresholds.critChance) {
@@ -411,7 +411,7 @@ class CombatManager(
 
         val effStats = session.effectiveStats()
         val bonuses = equipmentService.getCombatBonuses(playerName)
-        val damage = effStats.strength + bonuses.totalDamageBonus + (1..GameConfig.Skills.BASH_DAMAGE_RANGE).random()
+        val damage = effStats.strength / GameConfig.Combat.MELEE_STR_DIVISOR + bonuses.totalDamageBonus + (1..GameConfig.Skills.BASH_DAMAGE_RANGE).random()
         target.currentHp -= damage
 
         val stunned = (1..100).random() <= GameConfig.Skills.BASH_STUN_CHANCE
@@ -477,7 +477,7 @@ class CombatManager(
         }
 
         val effStats = session.effectiveStats()
-        val damage = effStats.strength / 4 + effStats.agility / 4 + (1..GameConfig.Skills.KICK_DAMAGE_RANGE).random()
+        val damage = effStats.strength / GameConfig.Skills.KICK_STR_DIVISOR + effStats.agility / GameConfig.Skills.KICK_AGI_DIVISOR + (1..GameConfig.Skills.KICK_DAMAGE_RANGE).random()
         target.currentHp -= damage
 
         session.skillCooldowns["KICK"] = GameConfig.Skills.KICK_COOLDOWN_TICKS

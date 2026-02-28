@@ -547,7 +547,8 @@ class IntegrationTest {
             receiveServerMessage() // MapData
             receiveServerMessage() // RoomItemsUpdate
         }
-        // WebSocket close triggers disconnect save
+        // WebSocket close triggers disconnect save — allow time for the finally block to complete
+        delay(500)
 
         // Session 2: Login again — visitedRooms should include both rooms
         wsClient.webSocket("/game") {

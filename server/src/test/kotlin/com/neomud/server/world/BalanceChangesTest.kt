@@ -71,7 +71,7 @@ class BalanceChangesTest {
         assertEquals("priest", holySmite.school)
         assertEquals(2, holySmite.schoolLevel)
         assertEquals(3, holySmite.levelRequired)
-        assertEquals(12, holySmite.manaCost)
+        assertEquals(10, holySmite.manaCost)
         assertEquals(18, holySmite.basePower)
         assertEquals("willpower", holySmite.primaryStat)
         assertEquals("ENEMY", holySmite.targetType.name)

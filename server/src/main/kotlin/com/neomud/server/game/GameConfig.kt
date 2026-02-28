@@ -29,6 +29,7 @@ object GameConfig {
         const val PARRY_STAT_DIVISOR = 80.0
         const val PARRY_REDUCTION_BASE = 2
         const val PARRY_REDUCTION_STR_DIVISOR = 20
+        const val MELEE_STR_DIVISOR = 3
         const val UNARMED_DAMAGE_RANGE = 3
         const val CRIT_DAMAGE_MULTIPLIER = 1.5
         const val BACKSTAB_DAMAGE_MULTIPLIER = 3
@@ -89,9 +90,11 @@ object GameConfig {
         const val KICK_DAMAGE_RANGE = 4
         const val KICK_COOLDOWN_TICKS = 2
         const val KICK_KNOCKBACK_STUN_TICKS = 2
-        const val SPELL_POWER_STAT_DIVISOR = 3
-        const val SPELL_POWER_LEVEL_DIVISOR = 2
-        const val SPELL_POWER_DICE_SIZE = 6
+        const val KICK_STR_DIVISOR = 4
+        const val KICK_AGI_DIVISOR = 4
+        const val SPELL_POWER_STAT_DIVISOR = 2
+        const val SPELL_POWER_LEVEL_DIVISOR = 1
+        const val SPELL_POWER_DICE_SIZE = 8
         const val DOT_INITIAL_DAMAGE_DIVISOR = 2
     }
     object Stealth {

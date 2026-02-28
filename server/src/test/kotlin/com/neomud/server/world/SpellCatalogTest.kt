@@ -24,7 +24,7 @@ class SpellCatalogTest {
         assertNotNull(spell)
         assertEquals("Magic Missile", spell.name)
         assertEquals("mage", spell.school)
-        assertEquals(5, spell.manaCost)
+        assertEquals(4, spell.manaCost)
     }
 
     @Test
@@ -69,7 +69,7 @@ class SpellCatalogTest {
         assertNotNull(fireball)
         assertEquals(18, fireball.manaCost)
         assertEquals(5, fireball.levelRequired)
-        assertEquals(30, fireball.basePower)
+        assertEquals(45, fireball.basePower)
         assertEquals("intellect", fireball.primaryStat)
     }
 }

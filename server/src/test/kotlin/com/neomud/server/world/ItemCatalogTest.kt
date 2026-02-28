@@ -25,8 +25,8 @@ class ItemCatalogTest {
         assertEquals("Iron Sword", sword.name)
         assertEquals("weapon", sword.type)
         assertEquals("weapon", sword.slot)
-        assertEquals(3, sword.damageBonus)
-        assertEquals(6, sword.damageRange)
+        assertEquals(8, sword.damageBonus)
+        assertEquals(8, sword.damageRange)
     }
 
     @Test
@@ -82,8 +82,8 @@ class ItemCatalogTest {
         assertNotNull(staff)
         assertEquals("Mystic Staff", staff.name)
         assertEquals("weapon", staff.type)
-        assertEquals(7, staff.damageBonus)
-        assertEquals(6, staff.damageRange)
+        assertEquals(8, staff.damageBonus)
+        assertEquals(8, staff.damageRange)
         assertEquals(5, staff.levelRequirement)
     }
 
