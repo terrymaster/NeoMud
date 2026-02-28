@@ -206,6 +206,36 @@ Image generation prompts are stored in the data files:
 - The `remove-bg.mjs` script samples corner pixels to detect background colors, so it safely skips images with dark/complex backgrounds
 - `nanobanana-output/` is gitignored — always clean it up after generation
 
+## Asset SFX Pipeline
+
+**Sound effects are generated via ElevenLabs AI** using the `text_to_sound_effects` MCP tool or the maker's `/generate/sound` backend endpoint.
+
+### Generation Methods
+
+1. **MCP Tool (Claude Code direct)**: Use `mcp__elevenlabs-sfx__text_to_sound_effects` — saves MP3 to configured base path, needs conversion to OGG
+2. **Maker Backend (recommended)**: `POST http://localhost:5173/api/generate/sound` with `{prompt, duration, assetPath}` — outputs OGG directly (requires maker dev server running)
+
+### SFX Conventions
+
+- **Format**: OGG Vorbis (`.ogg`), 0.5–3 seconds for SFX, 30–120 seconds for BGM
+- **Directory**: `maker/default_world_src/assets/audio/sfx/` (SFX) and `audio/bgm/` (BGM)
+- **Sound IDs**: Referenced by filename without extension or path prefix (e.g., `sword_swing` → `audio/sfx/sword_swing.ogg`)
+
+### Where Sounds Are Referenced
+
+| Entity Type | JSON Fields | Location |
+|---|---|---|
+| NPC | `attackSound`, `missSound`, `deathSound`, `interactSound` | Zone JSON files |
+| Item | `attackSound`, `missSound`, `useSound` | `items.json` |
+| Spell | `castSound`, `impactSound`, `missSound` | `spells.json` |
+| Room | `departSound` | Zone JSON files |
+| Room Effect | `sound` | Zone JSON files |
+| Zone | `bgm` | Zone JSON files |
+
+### After generation
+- Run `cd maker && npm run rebuild-world` if the Vite server isn't running
+- Run `export JAVA_HOME=/c/Users/lbarnes/.jdks/corretto-21.0.5 && ./gradlew packageWorld` to rebuild the `.nmd` bundle
+
 ## Maker Dev Server Gotchas
 
 - **ALWAYS kill stale Vite dev server before rebuilding/testing maker UI changes**
@@ -217,6 +247,6 @@ Image generation prompts are stored in the data files:
 ## Environment Notes
 
 - Windows 11, Git Bash shell — use Unix shell syntax (forward slashes, `/dev/null`)
-- No Python on this machine — use `jar` CLI or Node for ZIP/archive inspection
+- Python available via `uv`/`uvx` (installed at `/c/Users/lbarnes/.local/bin/uv`)
 - `.nmd` bundles are ZIP files — inspect with `jar tf file.nmd`
 - `packageWorld` Gradle task builds `default_world.nmd` from `server/src/main/resources/`
