@@ -567,6 +567,83 @@ class IntegrationTest {
         }
     }
 
+    @Test
+    fun testPickupCoinsInvalidTypeReturnsError() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("coin_test", "pass123", "CoinTester", "WARRIOR",
+                    allocatedStats = Stats(strength = 30, agility = 22, intellect = 18, willpower = 18, health = 30, charm = 18))
+            )))
+            receiveServerMessage() // RegisterOk
+        }
+
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Login("coin_test", "pass123")
+            )))
+            receiveServerMessage() // LoginOk
+            receiveServerMessage() // RoomInfo
+            receiveServerMessage() // MapData
+            receiveServerMessage() // InventoryUpdate
+            receiveServerMessage() // RoomItemsUpdate
+
+            // Send invalid coin type "all"
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.PickupCoins("all")
+            )))
+
+            val response = receiveServerMessage()
+            assertIs<ServerMessage.Error>(response)
+            assertTrue(response.message.contains("Invalid coin type"), "Should reject invalid coin type: ${response.message}")
+        }
+    }
+
+    @Test
+    fun testUseSkillWithPrefixIsNormalized() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        // Register a Mystic (has MEDITATE)
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("skill_prefix", "pass123", "SkillTester", "MYSTIC",
+                    allocatedStats = Stats(strength = 22, agility = 28, intellect = 20, willpower = 25, health = 22, charm = 18))
+            )))
+            receiveServerMessage() // RegisterOk
+        }
+
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Login("skill_prefix", "pass123")
+            )))
+            val loginOk = receiveServerMessage()
+            assertIs<ServerMessage.LoginOk>(loginOk)
+            receiveServerMessage() // RoomInfo
+            receiveServerMessage() // MapData
+            receiveServerMessage() // InventoryUpdate
+            receiveServerMessage() // RoomItemsUpdate
+
+            // Send UseSkill with "skill:" prefix — should be stripped and matched
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.UseSkill("skill:meditate")
+            )))
+
+            val response = receiveServerMessage()
+            // Mystic at full MP should get "mana is full" message, NOT "Unknown skill"
+            assertIs<ServerMessage.SystemMessage>(response, "Should recognize prefixed skill ID, got: $response")
+            assertTrue(response.message.contains("full"), "Should say mana is full (skill was recognized): ${response.message}")
+        }
+    }
+
     private suspend fun DefaultClientWebSocketSession.receiveServerMessage(): ServerMessage {
         val frame = incoming.receive()
         assertTrue(frame is Frame.Text, "Expected text frame")

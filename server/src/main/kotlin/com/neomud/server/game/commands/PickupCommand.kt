@@ -48,6 +48,12 @@ class PickupCommand(
         val playerName = session.playerName ?: return
         val roomId = session.currentRoomId ?: return
 
+        val validCoinTypes = setOf("copper", "silver", "gold", "platinum")
+        if (coinType !in validCoinTypes) {
+            session.send(ServerMessage.Error("Invalid coin type. Use: copper, silver, gold, or platinum."))
+            return
+        }
+
         MeditationUtils.breakMeditation(session, "You stop meditating.")
         StealthUtils.breakStealth(session, sessionManager, "Picking up coins reveals your presence!")
 

@@ -144,7 +144,7 @@ class CommandProcessor(
             }
             is ClientMessage.UseSkill -> {
                 requireAuth(session) {
-                    val skillId = message.skillId.uppercase()
+                    val skillId = message.skillId.removePrefix("skill:").uppercase()
                     if (!canUseSkill(session, skillId)) return@requireAuth
                     when (skillId) {
                         "BASH" -> bashCommand.execute(session, message.targetId)
@@ -155,7 +155,7 @@ class CommandProcessor(
                             val unlocked = pickLockCommand.execute(session, message.targetId)
                             if (unlocked) lookCommand.execute(session)
                         }
-                        else -> session.send(ServerMessage.SystemMessage("Unknown skill: ${message.skillId}"))
+                        else -> session.send(ServerMessage.SystemMessage("Unknown skill: $skillId"))
                     }
                 }
             }
