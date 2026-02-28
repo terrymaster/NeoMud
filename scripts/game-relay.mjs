@@ -428,7 +428,18 @@ const handlers = {
     pushEvent('level_up', `LEVEL UP! Now level ${msg.newLevel} (+${msg.hpRoll} HP, +${msg.mpRoll} MP, +${msg.cpGained} CP)`);
   },
   trainer_info(msg) {
-    pushEvent('trainer', `Trainer: ${msg.canLevelUp ? 'Can level up!' : 'Cannot level up.'} Unspent CP: ${msg.unspentCp}`);
+    const lines = ['The trainer can help you level up and allocate Character Points (CP) to improve your stats. You earn CP each time you level up.'];
+    if (msg.canLevelUp) {
+      lines.push('You are ready to level up!');
+    } else {
+      lines.push('You are not ready to level up yet. Gain more XP by defeating enemies.');
+    }
+    if (msg.totalCpEarned > 0) {
+      lines.push(`CP: ${msg.unspentCp} unspent / ${msg.totalCpEarned} total earned.`);
+    } else {
+      lines.push('You have no CP yet. Level up to earn CP for stat training!');
+    }
+    pushEvent('trainer', lines.join(' '));
   },
   stat_trained(msg) {
     pushEvent('trainer', `Trained ${msg.stat} to ${msg.newValue} (${msg.remainingCp} CP remaining)`);
