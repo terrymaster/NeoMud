@@ -91,6 +91,24 @@
       "missSound": "spell_fizzle"
     },
     {
+      "id": "HOLY_SMITE",
+      "name": "Holy Smite",
+      "description": "A searing column of divine light punishes the wicked.",
+      "school": "priest",
+      "spellType": "DAMAGE",
+      "manaCost": 12,
+      "cooldownTicks": 2,
+      "levelRequired": 3,
+      "schoolLevel": 2,
+      "primaryStat": "willpower",
+      "basePower": 18,
+      "targetType": "ENEMY",
+      "castMessage": "calls down holy light upon",
+      "castSound": "smite_cast",
+      "impactSound": "smite_hit",
+      "missSound": "spell_fizzle"
+    },
+    {
       "id": "MINOR_HEAL",
       "name": "Minor Heal",
       "description": "A warm glow mends minor wounds.",

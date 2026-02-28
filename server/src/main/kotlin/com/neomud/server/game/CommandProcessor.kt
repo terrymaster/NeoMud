@@ -137,11 +137,16 @@ class CommandProcessor(
                 requireAuth(session) { pickupCommand.handlePickupCoins(session, message.coinType) }
             }
             is ClientMessage.SneakToggle -> {
-                requireAuth(session) { sneakCommand.handleToggle(session, message.enabled) }
+                requireAuth(session) {
+                    if (message.enabled && !canUseSkill(session, "SNEAK")) return@requireAuth
+                    sneakCommand.handleToggle(session, message.enabled)
+                }
             }
             is ClientMessage.UseSkill -> {
                 requireAuth(session) {
-                    when (message.skillId.uppercase()) {
+                    val skillId = message.skillId.uppercase()
+                    if (!canUseSkill(session, skillId)) return@requireAuth
+                    when (skillId) {
                         "BASH" -> bashCommand.execute(session, message.targetId)
                         "KICK" -> kickCommand.execute(session, message.targetId)
                         "MEDITATE" -> meditateCommand.execute(session)
@@ -346,6 +351,10 @@ class CommandProcessor(
             session.send(ServerMessage.SystemMessage("Your training in ${spell.school} magic is not advanced enough."))
             return
         }
+        if (player.level < spell.levelRequired) {
+            session.send(ServerMessage.SystemMessage("You need level ${spell.levelRequired} to cast ${spell.name}."))
+            return
+        }
 
         session.readiedSpellId = spellId
 
@@ -353,6 +362,24 @@ class CommandProcessor(
         MeditationUtils.breakMeditation(session, "You stop meditating.")
         StealthUtils.breakStealth(session, sessionManager, "Casting a spell reveals your presence!")
         session.combatGraceTicks = 0
+    }
+
+    /**
+     * Check if the player's class can use the given skill.
+     * Returns true if allowed, false (and sends error) if not.
+     */
+    private suspend fun canUseSkill(session: PlayerSession, skillId: String): Boolean {
+        val player = session.player ?: return false
+        val skill = skillCatalog.getSkill(skillId)
+        if (skill == null) {
+            session.send(ServerMessage.SystemMessage("Unknown skill: $skillId"))
+            return false
+        }
+        if (skill.classRestrictions.isNotEmpty() && player.characterClass !in skill.classRestrictions) {
+            session.send(ServerMessage.SystemMessage("Your class cannot use ${skill.name}."))
+            return false
+        }
+        return true
     }
 
     private suspend inline fun requireAuth(session: PlayerSession, block: () -> Unit) {

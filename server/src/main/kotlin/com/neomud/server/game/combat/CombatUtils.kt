@@ -63,16 +63,18 @@ object CombatUtils {
     fun rollEvasion(evasionPercent: Double): Boolean =
         Math.random() < evasionPercent
 
-    /** AGI-scaled dodge chance: 0% at AGI 0, ~3% at AGI 20, ~15% at AGI 100. */
+    /** AGI-scaled dodge chance: 0% at AGI 0, capped at DODGE_MAX_CHANCE. */
     fun playerEvasion(stats: Stats): Double =
-        stats.agility / GameConfig.Combat.DODGE_STAT_DIVISOR * GameConfig.Combat.DODGE_MAX_CHANCE
+        (stats.agility / GameConfig.Combat.DODGE_STAT_DIVISOR * GameConfig.Combat.DODGE_MAX_CHANCE)
+            .coerceAtMost(GameConfig.Combat.DODGE_MAX_CHANCE)
 
     fun npcEvasion(npc: NpcState): Double =
         npc.evasion / GameConfig.Combat.NPC_EVASION_DIVISOR
 
-    /** STR-scaled parry chance: 0% at STR 0, ~3% at STR 20, ~15% at STR 100. */
+    /** STR-scaled parry chance: 0% at STR 0, capped at PARRY_MAX_CHANCE. */
     fun playerParry(stats: Stats): Double =
-        stats.strength / GameConfig.Combat.PARRY_STAT_DIVISOR * GameConfig.Combat.PARRY_MAX_CHANCE
+        (stats.strength / GameConfig.Combat.PARRY_STAT_DIVISOR * GameConfig.Combat.PARRY_MAX_CHANCE)
+            .coerceAtMost(GameConfig.Combat.PARRY_MAX_CHANCE)
 
     fun rollParry(parryPercent: Double): Boolean =
         Math.random() < parryPercent

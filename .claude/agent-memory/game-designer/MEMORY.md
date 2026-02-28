@@ -23,12 +23,12 @@
 - Player accuracy: (STR+AGI)/2 + thresholdHit + level*2 + weaponBonus
 - NPC accuracy: npc.accuracy + npc.level*2
 - Player defense: AGI/2 + armor/2 + level + shieldBonus
-- Dodge: AGI/100 * 0.15 (max 15% at AGI 100)
-- Parry: STR/100 * 0.15 (max 15% at STR 100)
+- Dodge: AGI/100 * 0.25 (max 25% at AGI 100) — GameConfig values updated from earlier 0.15
+- Parry: STR/100 * 0.25 (max 25% at STR 100) — GameConfig values updated from earlier 0.15
+- Death penalty: 5% XP loss (DEATH_XP_LOSS_PERCENT = 0.05, not 10%)
 - XP curve: 100 * level^2.2 (exponent 2.2)
 - Creation CP: 60 points, cost 1/2/3 at 0-9/10-19/20+ above min
 - Level-up CP: 10 (L1-10), 15 (L11-20), 20 (L21-30)
-- Death penalty: 10% XP loss
 - Meditation: 2 + willpower/10 MP per tick
 
 ## Current Content Scope (Feb 2026)
@@ -52,7 +52,21 @@
 ## Known Balance Issues
 - See `balance-audit-findings.md` for detailed audit
 - Skill classRestriction mismatches (partially addressed)
-- Magic school level enforcement missing — all classes cast all spells of their school
-- Melee DPS 3-5x higher than spell DPS
-- Parry/Dodge rates too low at typical L1 stats (5-6%)
+- Melee DPS 3-5x higher than spell DPS (spell formula: stat/3 + level/2 too weak)
+- Parry/Dodge rates too low at typical L1 stats (7-8% with 0.25 cap, divisor 100)
 - Sneak/Pick Lock DCs never fail for designated classes
+- Orphaned spells: DIAMOND_BODY (kai:3), SOOTHING_SONG/DISCORD/RALLYING_CRY (bard:2-3) — Mystic has kai:2, Bard has bard:1
+- Priest has only 1 damage spell (Smite); prior audit incorrectly said "NO damage spells"
+- No passive HP regen — non-healer classes dependent on potions between fights
+
+## Proposed Balance Changes (Feb 2026 session)
+- See `balance-melee-caster-gap.md` for detailed melee/caster DPS gap analysis
+- Melee nerf: Add MELEE_STR_DIVISOR=3, compensate with higher weapon stats
+- Spell buff: STAT_DIVISOR 3->2, LEVEL_DIVISOR 2->1, DICE 6->8, cooldowns -1
+- Tier 3 spell basePower boost: Fireball 30->45, Nature's Wrath 28->42
+- Tier 1 mana cost reductions (Magic Missile 5->4, etc.)
+- Dodge/Parry: DIVISOR 100->80, MAX_CHANCE 0.25->0.30 (prior session)
+- Mystic kai:2->3, Bard bard:1->3 (prior session)
+- Priest: add Holy Smite spell, xpModifier 1.1->1.05, hpPerLevelMax 6->7 (prior session)
+- New passive HP regen system (needs GameLoop code change, prior session)
+- Follow-up needed: NPC HP reduction in Marsh/Gorge after melee nerf (~30%)

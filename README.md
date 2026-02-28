@@ -200,7 +200,7 @@ cd maker && npm test                     # Maker tests
 ### Near Term
 - [ ] **Game Balance Pass** — address melee vs. magic disparity, Forest→Marsh difficulty gap, class viability
 - [ ] **HP Regeneration** — passive HP regen outside combat so players don't have to buy potions constantly
-- [ ] **Spell School Level Enforcement** — classes should only cast spells at or below their school level
+- [x] **Spell School Level Enforcement** — classes should only cast spells at or below their school level
 - [ ] **UX Polish** — zone danger warnings, trainer guidance for new players, vendor message improvements
 
 ### Medium Term

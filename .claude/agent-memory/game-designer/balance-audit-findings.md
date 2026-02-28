@@ -10,7 +10,7 @@
 - A: WitchHunter, Ranger, Ninja, Thief
 - B: Mage, Druid, Warlock, Mystic
 - C: Cleric, Paladin, Bard, Gypsy, Missionary
-- F: Priest (NO damage spells, worst HP, 1.2x XP)
+- F: Priest (only 1 damage spell [Smite], worst HP, 1.1x XP — prior note "NO damage spells" was incorrect)
 
 ## Key Math Results
 - L1 Warrior one-shots Shadow Wolf (47.5 avg damage vs 30 HP)

@@ -49,9 +49,9 @@
       "name": "Priest",
       "description": "A devoted healer and spiritual leader",
       "minimumStats": { "strength": 8, "agility": 8, "intellect": 12, "willpower": 20, "health": 10, "charm": 15 },
-      "hpPerLevelMin": 3, "hpPerLevelMax": 6,
+      "hpPerLevelMin": 3, "hpPerLevelMax": 7,
       "mpPerLevelMin": 4, "mpPerLevelMax": 10,
-      "xpModifier": 1.1,
+      "xpModifier": 1.05,
       "magicSchools": { "priest": 3 },
       "skills": ["MEDITATE", "PERCEPTION"]
     },
@@ -140,7 +140,7 @@
       "hpPerLevelMin": 4, "hpPerLevelMax": 8,
       "mpPerLevelMin": 1, "mpPerLevelMax": 4,
       "xpModifier": 1.1,
-      "magicSchools": { "kai": 2 },
+      "magicSchools": { "kai": 3 },
       "skills": ["KICK", "DODGE", "SNEAK", "PERCEPTION", "MEDITATE"]
     },
     {
@@ -151,7 +151,7 @@
       "hpPerLevelMin": 4, "hpPerLevelMax": 7,
       "mpPerLevelMin": 2, "mpPerLevelMax": 5,
       "xpModifier": 1.1,
-      "magicSchools": { "bard": 1 },
+      "magicSchools": { "bard": 3 },
       "skills": ["SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE"]
     },
     {

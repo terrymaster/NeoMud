@@ -95,7 +95,7 @@
       "manaCost": 0,
       "difficulty": 12,
       "isPassive": true,
-      "classRestrictions": ["THIEF", "RANGER", "DRUID", "MYSTIC"],
+      "classRestrictions": ["THIEF", "RANGER", "DRUID", "MYSTIC", "PRIEST", "MAGE"],
       "properties": {}
     },
     {

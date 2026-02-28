@@ -14,7 +14,7 @@ class SpellCatalogTest {
     @Test
     fun testLoadSpellCatalog() {
         val catalog = load()
-        assertTrue(catalog.spellCount >= 22, "Should load at least 22 spells, got ${catalog.spellCount}")
+        assertTrue(catalog.spellCount >= 23, "Should load at least 23 spells, got ${catalog.spellCount}")
     }
 
     @Test
@@ -50,7 +50,7 @@ class SpellCatalogTest {
         assertTrue(mageSpells.all { it.school == "mage" })
 
         val priestSpells = catalog.getSpellsForSchool("priest")
-        assertEquals(5, priestSpells.size)
+        assertEquals(6, priestSpells.size)
 
         val druidSpells = catalog.getSpellsForSchool("druid")
         assertEquals(4, druidSpells.size)

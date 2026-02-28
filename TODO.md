@@ -4,17 +4,17 @@ Active work items and known issues, ordered roughly by priority.
 
 ## High Priority
 
-### Game Balance (#40, #41)
-- Melee DPS is 3-5x higher than spell DPS — casters are underpowered at all levels
-- No passive HP regeneration outside combat (#41) — forces excessive potion purchases
+### Game Balance (#40, #43)
+- Melee DPS is 3-5x higher than spell DPS (#43) — needs STR scaling nerf + spell buff (both sides)
 - Large difficulty jump between Forest (L1-3, max 5 dmg) and Marsh (L4-5, 15+ dmg) — no L3-4 transitional content
-- Priest class is unviable solo (no damage spells, worst HP, 1.2x XP penalty)
-- Parry/Dodge proc rates too low at typical L1 stats (5-6%) — feels like they don't exist
+- ~~Priest class is unviable solo~~ — DONE (#45): added Holy Smite spell, reduced XP penalty (1.1→1.05), increased HP per level (6→7)
+- ~~Parry/Dodge proc rates too low~~ — DONE (#46): stat divisor 100→80, max chance 25%→30%, added proper cap enforcement
+- ~~Orphaned spells~~ — DONE (#44): Mystic kai:2→3, Bard bard:1→3
 - No zone danger warning when entering areas above player level (#40)
 
 ### Spell & Skill Bugs
-- Magic school level number (1/2/3 in classes.json) is never enforced — all classes with any school access can cast ALL spells of that school (Ranger casts Nature's Wrath, Gypsy casts Fireball)
-- Skill classRestriction mismatches: BASH missing CLERIC/WARLOCK, SNEAK missing MISSIONARY, MEDITATE missing PALADIN/MISSIONARY/BARD/GYPSY, KICK missing NINJA
+- ~~Magic school level enforcement~~ — DONE: `SpellCommand.execute()` and `handleReadySpell()` both validate `schoolLevel`; `levelRequired` check added to `handleReadySpell()`
+- ~~Skill classRestriction mismatches~~ — DONE: data reconciled; server now enforces `classRestrictions` at command dispatch
 - DoT/HoT tick application to NPCs needs verification — EffectApplicator uses Player object
 
 ### UX Issues (#33, #35, #42)

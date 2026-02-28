@@ -22,11 +22,11 @@ object GameConfig {
         const val DEFENSE_AGI_DIVISOR = 2
         const val DEFENSE_ARMOR_DIVISOR = 2
         const val NPC_DEFENSE_LEVEL_MULTIPLIER = 1
-        const val DODGE_MAX_CHANCE = 0.25
-        const val DODGE_STAT_DIVISOR = 100.0
+        const val DODGE_MAX_CHANCE = 0.30
+        const val DODGE_STAT_DIVISOR = 80.0
         const val NPC_EVASION_DIVISOR = 100.0
-        const val PARRY_MAX_CHANCE = 0.25
-        const val PARRY_STAT_DIVISOR = 100.0
+        const val PARRY_MAX_CHANCE = 0.30
+        const val PARRY_STAT_DIVISOR = 80.0
         const val PARRY_REDUCTION_BASE = 2
         const val PARRY_REDUCTION_STR_DIVISOR = 20
         const val UNARMED_DAMAGE_RANGE = 3
