@@ -64,9 +64,63 @@ if (args[0] === '--register') {
 // ---------------------------------------------------------------------------
 let classCatalog = [];
 let raceCatalog = [];
+let skillCatalog = [];
+let spellCatalog = [];
 let itemCatalogMap = {}; // itemId -> item name, built from ItemCatalogSync
 let catalogsReceived = { classes: false, races: false };
 let registrationSent = false;
+
+/**
+ * Cross-reference the player's class with skill/spell catalogs to determine
+ * what abilities are available, then write them into state.
+ */
+function computePlayerAbilities() {
+  if (!state.player) return;
+  const classDef = classCatalog.find(c => c.id === state.player.class);
+  if (!classDef) return;
+
+  // Skills: mirror server logic — classRestrictions empty = all classes,
+  // otherwise the player's class must be in the list
+  const playerClass = state.player.class;
+  state.availableSkills = skillCatalog
+    .filter(s => {
+      const restrictions = s.classRestrictions || [];
+      return restrictions.length === 0 || restrictions.includes(playerClass);
+    })
+    .map(s => ({
+      id: s.id,
+      name: s.name,
+      description: s.description,
+      category: s.category,
+      manaCost: s.manaCost || 0,
+      cooldownTicks: s.cooldownTicks || 0,
+      isPassive: s.isPassive || false,
+    }));
+
+  // Spells: filter by class magic schools and player level
+  const magicSchools = classDef.magicSchools || {};
+  state.availableSpells = spellCatalog
+    .filter(sp => {
+      const schoolMax = magicSchools[sp.school];
+      if (schoolMax == null) return false; // class doesn't have this school
+      if (sp.schoolLevel > schoolMax) return false; // school level too high
+      return true;
+    })
+    .map(sp => ({
+      id: sp.id,
+      name: sp.name,
+      description: sp.description,
+      school: sp.school,
+      spellType: sp.spellType,
+      manaCost: sp.manaCost,
+      cooldownTicks: sp.cooldownTicks || 0,
+      levelRequired: sp.levelRequired || 1,
+      targetType: sp.targetType,
+      basePower: sp.basePower || 0,
+    }));
+
+  scheduleStateWrite();
+}
 
 function tryRegister() {
   if (registrationSent || !registerMode) return;
@@ -136,6 +190,8 @@ const state = {
   isHidden: false,
   isMeditating: false,
   activeEffects: [],
+  availableSkills: [],
+  availableSpells: [],
   recentEvents: [],
 };
 
@@ -198,6 +254,7 @@ const handlers = {
       stats: p.stats || null,
     };
     pushEvent('system', `Logged in as ${p.name} (Lv${p.level} ${p.race || ''} ${p.characterClass})`);
+    computePlayerAbilities();
   },
   auth_error(msg) {
     pushEvent('error', `Auth error: ${msg.reason}`);
@@ -426,6 +483,7 @@ const handlers = {
       state.player.xpToNextLevel = msg.xpToNextLevel;
     }
     pushEvent('level_up', `LEVEL UP! Now level ${msg.newLevel} (+${msg.hpRoll} HP, +${msg.mpRoll} MP, +${msg.cpGained} CP)`);
+    computePlayerAbilities();
   },
   trainer_info(msg) {
     const lines = ['The trainer can help you level up and allocate Character Points (CP) to improve your stats. You earn CP each time you level up.'];
@@ -495,14 +553,22 @@ const handlers = {
     }
     pushEvent('system', `Received item catalog (${Object.keys(itemCatalogMap).length} items)`);
   },
-  skill_catalog_sync() { pushEvent('system', 'Received skill catalog'); },
+  skill_catalog_sync(msg) {
+    skillCatalog = msg.skills || [];
+    pushEvent('system', `Received skill catalog (${skillCatalog.length} skills)`);
+    computePlayerAbilities();
+  },
   race_catalog_sync(msg) {
     raceCatalog = msg.races || [];
     catalogsReceived.races = true;
     pushEvent('system', `Received race catalog (${raceCatalog.length} races)`);
     tryRegister();
   },
-  spell_catalog_sync() { pushEvent('system', 'Received spell catalog'); },
+  spell_catalog_sync(msg) {
+    spellCatalog = msg.spells || [];
+    pushEvent('system', `Received spell catalog (${spellCatalog.length} spells)`);
+    computePlayerAbilities();
+  },
 
   // Map data — just log
   map_data() { pushEvent('system', 'Received map data'); },
