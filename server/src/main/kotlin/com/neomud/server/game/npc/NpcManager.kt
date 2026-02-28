@@ -68,7 +68,8 @@ data class NpcEvent(
 
 class NpcManager(
     private val worldGraph: WorldGraph,
-    private val zoneSpawnConfigs: Map<String, SpawnConfig> = emptyMap()
+    private val zoneSpawnConfigs: Map<String, SpawnConfig> = emptyMap(),
+    private val roomMaxHostileNpcs: Map<RoomId, Int> = emptyMap()
 ) {
     private val logger = org.slf4j.LoggerFactory.getLogger(NpcManager::class.java)
     private val npcs = mutableListOf<NpcState>()
@@ -132,11 +133,18 @@ class NpcManager(
         )
     }
 
+    private fun aliveHostileNpcsInRoom(roomId: RoomId): Int =
+        npcs.count { it.currentRoomId == roomId && it.isAlive && it.hostile }
+
     private fun aliveNpcsInRoom(roomId: RoomId): Int =
         npcs.count { it.currentRoomId == roomId && it.isAlive }
 
     private fun aliveNpcsInZone(zoneId: String): Int =
         npcs.count { it.zoneId == zoneId && it.isAlive }
+
+    /** Returns the effective hostile NPC cap for a room: room override > zone default > 0 (unlimited). */
+    private fun effectiveMaxPerRoom(roomId: RoomId, zoneId: String): Int =
+        roomMaxHostileNpcs[roomId] ?: zoneSpawnConfigs[zoneId]?.maxPerRoom ?: 0
 
     /**
      * @param roomsWithVisiblePlayers rooms containing non-hidden, alive players past grace period.
@@ -155,11 +163,9 @@ class NpcManager(
                 continue
             }
 
-            val spawnConfig = zoneSpawnConfigs[npc.zoneId]
-            val maxPerRoom = spawnConfig?.maxPerRoom ?: 0
-
             val canMoveTo: (RoomId) -> Boolean = { targetRoomId ->
-                val roomOk = maxPerRoom == 0 || aliveNpcsInRoom(targetRoomId) < maxPerRoom
+                val maxPerRoom = effectiveMaxPerRoom(targetRoomId, npc.zoneId)
+                val roomOk = maxPerRoom == 0 || aliveHostileNpcsInRoom(targetRoomId) < maxPerRoom
                 val sanctuaryOk = !npc.hostile || worldGraph.getRoom(targetRoomId)?.effects?.none { it.type == "SANCTUARY" } != false
                 roomOk && sanctuaryOk
             }
@@ -219,11 +225,10 @@ class NpcManager(
             // Pick a random template and try to spawn at a valid room
             val (template, _) = templates.random()
             val candidates = template.spawnPoints.ifEmpty { listOf(template.startRoomId) }
-            val spawnRoom = if (config.maxPerRoom > 0) {
-                candidates.filter { aliveNpcsInRoom(it) < config.maxPerRoom }.randomOrNull() ?: continue
-            } else {
-                candidates.random()
-            }
+            val spawnRoom = candidates.filter { roomId ->
+                val max = effectiveMaxPerRoom(roomId, zoneId)
+                max == 0 || aliveHostileNpcsInRoom(roomId) < max
+            }.randomOrNull() ?: continue
 
             val instanceId = "${template.id}#${nextSpawnIndex++}"
             val spawned = createNpcState(template, zoneId, instanceId)

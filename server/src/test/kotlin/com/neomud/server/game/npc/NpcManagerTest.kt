@@ -4,6 +4,8 @@ import com.neomud.server.defaultWorldSource
 import com.neomud.server.game.npc.behavior.PatrolBehavior
 import com.neomud.server.game.npc.behavior.PursuitBehavior
 import com.neomud.server.game.npc.behavior.WanderBehavior
+import com.neomud.server.world.NpcData
+import com.neomud.server.world.SpawnConfig
 import com.neomud.server.world.WorldGraph
 import com.neomud.server.world.WorldLoader
 import com.neomud.shared.model.Direction
@@ -135,6 +137,84 @@ class NpcManagerTest {
             }
         }
         assertTrue(movedAtLeastOnce, "NPCs should wander normally when no players are present")
+    }
+
+    @Test
+    fun testRoomMaxHostileNpcsBlocksWander() {
+        // Build a 3-room world: A <-> B <-> C, all in zone "test"
+        val world = WorldGraph()
+        world.addRoom(Room("test:a", "A", "", mapOf(Direction.EAST to "test:b"), "test", 0, 0))
+        world.addRoom(Room("test:b", "B", "", mapOf(Direction.WEST to "test:a", Direction.EAST to "test:c"), "test", 1, 0))
+        world.addRoom(Room("test:c", "C", "", mapOf(Direction.WEST to "test:b"), "test", 2, 0))
+
+        // Room B has a per-room cap of 1 hostile NPC
+        val roomCaps = mapOf("test:b" to 1)
+        val zoneConfigs = mapOf("test" to SpawnConfig(maxEntities = 10, maxPerRoom = 5, rateTicks = 0))
+        val manager = NpcManager(world, zoneConfigs, roomCaps)
+
+        // Load two hostile wanderers, one starting in room A, one in room C
+        val wolf = NpcData("npc:wolf", "Wolf", "", startRoomId = "test:a", behaviorType = "wander", hostile = true, maxHp = 20, damage = 3)
+        val rat = NpcData("npc:rat", "Rat", "", startRoomId = "test:c", behaviorType = "wander", hostile = true, maxHp = 10, damage = 1)
+        manager.loadNpcs(listOf(wolf to "test", rat to "test"))
+
+        // Tick many times — room B should never have more than 1 hostile NPC
+        repeat(200) {
+            manager.tick()
+            val inB = manager.getLivingHostileNpcsInRoom("test:b")
+            assertTrue(inB.size <= 1, "Room B should have at most 1 hostile NPC (room cap), but had ${inB.size}")
+        }
+    }
+
+    @Test
+    fun testRoomMaxHostileNpcsBlocksSpawn() {
+        val world = WorldGraph()
+        world.addRoom(Room("test:a", "A", "", emptyMap(), "test", 0, 0))
+
+        // Room cap of 1, zone allows many
+        val roomCaps = mapOf("test:a" to 1)
+        val zoneConfigs = mapOf("test" to SpawnConfig(maxEntities = 10, maxPerRoom = 5, rateTicks = 1))
+        val manager = NpcManager(world, zoneConfigs, roomCaps)
+
+        // One hostile NPC that spawns at test:a
+        val rat = NpcData("npc:rat", "Rat", "", startRoomId = "test:a", behaviorType = "idle", hostile = true, maxHp = 10, damage = 1)
+        manager.loadNpcs(listOf(rat to "test"))
+
+        // Tick many times — spawner should not push past the room cap of 1
+        repeat(50) {
+            manager.tick()
+            val inA = manager.getLivingHostileNpcsInRoom("test:a")
+            assertTrue(inA.size <= 1, "Room A should have at most 1 hostile NPC (room cap), but had ${inA.size}")
+        }
+    }
+
+    @Test
+    fun testRoomMaxHostileNpcsFallsBackToZoneDefault() {
+        val world = WorldGraph()
+        world.addRoom(Room("test:a", "A", "", emptyMap(), "test", 0, 0))
+
+        // No room-level cap, zone default is 2
+        val zoneConfigs = mapOf("test" to SpawnConfig(maxEntities = 10, maxPerRoom = 2, rateTicks = 1))
+        val manager = NpcManager(world, zoneConfigs)
+
+        val rat = NpcData("npc:rat", "Rat", "", startRoomId = "test:a", behaviorType = "idle", hostile = true, maxHp = 10, damage = 1)
+        manager.loadNpcs(listOf(rat to "test"))
+
+        // Tick many times — zone default should cap at 2
+        repeat(50) {
+            manager.tick()
+            val inA = manager.getLivingHostileNpcsInRoom("test:a")
+            assertTrue(inA.size <= 2, "Room A should have at most 2 hostile NPCs (zone default), but had ${inA.size}")
+        }
+    }
+
+    @Test
+    fun testForestEdgeHasRoomCapInDefaultWorld() {
+        val result = load()
+        val npcManager = NpcManager(result.worldGraph, result.zoneSpawnConfigs, result.roomMaxHostileNpcs)
+        npcManager.loadNpcs(result.npcDataList)
+
+        // forest:edge should have maxHostileNpcs = 1 in the default world
+        assertEquals(1, result.roomMaxHostileNpcs["forest:edge"], "forest:edge should have a room-level cap of 1")
     }
 
     @Test

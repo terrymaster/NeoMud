@@ -22,6 +22,7 @@ object WorldLoader {
         val spellCatalog: SpellCatalog,
         val pcSpriteCatalog: PcSpriteCatalog,
         val zoneSpawnConfigs: Map<String, SpawnConfig>,
+        val roomMaxHostileNpcs: Map<String, Int>,
         val manifest: WorldManifest? = null
     )
 
@@ -46,6 +47,7 @@ object WorldLoader {
         val worldGraph = WorldGraph()
         val allNpcData = mutableListOf<Pair<NpcData, String>>()
         val zoneSpawnConfigs = mutableMapOf<String, SpawnConfig>()
+        val roomMaxHostileNpcs = mutableMapOf<String, Int>()
         val zoneFiles = source.list("world/", ".zone.json")
         var dataDefinedSpawn: String? = null
 
@@ -118,6 +120,8 @@ object WorldLoader {
                 worldGraph.setHiddenExitDefs(roomData.id, roomData.hiddenExits)
                 // Store interactable definitions
                 worldGraph.storeInteractableDefs(roomData.id, roomData.interactables)
+                // Store per-room hostile NPC cap if specified
+                roomData.maxHostileNpcs?.let { roomMaxHostileNpcs[roomData.id] = it }
             }
 
             allNpcData.addAll(zone.npcs.map { it to zone.id })
@@ -343,6 +347,6 @@ object WorldLoader {
             }
         }
 
-        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, skillCatalog, raceCatalog, spellCatalog, pcSpriteCatalog, zoneSpawnConfigs, manifest)
+        return LoadResult(worldGraph, allNpcData, classCatalog, itemCatalog, lootTableCatalog, skillCatalog, raceCatalog, spellCatalog, pcSpriteCatalog, zoneSpawnConfigs, roomMaxHostileNpcs, manifest)
     }
 }

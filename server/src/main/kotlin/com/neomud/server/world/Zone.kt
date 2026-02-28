@@ -58,7 +58,8 @@ data class RoomData(
     val imageWidth: Int = 1024,
     val imageHeight: Int = 576,
     val interactables: List<RoomInteractable> = emptyList(),
-    val unpickableExits: Set<Direction> = emptySet()
+    val unpickableExits: Set<Direction> = emptySet(),
+    val maxHostileNpcs: Int? = null
 )
 
 @Serializable

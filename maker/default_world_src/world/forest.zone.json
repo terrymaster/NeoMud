@@ -20,6 +20,7 @@
       },
       "backgroundImage": "/assets/images/rooms/forest_edge.webp",
       "departSound": "footstep_dirt",
+      "maxHostileNpcs": 1,
       "imagePrompt": "First-person view standing at the edge of an ancient forest. Flat grass and dirt ground plane filling the lower third, transitioning from open field to tree roots. Towering oaks ahead framing a path into darkness. Shafts of golden sunlight pierce the canopy. Town walls faintly visible behind. No people or creatures.",
       "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
       "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
