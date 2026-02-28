@@ -3,11 +3,13 @@ package com.neomud.server.game.commands
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PendingSkill
 import com.neomud.server.session.PlayerSession
+import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
 import com.neomud.shared.protocol.ServerMessage
 
 class KickCommand(
-    private val npcManager: NpcManager
+    private val npcManager: NpcManager,
+    private val worldGraph: WorldGraph
 ) {
     suspend fun execute(session: PlayerSession, targetId: String?) {
         val roomId = session.currentRoomId ?: return
@@ -31,7 +33,9 @@ class KickCommand(
             kickDirection = try {
                 Direction.valueOf(resolvedInput.substring(lastColon + 1).uppercase())
             } catch (_: IllegalArgumentException) {
-                session.send(ServerMessage.SystemMessage("Invalid kick direction."))
+                val room = worldGraph.getRoom(roomId)
+                val exits = room?.exits?.keys?.joinToString(", ") { it.name.lowercase() } ?: "none"
+                session.send(ServerMessage.SystemMessage("Invalid kick direction. Available exits: $exits. Format: targetId:DIRECTION"))
                 return
             }
         } else {
@@ -52,7 +56,9 @@ class KickCommand(
         }
 
         if (kickDirection == null) {
-            session.send(ServerMessage.SystemMessage("You must choose a direction to kick ${target.name}!"))
+            val room = worldGraph.getRoom(roomId)
+            val exits = room?.exits?.keys?.joinToString(", ") { it.name.lowercase() } ?: "none"
+            session.send(ServerMessage.SystemMessage("You must choose a direction to kick ${target.name}! Available exits: $exits. Format: targetId:DIRECTION"))
             return
         }
 

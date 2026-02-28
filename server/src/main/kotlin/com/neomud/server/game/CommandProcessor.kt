@@ -76,7 +76,7 @@ class CommandProcessor(
     private val attackCommand = AttackCommand(npcManager, worldGraph)
     private val sneakCommand = SneakCommand(sessionManager, npcManager, skillCatalog, classCatalog)
     private val bashCommand = BashCommand(npcManager)
-    private val kickCommand = KickCommand(npcManager)
+    private val kickCommand = KickCommand(npcManager, worldGraph)
     private val meditateCommand = MeditateCommand()
     private val trackCommand = TrackCommand()
     private val pickLockCommand = PickLockCommand(worldGraph, sessionManager, npcManager)
