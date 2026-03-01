@@ -54,7 +54,7 @@ test('create and delete an NPC after zone exists', async ({ page, baseURL }) => 
   // Delete
   page.on('dialog', (dialog) => dialog.accept())
   await page.getByRole('button', { name: 'Delete' }).click()
-  await expect(page.getByText(/Select a npc to edit/i)).toBeVisible()
+  await expect(page.getByText(/Select an npc to edit/i)).toBeVisible()
 })
 
 test('NPC creation blocked without selecting zone', async ({ page, baseURL }) => {

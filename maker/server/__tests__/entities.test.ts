@@ -35,6 +35,18 @@ describe('Items CRUD', () => {
     expect(res.body).toEqual([])
   })
 
+  it('POST /api/items rejects empty name', async () => {
+    const res = await request(app).post('/api/items').send({ ...itemData, id: 'no_name', name: '' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/name is required/i)
+  })
+
+  it('POST /api/items rejects whitespace-only name', async () => {
+    const res = await request(app).post('/api/items').send({ ...itemData, id: 'no_name2', name: '   ' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/name is required/i)
+  })
+
   it('POST /api/items creates an item', async () => {
     const res = await request(app).post('/api/items').send(itemData)
     expect(res.status).toBe(200)
@@ -116,6 +128,12 @@ describe('NPCs CRUD', () => {
     const res = await request(app).post('/api/npcs').send({ ...npcData, id: '' })
     expect(res.status).toBe(400)
     expect(res.body.error).toMatch(/id is required/i)
+  })
+
+  it('POST /api/npcs rejects empty name', async () => {
+    const res = await request(app).post('/api/npcs').send({ ...npcData, name: '' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/name is required/i)
   })
 
   it('POST /api/npcs rejects missing zoneId', async () => {

@@ -23,6 +23,14 @@ describe('Zone CRUD', () => {
     expect(res.body).toEqual([])
   })
 
+  it('POST /api/zones rejects empty name', async () => {
+    const res = await request(app).post('/api/zones').send({
+      id: 'no_name', name: '', description: 'Test',
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/name is required/i)
+  })
+
   it('POST /api/zones creates a zone', async () => {
     const res = await request(app).post('/api/zones').send({
       id: 'forest',
@@ -64,6 +72,24 @@ describe('Zone CRUD', () => {
 })
 
 describe('Room CRUD', () => {
+  it('POST /api/zones/:zoneId/rooms rejects empty name', async () => {
+    const res = await request(app).post('/api/zones/forest/rooms').send({
+      id: 'no_name', name: '', description: 'Test', x: 0, y: 0,
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/name is required/i)
+  })
+
+  it('POST /api/zones/:zoneId/rooms does not double zone-prefix', async () => {
+    const res = await request(app).post('/api/zones/forest/rooms').send({
+      id: 'forest:already_prefixed', name: 'Prefixed Room', description: 'Test', x: 5, y: 5,
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.id).toBe('forest:already_prefixed')
+    // Cleanup
+    await request(app).delete('/api/zones/forest/rooms/already_prefixed')
+  })
+
   it('POST /api/zones/:zoneId/rooms creates a room', async () => {
     const res = await request(app).post('/api/zones/forest/rooms').send({
       id: 'clearing',

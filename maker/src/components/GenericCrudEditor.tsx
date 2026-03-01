@@ -4,6 +4,15 @@ import ImagePreview from './ImagePreview';
 import SfxPreview from './SfxPreview';
 import type { CSSProperties } from 'react';
 
+// Letters whose names start with a vowel sound (e.g., N="en", M="em", S="es")
+const VOWEL_SOUND_LETTERS = /^[AEFHILMNORSX]/i
+
+function articleFor(word: string): string {
+  if (/^[aeiou]/i.test(word)) return 'an'
+  if (/^[A-Z]{2,}/.test(word) && VOWEL_SOUND_LETTERS.test(word)) return 'an'
+  return 'a'
+}
+
 export interface FieldConfig {
   key: string;
   label: string;
@@ -500,7 +509,7 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
           </>
         ) : (
           <div style={styles.empty}>
-            Select {/^[aeiou]/i.test(entityName) ? 'an' : 'a'} {entityName.toLowerCase()} to edit, or click "+ New {entityName}" to create one.
+            Select {articleFor(entityName)} {entityName.toLowerCase()} to edit, or click "+ New {entityName}" to create one.
           </div>
         )}
       </div>

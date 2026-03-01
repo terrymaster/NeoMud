@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api';
+import ValidationModal from './ValidationModal';
 import type { CSSProperties } from 'react';
 
 const styles: Record<string, CSSProperties> = {
@@ -35,6 +37,7 @@ const styles: Record<string, CSSProperties> = {
 function MenuBar() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
+  const [validation, setValidation] = useState<{ errors: string[]; warnings: string[] } | null>(null);
 
   const handleSaveAs = async () => {
     const newName = prompt('Save project as:', `${name}_copy`);
@@ -66,20 +69,9 @@ function MenuBar() {
   const handleValidate = async () => {
     try {
       const result = await api.get<{ errors: string[]; warnings: string[] }>('/export/validate');
-      if (result.errors.length === 0 && result.warnings.length === 0) {
-        alert('Validation passed — no errors or warnings.');
-      } else {
-        const parts: string[] = [];
-        if (result.errors.length > 0) {
-          parts.push('Errors:\n' + result.errors.map((e) => `  • ${e}`).join('\n'));
-        }
-        if (result.warnings.length > 0) {
-          parts.push('Warnings:\n' + result.warnings.map((w) => `  • ${w}`).join('\n'));
-        }
-        alert(parts.join('\n\n'));
-      }
+      setValidation(result);
     } catch (err: any) {
-      alert(err.message || 'Validation failed');
+      setValidation({ errors: [err.message || 'Validation failed'], warnings: [] });
     }
   };
 
@@ -93,10 +85,7 @@ function MenuBar() {
     try {
       const result = await api.get<{ errors: string[]; warnings: string[] }>('/export/validate');
       if (result.errors.length > 0) {
-        alert(
-          'Cannot package — validation errors:\n' +
-            result.errors.map((e) => `  • ${e}`).join('\n')
-        );
+        setValidation(result);
         return;
       }
       if (result.warnings.length > 0) {
@@ -111,7 +100,7 @@ function MenuBar() {
       a.href = '/api/export/package';
       a.click();
     } catch (err: any) {
-      alert(err.message || 'Package failed');
+      setValidation({ errors: [err.message || 'Package failed'], warnings: [] });
     }
   };
 
@@ -121,28 +110,37 @@ function MenuBar() {
     (e.currentTarget.style.backgroundColor = 'transparent');
 
   return (
-    <div style={styles.bar}>
-      <button style={styles.btn} onClick={handleSaveAs} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-        Save As
-      </button>
-      <button style={styles.btn} onClick={handleSwitchProject} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-        Switch Project
-      </button>
-      <div style={styles.separator} />
-      <button style={styles.btn} onClick={handleValidate} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-        Validate
-      </button>
-      <button style={styles.btn} onClick={handleExportNmd} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-        Export .nmd
-      </button>
-      <button style={styles.btn} onClick={handlePackage} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-        Package .nmd
-      </button>
-      <div style={styles.spacer} />
-      <button style={{ ...styles.btn, color: '#ff6b6b' }} onClick={handleQuit} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-        Quit Server
-      </button>
-    </div>
+    <>
+      <div style={styles.bar}>
+        <button style={styles.btn} onClick={handleSaveAs} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+          Save As
+        </button>
+        <button style={styles.btn} onClick={handleSwitchProject} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+          Switch Project
+        </button>
+        <div style={styles.separator} />
+        <button style={styles.btn} onClick={handleValidate} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+          Validate
+        </button>
+        <button style={styles.btn} onClick={handleExportNmd} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+          Export .nmd
+        </button>
+        <button style={styles.btn} onClick={handlePackage} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+          Package .nmd
+        </button>
+        <div style={styles.spacer} />
+        <button style={{ ...styles.btn, color: '#ff6b6b' }} onClick={handleQuit} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+          Quit Server
+        </button>
+      </div>
+      {validation && (
+        <ValidationModal
+          errors={validation.errors}
+          warnings={validation.warnings}
+          onClose={() => setValidation(null)}
+        />
+      )}
+    </>
   );
 }
 

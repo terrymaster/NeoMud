@@ -16,10 +16,24 @@ function validateId(id: string | undefined, entityLabel: string, res: Response):
   return true
 }
 
+function validateName(name: string | undefined, entityLabel: string, res: Response): boolean {
+  if (!name || !name.trim()) {
+    res.status(400).json({ error: `${entityLabel} name is required` })
+    return false
+  }
+  return true
+}
+
+function articleFor(label: string): string {
+  if (/^[aeiou]/i.test(label)) return 'An'
+  if (/^[A-Z]{2,}/.test(label) && /^[AEFHILMNORSX]/i.test(label)) return 'An'
+  return 'A'
+}
+
 function handlePrismaError(err: unknown, entityLabel: string, res: Response) {
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
-      res.status(409).json({ error: `A ${entityLabel} with that ID already exists` })
+      res.status(409).json({ error: `${articleFor(entityLabel)} ${entityLabel} with that ID already exists` })
       return
     }
     if (err.code === 'P2025') {
@@ -74,6 +88,7 @@ zonesRouter.get('/zones', async (_req, res) => {
 // POST /zones — create zone
 zonesRouter.post('/zones', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Zone', res)) return
+  if (!validateName(req.body.name, 'Zone', res)) return
   try {
     const {
       id, name, description,
@@ -157,13 +172,14 @@ zonesRouter.get('/zones/:zoneId/rooms', async (req, res) => {
 // POST /zones/:zoneId/rooms — create room
 zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Room', res)) return
+  if (!validateName(req.body.name, 'Room', res)) return
   try {
     const { zoneId } = req.params
     const {
       id, name, description, x, y,
       backgroundImage, effects, bgm, bgmPrompt, bgmDuration, departSound,
     } = req.body
-    const fullId = `${zoneId}:${id}`
+    const fullId = id.startsWith(`${zoneId}:`) ? id : `${zoneId}:${id}`
     const room = await db().room.create({
       data: {
         id: fullId,

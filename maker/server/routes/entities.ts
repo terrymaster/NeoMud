@@ -18,10 +18,24 @@ function validateId(id: string | undefined, entityLabel: string, res: Response):
   return true
 }
 
+function validateName(name: string | undefined, entityLabel: string, res: Response): boolean {
+  if (!name || !name.trim()) {
+    res.status(400).json({ error: `${entityLabel} name is required` })
+    return false
+  }
+  return true
+}
+
+function articleFor(label: string): string {
+  if (/^[aeiou]/i.test(label)) return 'An'
+  if (/^[A-Z]{2,}/.test(label) && /^[AEFHILMNORSX]/i.test(label)) return 'An'
+  return 'A'
+}
+
 function handlePrismaError(err: unknown, entityLabel: string, res: Response) {
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
-      res.status(409).json({ error: `A ${entityLabel} with that ID already exists` })
+      res.status(409).json({ error: `${articleFor(entityLabel)} ${entityLabel} with that ID already exists` })
       return
     }
     if (err.code === 'P2025') {
@@ -73,6 +87,7 @@ entitiesRouter.get('/items/:id', async (req, res) => {
 
 entitiesRouter.post('/items', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Item', res)) return
+  if (!validateName(req.body.name, 'Item', res)) return
   try {
     const item = await db().item.create({ data: req.body })
     res.json(item)
@@ -123,6 +138,7 @@ entitiesRouter.get('/npcs/:id', async (req, res) => {
 
 entitiesRouter.post('/npcs', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'NPC', res)) return
+  if (!validateName(req.body.name, 'NPC', res)) return
   try {
     const { zoneId } = req.body
     if (!zoneId || !zoneId.trim()) {
@@ -180,6 +196,7 @@ entitiesRouter.get('/character-classes/:id', async (req, res) => {
 
 entitiesRouter.post('/character-classes', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Class', res)) return
+  if (!validateName(req.body.name, 'Class', res)) return
   try {
     const cls = await db().characterClass.create({ data: req.body })
     res.json(cls)
@@ -229,6 +246,7 @@ entitiesRouter.get('/races/:id', async (req, res) => {
 
 entitiesRouter.post('/races', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Race', res)) return
+  if (!validateName(req.body.name, 'Race', res)) return
   try {
     const race = await db().race.create({ data: req.body })
     res.json(race)
@@ -278,6 +296,7 @@ entitiesRouter.get('/skills/:id', async (req, res) => {
 
 entitiesRouter.post('/skills', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Skill', res)) return
+  if (!validateName(req.body.name, 'Skill', res)) return
   try {
     const skill = await db().skill.create({ data: req.body })
     res.json(skill)
@@ -327,6 +346,7 @@ entitiesRouter.get('/spells/:id', async (req, res) => {
 
 entitiesRouter.post('/spells', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Spell', res)) return
+  if (!validateName(req.body.name, 'Spell', res)) return
   try {
     const spell = await db().spell.create({ data: req.body })
     res.json(spell)
