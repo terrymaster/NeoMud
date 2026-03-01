@@ -666,7 +666,6 @@ function connect() {
 
   ws.on('open', () => {
     console.log('[relay] Connected');
-    reconnectAttempts = 0;
     state.connected = true;
     scheduleStateWrite();
 
