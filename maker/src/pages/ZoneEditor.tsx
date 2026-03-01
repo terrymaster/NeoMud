@@ -484,6 +484,16 @@ function ZoneEditor() {
   const [allRooms, setAllRooms] = useState<AllRoomsGroup[]>([]);
   const [movementSfx, setMovementSfx] = useState<{ id: string; label: string }[]>([]);
 
+  // Flat map of roomId → roomName for efficient exit display
+  const roomNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const group of allRooms) {
+      for (const r of group.rooms) map.set(r.id, r.name);
+    }
+    for (const r of rooms) map.set(r.id, r.name); // current zone rooms override
+    return map;
+  }, [allRooms, rooms]);
+
   // Load zones list + all rooms for exit picker
   useEffect(() => {
     api.get<Zone[]>('/zones').then((zoneList) => {
@@ -1320,7 +1330,12 @@ function ZoneEditor() {
             {selectedRoom.exits && selectedRoom.exits.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {selectedRoom.exits.map((exit) => {
-                  const targetRoom = rooms.find((r) => r.id === exit.toRoomId);
+                  const targetName = roomNameMap.get(exit.toRoomId);
+                  const exitZone = exit.toRoomId.split(':')[0];
+                  const isOtherZone = selectedZoneId && exitZone !== selectedZoneId;
+                  const displayName = targetName
+                    ? (isOtherZone ? `${targetName} (${exitZone})` : targetName)
+                    : exit.toRoomId;
                   const lockedMap: Record<string, number> = (() => {
                     try { return JSON.parse(roomForm.lockedExits || '{}'); } catch { return {}; }
                   })();
@@ -1347,7 +1362,7 @@ function ZoneEditor() {
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <strong>{exit.direction}</strong>{' '}
                           <span style={{ color: '#666' }}>
-                            {targetRoom ? targetRoom.name : exit.toRoomId}
+                            {displayName}
                           </span>
                           {isHidden && <span style={{ color: '#388e3c', fontSize: 10, marginLeft: 4 }}>(hidden)</span>}
                         </span>
