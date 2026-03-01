@@ -117,6 +117,13 @@ When given a specific area to test (e.g., "zone editor", "item CRUD", "export fl
 
 **File a GitHub issue for every bug you find during the session.** Use `gh issue create` with the `worldmaker` label. File issues as you go — don't wait until the end of the session.
 
+### Attaching Screenshots
+
+When filing a bug, **always capture a screenshot** showing the issue and attach it to the GitHub issue:
+
+1. Take a screenshot with a descriptive filename: `browser_take_screenshot` with `filename` set to e.g. `worldmaker-bug-missing-confirm.png`
+2. Create the issue with the screenshot attached using `gh issue create`:
+
 ```bash
 gh issue create --title "Brief description of bug" --label "worldmaker" --body "$(cat <<'EOF'
 ## Bug Report (WorldMaker)
@@ -133,12 +140,19 @@ gh issue create --title "Brief description of bug" --label "worldmaker" --body "
 
 **Actual**: ...
 
-**Screenshot**: [Describe what you saw in the screenshot]
-
 **Console Errors**: [Any JS errors from browser_console_messages, if relevant]
+
+**Screenshot**: (see attached)
 EOF
-)"
+)" --add-file worldmaker-bug-missing-confirm.png
 ```
+
+After the issue is created, delete the screenshot file to keep the working directory clean:
+```bash
+rm worldmaker-bug-*.png
+```
+
+If the screenshot capture or upload fails for any reason, still file the issue — describe what you saw visually in the body instead.
 
 - **Critical**: Crash, data loss, can't complete basic workflow
 - **Major**: Broken feature, wrong behavior, blocks productivity

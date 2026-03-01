@@ -48,6 +48,9 @@ maker/default_world.nmd
 # MCP config (contains API keys)
 .mcp.json
 
+# Playwright MCP browser cache
+.playwright-mcp/
+
 # Nano Banana image generation output
 nanobanana-output/
 

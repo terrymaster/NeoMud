@@ -41,3 +41,11 @@ Do NOT proceed until the Maker is confirmed running.
 3. Follow your methodology — look, understand, assess, decide, act, evaluate, report
 4. File GitHub issues for every bug and UX problem you encounter
 5. End with a structured WorldMaker report
+
+## Cleanup
+
+After the session is complete (after producing the report), clean up the Playwright browser cache:
+
+```bash
+rm -rf .playwright-mcp/*
+```
