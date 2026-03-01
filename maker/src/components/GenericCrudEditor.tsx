@@ -28,6 +28,8 @@ interface GenericCrudEditorProps {
   disableCreateMessage?: string;
 }
 
+const IMAGE_PREVIEW_KEYS = new Set(['imagePrompt', 'imageStyle', 'imageNegativePrompt', 'imageWidth', 'imageHeight']);
+
 const styles: Record<string, CSSProperties> = {
   container: {
     display: 'flex',
@@ -378,7 +380,12 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                 onUpdate={(fields) => setForm((f: any) => ({ ...f, ...fields }))}
               />
             )}
-            {fields.filter((f) => !f.visibleWhen || f.visibleWhen(form)).map((field) => {
+            {fields.filter((f) => {
+              if (f.visibleWhen && !f.visibleWhen(form)) return false;
+              // Hide image fields when ImagePreview is shown (it manages them)
+              if (imagePreview && !isNew && selectedId && IMAGE_PREVIEW_KEYS.has(f.key)) return false;
+              return true;
+            }).map((field) => {
               const isIdDisabled = field.key === idField && !isNew;
               const disabled = field.disabled || isIdDisabled;
               return (

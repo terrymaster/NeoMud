@@ -1,5 +1,38 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { db, isReadOnly } from '../db.js'
+import { Prisma } from '../generated/prisma/client.js'
+
+const VALID_ID_RE = /^[a-zA-Z0-9_:]+$/
+
+function validateId(id: string | undefined, entityLabel: string, res: Response): boolean {
+  if (!id || !id.trim()) {
+    res.status(400).json({ error: `${entityLabel} ID is required` })
+    return false
+  }
+  if (!VALID_ID_RE.test(id)) {
+    res.status(400).json({ error: `${entityLabel} ID may only contain letters, numbers, underscores, and colons` })
+    return false
+  }
+  return true
+}
+
+function handlePrismaError(err: unknown, entityLabel: string, res: Response) {
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === 'P2002') {
+      res.status(409).json({ error: `A ${entityLabel} with that ID already exists` })
+      return
+    }
+    if (err.code === 'P2025') {
+      res.status(404).json({ error: `${entityLabel} not found` })
+      return
+    }
+  }
+  if (err instanceof Prisma.PrismaClientValidationError) {
+    res.status(400).json({ error: 'Invalid data — check required fields and types' })
+    return
+  }
+  res.status(500).json({ error: (err as any)?.message || 'Internal server error' })
+}
 
 export const zonesRouter = Router()
 
@@ -34,12 +67,13 @@ zonesRouter.get('/zones', async (_req, res) => {
     })
     res.json(zones)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
 // POST /zones — create zone
 zonesRouter.post('/zones', rejectIfReadOnly, async (req, res) => {
+  if (!validateId(req.body.id, 'Zone', res)) return
   try {
     const {
       id, name, description,
@@ -61,7 +95,7 @@ zonesRouter.post('/zones', rejectIfReadOnly, async (req, res) => {
     })
     res.json(zone)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -78,7 +112,7 @@ zonesRouter.get('/zones/:id', async (req, res) => {
     }
     res.json(zone)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -91,7 +125,7 @@ zonesRouter.put('/zones/:id', rejectIfReadOnly, async (req, res) => {
     })
     res.json(zone)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -101,7 +135,7 @@ zonesRouter.delete('/zones/:id', rejectIfReadOnly, async (req, res) => {
     await db().zone.delete({ where: { id: req.params.id } })
     res.json({ ok: true })
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -116,12 +150,13 @@ zonesRouter.get('/zones/:zoneId/rooms', async (req, res) => {
     })
     res.json(rooms)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
 // POST /zones/:zoneId/rooms — create room
 zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
+  if (!validateId(req.body.id, 'Room', res)) return
   try {
     const { zoneId } = req.params
     const {
@@ -147,7 +182,7 @@ zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
     })
     res.json(room)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -165,7 +200,7 @@ zonesRouter.get('/zones/:zoneId/rooms/:id', async (req, res) => {
     }
     res.json(room)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -179,7 +214,7 @@ zonesRouter.put('/zones/:zoneId/rooms/:id', rejectIfReadOnly, async (req, res) =
     })
     res.json(room)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -260,7 +295,7 @@ zonesRouter.put('/zones/:zoneId/rooms/:id/rename', rejectIfReadOnly, async (req,
 
     res.json(result)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -271,7 +306,7 @@ zonesRouter.delete('/zones/:zoneId/rooms/:id', rejectIfReadOnly, async (req, res
     await db().room.delete({ where: { id: fullId } })
     res.json({ ok: true })
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -297,7 +332,7 @@ zonesRouter.post('/rooms/:id/exits', rejectIfReadOnly, async (req, res) => {
 
     res.json(exit)
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
 
@@ -336,6 +371,6 @@ zonesRouter.delete('/rooms/:id/exits/:dir', rejectIfReadOnly, async (req, res) =
 
     res.json({ ok: true })
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    handlePrismaError(err, 'entity', res)
   }
 })
