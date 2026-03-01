@@ -1194,7 +1194,7 @@ private fun SettingsGearButton(onClick: () -> Unit) {
 
 private val ADMIN_COMMANDS = listOf(
     "/broadcast", "/godmode", "/grantcp", "/grantitem", "/grantxp",
-    "/heal", "/help", "/kill", "/setlevel", "/setstat", "/spawn", "/teleport"
+    "/heal", "/help", "/kill", "/setlevel", "/setstat", "/shutdown", "/spawn", "/teleport"
 )
 
 @Composable
