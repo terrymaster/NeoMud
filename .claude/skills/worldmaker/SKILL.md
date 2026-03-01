@@ -42,10 +42,13 @@ Do NOT proceed until the Maker is confirmed running.
 4. File GitHub issues for every bug and UX problem you encounter
 5. End with a structured WorldMaker report
 
-## Cleanup
+## Cleanup (MANDATORY)
 
-After the session is complete (after producing the report), clean up the Playwright browser cache:
+After the session is complete (after producing the report), you MUST run these cleanup commands. Do NOT skip this step:
 
 ```bash
+# Delete all screenshots and world copies created during the session
 rm -rf .playwright-mcp/*
 ```
+
+This removes screenshots (page-*.png) and any world bundle copies (.nmd files) that Playwright cached during the session. These files are large and must not accumulate.
