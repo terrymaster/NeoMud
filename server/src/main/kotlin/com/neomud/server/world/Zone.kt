@@ -1,6 +1,8 @@
 package com.neomud.server.world
 
+import com.neomud.shared.model.CoinDrop
 import com.neomud.shared.model.Direction
+import com.neomud.shared.model.LootEntry
 import com.neomud.shared.model.RoomEffect
 import com.neomud.shared.model.RoomId
 import com.neomud.shared.model.RoomInteractable
@@ -86,6 +88,8 @@ data class NpcData(
     val deathSound: String = "",
     val interactSound: String = "",
     val exitSound: String = "",
+    val lootItems: List<LootEntry> = emptyList(),
+    val coinDrop: CoinDrop? = null,
     val spawnPoints: List<RoomId> = emptyList(),
     val imagePrompt: String = "",
     val imageStyle: String = "",

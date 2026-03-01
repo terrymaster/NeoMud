@@ -150,10 +150,4 @@ describe('Read-only project guards', () => {
     expect(res.status).toBe(403)
   })
 
-  it('POST /api/loot-tables returns 403', async () => {
-    const res = await request(app).post('/api/loot-tables').send({
-      id: 'x', items: '[]',
-    })
-    expect(res.status).toBe(403)
-  })
 })

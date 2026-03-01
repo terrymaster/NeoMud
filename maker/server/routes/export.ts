@@ -34,7 +34,7 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
   zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)))
 
   // ─── Fetch all data ─────────────────────────────────
-  const [zones, items, npcs, classes, races, skills, spells, lootTables] =
+  const [zones, items, npcs, classes, races, skills, spells] =
     await Promise.all([
       prisma.zone.findMany({ include: { rooms: { include: { exits: true } } } }),
       prisma.item.findMany(),
@@ -43,7 +43,6 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
       prisma.race.findMany(),
       prisma.skill.findMany(),
       prisma.spell.findMany(),
-      prisma.lootTable.findMany(),
     ])
 
   // ─── Zone files (one per zone) ──────────────────────
@@ -127,6 +126,8 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
         imageNegativePrompt: npc.imageNegativePrompt,
         imageWidth: npc.imageWidth,
         imageHeight: npc.imageHeight,
+        ...((() => { const li = parseJsonField(npc.lootItems, []); return li.length > 0 ? { lootItems: li } : {}; })()),
+        ...((() => { const cd = parseJsonField(npc.coinDrop); return Object.keys(cd).length > 0 ? { coinDrop: cd } : {}; })()),
       })),
     }
     zip.addFile(`world/${zone.id}.zone.json`, Buffer.from(JSON.stringify(zoneOut, null, 2)))
@@ -296,16 +297,6 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
     )
   )
 
-  // Loot Tables
-  const tablesObj: Record<string, any> = {}
-  for (const lt of lootTables) {
-    tablesObj[lt.id] = {
-      items: parseJsonField(lt.items, []),
-      coinDrop: parseJsonField(lt.coinDrop),
-    }
-  }
-  zip.addFile('world/loot_tables.json', Buffer.from(JSON.stringify({ tables: tablesObj }, null, 2)))
-
   // ─── PC Sprites ────────────────────────────────────
   const pcSprites = await prisma.pcSprite.findMany({ orderBy: { id: 'asc' } })
   if (pcSprites.length > 0) {
@@ -367,7 +358,6 @@ exportRouter.get('/json', async (_req, res) => {
       races,
       skills,
       spells,
-      lootTables,
     ] = await Promise.all([
       prisma.zone.findMany({ include: { rooms: { include: { exits: true } } } }),
       prisma.item.findMany(),
@@ -376,7 +366,6 @@ exportRouter.get('/json', async (_req, res) => {
       prisma.race.findMany(),
       prisma.skill.findMany(),
       prisma.spell.findMany(),
-      prisma.lootTable.findMany(),
     ])
 
     // ─── Zones + Rooms ──────────────────────────────────
@@ -446,6 +435,8 @@ exportRouter.get('/json', async (_req, res) => {
           imageNegativePrompt: npc.imageNegativePrompt,
           imageWidth: npc.imageWidth,
           imageHeight: npc.imageHeight,
+          ...((() => { const li = parseJsonField(npc.lootItems, []); return li.length > 0 ? { lootItems: li } : {}; })()),
+          ...((() => { const cd = parseJsonField(npc.coinDrop); return Object.keys(cd).length > 0 ? { coinDrop: cd } : {}; })()),
         }
       }
 
@@ -587,15 +578,6 @@ exportRouter.get('/json', async (_req, res) => {
       }
     }
 
-    // ─── Loot Tables ────────────────────────────────────
-    const lootTablesOut: Record<string, any> = {}
-    for (const lt of lootTables) {
-      lootTablesOut[lt.id] = {
-        items: parseJsonField(lt.items, []),
-        coinDrop: parseJsonField(lt.coinDrop),
-      }
-    }
-
     res.json({
       zones: zonesOut,
       items: itemsOut,
@@ -603,7 +585,6 @@ exportRouter.get('/json', async (_req, res) => {
       races: racesOut,
       skills: skillsOut,
       spells: spellsOut,
-      lootTables: lootTablesOut,
     })
   } catch (err: any) {
     res.status(500).json({ error: err.message })

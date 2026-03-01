@@ -12,7 +12,6 @@ const navItems = [
   { label: 'Races', path: 'races' },
   { label: 'Skills', path: 'skills' },
   { label: 'Spells', path: 'spells' },
-  { label: 'Loot Tables', path: 'loot-tables' },
   { label: 'Default Players', path: 'default-players' },
   { label: 'Default SFX', path: 'default-sfx' },
 ];

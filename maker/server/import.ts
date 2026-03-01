@@ -195,19 +195,24 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
     }
   }
 
-  // ─── Loot Tables ───────────────────────────────────────
+  // ─── Legacy Loot Tables (backward-compat: merge into NPCs) ───
   const lootEntry = zip.getEntry('world/loot_tables.json')
   if (lootEntry) {
     const { tables } = JSON.parse(zip.readAsText(lootEntry))
     for (const [npcId, table] of Object.entries(tables) as [string, any][]) {
-      await prisma.lootTable.create({
-        data: {
-          id: npcId,
-          items: JSON.stringify(table.items ?? []),
-          coinDrop: JSON.stringify(table.coinDrop ?? {}),
-        },
-      })
+      try {
+        await prisma.npc.update({
+          where: { id: npcId },
+          data: {
+            lootItems: JSON.stringify(table.items ?? []),
+            coinDrop: JSON.stringify(table.coinDrop ?? {}),
+          },
+        })
+      } catch {
+        // NPC may not exist — skip silently
+      }
     }
+    console.log(`[import] Migrated ${Object.keys(tables).length} legacy loot tables into NPC records`)
   }
 
   // ─── PC Sprites ───────────────────────────────────────
@@ -335,6 +340,8 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           missSound: npc.missSound ?? '',
           deathSound: npc.deathSound ?? '',
           interactSound: npc.interactSound ?? '',
+          lootItems: JSON.stringify(npc.lootItems ?? []),
+          coinDrop: JSON.stringify(npc.coinDrop ?? {}),
           exitSound: npc.exitSound ?? '',
           imagePrompt: npc.imagePrompt ?? legacyNpc?.prompt ?? '',
           imageStyle: npc.imageStyle ?? legacyNpc?.style ?? '',

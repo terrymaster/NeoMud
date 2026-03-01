@@ -122,7 +122,14 @@
       "imageStyle": "fantasy creature sprite, full body, side-facing, clean edges, game asset, transparent background, PNG cutout, dark mood, fiery",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
       "imageWidth": 512,
-      "imageHeight": 384
+      "imageHeight": 384,
+      "lootItems": [
+        { "itemId": "item:obsidian_shard", "chance": 0.6, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:health_potion", "chance": 0.2, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:plated_boots", "chance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:scroll_of_fireball", "chance": 0.06, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 25, "maxCopper": 60, "minSilver": 1, "maxSilver": 3 }
     },
     {
       "id": "npc:volcanic_basilisk",
@@ -146,7 +153,14 @@
       "imageStyle": "fantasy creature sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout, dark mood, fiery volcanic",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
       "imageWidth": 512,
-      "imageHeight": 384
+      "imageHeight": 384,
+      "lootItems": [
+        { "itemId": "item:obsidian_shard", "chance": 0.9, "minQuantity": 1, "maxQuantity": 3 },
+        { "itemId": "item:plated_helm", "chance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:greater_health_potion", "chance": 0.15, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:scroll_of_fireball", "chance": 0.08, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 30, "maxCopper": 70, "minSilver": 2, "maxSilver": 4 }
     },
     {
       "id": "npc:blackstone_marauder",
@@ -170,7 +184,15 @@
       "imageStyle": "fantasy creature sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
       "imageWidth": 384,
-      "imageHeight": 512
+      "imageHeight": 512,
+      "lootItems": [
+        { "itemId": "item:obsidian_shard", "chance": 0.5, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:plated_gauntlets", "chance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:plated_legs", "chance": 0.03, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:greater_mana_potion", "chance": 0.1, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:scroll_of_healing", "chance": 0.08, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 30, "maxCopper": 80, "minSilver": 2, "maxSilver": 5 }
     },
     {
       "id": "npc:gorge_warden",
@@ -194,7 +216,16 @@
       "imageStyle": "fantasy creature sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout, dark mood, fiery volcanic",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
       "imageWidth": 384,
-      "imageHeight": 512
+      "imageHeight": 512,
+      "lootItems": [
+        { "itemId": "item:obsidian_shard", "chance": 0.9, "minQuantity": 2, "maxQuantity": 4 },
+        { "itemId": "item:steel_greatsword", "chance": 0.06, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:tower_shield", "chance": 0.05, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:plated_chest", "chance": 0.04, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:greater_health_potion", "chance": 0.25, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:scroll_of_fireball", "chance": 0.1, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 50, "maxCopper": 99, "minSilver": 3, "maxSilver": 8, "minGold": 0, "maxGold": 1 }
     }
   ]
 }

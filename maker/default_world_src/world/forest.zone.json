@@ -179,7 +179,13 @@
       "imageStyle": "fantasy creature sprite, full body, side-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
       "imageWidth": 512,
-      "imageHeight": 384
+      "imageHeight": 384,
+      "lootItems": [
+        { "itemId": "item:wolf_pelt", "chance": 0.8, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:health_potion", "chance": 0.15, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:mana_potion", "chance": 0.10, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 5, "maxCopper": 20, "minSilver": 0, "maxSilver": 1 }
     },
     {
       "id": "npc:forest_spider",
@@ -203,7 +209,13 @@
       "imageStyle": "fantasy creature sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
       "imageWidth": 512,
-      "imageHeight": 384
+      "imageHeight": 384,
+      "lootItems": [
+        { "itemId": "item:spider_fang", "chance": 0.9, "minQuantity": 1, "maxQuantity": 2 },
+        { "itemId": "item:leather_gloves", "chance": 0.1, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:health_potion", "chance": 0.15, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 10, "maxCopper": 35, "minSilver": 0, "maxSilver": 1 }
     },
     {
       "id": "npc:forest_rat",
@@ -227,7 +239,11 @@
       "imageStyle": "fantasy creature sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
       "imageWidth": 512,
-      "imageHeight": 384
+      "imageHeight": 384,
+      "lootItems": [
+        { "itemId": "item:health_potion", "chance": 0.10, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 1, "maxCopper": 8 }
     },
     {
       "id": "npc:forest_bandit",
@@ -251,7 +267,13 @@
       "imageStyle": "fantasy creature sprite, full body, front-facing, clean edges, game asset, transparent background, PNG cutout, dark mood",
       "imageNegativePrompt": "background, scenery, ground, shadow on floor, multiple creatures, portrait crop, modern, sci-fi, cute, cartoon",
       "imageWidth": 512,
-      "imageHeight": 384
+      "imageHeight": 384,
+      "lootItems": [
+        { "itemId": "item:health_potion", "chance": 0.20, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:leather_gloves", "chance": 0.08, "minQuantity": 1, "maxQuantity": 1 },
+        { "itemId": "item:leather_boots", "chance": 0.08, "minQuantity": 1, "maxQuantity": 1 }
+      ],
+      "coinDrop": { "minCopper": 8, "maxCopper": 25 }
     }
   ]
 }

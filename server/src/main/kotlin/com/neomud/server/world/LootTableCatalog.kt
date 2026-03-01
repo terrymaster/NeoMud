@@ -12,9 +12,6 @@ data class LootTableEntry(
     val coinDrop: CoinDrop? = null
 )
 
-@Serializable
-data class LootTableData(val tables: Map<String, LootTableEntry>)
-
 class LootTableCatalog(private val tables: Map<String, LootTableEntry>) {
 
     val tableCount: Int get() = tables.size
@@ -30,11 +27,24 @@ class LootTableCatalog(private val tables: Map<String, LootTableEntry>) {
         private val json = Json { ignoreUnknownKeys = true }
 
         fun load(source: WorldDataSource): LootTableCatalog {
-            val content = source.readText("world/loot_tables.json")
-                ?: error("loot_tables.json not found")
-            val data = json.decodeFromString<LootTableData>(content)
-            logger.info("Loaded ${data.tables.size} loot tables")
-            return LootTableCatalog(data.tables)
+            val tables = mutableMapOf<String, LootTableEntry>()
+            val zoneFiles = source.list("world/", ".zone.json")
+
+            for (file in zoneFiles) {
+                val content = source.readText(file) ?: continue
+                val zone = json.decodeFromString<ZoneData>(content)
+                for (npc in zone.npcs) {
+                    if (npc.lootItems.isNotEmpty() || npc.coinDrop != null) {
+                        tables[npc.id] = LootTableEntry(
+                            items = npc.lootItems,
+                            coinDrop = npc.coinDrop
+                        )
+                    }
+                }
+            }
+
+            logger.info("Loaded ${tables.size} loot tables from NPC data")
+            return LootTableCatalog(tables)
         }
     }
 }

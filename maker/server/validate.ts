@@ -35,12 +35,11 @@ export async function validateProject(
   const errors: string[] = []
   const warnings: string[] = []
 
-  const [zones, items, npcs, spells, lootTables, pcSprites] = await Promise.all([
+  const [zones, items, npcs, spells, pcSprites] = await Promise.all([
     prisma.zone.findMany({ include: { rooms: { include: { exits: true } } } }),
     prisma.item.findMany(),
     prisma.npc.findMany(),
     prisma.spell.findMany(),
-    prisma.lootTable.findMany(),
     prisma.pcSprite.findMany(),
   ])
 
@@ -52,7 +51,6 @@ export async function validateProject(
     }
   }
   const allItemIds = new Set(items.map((i) => i.id))
-  const lootTableIds = new Set(lootTables.map((lt) => lt.id))
 
   // ─── Spawn room ──────────────────────────────────────
   const hasSpawnRoom = zones.some((z) => z.spawnRoom && z.spawnRoom.length > 0)
@@ -92,8 +90,9 @@ export async function validateProject(
       if (npc.maxHp === 0) warnings.push(`Hostile NPC '${npc.id}' has maxHp=0`)
       if (npc.damage === 0) warnings.push(`Hostile NPC '${npc.id}' has damage=0`)
       if (npc.xpReward === 0) warnings.push(`Hostile NPC '${npc.id}' has xpReward=0`)
-      if (!lootTableIds.has(npc.id)) {
-        warnings.push(`Hostile NPC '${npc.id}' has no loot table entry`)
+      const npcLootItems = parseJsonField(npc.lootItems, []) as any[]
+      if (npcLootItems.length === 0) {
+        warnings.push(`Hostile NPC '${npc.id}' has no loot items`)
       }
     }
     const vendorItems = parseJsonField(npc.vendorItems, []) as string[]
@@ -147,12 +146,12 @@ export async function validateProject(
     }
   }
 
-  // ─── Loot table cross-reference ──────────────────────
-  for (const lt of lootTables) {
-    const ltItems = parseJsonField(lt.items, []) as { itemId: string }[]
-    for (const entry of ltItems) {
+  // ─── NPC loot item cross-reference ──────────────────
+  for (const npc of npcs) {
+    const lootItems = parseJsonField(npc.lootItems, []) as { itemId: string }[]
+    for (const entry of lootItems) {
       if (!allItemIds.has(entry.itemId)) {
-        warnings.push(`Loot table '${lt.id}' references unknown item '${entry.itemId}'`)
+        warnings.push(`NPC '${npc.id}' loot references unknown item '${entry.itemId}'`)
       }
     }
   }

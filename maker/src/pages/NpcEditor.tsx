@@ -62,6 +62,8 @@ function NpcEditor() {
     { key: 'xpReward', label: 'XP Reward', type: 'number' },
     { key: 'patrolRoute', label: 'Patrol Route (JSON)', type: 'json', rows: 3, help: 'Array of room IDs, e.g. ["zone:room1","zone:room2"]' },
     { key: 'vendorItems', label: 'Vendor Items (JSON)', type: 'json', rows: 3, help: 'Array of item IDs this NPC sells' },
+    { key: 'lootItems', label: 'Loot Items (JSON)', type: 'json', rows: 6, help: 'Array of loot entries, e.g. [{"itemId":"item:wolf_pelt","chance":0.8,"minQuantity":1,"maxQuantity":1}]' },
+    { key: 'coinDrop', label: 'Coin Drop (JSON)', type: 'json', rows: 3, help: 'e.g. {"minCopper":5,"maxCopper":20,"minSilver":0,"maxSilver":1}' },
     { key: 'attackSound', label: 'Attack Sound', type: 'sfx' },
     { key: 'missSound', label: 'Miss Sound', type: 'sfx' },
     { key: 'deathSound', label: 'Death Sound', type: 'sfx' },

@@ -118,6 +118,8 @@ model Npc {
   imagePrompt         String @default("")
   imageStyle          String @default("")
   imageNegativePrompt String @default("")
+  lootItems           String @default("[]")
+  coinDrop            String @default("")
   imageWidth          Int    @default(384)
   imageHeight         Int    @default(512)
 }
@@ -198,12 +200,6 @@ model Spell {
   imageNegativePrompt String @default("")
   imageWidth          Int    @default(256)
   imageHeight         Int    @default(256)
-}
-
-model LootTable {
-  id       String @id
-  items    String
-  coinDrop String @default("")
 }
 
 model PcSprite {
