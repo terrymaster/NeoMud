@@ -123,6 +123,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
         pcSpriteCatalog
     )
     val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository, skillCatalog, classCatalog, movementTrailManager)
+    commandProcessor.setGameLoop(gameLoop)
 
     // Install plugins
     configureWebSockets()
@@ -131,5 +132,25 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     // Launch game loop
     launch {
         gameLoop.run()
+
+        // Game loop exited — graceful shutdown
+        logger.info("Game loop ended. Saving player states and shutting down...")
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            try {
+                session.player?.let { playerRepository.savePlayerState(it) }
+            } catch (e: Exception) {
+                logger.error("Failed to save player ${session.playerName}: ${e.message}")
+            }
+            try {
+                session.webSocketSession.outgoing.send(
+                    io.ktor.websocket.Frame.Close(io.ktor.websocket.CloseReason(
+                        io.ktor.websocket.CloseReason.Codes.NORMAL,
+                        "Server shutting down"
+                    ))
+                )
+            } catch (_: Exception) { }
+        }
+        logger.info("All players saved. Server exiting.")
+        exitProcess(0)
     }
 }

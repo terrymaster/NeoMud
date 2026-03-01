@@ -1,5 +1,7 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.GameConfig
+import com.neomud.server.game.GameLoop
 import com.neomud.server.game.MapRoomFilter
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.game.npc.NpcManager
@@ -27,9 +29,14 @@ class AdminCommand(
     private val itemCatalog: ItemCatalog,
     private val classCatalog: ClassCatalog,
     private val raceCatalog: RaceCatalog,
-    private val roomItemManager: RoomItemManager
+    private val roomItemManager: RoomItemManager,
+    private var gameLoop: GameLoop? = null
 ) {
     private val logger = LoggerFactory.getLogger(AdminCommand::class.java)
+
+    fun setGameLoop(loop: GameLoop) {
+        gameLoop = loop
+    }
 
     suspend fun execute(session: PlayerSession, rawMessage: String) {
         val parts = rawMessage.trimStart('/').split(" ")
@@ -48,6 +55,7 @@ class AdminCommand(
             "grantitem" -> handleGrantItem(session, args)
             "broadcast" -> handleBroadcast(session, args)
             "godmode" -> handleGodMode(session)
+            "shutdown" -> handleShutdown(session, args)
             "help" -> handleHelp(session)
             else -> session.send(ServerMessage.SystemMessage("Unknown admin command: /$command. Type /help for a list."))
         }
@@ -430,6 +438,26 @@ class AdminCommand(
         logger.info("Admin ${session.playerName} toggled god mode: $status")
     }
 
+    private suspend fun handleShutdown(session: PlayerSession, args: List<String>) {
+        val loop = gameLoop
+        if (loop == null) {
+            session.send(ServerMessage.SystemMessage("Shutdown not available."))
+            return
+        }
+        if (loop.isShuttingDown) {
+            session.send(ServerMessage.SystemMessage("Shutdown already in progress (${loop.shutdownSecondsRemaining}s remaining)."))
+            return
+        }
+        val seconds = args.getOrNull(0)?.toIntOrNull() ?: GameConfig.Shutdown.DEFAULT_DELAY_SECONDS
+        if (seconds < 0) {
+            session.send(ServerMessage.SystemMessage("Delay must be non-negative."))
+            return
+        }
+        loop.initiateShutdown(seconds)
+        session.send(ServerMessage.SystemMessage("Server shutdown initiated: ${seconds}s countdown."))
+        logger.info("Admin ${session.playerName} initiated server shutdown with ${seconds}s delay")
+    }
+
     private suspend fun handleHelp(session: PlayerSession) {
         val help = buildString {
             appendLine("=== Admin Commands ===")
@@ -444,6 +472,7 @@ class AdminCommand(
             appendLine("/grantitem <itemId> [qty] [player] - Grant item")
             appendLine("/broadcast <message> - Message all players")
             appendLine("/godmode - Toggle invincibility")
+            appendLine("/shutdown [seconds] - Graceful server shutdown (default ${GameConfig.Shutdown.DEFAULT_DELAY_SECONDS}s)")
         }
         session.send(ServerMessage.SystemMessage(help))
     }

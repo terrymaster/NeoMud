@@ -150,6 +150,10 @@ object GameConfig {
         const val SELL_MAX_PERCENT = 99
         const val BUY_HAGGLE_MAX_DISCOUNT = 15 // max charm-based buy discount percent
     }
+    object Shutdown {
+        const val DEFAULT_DELAY_SECONDS = 60
+        val WARNING_AT_SECONDS = listOf(60, 30, 10, 5, 0)
+    }
     object Trails {
         const val MAX_ENTRIES_PER_ROOM = 20
         const val LIFETIME_MS = 90_000L

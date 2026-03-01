@@ -38,12 +38,71 @@ class GameLoop(
 ) {
     private val logger = LoggerFactory.getLogger(GameLoop::class.java)
 
+    /** Remaining seconds until shutdown, or -1 if not shutting down. */
+    @Volatile
+    var shutdownSecondsRemaining: Int = -1
+        private set
+
+    /** Set of warning thresholds already broadcast, to avoid duplicates. */
+    private val broadcastedWarnings = mutableSetOf<Int>()
+
+    val isShuttingDown: Boolean get() = shutdownSecondsRemaining >= 0
+
+    /**
+     * Initiate a graceful shutdown countdown.
+     * @param delaySeconds seconds until server stops (clamped to 0 minimum)
+     */
+    fun initiateShutdown(delaySeconds: Int) {
+        shutdownSecondsRemaining = delaySeconds.coerceAtLeast(0)
+        broadcastedWarnings.clear()
+        logger.info("Server shutdown initiated: ${shutdownSecondsRemaining}s remaining")
+    }
+
     suspend fun run() {
         logger.info("Game loop started (${GameConfig.Tick.INTERVAL_MS}ms ticks)")
         while (true) {
             delay(GameConfig.Tick.INTERVAL_MS)
             tick()
+            if (processShutdownTick()) {
+                logger.info("Shutdown countdown complete. Exiting game loop.")
+                break
+            }
         }
+    }
+
+    /**
+     * Process shutdown countdown each tick. Returns true when the server should stop.
+     * Broadcasts warnings at configured intervals and decrements the counter.
+     */
+    internal suspend fun processShutdownTick(): Boolean {
+        if (!isShuttingDown) return false
+
+        val secondsNow = shutdownSecondsRemaining
+
+        // Broadcast warnings at configured thresholds
+        for (threshold in GameConfig.Shutdown.WARNING_AT_SECONDS) {
+            if (secondsNow <= threshold && threshold !in broadcastedWarnings) {
+                broadcastedWarnings.add(threshold)
+                val message = if (threshold == 0) {
+                    "Server is shutting down NOW. Goodbye!"
+                } else {
+                    "Server shutting down in $threshold seconds!"
+                }
+                sessionManager.broadcastToAll(
+                    ServerMessage.ServerShutdown(message, threshold)
+                )
+                logger.info("Shutdown warning broadcast: $message")
+            }
+        }
+
+        if (secondsNow <= 0) {
+            return true
+        }
+
+        // Decrement by the tick interval (in seconds)
+        val tickSeconds = (GameConfig.Tick.INTERVAL_MS / 1000.0).toInt().coerceAtLeast(1)
+        shutdownSecondsRemaining = (secondsNow - tickSeconds).coerceAtLeast(0)
+        return false
     }
 
     private suspend fun tick() = GameStateLock.withLock {

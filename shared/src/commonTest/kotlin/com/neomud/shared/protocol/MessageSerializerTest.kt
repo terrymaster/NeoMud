@@ -945,6 +945,30 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testServerShutdownRoundTrip() {
+        val original = ServerMessage.ServerShutdown("Server shutting down in 30 seconds!", 30)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testServerShutdownZeroSecondsRoundTrip() {
+        val original = ServerMessage.ServerShutdown("Server is shutting down NOW. Goodbye!", 0)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testServerShutdownJsonFormat() {
+        val msg = ServerMessage.ServerShutdown("Shutting down!", 10)
+        val json = MessageSerializer.encodeServerMessage(msg)
+        assertTrue(json.contains("\"type\":\"server_shutdown\""), "Expected type discriminator: $json")
+        assertTrue(json.contains("\"secondsRemaining\":10"), "Expected secondsRemaining in JSON: $json")
+    }
+
+    @Test
     fun testTrainerInfoWithExitSoundRoundTrip() {
         val original = ServerMessage.TrainerInfo(
             canLevelUp = false,

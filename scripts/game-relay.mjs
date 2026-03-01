@@ -576,6 +576,15 @@ const handlers = {
     computePlayerAbilities();
   },
 
+  // Server shutdown
+  server_shutdown(msg) {
+    pushEvent('server_shutdown', msg.message);
+    console.log(`[relay] SERVER SHUTDOWN: ${msg.message} (${msg.secondsRemaining}s remaining)`);
+    if (msg.secondsRemaining <= 0) {
+      serverShuttingDown = true;
+    }
+  },
+
   // Map data — just log
   map_data() { pushEvent('system', 'Received map data'); },
 };
@@ -643,6 +652,7 @@ function formatCoinString(c) {
 let ws = null;
 let pingTimer = null;
 let commandPollTimer = null;
+let serverShuttingDown = false;
 
 function send(msg) {
   if (ws && ws.readyState === WebSocket.OPEN) {
@@ -689,8 +699,13 @@ function connect() {
   });
 
   ws.on('close', (code, reason) => {
-    console.error(`[relay] Connection lost (code=${code}). Exiting.`);
-    shutdownRelay(1);
+    if (serverShuttingDown) {
+      console.log(`[relay] Server shut down gracefully (code=${code}). Exiting.`);
+      shutdownRelay(0);
+    } else {
+      console.error(`[relay] Connection lost (code=${code}). Exiting.`);
+      shutdownRelay(1);
+    }
   });
 
   ws.on('error', (err) => {

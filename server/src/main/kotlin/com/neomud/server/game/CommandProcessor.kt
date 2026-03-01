@@ -71,6 +71,10 @@ class CommandProcessor(
         sessionManager, playerRepository, npcManager, worldGraph,
         inventoryCommand, inventoryRepository, itemCatalog, classCatalog, raceCatalog, roomItemManager
     )
+    fun setGameLoop(loop: GameLoop) {
+        adminCommand.setGameLoop(loop)
+    }
+
     private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, skillCatalog, classCatalog, movementTrailManager)
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager, skillCatalog, classCatalog)
     private val sayCommand = SayCommand(sessionManager, adminCommand)

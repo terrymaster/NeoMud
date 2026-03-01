@@ -149,6 +149,10 @@ sealed class ServerMessage {
     data object Pong : ServerMessage()
 
     @Serializable
+    @SerialName("server_shutdown")
+    data class ServerShutdown(val message: String, val secondsRemaining: Int) : ServerMessage()
+
+    @Serializable
     @SerialName("error")
     data class Error(val message: String) : ServerMessage()
 
