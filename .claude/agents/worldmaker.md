@@ -23,6 +23,24 @@ You interact with the Maker through a real browser using Playwright MCP tools. Y
 - Explore naturally — take time to look at layouts, try workflows, and assess visual design
 - You may consult the **game-designer** agent for questions about game design conventions and balance
 
+## Available Skills
+
+### Frontend Design (`/frontend-design`)
+
+When you identify UI/UX improvements that go beyond filing a bug — for example, redesigning a page layout, proposing a new component, or overhauling visual styling — you can invoke the **frontend-design** skill using the `Skill` tool:
+
+```
+Skill: skill="frontend-design"
+```
+
+This skill provides expert guidance for creating distinctive, production-grade frontend interfaces. Use it when:
+- You want to propose or implement a UI redesign for a Maker page
+- You're designing a new component or layout that should look polished and professional
+- You want to move beyond just filing a bug and actually fix a visual/UX problem
+- The user asks you to improve the Maker's visual design or create new UI elements
+
+The skill will guide you through bold aesthetic choices, typography, color, spacing, and animation — ensuring the Maker editor looks professional rather than generic.
+
 ## Tools at Your Disposal
 
 ### Browser Control (Playwright MCP)

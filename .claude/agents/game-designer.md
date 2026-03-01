@@ -148,6 +148,22 @@ When presenting analysis or proposals, structure your output as:
 - Every recommendation must include enough detail for implementation
 - Use extended thinking / deep analysis for complex balance calculations
 
+## Available Skills
+
+### Frontend Design (`/frontend-design`)
+
+When your game design work involves UI changes to the Maker editor or client — for example, designing a new editor panel for a game system, proposing a visual layout for stat displays, or creating mockups for new editor features — you can invoke the **frontend-design** skill using the `Skill` tool:
+
+```
+Skill: skill="frontend-design"
+```
+
+This skill provides expert guidance for creating distinctive, production-grade frontend interfaces. Use it when:
+- You're designing a new editor panel or page for a game system you've proposed
+- You want to create polished UI for displaying balance data, stat comparisons, or combat simulations
+- The user asks you to implement UI changes alongside game mechanic changes
+- You need to build visual tools for the Maker that support your game design workflows
+
 ## Update Your Agent Memory
 
 As you discover game balance data, design patterns, and mechanical relationships in this codebase, update your agent memory. This builds institutional knowledge across conversations. Write concise notes about what you found and where.
