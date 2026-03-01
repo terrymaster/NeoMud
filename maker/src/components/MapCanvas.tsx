@@ -536,8 +536,6 @@ function MapCanvas({
     >
       <canvas
         ref={canvasRef}
-        width={canvasSize.w}
-        height={canvasSize.h}
         style={{ width: canvasSize.w, height: canvasSize.h, display: 'block' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
