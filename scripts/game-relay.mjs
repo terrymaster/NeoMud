@@ -498,8 +498,12 @@ const handlers = {
     } else {
       lines.push('You are not ready to level up yet. Gain more XP by defeating enemies.');
     }
-    if (msg.totalCpEarned > 0) {
-      lines.push(`CP: ${msg.unspentCp} unspent / ${msg.totalCpEarned} total earned.`);
+    const creationPool = 60; // StatAllocator.CP_POOL
+    const levelingCp = msg.totalCpEarned - creationPool;
+    if (levelingCp > 0) {
+      lines.push(`CP: ${msg.unspentCp} unspent / ${levelingCp} earned from leveling (${msg.totalCpEarned} total budget).`);
+    } else if (msg.unspentCp > 0) {
+      lines.push(`CP: ${msg.unspentCp} unspent.`);
     } else {
       lines.push('You have no CP yet. Level up to earn CP for stat training!');
     }
