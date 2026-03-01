@@ -60,7 +60,7 @@ describe('GenericCrudEditor', () => {
 
   it('shows empty state message when nothing selected', () => {
     render(<GenericCrudEditor entityName="Item" apiPath="/items" fields={allFields} />)
-    expect(screen.getByText(/Select a item to edit/i)).toBeInTheDocument()
+    expect(screen.getByText(/Select an item to edit/i)).toBeInTheDocument()
   })
 
   it('"New" button creates empty form', async () => {

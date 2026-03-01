@@ -549,11 +549,6 @@ function ZoneEditor() {
   const { layerMap, layers } = useMemo(
     () => {
       const result = computeLayerMap(rooms, allExits);
-      if (allExits.some((e) => e.direction === 'UP' || e.direction === 'DOWN')) {
-        console.log('[LayerDebug] UP/DOWN exits found:', allExits.filter((e) => e.direction === 'UP' || e.direction === 'DOWN'));
-        console.log('[LayerDebug] layerMap:', Object.fromEntries(result.layerMap));
-        console.log('[LayerDebug] layers:', result.layers);
-      }
       return result;
     },
     [rooms, allExits]
@@ -692,6 +687,7 @@ function ZoneEditor() {
     try {
       await api.del(`/zones/${selectedZoneId}`);
       setZones((prev) => prev.filter((z) => z.id !== selectedZoneId));
+      setAllRooms((prev) => prev.filter((g) => g.zoneId !== selectedZoneId));
       setSelectedZoneId(null);
     } catch {}
   };

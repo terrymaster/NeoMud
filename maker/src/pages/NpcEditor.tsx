@@ -70,8 +70,8 @@ function NpcEditor() {
     { key: 'imagePrompt', label: 'Image Prompt', type: 'textarea', rows: 3 },
     { key: 'imageStyle', label: 'Image Style', type: 'text' },
     { key: 'imageNegativePrompt', label: 'Image Negative Prompt', type: 'text' },
-    { key: 'imageWidth', label: 'Image Width (max 384)', type: 'number', max: 384 },
-    { key: 'imageHeight', label: 'Image Height (max 512)', type: 'number', max: 512 },
+    { key: 'imageWidth', label: 'Image Width (384 humanoid, 512 creature)', type: 'number', max: 512 },
+    { key: 'imageHeight', label: 'Image Height (512 humanoid, 384 creature)', type: 'number', max: 512 },
   ];
 
   return (

@@ -190,13 +190,23 @@ function getImageUrl(assetPath: string, cacheBust: number): string {
   return `/api/assets/${assetPath}${cacheBust ? `?t=${cacheBust}` : ''}`;
 }
 
+function defaultDimensions(entityType: string): { w: number; h: number } {
+  switch (entityType) {
+    case 'item': case 'coin': return { w: 256, h: 256 };
+    case 'npc': return { w: 384, h: 512 };
+    case 'player': return { w: 384, h: 512 };
+    default: return { w: 1024, h: 576 }; // room backgrounds
+  }
+}
+
 function ImagePreview({ entityType, entityId, description, assetPath, imagePrompt, imageStyle, imageNegativePrompt, imageWidth, imageHeight, maxWidth, maxHeight, onUpdate }: ImagePreviewProps) {
+  const defaults = defaultDimensions(entityType);
   const [imgError, setImgError] = useState(false);
   const [localPrompt, setLocalPrompt] = useState(imagePrompt || '');
   const [localStyle, setLocalStyle] = useState(imageStyle || '');
   const [localNeg, setLocalNeg] = useState(imageNegativePrompt || '');
-  const [localW, setLocalW] = useState(imageWidth || 1024);
-  const [localH, setLocalH] = useState(imageHeight || 576);
+  const [localW, setLocalW] = useState(imageWidth || defaults.w);
+  const [localH, setLocalH] = useState(imageHeight || defaults.h);
   const [generating, setGenerating] = useState(false);
   const [cacheBust, setCacheBust] = useState(0);
   const [undoDepth, setUndoDepth] = useState(0);
@@ -209,8 +219,8 @@ function ImagePreview({ entityType, entityId, description, assetPath, imagePromp
     setLocalPrompt(imagePrompt || '');
     setLocalStyle(imageStyle || '');
     setLocalNeg(imageNegativePrompt || '');
-    setLocalW(imageWidth || 1024);
-    setLocalH(imageHeight || 576);
+    setLocalW(imageWidth || defaults.w);
+    setLocalH(imageHeight || defaults.h);
   }, [entityId, imagePrompt, imageStyle, imageNegativePrompt, imageWidth, imageHeight]);
 
   useEffect(() => {
