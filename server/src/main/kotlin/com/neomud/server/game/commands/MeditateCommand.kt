@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.RestUtils
 import com.neomud.server.session.PendingSkill
 import com.neomud.server.session.PlayerSession
 import com.neomud.shared.protocol.ServerMessage
@@ -30,6 +31,9 @@ class MeditateCommand {
             session.send(ServerMessage.SystemMessage("Meditate is on cooldown ($cooldown ticks remaining)."))
             return
         }
+
+        // Break rest if resting (mutual exclusion)
+        RestUtils.breakRest(session, "You stop resting to meditate.")
 
         // Queue for next tick
         session.pendingSkill = PendingSkill.Meditate

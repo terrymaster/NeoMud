@@ -7,6 +7,7 @@ import com.neomud.server.game.commands.InventoryCommand
 import com.neomud.server.game.commands.KickCommand
 import com.neomud.server.game.commands.LookCommand
 import com.neomud.server.game.commands.MeditateCommand
+import com.neomud.server.game.commands.RestCommand
 import com.neomud.server.game.commands.MoveCommand
 import com.neomud.server.game.commands.InteractCommand
 import com.neomud.server.game.commands.PickLockCommand
@@ -78,6 +79,7 @@ class CommandProcessor(
     private val bashCommand = BashCommand(npcManager)
     private val kickCommand = KickCommand(npcManager, worldGraph)
     private val meditateCommand = MeditateCommand()
+    private val restCommand = RestCommand()
     private val trackCommand = TrackCommand()
     private val pickLockCommand = PickLockCommand(worldGraph, sessionManager, npcManager)
     private val interactCommand = InteractCommand(worldGraph, sessionManager, npcManager, roomItemManager, lootService, lootTableCatalog)
@@ -150,6 +152,7 @@ class CommandProcessor(
                         "BASH" -> bashCommand.execute(session, message.targetId)
                         "KICK" -> kickCommand.execute(session, message.targetId)
                         "MEDITATE" -> meditateCommand.execute(session)
+                        "REST" -> restCommand.execute(session)
                         "TRACK" -> trackCommand.execute(session, message.targetId)
                         "PICK_LOCK" -> {
                             val unlocked = pickLockCommand.execute(session, message.targetId)
@@ -358,8 +361,9 @@ class CommandProcessor(
 
         session.readiedSpellId = spellId
 
-        // Entering spell combat breaks meditation, stealth, and grace period
+        // Entering spell combat breaks meditation, rest, stealth, and grace period
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
         StealthUtils.breakStealth(session, sessionManager, "Casting a spell reveals your presence!")
         session.combatGraceTicks = 0
     }

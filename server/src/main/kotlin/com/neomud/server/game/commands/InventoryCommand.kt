@@ -1,6 +1,7 @@
 package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.RestUtils
 import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.UseEffectProcessor
 import com.neomud.server.persistence.repository.CoinRepository
@@ -36,6 +37,7 @@ class InventoryCommand(
         val player = session.player ?: return
 
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
         StealthUtils.breakStealth(session, sessionManager, "Equipping gear reveals your presence!")
 
         if (slot !in VALID_SLOTS) {
@@ -72,6 +74,7 @@ class InventoryCommand(
         val playerName = session.playerName ?: return
 
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
         StealthUtils.breakStealth(session, sessionManager, "Unequipping gear reveals your presence!")
 
         val success = inventoryRepository.unequipItem(playerName, slot)
@@ -88,6 +91,7 @@ class InventoryCommand(
         val player = session.player ?: return
 
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
         StealthUtils.breakStealth(session, sessionManager, "Using an item reveals your presence!")
 
         val item = itemCatalog.getItem(itemId)

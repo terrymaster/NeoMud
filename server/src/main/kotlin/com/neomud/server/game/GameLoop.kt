@@ -61,6 +61,7 @@ class GameLoop(
                 session.pendingSkill = null
                 session.isHidden = false
                 session.isMeditating = false
+                session.isResting = false
                 session.activeEffects.clear()
 
                 val oldRoomId = session.currentRoomId
@@ -168,6 +169,10 @@ class GameLoop(
                 is PendingSkill.Meditate -> {
                     session.pendingSkill = null
                     resolveMeditate(session)
+                }
+                is PendingSkill.Rest -> {
+                    session.pendingSkill = null
+                    resolveRest(session)
                 }
                 is PendingSkill.Track -> {
                     session.pendingSkill = null
@@ -334,13 +339,14 @@ class GameLoop(
                         session.send(ServerMessage.PlayerDied(event.killerName, event.respawnRoomId, event.respawnHp, event.respawnMp))
                     } catch (_: Exception) { }
 
-                    // Disable attack mode, stealth, meditation, readied spell, and pending skill
+                    // Disable attack mode, stealth, meditation, rest, readied spell, and pending skill
                     session.attackMode = false
                     session.selectedTargetId = null
                     session.readiedSpellId = null
                     session.pendingSkill = null
                     session.isHidden = false
                     session.isMeditating = false
+                    session.isResting = false
 
                     // Broadcast leave from death room
                     sessionManager.broadcastToRoom(
@@ -454,6 +460,9 @@ class GameLoop(
 
         // 4c. Meditation MP restoration
         meditationPhase()
+
+        // 4d. Rest HP restoration
+        restPhase()
 
         // 5. Process active effects on all authenticated players
         for (session in sessionManager.getAllAuthenticatedSessions()) {
@@ -597,6 +606,37 @@ class GameLoop(
         }
     }
 
+    private suspend fun resolveRest(session: PlayerSession) {
+        val player = session.player ?: return
+
+        // Break stealth if hidden
+        StealthUtils.breakStealth(session, sessionManager, "Resting reveals your presence!")
+
+        // Skill check: health + willpower/2 + level/2 + d20 vs difficulty
+        val skillDef = skillCatalog.getSkill("REST")
+        if (skillDef == null) {
+            try { session.send(ServerMessage.SystemMessage("Rest skill not found.")) } catch (_: Exception) {}
+            return
+        }
+
+        // Cooldown applies regardless of pass/fail
+        session.skillCooldowns["REST"] = skillDef.cooldownTicks
+
+        val effStats = session.effectiveStats()
+        val result = SkillCheck.check(skillDef, effStats, player.level)
+
+        if (!result.success) {
+            try { session.send(ServerMessage.RestUpdate(false, "You fail to settle into a restful state. (roll: ${result.roll})")) } catch (_: Exception) {}
+            return
+        }
+
+        // Break meditation if meditating (mutual exclusion)
+        MeditationUtils.breakMeditation(session, "You stop meditating to rest.")
+
+        session.isResting = true
+        try { session.send(ServerMessage.RestUpdate(true, "You settle into a restful state. (roll: ${result.roll})")) } catch (_: Exception) {}
+    }
+
     private suspend fun resolveMeditate(session: PlayerSession) {
         val player = session.player ?: return
 
@@ -724,6 +764,35 @@ class GameLoop(
 
                 if (newMp >= player.maxMp) {
                     MeditationUtils.breakMeditation(session, "Your mana is fully restored.")
+                }
+
+                playerRepository.savePlayerState(session.player!!)
+            } catch (_: Exception) { }
+        }
+    }
+
+    private suspend fun restPhase() {
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            if (!session.isResting) continue
+            val player = session.player ?: continue
+
+            val effStats = session.effectiveStats()
+            val restore = maxOf(effStats.health / GameConfig.Rest.HEALTH_DIVISOR + GameConfig.Rest.RESTORE_BASE, 1)
+            val newHp = minOf(player.currentHp + restore, player.maxHp)
+            val restored = newHp - player.currentHp
+            session.player = player.copy(currentHp = newHp)
+
+            try {
+                session.send(ServerMessage.SpellCastResult(
+                    success = true,
+                    spellName = "Rest",
+                    message = "You rest and restore $restored health.",
+                    newMp = player.currentMp,
+                    newHp = newHp
+                ))
+
+                if (newHp >= player.maxHp) {
+                    RestUtils.breakRest(session, "Your health is fully restored.")
                 }
 
                 playerRepository.savePlayerState(session.player!!)

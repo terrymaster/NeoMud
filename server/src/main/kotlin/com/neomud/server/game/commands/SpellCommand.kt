@@ -2,6 +2,7 @@ package com.neomud.server.game.commands
 
 import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.RestUtils
 import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.npc.NpcState
@@ -87,8 +88,9 @@ class SpellCommand(
         val playerName = session.playerName ?: return null
         val player = session.player ?: return null
 
-        // Casting a spell breaks meditation and stealth
+        // Casting a spell breaks meditation, rest, and stealth
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
         StealthUtils.breakStealth(session, sessionManager, "Casting a spell reveals your presence!")
 
         val spell = spellCatalog.getSpell(spellId)

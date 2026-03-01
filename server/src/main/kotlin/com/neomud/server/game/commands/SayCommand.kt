@@ -1,6 +1,7 @@
 package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.RestUtils
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.shared.protocol.ServerMessage
@@ -23,8 +24,9 @@ class SayCommand(
             return
         }
 
-        // Break meditation on say
+        // Break meditation and rest on say
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
 
         // Break stealth on say
         if (session.isHidden) {

@@ -111,6 +111,10 @@ object GameConfig {
         const val WIL_DIVISOR = 10
         const val RESTORE_BASE = 2
     }
+    object Rest {
+        const val HEALTH_DIVISOR = 10
+        const val RESTORE_BASE = 1
+    }
     object Npc {
         const val WANDER_MOVE_TICKS = 15
         const val PATROL_MOVE_TICKS = 20

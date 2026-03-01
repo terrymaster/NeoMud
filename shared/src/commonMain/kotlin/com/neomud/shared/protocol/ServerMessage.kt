@@ -227,6 +227,10 @@ sealed class ServerMessage {
     data class MeditateUpdate(val meditating: Boolean, val message: String = "") : ServerMessage()
 
     @Serializable
+    @SerialName("rest_update")
+    data class RestUpdate(val resting: Boolean, val message: String = "") : ServerMessage()
+
+    @Serializable
     @SerialName("track_result")
     data class TrackResult(
         val success: Boolean,

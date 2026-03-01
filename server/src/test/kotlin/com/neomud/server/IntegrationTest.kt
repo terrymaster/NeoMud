@@ -644,6 +644,51 @@ class IntegrationTest {
         }
     }
 
+    @Test
+    fun testRestWithFullHpSendsSystemMessage() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+
+        val wsClient = createClient { install(WebSockets) }
+
+        // Register Warrior — min: str=18,agi=12,int=8,wil=10,hlt=15,chm=8
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Register("warrior_rest", "pass123", "RestTester", "WARRIOR",
+                    allocatedStats = Stats(strength = 28, agility = 22, intellect = 18, willpower = 20, health = 25, charm = 18))
+            )))
+            val reg = receiveServerMessage()
+            assertIs<ServerMessage.RegisterOk>(reg)
+        }
+
+        // Login and try to rest at full HP
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.Login("warrior_rest", "pass123")
+            )))
+            val loginOk = receiveServerMessage()
+            assertIs<ServerMessage.LoginOk>(loginOk)
+            val player = loginOk.player
+            assertEquals(player.currentHp, player.maxHp, "New character should start at full HP")
+            assertTrue(player.maxHp > 0, "Warrior should have HP")
+
+            receiveServerMessage() // RoomInfo
+            receiveServerMessage() // MapData
+            receiveServerMessage() // InventoryUpdate
+            receiveServerMessage() // RoomItemsUpdate
+
+            // Now send UseSkill("REST") with full HP
+            send(Frame.Text(MessageSerializer.encodeClientMessage(
+                ClientMessage.UseSkill("REST")
+            )))
+
+            val response = receiveServerMessage()
+            assertIs<ServerMessage.SystemMessage>(response, "Should get SystemMessage when resting at full HP, got: $response")
+            assertTrue(response.message.contains("full"), "Should say health is full: ${response.message}")
+        }
+    }
+
     private suspend fun DefaultClientWebSocketSession.receiveServerMessage(): ServerMessage {
         val frame = incoming.receive()
         assertTrue(frame is Frame.Text, "Expected text frame")

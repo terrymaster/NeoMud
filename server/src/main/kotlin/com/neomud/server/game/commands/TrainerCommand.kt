@@ -2,6 +2,7 @@ package com.neomud.server.game.commands
 
 import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.RestUtils
 import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.progression.CpAllocator
@@ -27,6 +28,7 @@ class TrainerCommand(
         val player = session.player ?: return
 
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
         StealthUtils.breakStealth(session, sessionManager, "Interacting with a trainer reveals your presence!")
 
         val trainer = npcManager.getTrainerInRoom(roomId)

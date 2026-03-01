@@ -800,6 +800,22 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testRestUpdateRoundTrip() {
+        val original = ServerMessage.RestUpdate(true, "You begin resting.")
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testRestUpdateNoMessageRoundTrip() {
+        val original = ServerMessage.RestUpdate(false)
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
     fun testRegisterWithGenderRoundTrip() {
         val original = ClientMessage.Register("user1", "pass123", "Elara", "MAGE", race = "ELF", gender = "female")
         val json = MessageSerializer.encodeClientMessage(original)

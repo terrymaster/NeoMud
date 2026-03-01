@@ -80,6 +80,10 @@ class GameViewModel(
     private val _isMeditating = MutableStateFlow(false)
     val isMeditating: StateFlow<Boolean> = _isMeditating
 
+    // Rest
+    private val _isResting = MutableStateFlow(false)
+    val isResting: StateFlow<Boolean> = _isResting
+
     // Skill catalog
     private val _skillCatalog = MutableStateFlow<Map<String, SkillDef>>(emptyMap())
     val skillCatalog: StateFlow<Map<String, SkillDef>> = _skillCatalog
@@ -366,6 +370,7 @@ class GameViewModel(
                 _activeEffects.value = emptyList()
                 _isHidden.value = false
                 _isMeditating.value = false
+                _isResting.value = false
                 _roomGroundItems.value = emptyList()
                 _roomGroundCoins.value = Coins()
             }
@@ -475,6 +480,12 @@ class GameViewModel(
             }
             is ServerMessage.MeditateUpdate -> {
                 _isMeditating.value = message.meditating
+                if (message.message.isNotEmpty()) {
+                    addLog(message.message, MudColors.spell)
+                }
+            }
+            is ServerMessage.RestUpdate -> {
+                _isResting.value = message.resting
                 if (message.message.isNotEmpty()) {
                     addLog(message.message, MudColors.spell)
                 }

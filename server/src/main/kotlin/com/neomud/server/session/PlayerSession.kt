@@ -11,6 +11,7 @@ sealed class PendingSkill {
     data class Bash(val targetId: String?) : PendingSkill()
     data class Kick(val targetId: String?, val direction: Direction) : PendingSkill()
     object Meditate : PendingSkill()
+    object Rest : PendingSkill()
     data class Track(val targetId: String?) : PendingSkill()
 }
 
@@ -25,6 +26,7 @@ class PlayerSession(
     var selectedTargetId: String? = null
     var isHidden: Boolean = false
     var isMeditating: Boolean = false
+    var isResting: Boolean = false
     var godMode: Boolean = false
     var combatGraceTicks: Int = 0
     var readiedSpellId: String? = null

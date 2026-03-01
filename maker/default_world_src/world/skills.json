@@ -153,6 +153,20 @@
       "isPassive": true,
       "classRestrictions": ["THIEF", "BARD", "GYPSY"],
       "properties": {"discount": "0.15"}
+    },
+    {
+      "id": "REST",
+      "name": "Rest",
+      "description": "Enter a restful state that restores health each tick until interrupted.",
+      "category": "utility",
+      "primaryStat": "health",
+      "secondaryStat": "willpower",
+      "cooldownTicks": 6,
+      "manaCost": 0,
+      "difficulty": 10,
+      "isPassive": false,
+      "classRestrictions": [],
+      "properties": {}
     }
   ]
 }

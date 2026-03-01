@@ -1,6 +1,7 @@
 package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.RestUtils
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.world.WorldGraph
@@ -31,8 +32,9 @@ class AttackCommand(
                 return
             }
 
-            // Entering attack mode breaks meditation and grace period
+            // Entering attack mode breaks meditation, rest, and grace period
             MeditationUtils.breakMeditation(session, "You stop meditating.")
+            RestUtils.breakRest(session, "You stop resting.")
             session.combatGraceTicks = 0
 
             session.attackMode = true

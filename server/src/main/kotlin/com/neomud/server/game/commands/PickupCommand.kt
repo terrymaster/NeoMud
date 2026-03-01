@@ -1,6 +1,7 @@
 package com.neomud.server.game.commands
 
 import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.RestUtils
 import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.inventory.RoomItemManager
 import com.neomud.server.persistence.repository.CoinRepository
@@ -24,6 +25,7 @@ class PickupCommand(
         val roomId = session.currentRoomId ?: return
 
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
         StealthUtils.breakStealth(session, sessionManager, "Picking up items reveals your presence!")
 
         val removed = roomItemManager.removeItem(roomId, itemId, quantity)
@@ -55,6 +57,7 @@ class PickupCommand(
         }
 
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
         StealthUtils.breakStealth(session, sessionManager, "Picking up coins reveals your presence!")
 
         val amount = roomItemManager.removeCoins(roomId, coinType)

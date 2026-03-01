@@ -3,6 +3,7 @@ package com.neomud.server.game.commands
 import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MapRoomFilter
 import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.RestUtils
 import com.neomud.server.game.RoomFilter
 import com.neomud.server.game.StealthUtils
 
@@ -32,6 +33,7 @@ class MoveCommand(
 ) {
     suspend fun execute(session: PlayerSession, direction: Direction) {
         MeditationUtils.breakMeditation(session, "You stop meditating.")
+        RestUtils.breakRest(session, "You stop resting.")
 
         val currentRoomId = session.currentRoomId ?: return
         val currentRoom = worldGraph.getRoom(currentRoomId)

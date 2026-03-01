@@ -2,6 +2,7 @@ package com.neomud.server.game.combat
 
 import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
+import com.neomud.server.game.RestUtils
 import com.neomud.server.game.MovementTrailManager
 import com.neomud.server.game.commands.SpellCommand
 import com.neomud.server.game.inventory.EquipmentService
@@ -355,9 +356,12 @@ class CombatManager(
                     val newHp = (targetPlayer.currentHp - damage).coerceAtLeast(0)
                     targetSession.player = targetPlayer.copy(currentHp = newHp)
 
-                    // Taking damage breaks meditation
+                    // Taking damage breaks meditation and rest
                     if (targetSession.isMeditating) {
                         MeditationUtils.breakMeditation(targetSession, "You are hit and lose concentration!")
+                    }
+                    if (targetSession.isResting) {
+                        RestUtils.breakRest(targetSession, "You are hit and can no longer rest!")
                     }
 
                     events.add(CombatEvent.Hit(

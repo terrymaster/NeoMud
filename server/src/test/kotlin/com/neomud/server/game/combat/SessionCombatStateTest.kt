@@ -128,6 +128,7 @@ class SessionCombatStateTest {
         session.selectedTargetId = "npc1"
         session.isHidden = true
         session.isMeditating = true
+        session.isResting = true
 
         // Simulate PlayerKilled handler
         session.attackMode = false
@@ -136,6 +137,7 @@ class SessionCombatStateTest {
         session.pendingSkill = null
         session.isHidden = false
         session.isMeditating = false
+        session.isResting = false
 
         assertNull(session.readiedSpellId)
         assertNull(session.pendingSkill)
@@ -143,6 +145,7 @@ class SessionCombatStateTest {
         assertFalse(session.attackMode)
         assertFalse(session.isHidden)
         assertFalse(session.isMeditating)
+        assertFalse(session.isResting)
     }
 
     @Test

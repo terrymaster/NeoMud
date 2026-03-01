@@ -1,4 +1,4 @@
-# NeoMud — Project Instructions
+    # NeoMud — Project Instructions
 
 A multiplayer dungeon game (MUD) inspired by '90s text MUDs like MajorMUD, built with Kotlin Multiplatform, Ktor, Jetpack Compose, and a React-based world editor.
 
@@ -36,6 +36,8 @@ export JAVA_HOME=/c/Users/lbarnes/.jdks/corretto-21.0.5
 ```
 
 **Gradle notes**: Configuration cache is enabled. `JAVA_HOME` must be exported before any gradlew command (not set system-wide).
+
+**CRITICAL — World Bundle**: The server loads world data from `server/build/worlds/default-world.nmd`, built by `./gradlew packageWorld` from `maker/default_world_src/`. **Always run `./gradlew packageWorld --rerun-tasks`** after ANY change to `default_world_src/` (skills, items, zones, assets, etc.) and before running the server, running tests, or doing any verification. Gradle's UP-TO-DATE check for this task is unreliable — never trust it, always force with `--rerun-tasks`.
 
 ## Architecture Overview
 

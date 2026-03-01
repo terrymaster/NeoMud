@@ -9,7 +9,7 @@
       "mpPerLevelMin": 0, "mpPerLevelMax": 0,
       "xpModifier": 1.0,
       "magicSchools": {},
-      "skills": ["BASH", "KICK", "PARRY", "DODGE"]
+      "skills": ["BASH", "KICK", "PARRY", "DODGE", "REST"]
     },
     {
       "id": "PALADIN",
@@ -20,7 +20,7 @@
       "mpPerLevelMin": 1, "mpPerLevelMax": 4,
       "xpModifier": 1.05,
       "magicSchools": { "priest": 1 },
-      "skills": ["BASH", "PARRY", "MEDITATE"]
+      "skills": ["BASH", "PARRY", "MEDITATE", "REST"]
     },
     {
       "id": "WITCHHUNTER",
@@ -31,7 +31,7 @@
       "mpPerLevelMin": 0, "mpPerLevelMax": 0,
       "xpModifier": 1.1,
       "magicSchools": {},
-      "skills": ["BASH", "KICK", "PARRY", "TRACK"]
+      "skills": ["BASH", "KICK", "PARRY", "TRACK", "REST"]
     },
     {
       "id": "CLERIC",
@@ -42,7 +42,7 @@
       "mpPerLevelMin": 2, "mpPerLevelMax": 6,
       "xpModifier": 1.1,
       "magicSchools": { "priest": 2 },
-      "skills": ["BASH", "MEDITATE"]
+      "skills": ["BASH", "MEDITATE", "REST"]
     },
     {
       "id": "PRIEST",
@@ -53,7 +53,7 @@
       "mpPerLevelMin": 4, "mpPerLevelMax": 10,
       "xpModifier": 1.05,
       "magicSchools": { "priest": 3 },
-      "skills": ["MEDITATE", "PERCEPTION"]
+      "skills": ["MEDITATE", "PERCEPTION", "REST"]
     },
     {
       "id": "MISSIONARY",
@@ -64,7 +64,7 @@
       "mpPerLevelMin": 2, "mpPerLevelMax": 5,
       "xpModifier": 1.15,
       "magicSchools": { "priest": 2 },
-      "skills": ["SNEAK", "BACKSTAB", "PICK_LOCK", "MEDITATE"]
+      "skills": ["SNEAK", "BACKSTAB", "PICK_LOCK", "MEDITATE", "REST"]
     },
     {
       "id": "MAGE",
@@ -75,7 +75,7 @@
       "mpPerLevelMin": 5, "mpPerLevelMax": 12,
       "xpModifier": 1.2,
       "magicSchools": { "mage": 3 },
-      "skills": ["MEDITATE", "PERCEPTION"]
+      "skills": ["MEDITATE", "PERCEPTION", "REST"]
     },
     {
       "id": "WARLOCK",
@@ -86,7 +86,7 @@
       "mpPerLevelMin": 2, "mpPerLevelMax": 6,
       "xpModifier": 1.15,
       "magicSchools": { "mage": 2 },
-      "skills": ["BASH", "MEDITATE"]
+      "skills": ["BASH", "MEDITATE", "REST"]
     },
     {
       "id": "DRUID",
@@ -97,7 +97,7 @@
       "mpPerLevelMin": 4, "mpPerLevelMax": 10,
       "xpModifier": 1.15,
       "magicSchools": { "druid": 3 },
-      "skills": ["MEDITATE", "PERCEPTION", "TRACK"]
+      "skills": ["MEDITATE", "PERCEPTION", "TRACK", "REST"]
     },
     {
       "id": "RANGER",
@@ -108,7 +108,7 @@
       "mpPerLevelMin": 1, "mpPerLevelMax": 3,
       "xpModifier": 1.1,
       "magicSchools": { "druid": 1 },
-      "skills": ["SNEAK", "KICK", "DODGE", "PERCEPTION", "TRACK"]
+      "skills": ["SNEAK", "KICK", "DODGE", "PERCEPTION", "TRACK", "REST"]
     },
     {
       "id": "THIEF",
@@ -119,7 +119,7 @@
       "mpPerLevelMin": 0, "mpPerLevelMax": 0,
       "xpModifier": 1.0,
       "magicSchools": {},
-      "skills": ["SNEAK", "BACKSTAB", "PICK_LOCK", "DODGE", "PERCEPTION", "HAGGLE"]
+      "skills": ["SNEAK", "BACKSTAB", "PICK_LOCK", "DODGE", "PERCEPTION", "HAGGLE", "REST"]
     },
     {
       "id": "NINJA",
@@ -130,7 +130,7 @@
       "mpPerLevelMin": 0, "mpPerLevelMax": 0,
       "xpModifier": 1.1,
       "magicSchools": {},
-      "skills": ["SNEAK", "BACKSTAB", "KICK", "DODGE"]
+      "skills": ["SNEAK", "BACKSTAB", "KICK", "DODGE", "REST"]
     },
     {
       "id": "MYSTIC",
@@ -141,7 +141,7 @@
       "mpPerLevelMin": 1, "mpPerLevelMax": 4,
       "xpModifier": 1.1,
       "magicSchools": { "kai": 3 },
-      "skills": ["KICK", "DODGE", "SNEAK", "PERCEPTION", "MEDITATE"]
+      "skills": ["KICK", "DODGE", "SNEAK", "PERCEPTION", "MEDITATE", "REST"]
     },
     {
       "id": "BARD",
@@ -152,7 +152,7 @@
       "mpPerLevelMin": 2, "mpPerLevelMax": 5,
       "xpModifier": 1.1,
       "magicSchools": { "bard": 3 },
-      "skills": ["SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE"]
+      "skills": ["SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE", "REST"]
     },
     {
       "id": "GYPSY",
@@ -163,7 +163,7 @@
       "mpPerLevelMin": 1, "mpPerLevelMax": 4,
       "xpModifier": 1.1,
       "magicSchools": { "mage": 1 },
-      "skills": ["SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE"]
+      "skills": ["SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE", "REST"]
     }
   ]
 }

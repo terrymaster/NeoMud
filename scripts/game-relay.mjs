@@ -23,7 +23,6 @@ const LOCK_FILE = path.join(__dirname, 'relay.lock');
 const SERVER_URL = process.env.NEOMUD_URL || 'ws://localhost:8080/game';
 const COMMAND_POLL_MS = 250;
 const PING_INTERVAL_MS = 30_000;
-const RECONNECT_DELAY_MS = 3_000;
 const COMMAND_SPACING_MS = 150;
 const MAX_RECENT_EVENTS = 50;
 const STATE_WRITE_DEBOUNCE_MS = 100;
@@ -190,6 +189,7 @@ const state = {
   selectedTarget: null,
   isHidden: false,
   isMeditating: false,
+  isResting: false,
   activeEffects: [],
   availableSkills: [],
   availableSpells: [],
@@ -415,6 +415,11 @@ const handlers = {
     state.isMeditating = msg.meditating;
     if (msg.message) pushEvent('meditate', msg.message);
     else pushEvent('meditate', msg.meditating ? 'Meditating...' : 'Stopped meditating');
+  },
+  rest_update(msg) {
+    state.isResting = msg.resting;
+    if (msg.message) pushEvent('rest', msg.message);
+    else pushEvent('rest', msg.resting ? 'Resting...' : 'Stopped resting');
   },
   track_result(msg) {
     pushEvent('track', msg.message);
@@ -651,6 +656,7 @@ function connect() {
 
   ws.on('open', () => {
     console.log('[relay] Connected');
+    reconnectAttempts = 0;
     state.connected = true;
     scheduleStateWrite();
 
@@ -683,19 +689,13 @@ function connect() {
   });
 
   ws.on('close', (code, reason) => {
-    console.log(`[relay] Disconnected (code=${code})`);
-    cleanup();
-    state.connected = false;
-    state.loggedIn = false;
-    scheduleStateWrite();
-
-    // Reconnect
-    console.log(`[relay] Reconnecting in ${RECONNECT_DELAY_MS}ms...`);
-    setTimeout(connect, RECONNECT_DELAY_MS);
+    console.error(`[relay] Connection lost (code=${code}). Exiting.`);
+    shutdownRelay(1);
   });
 
   ws.on('error', (err) => {
-    console.error('[relay] WebSocket error:', err.message);
+    console.error(`[relay] WebSocket error: ${err.message}`);
+    // close event will fire after this and trigger shutdownRelay
   });
 }
 
@@ -797,12 +797,20 @@ writeStateFile();
 connect();
 
 // Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('\n[relay] Shutting down...');
+function shutdownRelay(exitCode = 0) {
   cleanup();
-  if (ws) ws.close();
+  if (ws) { try { ws.close(); } catch {} }
   try { fs.unlinkSync(STATE_FILE); } catch {}
   try { fs.unlinkSync(TEMP_STATE_FILE); } catch {}
   releaseLock();
-  process.exit(0);
+  process.exit(exitCode);
+}
+
+process.on('SIGINT', () => {
+  console.log('\n[relay] Shutting down...');
+  shutdownRelay(0);
+});
+process.on('SIGTERM', () => {
+  console.log('[relay] Received SIGTERM. Shutting down...');
+  shutdownRelay(0);
 });

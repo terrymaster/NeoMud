@@ -110,6 +110,7 @@ fun GameScreen(
 
     val isHidden by gameViewModel.isHidden.collectAsState()
     val isMeditating by gameViewModel.isMeditating.collectAsState()
+    val isResting by gameViewModel.isResting.collectAsState()
     val skillCatalog by gameViewModel.skillCatalog.collectAsState()
 
     val availableExits = roomInfo?.room?.exits?.keys ?: emptySet()
@@ -561,6 +562,7 @@ private fun GameScreenPortrait(
                         activeEffects = activeEffects,
                         isHidden = isHidden,
                         isMeditating = gameViewModel.isMeditating.collectAsState().value,
+                        isResting = gameViewModel.isResting.collectAsState().value,
                         spellSlots = spellSlots,
                         spellCatalog = spellCatalogState,
                         readiedSpellId = readiedSpellId,
@@ -810,6 +812,7 @@ private fun GameScreenLandscape(
                             activeEffects = activeEffects,
                             isHidden = isHidden,
                             isMeditating = gameViewModel.isMeditating.collectAsState().value,
+                            isResting = gameViewModel.isResting.collectAsState().value,
                             spellSlots = spellSlots,
                             spellCatalog = spellCatalogState,
                             readiedSpellId = readiedSpellId,
@@ -882,7 +885,8 @@ private val SKILL_BUTTON_MAP = mapOf(
     "SNEAK" to SkillButtonInfo("\uD83E\uDDE5", Color(0xFF888888)),       // 🧥 Gray
     "MEDITATE" to SkillButtonInfo("\uD83E\uDDD8", Color(0xFF7755CC)),    // 🧘 Blue-purple
     "TRACK" to SkillButtonInfo("\uD83D\uDC3E", Color(0xFF55AA55)),       // 🐾 Green
-    "PICK_LOCK" to SkillButtonInfo("\uD83D\uDD13", Color(0xFFCCAA33))    // 🔓 Gold
+    "PICK_LOCK" to SkillButtonInfo("\uD83D\uDD13", Color(0xFFCCAA33)),   // 🔓 Gold
+    "REST" to SkillButtonInfo("\uD83D\uDCA4", Color(0xFF55AA77))           // 💤 Green
 )
 
 @Composable
@@ -913,6 +917,7 @@ private fun ActionButtonRow(
     activeEffects: List<com.neomud.shared.model.ActiveEffect>,
     isHidden: Boolean = false,
     isMeditating: Boolean = false,
+    isResting: Boolean = false,
     spellSlots: List<String?> = listOf(null, null, null, null),
     spellCatalog: Map<String, com.neomud.shared.model.SpellDef> = emptyMap(),
     readiedSpellId: String? = null,
@@ -973,6 +978,14 @@ private fun ActionButtonRow(
                     isActive = isMeditating,
                     enabled = !attackMode || isMeditating,
                     onClick = { gameViewModel.useSkill("MEDITATE") }
+                )
+            } else if (skillId == "REST") {
+                ActionButton(
+                    icon = btnInfo.icon,
+                    color = if (isResting) MudColors.friendly else btnInfo.activeColor,
+                    isActive = isResting,
+                    enabled = !attackMode || isResting,
+                    onClick = { gameViewModel.useSkill("REST") }
                 )
             } else if (skillId == "PICK_LOCK") {
                 ActionButton(
