@@ -74,11 +74,11 @@ export async function openProject(name: string): Promise<PrismaClient> {
     await prisma.$disconnect()
   }
 
-  // Ensure schema is up-to-date (adds new columns with defaults, safe for existing data)
+  // Ensure schema is up-to-date (adds new columns with defaults, drops removed tables)
   const dbPath = path.join(projectsDir, `${name}.db`)
   if (fs.existsSync(dbPath)) {
     const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma')
-    execSync(`npx prisma db push --schema="${schemaPath}"`, {
+    execSync(`npx prisma db push --accept-data-loss --schema="${schemaPath}"`, {
       env: { ...process.env, DATABASE_URL: `file:${dbPath}` },
       cwd: path.join(__dirname, '..'),
       stdio: 'pipe',

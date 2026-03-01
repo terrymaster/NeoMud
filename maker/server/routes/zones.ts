@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express'
 import { db, isReadOnly } from '../db.js'
 import { Prisma } from '../generated/prisma/client.js'
 
-const VALID_ID_RE = /^[a-zA-Z0-9_:]+$/
+const VALID_ID_RE = /^[a-zA-Z0-9_:\-]+$/
 
 function validateId(id: string | undefined, entityLabel: string, res: Response): boolean {
   if (!id || !id.trim()) {
@@ -10,7 +10,7 @@ function validateId(id: string | undefined, entityLabel: string, res: Response):
     return false
   }
   if (!VALID_ID_RE.test(id)) {
-    res.status(400).json({ error: `${entityLabel} ID may only contain letters, numbers, underscores, and colons` })
+    res.status(400).json({ error: `${entityLabel} ID may only contain letters, numbers, underscores, hyphens, and colons` })
     return false
   }
   return true
