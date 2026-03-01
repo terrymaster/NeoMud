@@ -32,6 +32,45 @@ function articleFor(label: string): string {
   return 'A'
 }
 
+interface NumericRule {
+  field: string;
+  label: string;
+  min: number;
+}
+
+const NPC_NUMERIC_RULES: NumericRule[] = [
+  { field: 'level', label: 'Level', min: 1 },
+  { field: 'maxHp', label: 'Max HP', min: 0 },
+  { field: 'damage', label: 'Damage', min: 0 },
+  { field: 'accuracy', label: 'Accuracy', min: 0 },
+  { field: 'defense', label: 'Defense', min: 0 },
+  { field: 'evasion', label: 'Evasion', min: 0 },
+  { field: 'agility', label: 'Agility', min: 0 },
+  { field: 'perception', label: 'Perception', min: 0 },
+  { field: 'xpReward', label: 'XP Reward', min: 0 },
+]
+
+const ITEM_NUMERIC_RULES: NumericRule[] = [
+  { field: 'value', label: 'Value', min: 0 },
+  { field: 'weight', label: 'Weight', min: 0 },
+  { field: 'damageBonus', label: 'Damage Bonus', min: 0 },
+  { field: 'damageRange', label: 'Damage Range', min: 0 },
+  { field: 'armorValue', label: 'Armor Value', min: 0 },
+  { field: 'levelRequirement', label: 'Level Requirement', min: 0 },
+  { field: 'maxStack', label: 'Max Stack', min: 1 },
+]
+
+function validateNumericRanges(body: Record<string, any>, rules: NumericRule[], res: Response): boolean {
+  for (const rule of rules) {
+    const val = body[rule.field]
+    if (val !== undefined && val !== null && typeof val === 'number' && val < rule.min) {
+      res.status(400).json({ error: `${rule.label} must be at least ${rule.min}` })
+      return false
+    }
+  }
+  return true
+}
+
 function handlePrismaError(err: unknown, entityLabel: string, res: Response) {
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
@@ -88,6 +127,7 @@ entitiesRouter.get('/items/:id', async (req, res) => {
 entitiesRouter.post('/items', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Item', res)) return
   if (!validateName(req.body.name, 'Item', res)) return
+  if (!validateNumericRanges(req.body, ITEM_NUMERIC_RULES, res)) return
   try {
     const item = await db().item.create({ data: req.body })
     res.json(item)
@@ -97,6 +137,7 @@ entitiesRouter.post('/items', rejectIfReadOnly, async (req, res) => {
 })
 
 entitiesRouter.put('/items/:id', rejectIfReadOnly, async (req, res) => {
+  if (!validateNumericRanges(req.body, ITEM_NUMERIC_RULES, res)) return
   try {
     const item = await db().item.update({ where: { id: req.params.id }, data: req.body })
     res.json(item)
@@ -139,6 +180,7 @@ entitiesRouter.get('/npcs/:id', async (req, res) => {
 entitiesRouter.post('/npcs', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'NPC', res)) return
   if (!validateName(req.body.name, 'NPC', res)) return
+  if (!validateNumericRanges(req.body, NPC_NUMERIC_RULES, res)) return
   try {
     const { zoneId } = req.body
     if (!zoneId || !zoneId.trim()) {
@@ -156,6 +198,7 @@ entitiesRouter.post('/npcs', rejectIfReadOnly, async (req, res) => {
 })
 
 entitiesRouter.put('/npcs/:id', rejectIfReadOnly, async (req, res) => {
+  if (!validateNumericRanges(req.body, NPC_NUMERIC_RULES, res)) return
   try {
     const npc = await db().npc.update({ where: { id: req.params.id }, data: req.body })
     res.json(npc)

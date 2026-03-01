@@ -7,7 +7,7 @@ const isStackable = (f: Record<string, any>) => !isEquipment(f);
 
 const fields: FieldConfig[] = [
   { key: 'id', label: 'ID', type: 'text', placeholder: 'e.g. iron_sword' },
-  { key: 'name', label: 'Name', type: 'text', placeholder: 'Iron Sword' },
+  { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. My New Item' },
   { key: 'description', label: 'Description', type: 'textarea', rows: 3 },
   {
     key: 'type', label: 'Category', type: 'select',

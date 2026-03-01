@@ -364,3 +364,105 @@ describe('Spells CRUD', () => {
   })
 })
 
+// ─── Numeric validation (#96) ───────────────────────────────
+
+describe('NPC numeric range validation (#96)', () => {
+  it('setup: create zone for NPC tests', async () => {
+    await request(app).post('/api/zones').send({ id: 'val_zone', name: 'Validation Zone', description: '' })
+  })
+
+  const validNpc = {
+    id: 'placeholder', name: 'Placeholder', description: 'Test', zoneId: 'val_zone',
+    startRoomId: '', behaviorType: 'idle', maxHp: 50, damage: 5, level: 1,
+  }
+
+  it('rejects NPC with negative maxHp', async () => {
+    const res = await request(app).post('/api/npcs').send({
+      ...validNpc, id: 'bad_npc', name: 'Bad NPC', maxHp: -50,
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Max HP')
+    expect(res.body.error).toContain('at least 0')
+  })
+
+  it('rejects NPC with negative damage', async () => {
+    const res = await request(app).post('/api/npcs').send({
+      ...validNpc, id: 'bad_npc2', name: 'Bad NPC 2', damage: -10,
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Damage')
+  })
+
+  it('rejects NPC with level 0', async () => {
+    const res = await request(app).post('/api/npcs').send({
+      ...validNpc, id: 'bad_npc3', name: 'Bad NPC 3', level: 0,
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Level')
+    expect(res.body.error).toContain('at least 1')
+  })
+
+  it('accepts NPC with valid values', async () => {
+    const res = await request(app).post('/api/npcs').send({
+      ...validNpc, id: 'good_npc', name: 'Good NPC',
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects NPC update with negative values', async () => {
+    const res = await request(app).put('/api/npcs/good_npc').send({ maxHp: -1 })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Max HP')
+  })
+
+  it('cleanup', async () => {
+    await request(app).delete('/api/npcs/good_npc')
+    await request(app).delete('/api/zones/val_zone')
+  })
+})
+
+describe('Item numeric range validation (#96)', () => {
+  it('rejects item with negative value', async () => {
+    const res = await request(app).post('/api/items').send({
+      id: 'bad_item', name: 'Bad Item', type: 'weapon', value: -100,
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Value')
+    expect(res.body.error).toContain('at least 0')
+  })
+
+  it('rejects item with negative weight', async () => {
+    const res = await request(app).post('/api/items').send({
+      id: 'bad_item2', name: 'Bad Item 2', type: 'weapon', weight: -5,
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Weight')
+  })
+
+  it('rejects item with maxStack < 1', async () => {
+    const res = await request(app).post('/api/items').send({
+      id: 'bad_item3', name: 'Bad Item 3', type: 'consumable', maxStack: 0,
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Max Stack')
+    expect(res.body.error).toContain('at least 1')
+  })
+
+  it('accepts item with valid values', async () => {
+    const res = await request(app).post('/api/items').send({
+      id: 'good_item', name: 'Good Item', description: 'A test item', type: 'weapon', value: 10, weight: 5, damageBonus: 3,
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects item update with negative values', async () => {
+    const res = await request(app).put('/api/items/good_item').send({ damageBonus: -5 })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Damage Bonus')
+  })
+
+  it('cleanup', async () => {
+    await request(app).delete('/api/items/good_item')
+  })
+})
+

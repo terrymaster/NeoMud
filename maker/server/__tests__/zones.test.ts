@@ -421,6 +421,139 @@ describe('Cross-zone room move', () => {
   })
 })
 
+describe('Room DELETE accepts fully-qualified IDs (#92)', () => {
+  it('setup: create zone and room', async () => {
+    await request(app).post('/api/zones').send({ id: 'id_test', name: 'ID Test', description: '' })
+    const res = await request(app).post('/api/zones/id_test/rooms').send({
+      id: 'test_room', name: 'Test Room', description: '', x: 0, y: 0,
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.id).toBe('id_test:test_room')
+  })
+
+  it('DELETE accepts fully-qualified ID (zone:room)', async () => {
+    const res = await request(app).delete('/api/zones/id_test/rooms/id_test:test_room')
+    expect(res.status).toBe(200)
+    const rooms = await request(app).get('/api/zones/id_test/rooms')
+    expect(rooms.body).toHaveLength(0)
+  })
+
+  it('GET accepts fully-qualified ID', async () => {
+    await request(app).post('/api/zones/id_test/rooms').send({
+      id: 'get_room', name: 'Get Room', description: '', x: 1, y: 1,
+    })
+    const res = await request(app).get('/api/zones/id_test/rooms/id_test:get_room')
+    expect(res.status).toBe(200)
+    expect(res.body.name).toBe('Get Room')
+  })
+
+  it('PUT accepts fully-qualified ID', async () => {
+    const res = await request(app)
+      .put('/api/zones/id_test/rooms/id_test:get_room')
+      .send({ name: 'Updated' })
+    expect(res.status).toBe(200)
+    expect(res.body.name).toBe('Updated')
+  })
+
+  it('cleanup', async () => {
+    await request(app).delete('/api/zones/id_test')
+  })
+})
+
+describe('Duplicate exit direction returns clear error (#93)', () => {
+  it('setup: create zone and rooms', async () => {
+    await request(app).post('/api/zones').send({ id: 'exit_test', name: 'Exit Test', description: '' })
+    await request(app).post('/api/zones/exit_test/rooms').send({
+      id: 'room_a', name: 'Room A', description: '', x: 0, y: 0,
+    })
+    await request(app).post('/api/zones/exit_test/rooms').send({
+      id: 'room_b', name: 'Room B', description: '', x: 1, y: 0,
+    })
+    await request(app).post('/api/zones/exit_test/rooms').send({
+      id: 'room_c', name: 'Room C', description: '', x: 0, y: 1,
+    })
+  })
+
+  it('first exit in a direction succeeds', async () => {
+    const res = await request(app).post('/api/rooms/exit_test:room_a/exits').send({
+      direction: 'NORTH', toRoomId: 'exit_test:room_b',
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('duplicate direction returns 409 with clear message', async () => {
+    const res = await request(app).post('/api/rooms/exit_test:room_a/exits').send({
+      direction: 'NORTH', toRoomId: 'exit_test:room_c',
+    })
+    expect(res.status).toBe(409)
+    expect(res.body.error).toContain('NORTH')
+    expect(res.body.error).not.toContain('entity')
+  })
+})
+
+describe('Exit creation validates target room exists (#95)', () => {
+  it('rejects exit to nonexistent room', async () => {
+    const res = await request(app).post('/api/rooms/exit_test:room_a/exits').send({
+      direction: 'SOUTH', toRoomId: 'nonexistent:room',
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('does not exist')
+  })
+
+  it('requires direction and toRoomId', async () => {
+    const res = await request(app).post('/api/rooms/exit_test:room_a/exits').send({})
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('required')
+  })
+})
+
+describe('Exit DELETE validates direction name (#94)', () => {
+  it('rejects numeric ID as direction', async () => {
+    const res = await request(app).delete('/api/rooms/exit_test:room_a/exits/51')
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Invalid direction')
+  })
+
+  it('returns 404 with specific message for missing exit', async () => {
+    const res = await request(app).delete('/api/rooms/exit_test:room_a/exits/SOUTH')
+    expect(res.status).toBe(404)
+    expect(res.body.error).toContain('SOUTH')
+  })
+
+  it('cleanup', async () => {
+    await request(app).delete('/api/zones/exit_test')
+  })
+})
+
+describe('Room creation rejects overlapping coordinates (#91)', () => {
+  it('setup: create zone and first room', async () => {
+    await request(app).post('/api/zones').send({ id: 'overlap_test', name: 'Overlap Test', description: '' })
+    const res = await request(app).post('/api/zones/overlap_test/rooms').send({
+      id: 'room_1', name: 'Room 1', description: '', x: 3, y: 5,
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects second room at same coordinates', async () => {
+    const res = await request(app).post('/api/zones/overlap_test/rooms').send({
+      id: 'room_2', name: 'Room 2', description: '', x: 3, y: 5,
+    })
+    expect(res.status).toBe(409)
+    expect(res.body.error).toContain('coordinates')
+  })
+
+  it('allows room at different coordinates', async () => {
+    const res = await request(app).post('/api/zones/overlap_test/rooms').send({
+      id: 'room_3', name: 'Room 3', description: '', x: 4, y: 5,
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('cleanup', async () => {
+    await request(app).delete('/api/zones/overlap_test')
+  })
+})
+
 describe('Room + Zone deletion', () => {
   it('DELETE room', async () => {
     const res = await request(app).delete('/api/zones/forest/rooms/cave')

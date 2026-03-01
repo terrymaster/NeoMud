@@ -37,7 +37,7 @@ const styles: Record<string, CSSProperties> = {
 function MenuBar() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
-  const [validation, setValidation] = useState<{ errors: string[]; warnings: string[] } | null>(null);
+  const [validation, setValidation] = useState<{ errors: string[]; warnings: string[]; actionLabel?: string; onAction?: () => void } | null>(null);
 
   const handleSaveAs = async () => {
     const newName = prompt('Save project as:', `${name}_copy`);
@@ -81,6 +81,12 @@ function MenuBar() {
     a.click();
   };
 
+  const doPackageDownload = () => {
+    const a = document.createElement('a');
+    a.href = '/api/export/package';
+    a.click();
+  };
+
   const handlePackage = async () => {
     try {
       const result = await api.get<{ errors: string[]; warnings: string[] }>('/export/validate');
@@ -89,16 +95,14 @@ function MenuBar() {
         return;
       }
       if (result.warnings.length > 0) {
-        const proceed = confirm(
-          'Validation warnings:\n' +
-            result.warnings.map((w) => `  • ${w}`).join('\n') +
-            '\n\nContinue with packaging?'
-        );
-        if (!proceed) return;
+        setValidation({
+          ...result,
+          actionLabel: 'Package Anyway',
+          onAction: doPackageDownload,
+        });
+        return;
       }
-      const a = document.createElement('a');
-      a.href = '/api/export/package';
-      a.click();
+      doPackageDownload();
     } catch (err: any) {
       setValidation({ errors: [err.message || 'Package failed'], warnings: [] });
     }
@@ -138,6 +142,8 @@ function MenuBar() {
           errors={validation.errors}
           warnings={validation.warnings}
           onClose={() => setValidation(null)}
+          actionLabel={validation.actionLabel}
+          onAction={validation.onAction}
         />
       )}
     </>

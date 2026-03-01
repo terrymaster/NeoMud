@@ -509,7 +509,7 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
           </>
         ) : (
           <div style={styles.empty}>
-            Select {articleFor(entityName)} {entityName.toLowerCase()} to edit, or click "+ New {entityName}" to create one.
+            Select {articleFor(entityName)} {/^[A-Z]{2,}$/.test(entityName) ? entityName : entityName.toLowerCase()} to edit, or click "+ New {entityName}" to create one.
           </div>
         )}
       </div>

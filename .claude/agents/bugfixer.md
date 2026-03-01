@@ -40,6 +40,16 @@ Work through open GitHub issues in priority order:
 - **DO batch related fixes** into a single commit when they touch the same file/area.
 - **Flag enhancements**: Issues labeled `enhancement` that require significant new code (e.g., "Add search/filter to entity lists") should be skipped with a note — those need user direction on approach.
 
+## Consulting Other Agents
+
+You can consult other specialized agents when a fix requires domain expertise beyond code:
+
+- **game-designer** — consult when a bug fix involves game balance, combat formulas, XP curves, or RPG mechanics decisions. Example: if you're unsure whether a validation range (e.g., min/max damage) is game-design appropriate.
+- **worldmaker** — consult when you need to verify a UI fix works correctly in the browser, or when you're unsure about the expected UX behavior.
+- **playtester** — consult when a fix affects gameplay and you want to verify it works in an actual game session.
+
+Use the `Agent` tool to consult these agents. Keep consultations focused — ask a specific question, get the answer, and continue.
+
 ## After Fixing
 
 After fixing a batch of issues:

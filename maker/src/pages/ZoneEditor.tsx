@@ -694,6 +694,13 @@ function ZoneEditor() {
 
   const handleDeleteZone = async () => {
     if (!selectedZoneId) return;
+    const zone = zones.find((z) => z.id === selectedZoneId);
+    const zoneName = zone?.name || selectedZoneId;
+    const roomCount = rooms.length;
+    const msg = roomCount > 0
+      ? `Delete zone "${zoneName}" and all ${roomCount} room(s) in it? This cannot be undone.`
+      : `Delete zone "${zoneName}"? This cannot be undone.`;
+    if (!window.confirm(msg)) return;
     try {
       await api.del(`/zones/${selectedZoneId}`);
       setZones((prev) => prev.filter((z) => z.id !== selectedZoneId));

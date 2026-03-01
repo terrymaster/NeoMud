@@ -330,7 +330,7 @@ function SettingsEditor() {
   if (!settings) return null;
 
   return (
-    <div style={styles.page}>
+    <form style={styles.page} onSubmit={(e) => { e.preventDefault(); save(); }} autoComplete="off">
       <h2 style={styles.title}>Settings</h2>
 
       {/* Active Providers */}
@@ -389,6 +389,7 @@ function SettingsEditor() {
             <input
               style={styles.input}
               type="password"
+              autoComplete="new-password"
               value={settings.providers['stable-diffusion'].apiKey || ''}
               onChange={(e) =>
                 updateProvider('stable-diffusion', 'apiKey', e.target.value)
@@ -419,6 +420,7 @@ function SettingsEditor() {
             <input
               style={styles.input}
               type="password"
+              autoComplete="new-password"
               value={settings.providers.openai.apiKey || ''}
               onChange={(e) =>
                 updateProvider('openai', 'apiKey', e.target.value)
@@ -449,6 +451,7 @@ function SettingsEditor() {
             <input
               style={styles.input}
               type="password"
+              autoComplete="new-password"
               value={settings.providers.elevenlabs.apiKey || ''}
               onChange={(e) =>
                 updateProvider('elevenlabs', 'apiKey', e.target.value)
@@ -495,6 +498,7 @@ function SettingsEditor() {
               <input
                 style={styles.input}
                 type="password"
+              autoComplete="new-password"
                 value={cp.apiKey || ''}
                 onChange={(e) => updateCustomProvider(i, 'apiKey', e.target.value)}
               />
@@ -515,7 +519,7 @@ function SettingsEditor() {
       <p style={styles.note}>
         Keys are stored locally in maker/settings.json
       </p>
-    </div>
+    </form>
   );
 }
 

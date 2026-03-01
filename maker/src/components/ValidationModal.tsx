@@ -4,6 +4,8 @@ interface ValidationModalProps {
   errors: string[];
   warnings: string[];
   onClose: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -74,7 +76,7 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
-function ValidationModal({ errors, warnings, onClose }: ValidationModalProps) {
+function ValidationModal({ errors, warnings, onClose, actionLabel, onAction }: ValidationModalProps) {
   const hasIssues = errors.length > 0 || warnings.length > 0;
 
   return (
@@ -116,7 +118,17 @@ function ValidationModal({ errors, warnings, onClose }: ValidationModalProps) {
             </>
           )}
         </div>
-        <button style={styles.closeBtn} onClick={onClose}>Close</button>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          {actionLabel && onAction && errors.length === 0 && warnings.length > 0 && (
+            <button
+              style={{ ...styles.closeBtn, backgroundColor: '#e65100' }}
+              onClick={() => { onClose(); onAction(); }}
+            >
+              {actionLabel}
+            </button>
+          )}
+          <button style={styles.closeBtn} onClick={onClose}>Close</button>
+        </div>
       </div>
     </div>
   );

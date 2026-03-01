@@ -180,6 +180,18 @@ zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
       backgroundImage, effects, bgm, bgmPrompt, bgmDuration, departSound,
     } = req.body
     const fullId = id.startsWith(`${zoneId}:`) ? id : `${zoneId}:${id}`
+
+    // Validate no room exists at the same coordinates in this zone
+    if (x !== undefined && y !== undefined) {
+      const overlapping = await db().room.findFirst({
+        where: { zoneId, x, y },
+      })
+      if (overlapping) {
+        res.status(409).json({ error: `A room already exists at coordinates (${x}, ${y})` })
+        return
+      }
+    }
+
     const room = await db().room.create({
       data: {
         id: fullId,
@@ -202,10 +214,12 @@ zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
   }
 })
 
-// GET /zones/:zoneId/rooms/:id — get room with exits
+// GET /zones/:zoneId/rooms/:id — get room with exits (accepts local or fully-qualified ID)
 zonesRouter.get('/zones/:zoneId/rooms/:id', async (req, res) => {
   try {
-    const fullId = `${req.params.zoneId}:${req.params.id}`
+    const { zoneId } = req.params
+    const rawId = req.params.id
+    const fullId = rawId.startsWith(`${zoneId}:`) ? rawId : `${zoneId}:${rawId}`
     const room = await db().room.findUnique({
       where: { id: fullId },
       include: { exits: true },
@@ -220,10 +234,12 @@ zonesRouter.get('/zones/:zoneId/rooms/:id', async (req, res) => {
   }
 })
 
-// PUT /zones/:zoneId/rooms/:id — update room
+// PUT /zones/:zoneId/rooms/:id — update room (accepts local or fully-qualified ID)
 zonesRouter.put('/zones/:zoneId/rooms/:id', rejectIfReadOnly, async (req, res) => {
   try {
-    const fullId = `${req.params.zoneId}:${req.params.id}`
+    const { zoneId } = req.params
+    const rawId = req.params.id
+    const fullId = rawId.startsWith(`${zoneId}:`) ? rawId : `${zoneId}:${rawId}`
     const room = await db().room.update({
       where: { id: fullId },
       data: req.body,
@@ -315,14 +331,17 @@ zonesRouter.put('/zones/:zoneId/rooms/:id/rename', rejectIfReadOnly, async (req,
   }
 })
 
-// DELETE /zones/:zoneId/rooms/:id — delete room
+// DELETE /zones/:zoneId/rooms/:id — delete room (accepts local or fully-qualified ID)
 zonesRouter.delete('/zones/:zoneId/rooms/:id', rejectIfReadOnly, async (req, res) => {
   try {
-    const fullId = `${req.params.zoneId}:${req.params.id}`
+    const { zoneId } = req.params
+    const rawId = req.params.id
+    // Accept both "room_slug" and "zone:room_slug" formats
+    const fullId = rawId.startsWith(`${zoneId}:`) ? rawId : `${zoneId}:${rawId}`
     await db().room.delete({ where: { id: fullId } })
     res.json({ ok: true })
   } catch (err: any) {
-    handlePrismaError(err, 'entity', res)
+    handlePrismaError(err, 'Room', res)
   }
 })
 
@@ -333,6 +352,28 @@ zonesRouter.post('/rooms/:id/exits', rejectIfReadOnly, async (req, res) => {
   try {
     const fromRoomId = req.params.id
     const { direction, toRoomId } = req.body
+
+    if (!direction || !toRoomId) {
+      res.status(400).json({ error: 'Both direction and toRoomId are required' })
+      return
+    }
+
+    // Validate target room exists
+    const targetRoom = await db().room.findUnique({ where: { id: toRoomId } })
+    if (!targetRoom) {
+      res.status(400).json({ error: `Target room "${toRoomId}" does not exist` })
+      return
+    }
+
+    // Check for duplicate exit direction
+    const existing = await db().exit.findUnique({
+      where: { fromRoomId_direction: { fromRoomId, direction } },
+    })
+    if (existing) {
+      res.status(409).json({ error: `This room already has a ${direction} exit` })
+      return
+    }
+
     const opposite = DIRECTION_OPPOSITES[direction]
 
     const exit = await db().exit.create({
@@ -352,11 +393,19 @@ zonesRouter.post('/rooms/:id/exits', rejectIfReadOnly, async (req, res) => {
   }
 })
 
-// DELETE /rooms/:id/exits/:dir — delete exit + reverse exit
+// DELETE /rooms/:id/exits/:dir — delete exit + reverse exit (dir must be a direction name like NORTH, not a numeric ID)
 zonesRouter.delete('/rooms/:id/exits/:dir', rejectIfReadOnly, async (req, res) => {
   try {
     const fromRoomId = req.params.id
     const direction = req.params.dir
+
+    // Validate direction is a known compass direction
+    const ALL_DIRECTIONS = Object.keys(DIRECTION_OPPOSITES)
+    if (!ALL_DIRECTIONS.includes(direction)) {
+      res.status(400).json({ error: `Invalid direction "${direction}". Must be one of: ${ALL_DIRECTIONS.join(', ')}` })
+      return
+    }
+
     const opposite = DIRECTION_OPPOSITES[direction]
 
     // Find the forward exit so we know the target room for reverse deletion
@@ -365,7 +414,7 @@ zonesRouter.delete('/rooms/:id/exits/:dir', rejectIfReadOnly, async (req, res) =
     })
 
     if (!forwardExit) {
-      res.status(404).json({ error: 'Exit not found' })
+      res.status(404).json({ error: `No ${direction} exit found from room "${fromRoomId}"` })
       return
     }
 
