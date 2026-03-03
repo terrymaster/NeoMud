@@ -102,10 +102,10 @@ fun SpriteOverlay(
 
         if (allEntities.isNotEmpty()) {
             val totalEntities = npcs.size + players.size
-            // Front row: indices 0, 2, 4, 6 (up to 4 entities)
-            val frontRow = allEntities.filterIndexed { i, _ -> i % 2 == 0 }
-            // Back row: indices 1, 3, 5 (up to 3 entities)
-            val backRow = allEntities.filterIndexed { i, _ -> i % 2 == 1 }
+            // Front row: first 4 entities (fill bottom row first)
+            val frontRow = allEntities.take(4)
+            // Back row: overflow entities 5-7
+            val backRow = allEntities.drop(4)
 
             val context = androidx.compose.ui.platform.LocalContext.current
 
