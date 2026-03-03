@@ -140,7 +140,7 @@
     {
       "id": "forest:ruins",
       "name": "Overgrown Ruins",
-      "description": "Crumbling stone walls rise from the forest floor, half-swallowed by moss and creeping vines. The remains of an ancient structure — perhaps a watchtower or shrine — stand in eerie silence. Faded carvings on the stones hint at a civilization long forgotten. The air here feels heavy, as if the ruins remember what the forest has tried to bury.",
+      "description": "Crumbling stone walls rise from the forest floor, half-swallowed by moss and creeping vines. The remains of an ancient structure — perhaps a watchtower or shrine — stand in eerie silence. Faded carvings on the stones hint at a civilization long forgotten. The air here feels heavy, as if the ruins remember what the forest has tried to bury. To the north, the ground grows treacherous and waterlogged. Dark shapes move in the distant mist — this is no place for the unprepared.",
       "x": 0,
       "y": 5,
       "exits": {

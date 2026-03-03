@@ -5,8 +5,8 @@ Active work items and known issues, ordered roughly by priority.
 ## High Priority
 
 ### Game Balance (#40, #43)
-- Melee DPS is 3-5x higher than spell DPS (#43) — needs STR scaling nerf + spell buff (both sides)
-- Large difficulty jump between Forest (L1-3, max 5 dmg) and Marsh (L4-5, 15+ dmg) — no L3-4 transitional content
+- ~~Melee DPS is 3-5x higher than spell DPS (#43)~~ — DONE: MELEE_STR_DIVISOR nerf brought ratio to ~1.26x
+- ~~Large difficulty jump between Forest and Marsh (#40)~~ — DONE: reduced Marsh NPC stats (HP -25-35%, dmg -12-22%), reduced Gorge HP (-15-18%), added narrative danger hints at zone transitions
 - ~~Priest class is unviable solo~~ — DONE (#45): added Holy Smite spell, reduced XP penalty (1.1→1.05), increased HP per level (6→7)
 - ~~Parry/Dodge proc rates too low~~ — DONE (#46): stat divisor 100→80, max chance 25%→30%, added proper cap enforcement
 - ~~Orphaned spells~~ — DONE (#44): Mystic kai:2→3, Bard bard:1→3
@@ -15,7 +15,7 @@ Active work items and known issues, ordered roughly by priority.
 ### Spell & Skill Bugs
 - ~~Magic school level enforcement~~ — DONE: `SpellCommand.execute()` and `handleReadySpell()` both validate `schoolLevel`; `levelRequired` check added to `handleReadySpell()`
 - ~~Skill classRestriction mismatches~~ — DONE: data reconciled; server now enforces `classRestrictions` at command dispatch
-- DoT/HoT tick application to NPCs needs verification — EffectApplicator uses Player object
+- ~~DoT/HoT tick application to NPCs~~ — DONE: NpcState now has `activeEffects`, GameLoop ticks NPC effects (damage/heal/kill credit), `SpellDef.tickPower` controls per-tick values
 
 ### UX Issues (#33, #35, #42)
 - Kick error message doesn't explain expected direction format (#33)
