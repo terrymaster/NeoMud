@@ -274,15 +274,15 @@ class WorldLoaderTest {
         assertNotNull(lurker, "Bog Lurker should be loaded")
         assertEquals("wander", lurker.first.behaviorType)
         assertTrue(lurker.first.hostile)
-        assertEquals(70, lurker.first.maxHp)
-        assertEquals(18, lurker.first.damage)
+        assertEquals(55, lurker.first.maxHp)
+        assertEquals(14, lurker.first.damage)
         assertEquals(4, lurker.first.level)
         assertEquals("marsh", lurker.second, "Bog Lurker should belong to marsh zone")
 
         val hag = result.npcDataList.find { it.first.id == "npc:mire_hag" }
         assertNotNull(hag, "Mire Hag should be loaded")
         assertEquals("idle", hag.first.behaviorType)
-        assertEquals(140, hag.first.maxHp)
+        assertEquals(100, hag.first.maxHp)
         assertEquals(5, hag.first.level)
         assertEquals("marsh", hag.second)
     }
@@ -295,14 +295,14 @@ class WorldLoaderTest {
         assertNotNull(stalker, "Gorge Stalker should be loaded")
         assertEquals("patrol", stalker.first.behaviorType)
         assertTrue(stalker.first.patrolRoute.isNotEmpty(), "Gorge Stalker should have patrol route")
-        assertEquals(95, stalker.first.maxHp)
+        assertEquals(80, stalker.first.maxHp)
         assertEquals(6, stalker.first.level)
         assertEquals("gorge", stalker.second)
 
         val warden = result.npcDataList.find { it.first.id == "npc:gorge_warden" }
         assertNotNull(warden, "Gorge Warden should be loaded")
         assertEquals("idle", warden.first.behaviorType)
-        assertEquals(165, warden.first.maxHp)
+        assertEquals(140, warden.first.maxHp)
         assertEquals(7, warden.first.level)
         assertEquals("gorge", warden.second)
     }
