@@ -1,5 +1,6 @@
 package com.neomud.server.game.commands
 
+import com.neomud.server.game.GameConfig
 import com.neomud.server.game.MeditationUtils
 import com.neomud.server.game.RestUtils
 import com.neomud.server.game.StealthUtils
@@ -10,6 +11,7 @@ import com.neomud.server.session.SessionManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
+import com.neomud.shared.model.Stats
 import com.neomud.shared.protocol.ServerMessage
 
 // TODO: Consider lockable containers/chests as future pickable targets
@@ -63,11 +65,8 @@ class PickLockCommand(
                 return false
             }
 
-            session.skillCooldowns["PICK_LOCK"] = 3
-
-            val effStats = session.effectiveStats()
-            val roll = (1..20).random()
-            val check = effStats.agility + effStats.intellect / 2 + roll
+            setCooldown(session)
+            val check = rollPickLockCheck(session.effectiveStats())
 
             if (check >= feat.difficulty) {
                 session.send(ServerMessage.SystemMessage("You successfully pick the lock on the ${feat.label}."))
@@ -120,10 +119,8 @@ class PickLockCommand(
                     difficulty = entry.value
                 } else {
                     val feat = pickableFeatures.first()
-                    session.skillCooldowns["PICK_LOCK"] = 3
-                    val effStats = session.effectiveStats()
-                    val roll = (1..20).random()
-                    val check = effStats.agility + effStats.intellect / 2 + roll
+                    setCooldown(session)
+                    val check = rollPickLockCheck(session.effectiveStats())
                     if (check >= feat.difficulty) {
                         session.send(ServerMessage.SystemMessage("You successfully pick the lock on the ${feat.label}."))
                         return true
@@ -148,11 +145,8 @@ class PickLockCommand(
         // Mark lock as discovered so direction pad and map show it
         session.discoverLock(roomId, direction)
 
-        session.skillCooldowns["PICK_LOCK"] = 3
-
-        val effStats = session.effectiveStats()
-        val roll = (1..20).random()
-        val check = effStats.agility + effStats.intellect / 2 + roll
+        setCooldown(session)
+        val check = rollPickLockCheck(session.effectiveStats())
 
         if (check >= difficulty) {
             worldGraph.unlockExit(roomId, direction)
@@ -162,5 +156,14 @@ class PickLockCommand(
             session.send(ServerMessage.SystemMessage("You fail to pick the lock."))
             return false
         }
+    }
+
+    private fun setCooldown(session: PlayerSession) {
+        session.skillCooldowns["PICK_LOCK"] = GameConfig.Skills.PICK_LOCK_COOLDOWN_TICKS
+    }
+
+    private fun rollPickLockCheck(stats: Stats): Int {
+        val roll = (1..GameConfig.Skills.PICK_LOCK_DICE_SIZE).random()
+        return stats.agility + stats.intellect / GameConfig.Skills.PICK_LOCK_INT_DIVISOR + roll
     }
 }

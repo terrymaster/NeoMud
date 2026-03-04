@@ -96,6 +96,9 @@ object GameConfig {
         const val SPELL_POWER_LEVEL_DIVISOR = 1
         const val SPELL_POWER_DICE_SIZE = 8
         const val DOT_INITIAL_DAMAGE_DIVISOR = 2
+        const val PICK_LOCK_COOLDOWN_TICKS = 3
+        const val PICK_LOCK_DICE_SIZE = 20
+        const val PICK_LOCK_INT_DIVISOR = 2
     }
     object Stealth {
         const val DC_BASE = 10

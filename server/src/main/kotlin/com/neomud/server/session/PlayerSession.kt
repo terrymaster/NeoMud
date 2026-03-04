@@ -14,6 +14,8 @@ sealed class PendingSkill {
     object Rest : PendingSkill()
     data class Track(val targetId: String?) : PendingSkill()
     data class UseItem(val itemId: String) : PendingSkill()
+    data class CastSpell(val spellId: String, val targetId: String?) : PendingSkill()
+    object Sneak : PendingSkill()
 }
 
 class PlayerSession(

@@ -7,6 +7,7 @@ import com.neomud.server.game.StealthUtils
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.game.npc.NpcState
 import com.neomud.server.persistence.repository.PlayerRepository
+import com.neomud.server.session.PendingSkill
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.ClassCatalog
@@ -80,13 +81,11 @@ class SpellCommand(
     }
 
     /**
-     * Execute a manually-cast spell. Returns the NPC target state if an offensive spell
-     * was cast against one (caller should check target.currentHp <= 0 for kill handling).
+     * Validate a manually-cast spell and queue it for resolution on the next game tick.
+     * No MP deduction, damage, or state changes happen here — only validation.
      */
-    suspend fun execute(session: PlayerSession, spellId: String, targetId: String?): NpcState? {
-        val roomId = session.currentRoomId ?: return null
-        val playerName = session.playerName ?: return null
-        val player = session.player ?: return null
+    suspend fun execute(session: PlayerSession, spellId: String, targetId: String?) {
+        val player = session.player ?: return
 
         // Casting a spell breaks meditation, rest, and stealth
         MeditationUtils.breakMeditation(session, "You stop meditating.")
@@ -96,7 +95,7 @@ class SpellCommand(
         val spell = spellCatalog.getSpell(spellId)
         if (spell == null) {
             session.send(ServerMessage.SpellCastResult(false, spellId, "Unknown spell.", player.currentMp))
-            return null
+            return
         }
 
         // Validate class has school access at required tier
@@ -104,26 +103,54 @@ class SpellCommand(
         val schoolLevel = classDef?.magicSchools?.get(spell.school)
         if (schoolLevel == null) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "Your class cannot cast ${spell.school} spells.", player.currentMp))
-            return null
+            return
         }
         if (schoolLevel < spell.schoolLevel) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "Your training in ${spell.school} magic is not advanced enough.", player.currentMp))
-            return null
+            return
         }
 
         // Validate level
         if (player.level < spell.levelRequired) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "You need level ${spell.levelRequired} to cast ${spell.name}.", player.currentMp))
-            return null
+            return
         }
 
         // Validate MP
         if (player.currentMp < spell.manaCost) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "Not enough mana! (need ${spell.manaCost}, have ${player.currentMp})", player.currentMp))
-            return null
+            return
         }
 
         // Validate cooldown
+        val cooldown = session.skillCooldowns[spellId]
+        if (cooldown != null && cooldown > 0) {
+            session.send(ServerMessage.SpellCastResult(false, spell.name, "${spell.name} is on cooldown ($cooldown ticks remaining).", player.currentMp))
+            return
+        }
+
+        // Queue for resolution on next game tick
+        session.pendingSkill = PendingSkill.CastSpell(spellId, targetId)
+    }
+
+    /**
+     * Resolve a queued spell during the game tick. Deducts MP, applies effects,
+     * and returns the NPC target (if offensive) for kill checking by GameLoop.
+     */
+    suspend fun resolve(session: PlayerSession, spellId: String, targetId: String?): NpcState? {
+        val roomId = session.currentRoomId ?: return null
+        val playerName = session.playerName ?: return null
+        val player = session.player ?: return null
+
+        val spell = spellCatalog.getSpell(spellId) ?: return null
+
+        // Re-validate MP (may have changed between queue and tick)
+        if (player.currentMp < spell.manaCost) {
+            session.send(ServerMessage.SpellCastResult(false, spell.name, "Not enough mana! (need ${spell.manaCost}, have ${player.currentMp})", player.currentMp))
+            return null
+        }
+
+        // Re-validate cooldown (another spell may have set it)
         val cooldown = session.skillCooldowns[spellId]
         if (cooldown != null && cooldown > 0) {
             session.send(ServerMessage.SpellCastResult(false, spell.name, "${spell.name} is on cooldown ($cooldown ticks remaining).", player.currentMp))

@@ -14,10 +14,12 @@ import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.InventoryRepository
+import com.neomud.server.game.commands.SpellCommand
 import com.neomud.server.world.ClassCatalog
 import com.neomud.server.world.ItemCatalog
 import com.neomud.server.world.LootTableCatalog
 import com.neomud.server.world.SkillCatalog
+import com.neomud.server.world.SpellCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.ActiveEffect
 import com.neomud.shared.model.EffectType
@@ -41,7 +43,9 @@ class GameLoop(
     private val itemCatalog: ItemCatalog,
     private val inventoryRepository: InventoryRepository,
     private val coinRepository: CoinRepository,
-    private val movementTrailManager: MovementTrailManager? = null
+    private val movementTrailManager: MovementTrailManager? = null,
+    private val spellCommand: SpellCommand? = null,
+    private val spellCatalog: SpellCatalog? = null
 ) {
     private val logger = LoggerFactory.getLogger(GameLoop::class.java)
 
@@ -248,6 +252,14 @@ class GameLoop(
                     session.pendingSkill = null
                     resolveUseItem(session, skill.itemId)
                 }
+                is PendingSkill.CastSpell -> {
+                    session.pendingSkill = null
+                    resolveCastSpell(session, skill.spellId, skill.targetId)
+                }
+                is PendingSkill.Sneak -> {
+                    session.pendingSkill = null
+                    resolveSneak(session)
+                }
                 else -> {} // Bash/Kick handled by CombatManager
             }
         }
@@ -290,78 +302,7 @@ class GameLoop(
                     )
                 }
                 is CombatEvent.NpcKilled -> {
-                    if (!npcManager.markDead(event.npcId)) continue
-                    sessionManager.broadcastToRoom(
-                        event.roomId,
-                        ServerMessage.NpcDied(event.npcId, event.npcName, event.killerName, event.roomId)
-                    )
-
-                    // Roll loot and drop on ground (use templateId for spawned copies)
-                    val lootKey = event.templateId.ifEmpty { event.npcId }
-                    val lootTable = lootTableCatalog.getLootTable(lootKey)
-                    val coinDrop = lootTableCatalog.getCoinDrop(lootKey)
-                    val lootedItems = lootService.rollLoot(lootTable)
-                    val coins = lootService.rollCoins(coinDrop)
-
-                    if (lootedItems.isNotEmpty() || !coins.isEmpty()) {
-                        // Place on ground
-                        if (lootedItems.isNotEmpty()) {
-                            roomItemManager.addItems(
-                                event.roomId,
-                                lootedItems.map { GroundItem(it.itemId, it.quantity) }
-                            )
-                        }
-                        roomItemManager.addCoins(event.roomId, coins)
-
-                        // Broadcast loot dropped
-                        sessionManager.broadcastToRoom(
-                            event.roomId,
-                            ServerMessage.LootDropped(event.npcName, lootedItems, coins)
-                        )
-
-                        // Broadcast updated ground state
-                        val groundItems = roomItemManager.getGroundItems(event.roomId)
-                        val groundCoins = roomItemManager.getGroundCoins(event.roomId)
-                        sessionManager.broadcastToRoom(
-                            event.roomId,
-                            ServerMessage.RoomItemsUpdate(groundItems, groundCoins)
-                        )
-                    }
-
-                    // Award XP to killer
-                    if (event.xpReward > 0) {
-                        val killerSession = sessionManager.getSession(event.killerName)
-                        val killerPlayer = killerSession?.player
-                        if (killerSession != null && killerPlayer != null) {
-                            val xpGained = XpCalculator.xpForKill(event.npcLevel, killerPlayer.level, event.xpReward)
-                            val newXp = killerPlayer.currentXp + xpGained
-                            killerSession.player = killerPlayer.copy(currentXp = newXp)
-                            try {
-                                killerSession.send(ServerMessage.XpGained(xpGained, newXp, killerPlayer.xpToNextLevel))
-                                if (XpCalculator.isReadyToLevel(newXp, killerPlayer.xpToNextLevel, killerPlayer.level)) {
-                                    killerSession.send(ServerMessage.SystemMessage("You have enough experience to level up! Visit a trainer."))
-                                }
-                                playerRepository.savePlayerState(killerSession.player!!)
-                            } catch (_: Exception) { }
-                        }
-                    }
-
-                    // Auto-disable attack mode for players with no remaining targets
-                    for (session in sessionManager.getSessionsInRoom(event.roomId)) {
-                        if (session.attackMode) {
-                            val remaining = npcManager.getLivingHostileNpcsInRoom(event.roomId)
-                            if (remaining.isEmpty()) {
-                                session.attackMode = false
-                                session.selectedTargetId = null
-                                session.readiedSpellId = null
-                                try {
-                                    session.send(ServerMessage.AttackModeUpdate(false))
-                                } catch (_: Exception) { }
-                            } else if (session.selectedTargetId == event.npcId) {
-                                session.selectedTargetId = null
-                            }
-                        }
-                    }
+                    handleNpcKillEvent(event)
                 }
                 is CombatEvent.NpcKnockedBack -> {
                     // Broadcast NPC left old room
@@ -635,72 +576,7 @@ class GameLoop(
 
         // Process NPC effect kills through existing kill handling
         for (event in npcEffectKills) {
-            if (!npcManager.markDead(event.npcId)) continue
-            sessionManager.broadcastToRoom(
-                event.roomId,
-                ServerMessage.NpcDied(event.npcId, event.npcName, event.killerName, event.roomId)
-            )
-
-            val lootKey = event.templateId.ifEmpty { event.npcId }
-            val lootTable = lootTableCatalog.getLootTable(lootKey)
-            val coinDrop = lootTableCatalog.getCoinDrop(lootKey)
-            val lootedItems = lootService.rollLoot(lootTable)
-            val coins = lootService.rollCoins(coinDrop)
-
-            if (lootedItems.isNotEmpty() || !coins.isEmpty()) {
-                if (lootedItems.isNotEmpty()) {
-                    roomItemManager.addItems(
-                        event.roomId,
-                        lootedItems.map { GroundItem(it.itemId, it.quantity) }
-                    )
-                }
-                roomItemManager.addCoins(event.roomId, coins)
-
-                sessionManager.broadcastToRoom(
-                    event.roomId,
-                    ServerMessage.LootDropped(event.npcName, lootedItems, coins)
-                )
-
-                val groundItems = roomItemManager.getGroundItems(event.roomId)
-                val groundCoins = roomItemManager.getGroundCoins(event.roomId)
-                sessionManager.broadcastToRoom(
-                    event.roomId,
-                    ServerMessage.RoomItemsUpdate(groundItems, groundCoins)
-                )
-            }
-
-            if (event.xpReward > 0) {
-                val killerSession = sessionManager.getSession(event.killerName)
-                val killerPlayer = killerSession?.player
-                if (killerSession != null && killerPlayer != null) {
-                    val xpGained = XpCalculator.xpForKill(event.npcLevel, killerPlayer.level, event.xpReward)
-                    val newXp = killerPlayer.currentXp + xpGained
-                    killerSession.player = killerPlayer.copy(currentXp = newXp)
-                    try {
-                        killerSession.send(ServerMessage.XpGained(xpGained, newXp, killerPlayer.xpToNextLevel))
-                        if (XpCalculator.isReadyToLevel(newXp, killerPlayer.xpToNextLevel, killerPlayer.level)) {
-                            killerSession.send(ServerMessage.SystemMessage("You have enough experience to level up! Visit a trainer."))
-                        }
-                        playerRepository.savePlayerState(killerSession.player!!)
-                    } catch (_: Exception) { }
-                }
-            }
-
-            for (session in sessionManager.getSessionsInRoom(event.roomId)) {
-                if (session.attackMode) {
-                    val remaining = npcManager.getLivingHostileNpcsInRoom(event.roomId)
-                    if (remaining.isEmpty()) {
-                        session.attackMode = false
-                        session.selectedTargetId = null
-                        session.readiedSpellId = null
-                        try {
-                            session.send(ServerMessage.AttackModeUpdate(false))
-                        } catch (_: Exception) { }
-                    } else if (session.selectedTargetId == event.npcId) {
-                        session.selectedTargetId = null
-                    }
-                }
-            }
+            handleNpcKillEvent(event)
         }
 
         // 6. Room effects
@@ -988,6 +864,171 @@ class GameLoop(
                 s.send(ServerMessage.MapData(mapRooms, roomId))
             } catch (_: Exception) {}
         }
+    }
+
+    /**
+     * Handle an NPC kill: mark dead, broadcast death, roll/drop loot, award XP,
+     * and auto-disable attack mode for players with no remaining targets.
+     */
+    private suspend fun handleNpcKillEvent(event: CombatEvent.NpcKilled) {
+        if (!npcManager.markDead(event.npcId)) return
+        sessionManager.broadcastToRoom(
+            event.roomId,
+            ServerMessage.NpcDied(event.npcId, event.npcName, event.killerName, event.roomId)
+        )
+
+        // Roll loot and drop on ground (use templateId for spawned copies)
+        val lootKey = event.templateId.ifEmpty { event.npcId }
+        val lootTable = lootTableCatalog.getLootTable(lootKey)
+        val coinDrop = lootTableCatalog.getCoinDrop(lootKey)
+        val lootedItems = lootService.rollLoot(lootTable)
+        val coins = lootService.rollCoins(coinDrop)
+
+        if (lootedItems.isNotEmpty() || !coins.isEmpty()) {
+            if (lootedItems.isNotEmpty()) {
+                roomItemManager.addItems(
+                    event.roomId,
+                    lootedItems.map { GroundItem(it.itemId, it.quantity) }
+                )
+            }
+            roomItemManager.addCoins(event.roomId, coins)
+
+            sessionManager.broadcastToRoom(
+                event.roomId,
+                ServerMessage.LootDropped(event.npcName, lootedItems, coins)
+            )
+
+            val groundItems = roomItemManager.getGroundItems(event.roomId)
+            val groundCoins = roomItemManager.getGroundCoins(event.roomId)
+            sessionManager.broadcastToRoom(
+                event.roomId,
+                ServerMessage.RoomItemsUpdate(groundItems, groundCoins)
+            )
+        }
+
+        // Award XP to killer
+        if (event.xpReward > 0) {
+            val killerSession = sessionManager.getSession(event.killerName)
+            val killerPlayer = killerSession?.player
+            if (killerSession != null && killerPlayer != null) {
+                val xpGained = XpCalculator.xpForKill(event.npcLevel, killerPlayer.level, event.xpReward)
+                val newXp = killerPlayer.currentXp + xpGained
+                killerSession.player = killerPlayer.copy(currentXp = newXp)
+                try {
+                    killerSession.send(ServerMessage.XpGained(xpGained, newXp, killerPlayer.xpToNextLevel))
+                    if (XpCalculator.isReadyToLevel(newXp, killerPlayer.xpToNextLevel, killerPlayer.level)) {
+                        killerSession.send(ServerMessage.SystemMessage("You have enough experience to level up! Visit a trainer."))
+                    }
+                    playerRepository.savePlayerState(killerSession.player!!)
+                } catch (_: Exception) { }
+            }
+        }
+
+        // Auto-disable attack mode for players with no remaining targets
+        for (session in sessionManager.getSessionsInRoom(event.roomId)) {
+            if (session.attackMode) {
+                val remaining = npcManager.getLivingHostileNpcsInRoom(event.roomId)
+                if (remaining.isEmpty()) {
+                    session.attackMode = false
+                    session.selectedTargetId = null
+                    session.readiedSpellId = null
+                    try {
+                        session.send(ServerMessage.AttackModeUpdate(false))
+                    } catch (_: Exception) { }
+                } else if (session.selectedTargetId == event.npcId) {
+                    session.selectedTargetId = null
+                }
+            }
+        }
+    }
+
+    /**
+     * Resolve a queued CastSpell via SpellCommand.resolve(), then handle kill if target died.
+     */
+    private suspend fun resolveCastSpell(session: PlayerSession, spellId: String, targetId: String?) {
+        val cmd = spellCommand ?: return
+        val target = cmd.resolve(session, spellId, targetId)
+        if (target != null && target.currentHp <= 0 && target.isAlive) {
+            val playerName = session.playerName ?: return
+            handleNpcKillEvent(CombatEvent.NpcKilled(
+                npcId = target.id,
+                npcName = target.name,
+                killerName = playerName,
+                roomId = target.currentRoomId,
+                npcLevel = target.level,
+                xpReward = target.xpReward,
+                templateId = target.templateId
+            ))
+        }
+    }
+
+    /**
+     * Resolve a queued Sneak attempt: skill check, NPC/player perception rolls, hide or fail.
+     */
+    private suspend fun resolveSneak(session: PlayerSession) {
+        val roomId = session.currentRoomId ?: return
+        val playerName = session.playerName ?: return
+        val player = session.player ?: return
+
+        // Skill check: AGI + WIL/2 + level/2 + d20 vs SNEAK_DIFFICULTY (using buffed stats)
+        val stats = session.effectiveStats()
+        val roll = (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
+        val check = stats.agility + stats.willpower / GameConfig.Stealth.DC_WIL_DIVISOR + player.level / GameConfig.Stealth.DC_LEVEL_DIVISOR + roll
+        val difficulty = GameConfig.Stealth.SNEAK_DIFFICULTY
+
+        val sneakSkill = skillCatalog.getSkill("SNEAK")
+        session.skillCooldowns["SNEAK"] = sneakSkill?.cooldownTicks ?: 2
+
+        if (check < difficulty) {
+            try { session.send(ServerMessage.StealthUpdate(false, "You fail to find cover! (roll: $roll)")) } catch (_: Exception) {}
+            return
+        }
+
+        // Stealth check passed - NPCs in the room get a perception check
+        val stealthDc = stats.agility + stats.willpower / GameConfig.Stealth.DC_WIL_DIVISOR + player.level / GameConfig.Stealth.DC_LEVEL_DIVISOR + GameConfig.Stealth.DC_BASE
+        val npcsInRoom = npcManager.getLivingNpcsInRoom(roomId)
+        var detected = false
+        var detectorName = ""
+
+        for (npc in npcsInRoom) {
+            val npcRoll = npc.perception + npc.level + (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
+            if (npcRoll >= stealthDc) {
+                detected = true
+                detectorName = npc.name
+                break
+            }
+        }
+
+        // Non-hidden players in room get perception checks
+        if (!detected) {
+            for (otherSession in sessionManager.getSessionsInRoom(roomId)) {
+                if (otherSession == session || otherSession.isHidden) continue
+                val otherPlayer = otherSession.player ?: continue
+                val otherStats = otherSession.effectiveStats()
+                val bonus = StealthUtils.perceptionBonus(otherPlayer.characterClass, classCatalog)
+                val observerRoll = otherStats.willpower + otherStats.intellect / GameConfig.Stealth.PERCEPTION_INT_DIVISOR + otherPlayer.level / GameConfig.Stealth.PERCEPTION_LEVEL_DIVISOR + bonus + (1..GameConfig.Stealth.PERCEPTION_DICE_SIZE).random()
+                if (observerRoll >= stealthDc) {
+                    detected = true
+                    detectorName = otherPlayer.name
+                    break
+                }
+            }
+        }
+
+        if (detected) {
+            try { session.send(ServerMessage.StealthUpdate(false, "$detectorName notices your attempt to hide!")) } catch (_: Exception) {}
+            return
+        }
+
+        // Successfully hidden!
+        session.isHidden = true
+        try { session.send(ServerMessage.StealthUpdate(true, "You slip into the shadows.")) } catch (_: Exception) {}
+        // Player vanishes from others' view
+        sessionManager.broadcastToRoom(
+            roomId,
+            ServerMessage.PlayerLeft(playerName, roomId, com.neomud.shared.model.Direction.NORTH),
+            exclude = playerName
+        )
     }
 
     private suspend fun meditationPhase() {
