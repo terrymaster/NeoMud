@@ -69,7 +69,12 @@ sealed class ServerMessage {
         val currentHp: Int = 0,
         val maxHp: Int = 0,
         val spawned: Boolean = false,
-        val templateId: String = ""
+        val templateId: String = "",
+        val attackSound: String = "",
+        val missSound: String = "",
+        val deathSound: String = "",
+        val interactSound: String = "",
+        val exitSound: String = ""
     ) : ServerMessage()
 
     @Serializable

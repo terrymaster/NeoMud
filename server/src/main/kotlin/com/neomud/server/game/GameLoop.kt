@@ -214,7 +214,12 @@ class GameLoop(
                         event.npcName, event.toRoomId,
                         event.npcId, event.hostile, event.currentHp, event.maxHp,
                         spawned = isSpawn,
-                        templateId = event.templateId
+                        templateId = event.templateId,
+                        attackSound = event.attackSound,
+                        missSound = event.missSound,
+                        deathSound = event.deathSound,
+                        interactSound = event.interactSound,
+                        exitSound = event.exitSound
                     )
                 )
 
@@ -332,7 +337,12 @@ class GameLoop(
                             event.npcName, event.toRoomId,
                             event.npcId, event.hostile, event.npcCurrentHp, event.npcMaxHp,
                             spawned = false,
-                            templateId = event.templateId
+                            templateId = event.templateId,
+                            attackSound = event.attackSound,
+                            missSound = event.missSound,
+                            deathSound = event.deathSound,
+                            interactSound = event.interactSound,
+                            exitSound = event.exitSound
                         )
                     )
 

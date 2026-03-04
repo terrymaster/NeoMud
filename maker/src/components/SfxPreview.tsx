@@ -6,6 +6,8 @@ interface SfxPreviewProps {
   soundId: string;
   onSoundIdChange: (id: string) => void;
   entityLabel?: string;
+  /** Audio subdirectory: 'general', 'npcs', 'items', 'spells', 'rooms' */
+  audioCategory?: string;
   /** Pre-fill the AI prompt (e.g. from DB-persisted value) */
   initialPrompt?: string;
   /** Pre-fill the AI duration (e.g. from DB-persisted value) */
@@ -105,7 +107,7 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
-function SfxPreview({ soundId, onSoundIdChange, entityLabel, initialPrompt, initialDuration, onPromptChange, readOnlyId }: SfxPreviewProps) {
+function SfxPreview({ soundId, onSoundIdChange, entityLabel, audioCategory = 'general', initialPrompt, initialDuration, onPromptChange, readOnlyId }: SfxPreviewProps) {
   const [showPopover, setShowPopover] = useState(false);
   const [prompt, setPrompt] = useState(initialPrompt ?? '');
   const [duration, setDuration] = useState(initialDuration ?? 5);
@@ -121,7 +123,7 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel, initialPrompt, init
     if (initialDuration !== undefined) setDuration(initialDuration);
   }, [initialDuration]);
 
-  const assetPath = soundId ? `audio/sfx/${soundId}.mp3` : '';
+  const assetPath = soundId ? `audio/${audioCategory}/${soundId}.mp3` : '';
 
   useEffect(() => {
     if (!assetPath) { setUndoDepth(0); return; }
@@ -161,7 +163,7 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel, initialPrompt, init
     }
     if (!effectiveSoundId || !prompt) return;
 
-    const effectiveAssetPath = `audio/sfx/${effectiveSoundId}.mp3`;
+    const effectiveAssetPath = `audio/${audioCategory}/${effectiveSoundId}.mp3`;
     setGenerating(true);
     try {
       await api.post('/generate/sound', {
@@ -185,7 +187,7 @@ function SfxPreview({ soundId, onSoundIdChange, entityLabel, initialPrompt, init
       effectiveSoundId = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
       onSoundIdChange(effectiveSoundId);
     }
-    const effectiveAssetPath = `audio/sfx/${effectiveSoundId}.mp3`;
+    const effectiveAssetPath = `audio/${audioCategory}/${effectiveSoundId}.mp3`;
     try {
       await api.upload('/asset-mgmt/upload', file, { assetPath: effectiveAssetPath });
     } catch (err: any) {

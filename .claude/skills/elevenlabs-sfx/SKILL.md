@@ -44,7 +44,11 @@ This requires the maker dev server to be running (`cd maker && npm run dev`).
 ```
 maker/default_world_src/assets/audio/
 ├── bgm/              Background music (MP3, 1-2 MB, looping)
-└── sfx/              Sound effects (MP3, 8-24 KB, short)
+├── npcs/             NPC attack, miss, death, interact, exit sounds
+├── items/            Weapon attack/miss, item use sounds
+├── spells/           Spell cast, impact, miss sounds
+├── rooms/            Room depart sounds, room effect sounds
+└── general/          Shared sounds: dodge, parry, backstab, miss, loot_drop, etc.
 ```
 
 ### File Format
@@ -54,7 +58,10 @@ maker/default_world_src/assets/audio/
 
 ### Sound ID Naming
 Sound IDs are referenced by name (no extension, no path prefix) in JSON data files:
-- `sword_swing` → `audio/sfx/sword_swing.mp3`
+- `sword_swing` → `audio/items/sword_swing.mp3` (weapon sounds go in `items/`)
+- `wolf_bite` → `audio/npcs/wolf_bite.mp3` (NPC sounds go in `npcs/`)
+- `fireball_cast` → `audio/spells/fireball_cast.mp3` (spell sounds go in `spells/`)
+- `dodge` → `audio/general/dodge.mp3` (shared sounds go in `general/`)
 - `town_peaceful` → `audio/bgm/town_peaceful.mp3`
 
 ### Where Sounds Are Referenced
@@ -131,7 +138,7 @@ ElevenLabs sound effects work best with descriptive, evocative prompts:
 1. Read the NPC definition from the zone JSON
 2. Generate sounds for `attackSound`, `missSound`, `deathSound`
 3. Add `interactSound` if the NPC is a vendor/trainer
-4. Save to `maker/default_world_src/assets/audio/sfx/`
+4. Save to `maker/default_world_src/assets/audio/npcs/`
 
 ### For a new spell:
 1. Read the spell definition from `spells.json`
@@ -154,7 +161,7 @@ ElevenLabs sound effects work best with descriptive, evocative prompts:
 $ARGUMENTS
 
 1. **Identify** what sounds are needed (read relevant JSON data files)
-2. **Check** what SFX already exist in `maker/default_world_src/assets/audio/sfx/`
+2. **Check** what SFX already exist in `maker/default_world_src/assets/audio/{npcs,items,spells,rooms,general}/`
 3. **Generate** missing sounds using `text_to_sound_effects` MCP tool
 4. **Rename** MCP output files to match the expected naming convention
 5. **Update** JSON data files with sound IDs if they're currently empty

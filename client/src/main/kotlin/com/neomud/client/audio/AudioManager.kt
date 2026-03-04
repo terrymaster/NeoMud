@@ -31,6 +31,8 @@ class AudioManager(context: Context) {
     private val sfxCache = mutableMapOf<String, Int>()
     // soundId strings currently being loaded (avoid duplicate downloads)
     private val sfxLoading = mutableSetOf<String>()
+    // SoundPool IDs pending first play after load completes
+    private val pendingFirstPlay = mutableSetOf<Int>()
 
     var masterVolume: Float = 1f
         private set
@@ -44,12 +46,21 @@ class AudioManager(context: Context) {
         masterVolume = prefs.getFloat("volume_master", 1f)
         sfxVolume = prefs.getFloat("volume_sfx", 1f)
         bgmVolume = prefs.getFloat("volume_bgm", 0.5f)
+
+        // Single listener handles all first-play-after-load events
+        soundPool.setOnLoadCompleteListener { pool, sampleId, status ->
+            if (status == 0 && pendingFirstPlay.remove(sampleId)) {
+                val vol = masterVolume * sfxVolume
+                pool.play(sampleId, vol, vol, 1, 0, 1f)
+            }
+        }
     }
 
-    fun playSfx(serverBaseUrl: String, soundId: String) {
+    fun playSfx(serverBaseUrl: String, soundId: String, category: String) {
         if (soundId.isBlank() || masterVolume == 0f || sfxVolume == 0f) return
 
-        val cached = sfxCache[soundId]
+        val cacheKey = "$category/$soundId"
+        val cached = sfxCache[cacheKey]
         if (cached != null) {
             val vol = masterVolume * sfxVolume
             soundPool.play(cached, vol, vol, 1, 0, 1f)
@@ -57,13 +68,13 @@ class AudioManager(context: Context) {
         }
 
         // Don't double-download
-        if (soundId in sfxLoading) return
-        sfxLoading.add(soundId)
+        if (cacheKey in sfxLoading) return
+        sfxLoading.add(cacheKey)
 
         scope.launch {
             try {
-                val url = "$serverBaseUrl/assets/audio/sfx/$soundId.mp3"
-                val tempFile = File(appContext.cacheDir, "sfx_$soundId.mp3")
+                val url = "$serverBaseUrl/assets/audio/$category/$soundId.mp3"
+                val tempFile = File(appContext.cacheDir, "sfx_${category}_$soundId.mp3")
                 if (!tempFile.exists()) {
                     URL(url).openStream().use { input ->
                         tempFile.outputStream().use { output ->
@@ -72,18 +83,12 @@ class AudioManager(context: Context) {
                     }
                 }
                 val loadedId = soundPool.load(tempFile.absolutePath, 1)
-                sfxCache[soundId] = loadedId
-                // SoundPool needs a moment after load before play; use a listener
-                soundPool.setOnLoadCompleteListener { pool, sampleId, status ->
-                    if (status == 0 && sampleId == loadedId) {
-                        val vol = masterVolume * sfxVolume
-                        pool.play(sampleId, vol, vol, 1, 0, 1f)
-                    }
-                }
+                sfxCache[cacheKey] = loadedId
+                pendingFirstPlay.add(loadedId)
             } catch (e: Exception) {
-                Log.w(tag, "Failed to load SFX '$soundId': ${e.message}")
+                Log.w(tag, "Failed to load SFX '$category/$soundId': ${e.message}")
             } finally {
-                sfxLoading.remove(soundId)
+                sfxLoading.remove(cacheKey)
             }
         }
     }

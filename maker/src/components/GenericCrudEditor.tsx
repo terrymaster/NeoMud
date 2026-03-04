@@ -24,6 +24,8 @@ export interface FieldConfig {
   rows?: number;
   help?: string;
   max?: number;
+  /** Audio subdirectory for sfx fields: 'general', 'npcs', 'items', 'spells', 'rooms' */
+  audioCategory?: string;
   visibleWhen?: (form: Record<string, any>) => boolean;
 }
 
@@ -489,6 +491,7 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                       soundId={form[field.key] ?? ''}
                       onSoundIdChange={(id) => handleChange(field.key, id)}
                       entityLabel={form.name || form.id || selectedId || ''}
+                      audioCategory={field.audioCategory}
                     />
                   )}
                   {field.help && <div style={styles.help}>{field.help}</div>}

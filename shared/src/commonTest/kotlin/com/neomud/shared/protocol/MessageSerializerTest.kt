@@ -288,6 +288,23 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testNpcEnteredWithSoundFieldsRoundTrip() {
+        val original = ServerMessage.NpcEntered(
+            "Shadow Wolf", "forest:path", "npc:shadow_wolf", true, 45, 50,
+            spawned = true, templateId = "npc:shadow_wolf",
+            attackSound = "wolf_bite", missSound = "wolf_miss", deathSound = "wolf_death",
+            interactSound = "", exitSound = ""
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+        val npcEntered = decoded as ServerMessage.NpcEntered
+        assertEquals("wolf_bite", npcEntered.attackSound)
+        assertEquals("wolf_miss", npcEntered.missSound)
+        assertEquals("wolf_death", npcEntered.deathSound)
+    }
+
+    @Test
     fun testNpcLeftWithIdRoundTrip() {
         val original = ServerMessage.NpcLeft("Shadow Wolf", "forest:path", Direction.NORTH, "npc:shadow_wolf")
         val json = MessageSerializer.encodeServerMessage(original)

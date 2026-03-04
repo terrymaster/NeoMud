@@ -160,8 +160,8 @@ class GameViewModel(
     private val _classCatalog = MutableStateFlow<Map<String, CharacterClassDef>>(emptyMap())
     val classCatalog: StateFlow<Map<String, CharacterClassDef>> = _classCatalog
 
-    private fun sfx(soundId: String) {
-        if (soundId.isNotBlank()) audioManager?.playSfx(serverBaseUrl, soundId)
+    private fun sfx(soundId: String, category: String) {
+        if (soundId.isNotBlank()) audioManager?.playSfx(serverBaseUrl, soundId, category)
     }
 
     private fun bgm(trackId: String) {
@@ -232,7 +232,7 @@ class GameViewModel(
             is ServerMessage.MoveOk -> {
                 // Play departure sound from the room we're leaving
                 val previousRoom = _roomInfo.value?.room
-                if (previousRoom != null) sfx(previousRoom.departSound)
+                if (previousRoom != null) sfx(previousRoom.departSound, "rooms")
                 _roomInfo.value = ServerMessage.RoomInfo(message.room, message.players, message.npcs)
                 _roomEntities.value = message.npcs
                 _roomPlayers.value = message.players
@@ -284,7 +284,12 @@ class GameViewModel(
                         behaviorType = "unknown",
                         hostile = message.hostile,
                         currentHp = message.currentHp,
-                        maxHp = message.maxHp
+                        maxHp = message.maxHp,
+                        attackSound = message.attackSound,
+                        missSound = message.missSound,
+                        deathSound = message.deathSound,
+                        interactSound = message.interactSound,
+                        exitSound = message.exitSound
                     ))
                     _roomEntities.value = current
                 }
@@ -304,21 +309,23 @@ class GameViewModel(
                         if (!message.isPlayerDefender) {
                             // Player missed NPC — play weapon miss sound
                             val weaponId = _equipment.value["weapon"]
-                            val missSound = weaponId?.let { _itemCatalog.value[it]?.missSound } ?: ""
-                            sfx(missSound.ifEmpty { "miss" })
+                            val item = weaponId?.let { _itemCatalog.value[it] }
+                            val missSound = item?.missSound ?: ""
+                            if (missSound.isNotEmpty()) sfx(missSound, "items") else sfx("miss", "general")
                         } else {
                             // NPC missed player — play NPC miss sound
                             val npc = _roomEntities.value.find { it.name == message.attackerName }
-                            sfx(npc?.missSound?.ifEmpty { "miss" } ?: "miss")
+                            val npcMissSound = npc?.missSound ?: ""
+                            if (npcMissSound.isNotEmpty()) sfx(npcMissSound, "npcs") else sfx("miss", "general")
                         }
                     }
                     message.isDodge -> {
                         addLog("${message.defenderName} dodges ${message.attackerName}'s attack!", MudColors.combatYou)
-                        sfx("dodge")
+                        sfx("dodge", "general")
                     }
                     message.isParry && message.damage > 0 -> {
                         addLog("${message.defenderName} parries ${message.attackerName}'s blow for reduced damage! (${message.damage} damage, ${message.defenderHp}/${message.defenderMaxHp} HP)", MudColors.combatYou)
-                        sfx("parry")
+                        sfx("parry", "general")
                     }
                     message.damage > 0 -> {
                         val verb = if (message.isBackstab) "backstabs" else "hits"
@@ -326,14 +333,16 @@ class GameViewModel(
                             else if (message.isBackstab) MudColors.stealth else MudColors.combatYou
                         addLog("${message.attackerName} $verb ${message.defenderName} for ${message.damage} damage! (${message.defenderHp}/${message.defenderMaxHp} HP)", color)
                         if (message.isBackstab) {
-                            sfx("backstab")
+                            sfx("backstab", "general")
                         } else if (!message.isPlayerDefender) {
                             val weaponId = _equipment.value["weapon"]
-                            val weaponSound = weaponId?.let { _itemCatalog.value[it]?.attackSound } ?: ""
-                            sfx(weaponSound)
+                            val item = weaponId?.let { _itemCatalog.value[it] }
+                            val weaponSound = item?.attackSound ?: ""
+                            if (weaponSound.isNotEmpty()) sfx(weaponSound, "items") else sfx("sword_swing", "items")
                         } else {
                             val npc = _roomEntities.value.find { it.name == message.attackerName }
-                            sfx(npc?.attackSound ?: "")
+                            val npcAttackSound = npc?.attackSound ?: ""
+                            if (npcAttackSound.isNotEmpty()) sfx(npcAttackSound, "npcs") else sfx("miss", "general")
                         }
                     }
                 }
@@ -349,7 +358,7 @@ class GameViewModel(
             }
             is ServerMessage.NpcDied -> {
                 val dyingNpc = _roomEntities.value.find { it.id == message.npcId }
-                sfx(dyingNpc?.deathSound ?: "enemy_death")
+                sfx(dyingNpc?.deathSound?.ifEmpty { null } ?: "enemy_death", "npcs")
                 addLog("${message.npcName} has been slain by ${message.killerName}!", MudColors.kill)
                 _roomEntities.value = _roomEntities.value.filter { it.id != message.npcId }
                 if (_selectedTargetId.value == message.npcId) {
@@ -393,7 +402,7 @@ class GameViewModel(
                 _activeEffects.value = message.effects
             }
             is ServerMessage.EffectTick -> {
-                sfx(message.sound)
+                sfx(message.sound, "spells")
                 addLog(message.message, MudColors.effect)
                 _player.value = _player.value?.let { p ->
                     val newMp = if (message.newMp >= 0) message.newMp else p.currentMp
@@ -425,7 +434,7 @@ class GameViewModel(
             }
             is ServerMessage.ItemUsed -> {
                 val usedItem = findItemByName(message.itemName)
-                sfx(usedItem?.useSound ?: "potion_drink")
+                if (usedItem?.useSound?.isNotEmpty() == true) sfx(usedItem.useSound, "items") else sfx("potion_drink", "items")
                 addLog(message.message, MudColors.effect)
                 _player.value = _player.value?.copy(
                     currentHp = message.newHp,
@@ -444,7 +453,7 @@ class GameViewModel(
                 _roomGroundCoins.value = message.coins
             }
             is ServerMessage.LootDropped -> {
-                sfx("loot_drop")
+                sfx("loot_drop", "general")
                 val catalog = _itemCatalog.value
                 for (item in message.items) {
                     val name = catalog[item.itemId]?.name ?: item.itemName
@@ -461,7 +470,7 @@ class GameViewModel(
                 }
             }
             is ServerMessage.PickupResult -> {
-                sfx(if (message.isCoin) "coin_pickup" else "item_pickup")
+                sfx(if (message.isCoin) "coin_pickup" else "item_pickup", "general")
                 if (message.isCoin) {
                     addLog("You pick up ${message.quantity} ${message.itemName}.", MudColors.loot)
                 } else {
@@ -509,7 +518,7 @@ class GameViewModel(
                 addLog(message.message, color)
                 if (message.success) {
                     val spell = findSpellByName(message.spellName)
-                    sfx(spell?.castSound ?: "")
+                    sfx(spell?.castSound ?: "", "spells")
                     _player.value = _player.value?.let { p ->
                         val newHp = message.newHp ?: p.currentHp
                         p.copy(currentMp = message.newMp, currentHp = newHp)
@@ -519,7 +528,7 @@ class GameViewModel(
             }
             is ServerMessage.SpellEffect -> {
                 val impactSpell = findSpellByName(message.spellName)
-                sfx(impactSpell?.impactSound ?: "")
+                sfx(impactSpell?.impactSound ?: "", "spells")
                 if (!message.isPlayerTarget) {
                     _roomEntities.value = _roomEntities.value.map { npc ->
                         if (message.targetId.isNotEmpty() && npc.id == message.targetId ||
@@ -539,7 +548,7 @@ class GameViewModel(
                 }
             }
             is ServerMessage.VendorInfo -> {
-                sfx(message.interactSound)
+                sfx(message.interactSound, "npcs")
                 _vendorInfo.value = message
                 _showVendor.value = true
             }
@@ -588,7 +597,7 @@ class GameViewModel(
                 if (_showTrainer.value) interactTrainer()
             }
             is ServerMessage.TrainerInfo -> {
-                sfx(message.interactSound)
+                sfx(message.interactSound, "npcs")
                 _trainerInfo.value = message
                 _showTrainer.value = true
                 _player.value = _player.value?.copy(
@@ -599,7 +608,7 @@ class GameViewModel(
             is ServerMessage.InteractResult -> {
                 val color = if (message.success) MudColors.selfAction else MudColors.error
                 addLog(message.message, color)
-                sfx(message.sound)
+                sfx(message.sound, "rooms")
             }
             is ServerMessage.StatTrained -> {
                 addLog("Trained ${message.stat} to ${message.newValue} (${message.cpSpent} CP spent, ${message.remainingCp} remaining)", MudColors.system)
@@ -807,7 +816,7 @@ class GameViewModel(
     }
 
     fun dismissTrainer() {
-        _trainerInfo.value?.exitSound?.let { if (it.isNotBlank()) sfx(it) }
+        _trainerInfo.value?.exitSound?.let { if (it.isNotBlank()) sfx(it, "npcs") }
         _showTrainer.value = false
         _trainerInfo.value = null
     }
@@ -831,7 +840,7 @@ class GameViewModel(
     }
 
     fun dismissVendor() {
-        _vendorInfo.value?.exitSound?.let { if (it.isNotBlank()) sfx(it) }
+        _vendorInfo.value?.exitSound?.let { if (it.isNotBlank()) sfx(it, "npcs") }
         _showVendor.value = false
         _vendorInfo.value = null
     }

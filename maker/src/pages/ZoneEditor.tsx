@@ -1254,7 +1254,7 @@ function ZoneEditor() {
                 disabled={!roomForm.departSound}
                 onClick={() => {
                   if (roomForm.departSound) {
-                    const audio = new Audio(`/api/assets/audio/sfx/${roomForm.departSound}.mp3`);
+                    const audio = new Audio(`/api/assets/audio/rooms/${roomForm.departSound}.mp3`);
                     audio.play().catch(() => {});
                   }
                 }}
@@ -1310,6 +1310,7 @@ function ZoneEditor() {
                         soundId={eff.sound || ''}
                         onSoundIdChange={(id) => { const u = [...effectsList]; u[i] = { ...u[i], sound: id }; updateEffects(u); }}
                         entityLabel={`${eff.type.toLowerCase()} effect`}
+                        audioCategory="rooms"
                       />
                     </div>
                   ))}

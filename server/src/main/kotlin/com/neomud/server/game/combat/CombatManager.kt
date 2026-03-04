@@ -64,7 +64,12 @@ sealed class CombatEvent {
         val templateId: String,
         val hostile: Boolean,
         val npcCurrentHp: Int,
-        val npcMaxHp: Int
+        val npcMaxHp: Int,
+        val attackSound: String = "",
+        val missSound: String = "",
+        val deathSound: String = "",
+        val interactSound: String = "",
+        val exitSound: String = ""
     ) : CombatEvent()
 }
 
@@ -550,7 +555,12 @@ class CombatManager(
                     templateId = target.templateId,
                     hostile = target.hostile,
                     npcCurrentHp = target.currentHp,
-                    npcMaxHp = target.maxHp
+                    npcMaxHp = target.maxHp,
+                    attackSound = target.attackSound,
+                    missSound = target.missSound,
+                    deathSound = target.deathSound,
+                    interactSound = target.interactSound,
+                    exitSound = target.exitSound
                 ))
 
                 // Trigger pursuit

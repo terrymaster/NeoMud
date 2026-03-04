@@ -220,8 +220,17 @@ Image generation prompts are stored in the data files:
 ### SFX Conventions
 
 - **Format**: MP3 (`.mp3`), 0.5–3 seconds for SFX, 30–120 seconds for BGM
-- **Directory**: `maker/default_world_src/assets/audio/sfx/` (SFX) and `audio/bgm/` (BGM)
-- **Sound IDs**: Referenced by filename without extension or path prefix (e.g., `sword_swing` → `audio/sfx/sword_swing.mp3`)
+- **Directory structure**:
+  ```
+  maker/default_world_src/assets/audio/
+  ├── bgm/        Background music
+  ├── npcs/       NPC attack, miss, death, interact, exit sounds
+  ├── items/      Weapon attack/miss, item use sounds
+  ├── spells/     Spell cast, impact, miss sounds
+  ├── rooms/      Room depart sounds, room effect sounds
+  └── general/    Shared sounds: dodge, parry, backstab, miss, loot_drop, coin_pickup, item_pickup, enemy_death
+  ```
+- **Sound IDs**: Referenced by filename without extension or path prefix. The client derives the subdirectory from context (e.g., NPC sounds → `audio/npcs/`, item sounds → `audio/items/`)
 
 ### Where Sounds Are Referenced
 

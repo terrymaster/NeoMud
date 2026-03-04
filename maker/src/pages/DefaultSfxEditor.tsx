@@ -246,6 +246,13 @@ function DefaultSfxEditor() {
                 soundId={selected.id}
                 onSoundIdChange={() => {}}
                 entityLabel={selected.label}
+                audioCategory={
+                  selected.category === 'combat' || selected.category === 'loot' ? 'general'
+                  : selected.category === 'item' ? 'items'
+                  : selected.category === 'magic' ? 'spells'
+                  : selected.category === 'movement' ? 'rooms'
+                  : 'general'
+                }
                 initialPrompt={selected.prompt}
                 initialDuration={selected.duration}
                 onPromptChange={handlePromptChange}

@@ -184,7 +184,12 @@ class InteractCommand(
                         currentHp = spawned.currentHp,
                         maxHp = spawned.maxHp,
                         spawned = true,
-                        templateId = spawned.templateId
+                        templateId = spawned.templateId,
+                        attackSound = spawned.attackSound,
+                        missSound = spawned.missSound,
+                        deathSound = spawned.deathSound,
+                        interactSound = spawned.interactSound,
+                        exitSound = spawned.exitSound
                     ))
             }
         }

@@ -289,7 +289,7 @@ object WorldLoader {
             val folder = "${prefix}s" // npc -> npcs, item -> items
             return "assets/images/$folder/${entityId.replace(':', '_')}.webp"
         }
-        fun sfxPathFor(soundId: String) = "assets/audio/sfx/$soundId.mp3"
+        fun sfxPathFor(soundId: String, category: String) = "assets/audio/$category/$soundId.mp3"
         fun bgmPathFor(trackId: String) = "assets/audio/bgm/$trackId.mp3"
 
         // Item sprites
@@ -311,32 +311,29 @@ object WorldLoader {
         }
         // SFX files
         val checkedSfx = mutableSetOf<String>()
+        fun checkSfx(soundId: String, category: String, owner: String) {
+            val key = "$category/$soundId"
+            if (soundId.isNotBlank() && checkedSfx.add(key) && !assetExists(sfxPathFor(soundId, category))) {
+                logger.warn("Missing SFX asset: ${sfxPathFor(soundId, category)} (referenced by $owner)")
+            }
+        }
         for (item in itemCatalog.getAllItems()) {
             for (sound in listOf(item.attackSound, item.missSound, item.useSound)) {
-                if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
-                    logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by item '${item.id}')")
-                }
+                checkSfx(sound, "items", "item '${item.id}'")
             }
         }
         for ((npcData, _) in allNpcData) {
             for (sound in listOf(npcData.attackSound, npcData.missSound, npcData.deathSound, npcData.interactSound, npcData.exitSound)) {
-                if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
-                    logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by NPC '${npcData.id}')")
-                }
+                checkSfx(sound, "npcs", "NPC '${npcData.id}'")
             }
         }
         for (spell in spellCatalog.getAllSpells()) {
             for (sound in listOf(spell.castSound, spell.impactSound, spell.missSound)) {
-                if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
-                    logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by spell '${spell.id}')")
-                }
+                checkSfx(sound, "spells", "spell '${spell.id}'")
             }
         }
         for (room in worldGraph.getAllRooms()) {
-            val sound = room.departSound
-            if (sound.isNotBlank() && checkedSfx.add(sound) && !assetExists(sfxPathFor(sound))) {
-                logger.warn("Missing SFX asset: ${sfxPathFor(sound)} (referenced by room '${room.id}')")
-            }
+            checkSfx(room.departSound, "rooms", "room '${room.id}'")
         }
         // BGM files
         val checkedBgm = mutableSetOf<String>()

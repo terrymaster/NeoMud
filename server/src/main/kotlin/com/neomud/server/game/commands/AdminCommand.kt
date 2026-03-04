@@ -261,7 +261,10 @@ class AdminCommand(
             roomId,
             ServerMessage.NpcEntered(
                 spawned.name, roomId, spawned.id, spawned.hostile,
-                spawned.currentHp, spawned.maxHp, spawned = true, templateId = spawned.templateId
+                spawned.currentHp, spawned.maxHp, spawned = true, templateId = spawned.templateId,
+                attackSound = spawned.attackSound, missSound = spawned.missSound,
+                deathSound = spawned.deathSound, interactSound = spawned.interactSound,
+                exitSound = spawned.exitSound
             )
         )
         session.send(ServerMessage.SystemMessage("Spawned ${spawned.name} (${spawned.id})."))

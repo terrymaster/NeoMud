@@ -66,7 +66,12 @@ data class NpcEvent(
     val hostile: Boolean = false,
     val currentHp: Int = 0,
     val maxHp: Int = 0,
-    val templateId: String = ""
+    val templateId: String = "",
+    val attackSound: String = "",
+    val missSound: String = "",
+    val deathSound: String = "",
+    val interactSound: String = "",
+    val exitSound: String = ""
 )
 
 class NpcManager(
@@ -193,7 +198,12 @@ class NpcManager(
                             hostile = npc.hostile,
                             currentHp = npc.currentHp,
                             maxHp = npc.maxHp,
-                            templateId = npc.templateId
+                            templateId = npc.templateId,
+                            attackSound = npc.attackSound,
+                            missSound = npc.missSound,
+                            deathSound = npc.deathSound,
+                            interactSound = npc.interactSound,
+                            exitSound = npc.exitSound
                         )
                     )
                 }
@@ -249,7 +259,12 @@ class NpcManager(
                     hostile = spawned.hostile,
                     currentHp = spawned.currentHp,
                     maxHp = spawned.maxHp,
-                    templateId = spawned.templateId
+                    templateId = spawned.templateId,
+                    attackSound = spawned.attackSound,
+                    missSound = spawned.missSound,
+                    deathSound = spawned.deathSound,
+                    interactSound = spawned.interactSound,
+                    exitSound = spawned.exitSound
                 )
             )
         }
@@ -339,7 +354,12 @@ class NpcManager(
             hostile = npc.hostile,
             currentHp = npc.currentHp,
             maxHp = npc.maxHp,
-            templateId = npc.templateId
+            templateId = npc.templateId,
+            attackSound = npc.attackSound,
+            missSound = npc.missSound,
+            deathSound = npc.deathSound,
+            interactSound = npc.interactSound,
+            exitSound = npc.exitSound
         )
     }
 

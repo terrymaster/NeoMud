@@ -18,9 +18,9 @@ Active work items and known issues, ordered roughly by priority.
 - ~~DoT/HoT tick application to NPCs~~ — DONE: NpcState now has `activeEffects`, GameLoop ticks NPC effects (damage/heal/kill credit), `SpellDef.tickPower` controls per-tick values
 
 ### UX Issues (#33, #35, #42)
-- Kick error message doesn't explain expected direction format (#33)
-- Trainer interaction lacks context for new players (#35)
-- Vendor bulk sale messages don't show quantity (#42)
+- ~~Kick error message doesn't explain expected direction format (#33)~~ — DONE
+- ~~Trainer interaction lacks context for new players (#35)~~ — DONE
+- ~~Vendor bulk sale messages don't show quantity (#42)~~ — DONE
 - Consumable items UX — polish tap-to-use flow, add cooldown indicator
 
 ### Asset Pipeline (#36)
@@ -57,6 +57,7 @@ Active work items and known issues, ordered roughly by priority.
 - Player status panel condensing — HP/MP/XP bars take too much vertical space in portrait mode
 - Action panel reorganization — separate permanent actions (attack, hide, spell bar) from contextual ones (trainer, vendor, settings)
 - Sound effects gaps: equip/unequip, spell cast, potion use, death, respawn, UI feedback sounds
+- Precache all BGM and SFX assets on connect — currently audio is fetched on-demand, causing first-play delay
 
 ### Multiplayer
 - Stress testing — concurrent player interactions, combat with multiple players, reconnection handling
