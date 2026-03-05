@@ -45,7 +45,7 @@
     {
       "id": "KICK",
       "name": "Kick",
-      "description": "A swift kick that deals extra damage.",
+      "description": "A swift kick that knocks the target in a direction (north, south, east, west). Deals bonus damage and displaces the enemy.",
       "category": "combat",
       "primaryStat": "agility",
       "secondaryStat": "strength",
