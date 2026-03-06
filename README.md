@@ -8,7 +8,7 @@ A love letter to the MUDs of the '90s, built with modern tools and vibes. 100% v
 </p>
 <p align="center">
   <img src="docs/screenshots/client_character.png" width="230" alt="Character sheet with stats, equipment, and skills" />
-  <img src="docs/screenshots/client_landscape.png" width="500" alt="Landscape immersive mode — full room art with floating UI" />
+  <img src="docs/screenshots/client_landscape.png" width="500" alt="Landscape mode — side-by-side room art and game log" />
 </p>
 <p align="center">
   <img src="docs/screenshots/maker_zones.png" width="500" alt="Maker world map — all zones on a shared coordinate grid" />
@@ -82,7 +82,7 @@ Every room has hand-prompted AI-generated background art. Every NPC and item has
 - Room scene: background art + NPC sprites + item sprites + player sprites
 - BFS-based minimap with fog-of-war, zone color-coding, locked/hidden/interactable exit indicators
 - 10-direction navigation (cardinal, diagonal, up/down)
-- **Landscape immersive mode** — full-bleed room art with floating translucent UI panels
+- **Landscape mode** — side-by-side room art and game log with compact controls
 - Spell bar with drag-to-assign slots and tap-to-ready auto-cast
 - Icon grid inventory with item sprites and tap-to-use
 - Per-zone background music with crossfade on zone transitions
