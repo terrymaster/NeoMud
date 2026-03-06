@@ -26,4 +26,8 @@ class NmdBundleDataSource(private val zipFile: ZipFile) : WorldDataSource {
         val entry = zipFile.getEntry(path) ?: return null
         return zipFile.getInputStream(entry)
     }
+
+    override fun close() {
+        zipFile.close()
+    }
 }

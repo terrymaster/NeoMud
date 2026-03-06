@@ -548,7 +548,7 @@ class GameViewModel(
                 }
             }
             is ServerMessage.VendorInfo -> {
-                sfx(message.interactSound, "npcs")
+                if (!_showVendor.value) sfx(message.interactSound, "npcs")
                 _vendorInfo.value = message
                 _showVendor.value = true
             }
@@ -597,7 +597,7 @@ class GameViewModel(
                 if (_showTrainer.value) interactTrainer()
             }
             is ServerMessage.TrainerInfo -> {
-                sfx(message.interactSound, "npcs")
+                if (!_showTrainer.value) sfx(message.interactSound, "npcs")
                 _trainerInfo.value = message
                 _showTrainer.value = true
                 _player.value = _player.value?.copy(

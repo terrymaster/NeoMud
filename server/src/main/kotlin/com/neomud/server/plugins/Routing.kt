@@ -11,6 +11,7 @@ import com.neomud.shared.protocol.MessageSerializer
 import com.neomud.shared.protocol.ServerMessage
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
@@ -56,6 +57,17 @@ fun Application.configureRouting(
 
             val ext = path.substringAfterLast('.', "").lowercase()
             val contentType = extensionToContentType[ext] ?: ContentType.Application.OctetStream
+
+            // ETag based on content hash so clients refetch when assets change
+            val etag = "\"${bytes.size}-${bytes.contentHashCode()}\""
+            val ifNoneMatch = call.request.headers["If-None-Match"]
+            if (ifNoneMatch == etag) {
+                call.respond(HttpStatusCode.NotModified)
+                return@get
+            }
+            call.response.header("ETag", etag)
+            call.response.header("Cache-Control", "no-cache")
+
             call.respondBytes(bytes, contentType)
         }
 

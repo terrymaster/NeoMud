@@ -1,9 +1,10 @@
 package com.neomud.server.world
 
 import kotlinx.serialization.Serializable
+import java.io.Closeable
 import java.io.InputStream
 
-interface WorldDataSource {
+interface WorldDataSource : Closeable {
     fun readText(path: String): String?
     fun readBytes(path: String): ByteArray?
     fun list(prefix: String, suffix: String = ""): List<String>

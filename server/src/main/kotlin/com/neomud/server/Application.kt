@@ -59,9 +59,17 @@ fun main() {
     val worldFile = System.getenv("NEOMUD_WORLD")
         ?: "build/worlds/default-world.nmd"
 
-    embeddedServer(Netty, port = PORT, host = "0.0.0.0") {
+    val server = embeddedServer(Netty, port = PORT, host = "0.0.0.0") {
         module(worldFile = worldFile)
-    }.start(wait = true)
+    }
+
+    Runtime.getRuntime().addShutdownHook(Thread {
+        logger.info("Shutdown signal received. Stopping server...")
+        server.stop(gracePeriodMillis = 1000, timeoutMillis = 3000)
+        logger.info("Server stopped.")
+    })
+
+    server.start(wait = true)
 }
 
 fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: String = "build/worlds/default-world.nmd", adminUsernamesOverride: Set<String>? = null) {
@@ -125,6 +133,20 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository, skillCatalog, classCatalog, itemCatalog, inventoryRepository, coinRepository, movementTrailManager, spellCommand, spellCatalog)
     commandProcessor.setGameLoop(gameLoop)
 
+    // Save players and close resources when the application stops
+    monitor.subscribe(ApplicationStopped) {
+        logger.info("Saving player states...")
+        for (session in sessionManager.getAllAuthenticatedSessions()) {
+            try {
+                session.player?.let { playerRepository.savePlayerState(it) }
+            } catch (e: Exception) {
+                logger.error("Failed to save player ${session.playerName}: ${e.message}")
+            }
+        }
+        logger.info("Closing world bundle...")
+        dataSource.close()
+    }
+
     // Install plugins
     configureWebSockets()
     configureRouting(sessionManager, commandProcessor, playerRepository, discoveryRepository, dataSource)
@@ -132,25 +154,6 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     // Launch game loop
     launch {
         gameLoop.run()
-
-        // Game loop exited — graceful shutdown
-        logger.info("Game loop ended. Saving player states and shutting down...")
-        for (session in sessionManager.getAllAuthenticatedSessions()) {
-            try {
-                session.player?.let { playerRepository.savePlayerState(it) }
-            } catch (e: Exception) {
-                logger.error("Failed to save player ${session.playerName}: ${e.message}")
-            }
-            try {
-                session.webSocketSession.outgoing.send(
-                    io.ktor.websocket.Frame.Close(io.ktor.websocket.CloseReason(
-                        io.ktor.websocket.CloseReason.Codes.NORMAL,
-                        "Server shutting down"
-                    ))
-                )
-            } catch (_: Exception) { }
-        }
-        logger.info("All players saved. Server exiting.")
-        exitProcess(0)
+        logger.info("Game loop ended.")
     }
 }
