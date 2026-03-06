@@ -1,3 +1,12 @@
+function extractErrorMessage(text: string, status: number): string {
+  try {
+    const json = JSON.parse(text);
+    if (json.error) return json.error;
+  } catch { /* not JSON, use raw text */ }
+  if (status >= 500) return 'Something went wrong. Please try again.';
+  return text || `Request failed (${status})`;
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const opts: RequestInit = {
     method,
@@ -9,7 +18,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const res = await fetch(`/api${path}`, opts);
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
-    throw new Error(`${method} ${path} failed (${res.status}): ${text}`);
+    throw new Error(extractErrorMessage(text, res.status));
   }
   const contentType = res.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
@@ -32,7 +41,7 @@ async function uploadRequest<T>(path: string, file: File, fields?: Record<string
   });
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
-    throw new Error(`POST ${path} failed (${res.status}): ${text}`);
+    throw new Error(extractErrorMessage(text, res.status));
   }
   const contentType = res.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
