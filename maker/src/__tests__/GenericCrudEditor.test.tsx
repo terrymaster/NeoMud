@@ -114,7 +114,7 @@ describe('GenericCrudEditor', () => {
     render(<GenericCrudEditor entityName="Item" apiPath="/items" fields={[jsonField]} />)
 
     await user.click(screen.getByText('+ New Item'))
-    await user.type(screen.getByRole('textbox'), '{{invalid json')
+    await user.type(screen.getByPlaceholderText('{}'), '{{invalid json')
     await user.click(screen.getByText('Create'))
 
     expect(screen.getByText('Invalid JSON')).toBeInTheDocument()
@@ -128,7 +128,9 @@ describe('GenericCrudEditor', () => {
 
     render(<GenericCrudEditor entityName="Item" apiPath="/items" fields={fields} />)
     await user.click(screen.getByText('+ New Item'))
-    await user.type(screen.getByRole('textbox'), 'new_item')
+    const inputs = screen.getAllByRole('textbox')
+    const idInput = inputs.find(el => el.tagName === 'INPUT' && !el.getAttribute('placeholder')?.startsWith('Search'))!
+    await user.type(idInput, 'new_item')
     await user.click(screen.getByText('Create'))
 
     await waitFor(() => {

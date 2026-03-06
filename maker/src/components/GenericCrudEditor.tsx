@@ -204,6 +204,7 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
   const [isNew, setIsNew] = useState(false);
   const [error, setError] = useState('');
   const [jsonErrors, setJsonErrors] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState('');
 
   const loadList = () => {
     api.get<any[]>(apiPath).then(setItems).catch(() => {});
@@ -353,9 +354,25 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
               {disableCreateMessage}
             </div>
           )}
+          <input
+            type="text"
+            placeholder={`Search ${entityName}s...`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ ...styles.input, marginTop: 8, fontSize: 12 }}
+          />
         </div>
         <div style={styles.listItems}>
-          {items.map((item) => (
+          {items
+            .filter((item) => {
+              if (!search) return true;
+              const q = search.toLowerCase();
+              const name = (item.name || '').toLowerCase();
+              const id = (item[idField] || '').toLowerCase();
+              return name.includes(q) || id.includes(q);
+            })
+            .sort((a, b) => (a.name || a[idField] || '').localeCompare(b.name || b[idField] || ''))
+            .map((item) => (
             <div
               key={item[idField]}
               style={{
