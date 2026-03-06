@@ -129,16 +129,27 @@ function MapCanvas({
 
   // Center view on rooms' bounding-box center whenever the room set changes
   // When dimmedRoomIds is provided, center on non-dimmed (active zone) rooms only
+  // When selectedRoomId changes alongside rooms, center on that specific room
   const prevRoomKey = useRef('');
   useEffect(() => {
     if (canvasSize.w <= 0 || canvasSize.h <= 0) return;
-    // Build key from non-dimmed rooms so layer/zone changes trigger re-centering
+    // Build key from non-dimmed rooms + selectedRoomId so zone switches via room click trigger re-centering
     const activeRooms = dimmedRoomIds
       ? rooms.filter((r) => !dimmedRoomIds.has(r.id))
       : rooms;
-    const key = activeRooms.map((r) => r.id).sort().join(',');
+    const key = activeRooms.map((r) => r.id).sort().join(',') + '|' + (selectedRoomId ?? '');
     if (key === prevRoomKey.current) return;
     prevRoomKey.current = key;
+
+    // If a specific room is selected and exists in the room set, center on it
+    const selectedRoom = selectedRoomId ? rooms.find((r) => r.id === selectedRoomId) : null;
+    if (selectedRoom) {
+      setOffset({
+        x: Math.floor(canvasSize.w / 2 - selectedRoom.x * STRIDE - STRIDE / 2),
+        y: Math.floor(canvasSize.h / 2 + selectedRoom.y * STRIDE - STRIDE / 2),
+      });
+      return;
+    }
 
     const centerRooms = activeRooms.length > 0 ? activeRooms : rooms;
     if (centerRooms.length === 0) {
@@ -157,7 +168,7 @@ function MapCanvas({
       x: Math.floor(canvasSize.w / 2 - cx * STRIDE - STRIDE / 2),
       y: Math.floor(canvasSize.h / 2 + cy * STRIDE - STRIDE / 2),
     });
-  }, [rooms, canvasSize.w, canvasSize.h, dimmedRoomIds]);
+  }, [rooms, canvasSize.w, canvasSize.h, dimmedRoomIds, selectedRoomId]);
 
   // Convert grid coords to pixel coords (center of cell, centered within stride)
   const gridToPixel = useCallback(
