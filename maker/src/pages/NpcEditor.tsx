@@ -99,10 +99,11 @@ const styles: Record<string, CSSProperties> = {
     borderBottom: '1px solid #ddd', alignItems: 'center', flexWrap: 'wrap',
   },
   modeBtn: {
-    padding: '4px 10px', fontSize: 11, fontWeight: 600, border: '1px solid #ccc',
-    borderRadius: 4, cursor: 'pointer', backgroundColor: '#f5f5f5', color: '#333',
+    padding: '4px 10px', fontSize: 11, fontWeight: 600,
+    borderWidth: 1, borderStyle: 'solid', borderColor: '#ccc', borderRadius: 4,
+    cursor: 'pointer', backgroundColor: '#f5f5f5', color: '#333',
   },
-  modeBtnActive: { backgroundColor: '#1a1a2e', color: '#fff', border: '1px solid #1a1a2e' },
+  modeBtnActive: { backgroundColor: '#1a1a2e', color: '#fff', borderColor: '#1a1a2e' },
   mapArea: { flex: 1, position: 'relative' },
   rightPanel: {
     width: 340, minWidth: 340, borderLeft: '1px solid #ddd',
@@ -548,7 +549,7 @@ function NpcEditor() {
             <input
               style={styles.input}
               value={form.name ?? ''}
-              placeholder="e.g. Goblin Guard"
+              placeholder="NPC name"
               onChange={(e) => handleChange('name', e.target.value)}
             />
 
