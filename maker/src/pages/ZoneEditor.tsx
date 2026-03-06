@@ -50,6 +50,7 @@ interface Room {
   unpickableExits: string;
   imageWidth: number;
   imageHeight: number;
+  maxHostileNpcs: number | null;
   exits: Exit[];
   _editSlug?: string;
   _editZone?: string;
@@ -416,7 +417,7 @@ function InteractablesEditor({ roomForm, setRoomForm }: {
 interface AllRoomsGroup {
   zoneId: string;
   zoneName: string;
-  rooms: { id: string; name: string }[];
+  rooms: { id: string; name: string; x: number; y: number; exits: Exit[] }[];
 }
 
 function computeLayerMap(rooms: Room[], exits: Exit[]) {
@@ -498,12 +499,12 @@ function ZoneEditor() {
   useEffect(() => {
     api.get<Zone[]>('/zones').then((zoneList) => {
       setZones(zoneList);
-      // Load all rooms across all zones for the manual exit dropdown
+      // Load all rooms across all zones (with coordinates and exits for world map)
       const promises = zoneList.map((z) =>
-        api.get<Room[]>(`/zones/${z.id}/rooms`).then((zoneRooms) => ({
+        api.get<ZoneWithRooms>(`/zones/${z.id}`).then((data) => ({
           zoneId: z.id,
           zoneName: z.name,
-          rooms: zoneRooms.map((r) => ({ id: r.id, name: r.name })),
+          rooms: (data.rooms || []).map((r) => ({ id: r.id, name: r.name, x: r.x, y: r.y, exits: r.exits || [] })),
         }))
       );
       Promise.all(promises).then(setAllRooms).catch(() => {});
@@ -660,6 +661,109 @@ function ZoneEditor() {
     return result;
   }, [allExits, layerRoomIds, selectedZoneId, zones]);
 
+  // Compute dimmedRoomIds: rooms from non-selected zones (for world map overlay)
+  const dimmedRoomIds = useMemo(() => {
+    if (!selectedZoneId) return undefined;
+    const set = new Set<string>();
+    for (const g of allRooms) {
+      if (g.zoneId !== selectedZoneId) {
+        for (const r of g.rooms) set.add(r.id);
+      }
+    }
+    return set.size > 0 ? set : undefined;
+  }, [selectedZoneId, allRooms]);
+
+  // Compute zone labels at centroids for dimmed zones
+  const zoneLabels = useMemo(() => {
+    if (!selectedZoneId) return [];
+    return allRooms
+      .filter((g) => g.zoneId !== selectedZoneId && g.rooms.length > 0)
+      .map((g) => {
+        const cx = g.rooms.reduce((sum, r) => sum + r.x, 0) / g.rooms.length;
+        const cy = g.rooms.reduce((sum, r) => sum + r.y, 0) / g.rooms.length;
+        return { zoneName: g.zoneName, cx, cy };
+      });
+  }, [selectedZoneId, allRooms]);
+
+  // Combined rooms for MapCanvas when a zone is selected (current zone full data + other zones from allRooms)
+  const combinedMapRooms = useMemo(() => {
+    if (!selectedZoneId) return [];
+    const currentZoneRooms = filteredRooms.map((r) => ({ id: r.id, name: r.name, x: r.x, y: r.y }));
+    const otherZoneRooms = allRooms
+      .filter((g) => g.zoneId !== selectedZoneId)
+      .flatMap((g) => g.rooms.map((r) => ({ id: r.id, name: r.name, x: r.x, y: r.y })));
+    return [...currentZoneRooms, ...otherZoneRooms];
+  }, [selectedZoneId, filteredRooms, allRooms]);
+
+  // Combined exits for MapCanvas when a zone is selected
+  const combinedMapExits = useMemo(() => {
+    if (!selectedZoneId) return [];
+    const otherExits = allRooms
+      .filter((g) => g.zoneId !== selectedZoneId)
+      .flatMap((g) => g.rooms.flatMap((r) => (r.exits || []).filter(
+        (e) => e.direction !== 'UP' && e.direction !== 'DOWN'
+      )));
+    return [...filteredExits, ...otherExits];
+  }, [selectedZoneId, filteredExits, allRooms]);
+
+  // World map rooms/exits (when no zone is selected)
+  const worldMapRooms = useMemo(() => {
+    if (selectedZoneId) return [];
+    return allRooms.flatMap((g) =>
+      g.rooms.map((r) => ({ id: r.id, name: r.name, x: r.x, y: r.y }))
+    );
+  }, [selectedZoneId, allRooms]);
+
+  const worldMapExits = useMemo(() => {
+    if (selectedZoneId) return [];
+    return allRooms.flatMap((g) =>
+      g.rooms.flatMap((r) => (r.exits || []).filter(
+        (e) => e.direction !== 'UP' && e.direction !== 'DOWN'
+      ))
+    );
+  }, [selectedZoneId, allRooms]);
+
+  const worldMapZoneLabels = useMemo(() => {
+    if (selectedZoneId) return [];
+    return allRooms
+      .filter((g) => g.rooms.length > 0)
+      .map((g) => {
+        const cx = g.rooms.reduce((sum, r) => sum + r.x, 0) / g.rooms.length;
+        const cy = g.rooms.reduce((sum, r) => sum + r.y, 0) / g.rooms.length;
+        return { zoneName: g.zoneName, cx, cy };
+      });
+  }, [selectedZoneId, allRooms]);
+
+  // Handle clicking a room in world map view (find zone and select it)
+  const handleWorldMapSelectRoom = useCallback((roomId: string) => {
+    for (const g of allRooms) {
+      const room = g.rooms.find((r) => r.id === roomId);
+      if (room) {
+        setSelectedZoneId(g.zoneId);
+        setSelectedRoomId(roomId);
+        return;
+      }
+    }
+  }, [allRooms]);
+
+  // Handle clicking a dimmed room from another zone (switch zones)
+  const handleCombinedSelectRoom = useCallback((roomId: string) => {
+    if (dimmedRoomIds?.has(roomId)) {
+      // Clicked a dimmed room — switch to that zone
+      for (const g of allRooms) {
+        const room = g.rooms.find((r) => r.id === roomId);
+        if (room) {
+          setSelectedZoneId(g.zoneId);
+          setSelectedRoomId(roomId);
+          return;
+        }
+      }
+    } else {
+      // Clicked a room in the current zone
+      setSelectedRoomId(roomId);
+    }
+  }, [dimmedRoomIds, allRooms]);
+
   const layerLabel = (layer: number) => {
     if (layer === 0) return 'Ground';
     if (layer > 0) return `Above +${layer}`;
@@ -712,6 +816,11 @@ function ZoneEditor() {
   const handleCreateRoom = useCallback(
     async (x: number, y: number) => {
       if (!selectedZoneId) return;
+      // Global coordinate collision check (fast-fail before API call)
+      const globalOccupied = allRooms.some((g) =>
+        g.rooms.some((r) => r.x === x && r.y === y)
+      );
+      if (globalOccupied) return;
       const roomSlug = `${selectedZoneId}_room_${x}_${y}`;
       const roomName = `New Room (${x},${y})`;
       if (!window.confirm(`Create new room at grid (${x}, ${y})?`)) return;
@@ -725,15 +834,15 @@ function ZoneEditor() {
         });
         setRooms((prev) => [...prev, { ...room, exits: room.exits || [] }]);
         setSelectedRoomId(room.id);
-        // Update allRooms so the exit target dropdown includes the new room
+        // Update allRooms so the world map and exit target dropdown include the new room
         setAllRooms((prev) => prev.map((g) =>
           g.zoneId === selectedZoneId
-            ? { ...g, rooms: [...g.rooms, { id: room.id, name: room.name }] }
+            ? { ...g, rooms: [...g.rooms, { id: room.id, name: room.name, x: room.x, y: room.y, exits: room.exits || [] }] }
             : g
         ));
       } catch {}
     },
-    [selectedZoneId]
+    [selectedZoneId, allRooms]
   );
 
   const handleSelectRoom = useCallback((id: string) => {
@@ -799,11 +908,11 @@ function ZoneEditor() {
         )
       );
       setRoomForm((prev) => ({ ...prev, ...updated }));
-      // Sync allRooms so exit target dropdown reflects the updated name
+      // Sync allRooms so world map and exit target dropdown reflect the update
       if (selectedZoneId) {
         setAllRooms((prev) => prev.map((g) =>
           g.zoneId === selectedZoneId
-            ? { ...g, rooms: g.rooms.map((r) => r.id === updated.id ? { id: r.id, name: updated.name } : r) }
+            ? { ...g, rooms: g.rooms.map((r) => r.id === updated.id ? { ...r, name: updated.name, x: updated.x, y: updated.y } : r) }
             : g
         ));
       }
@@ -853,10 +962,10 @@ function ZoneEditor() {
       // Refresh all rooms list too
       const zoneList = await api.get<Zone[]>('/zones');
       const promises = zoneList.map((z) =>
-        api.get<Room[]>(`/zones/${z.id}/rooms`).then((zoneRooms) => ({
+        api.get<ZoneWithRooms>(`/zones/${z.id}`).then((data) => ({
           zoneId: z.id,
           zoneName: z.name,
-          rooms: zoneRooms.map((r) => ({ id: r.id, name: r.name })),
+          rooms: (data.rooms || []).map((r) => ({ id: r.id, name: r.name, x: r.x, y: r.y, exits: r.exits || [] })),
         }))
       );
       Promise.all(promises).then(setAllRooms).catch(() => {});
@@ -1051,29 +1160,29 @@ function ZoneEditor() {
               </div>
             )}
             <MapCanvas
-              rooms={filteredRooms.map((r) => ({ id: r.id, name: r.name, x: r.x, y: r.y }))}
-              exits={filteredExits}
+              rooms={combinedMapRooms}
+              exits={combinedMapExits}
               selectedRoomId={selectedRoomId}
-              onSelectRoom={handleSelectRoom}
+              onSelectRoom={handleCombinedSelectRoom}
               onCreateRoom={handleCreateRoom}
               onCreateExit={handleCreateExit}
               verticalExits={verticalExits}
               crossZoneExits={crossZoneExits}
+              dimmedRoomIds={dimmedRoomIds}
+              zoneLabels={zoneLabels}
             />
           </>
         ) : (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: '#999',
-              fontSize: 16,
-            }}
-          >
-            Select or create a zone to begin editing
-          </div>
+          <MapCanvas
+            rooms={worldMapRooms}
+            exits={worldMapExits}
+            selectedRoomId={null}
+            onSelectRoom={handleWorldMapSelectRoom}
+            onCreateRoom={() => {}}
+            onCreateExit={() => {}}
+            readOnly
+            zoneLabels={worldMapZoneLabels}
+          />
         )}
       </div>
 
@@ -1179,13 +1288,13 @@ function ZoneEditor() {
                           setSelectedRoomId(newFullId);
                           setRoomForm((f) => ({ ...f, id: newFullId, _editSlug: undefined, _editZone: undefined }));
                         }
-                        // Refresh allRooms across all zones for exit target dropdown (fire-and-forget)
+                        // Refresh allRooms across all zones (fire-and-forget)
                         api.get<Zone[]>('/zones').then((zoneList) => {
                           const promises = zoneList.map((z) =>
-                            api.get<Room[]>(`/zones/${z.id}/rooms`).then((zoneRooms) => ({
+                            api.get<ZoneWithRooms>(`/zones/${z.id}`).then((data) => ({
                               zoneId: z.id,
                               zoneName: z.name,
-                              rooms: zoneRooms.map((r) => ({ id: r.id, name: r.name })),
+                              rooms: (data.rooms || []).map((r) => ({ id: r.id, name: r.name, x: r.x, y: r.y, exits: r.exits || [] })),
                             }))
                           );
                           Promise.all(promises).then(setAllRooms).catch(() => {});
@@ -1262,6 +1371,28 @@ function ZoneEditor() {
                 Play
               </button>
             </div>
+            {/* Max hostile NPCs per room */}
+            <label style={styles.label}>
+              Max Hostile NPCs{' '}
+              <span style={{ fontWeight: 400, color: '#999', fontSize: 10 }}>
+                (blank = zone default: {zoneForm.spawnMaxPerRoom || 'unlimited'})
+              </span>
+            </label>
+            <input
+              style={styles.input}
+              type="number"
+              min={0}
+              placeholder={`Zone default: ${zoneForm.spawnMaxPerRoom || 'unlimited'}`}
+              value={roomForm.maxHostileNpcs ?? ''}
+              onChange={(e) => {
+                const val = e.target.value.trim();
+                setRoomForm((f) => ({
+                  ...f,
+                  maxHostileNpcs: val === '' ? null : Math.max(0, parseInt(val) || 0),
+                }));
+              }}
+            />
+
             {/* Effects */}
             <div style={{ ...styles.sectionTitle, marginTop: 12 }}>Effects</div>
             {(() => {

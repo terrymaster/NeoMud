@@ -181,10 +181,10 @@ zonesRouter.post('/zones/:zoneId/rooms', rejectIfReadOnly, async (req, res) => {
     } = req.body
     const fullId = id.startsWith(`${zoneId}:`) ? id : `${zoneId}:${id}`
 
-    // Validate no room exists at the same coordinates in this zone
+    // Validate no room exists at the same coordinates globally (shared coordinate space)
     if (x !== undefined && y !== undefined) {
       const overlapping = await db().room.findFirst({
-        where: { zoneId, x, y },
+        where: { x, y },
       })
       if (overlapping) {
         res.status(409).json({ error: `A room already exists at coordinates (${x}, ${y})` })
@@ -241,10 +241,10 @@ zonesRouter.put('/zones/:zoneId/rooms/:id', rejectIfReadOnly, async (req, res) =
     const rawId = req.params.id
     const fullId = rawId.startsWith(`${zoneId}:`) ? rawId : `${zoneId}:${rawId}`
 
-    // Validate no other room exists at the same coordinates in this zone
+    // Validate no other room exists at the same coordinates globally (shared coordinate space)
     if (req.body.x !== undefined && req.body.y !== undefined) {
       const overlapping = await db().room.findFirst({
-        where: { zoneId, x: req.body.x, y: req.body.y, id: { not: fullId } },
+        where: { x: req.body.x, y: req.body.y, id: { not: fullId } },
       })
       if (overlapping) {
         res.status(409).json({ error: `A room already exists at coordinates (${req.body.x}, ${req.body.y})` })

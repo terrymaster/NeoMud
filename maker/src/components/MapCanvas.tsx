@@ -27,6 +27,23 @@ interface CrossZoneExit {
   targetZoneId: string;  // e.g. "marsh"
 }
 
+export interface MapOverlay {
+  /** Rooms to tint with a semi-transparent color: roomId -> color */
+  roomTints?: Map<string, string>;
+  /** Start room gets a gold star marker */
+  startRoomId?: string;
+  /** Patrol route: ordered room IDs drawn as connected numbered path */
+  patrolRoute?: string[];
+  /** Spawn point rooms get cyan diamond markers */
+  spawnPoints?: string[];
+}
+
+interface ZoneLabel {
+  zoneName: string;
+  cx: number;  // centroid x in grid coords
+  cy: number;  // centroid y in grid coords
+}
+
 interface MapCanvasProps {
   rooms: RoomNode[];
   exits: ExitEdge[];
@@ -36,6 +53,14 @@ interface MapCanvasProps {
   onCreateExit: (fromId: string, toId: string) => void;
   verticalExits?: VerticalExit[];
   crossZoneExits?: CrossZoneExit[];
+  /** NPC behavior overlays (tints, patrol routes, markers) */
+  overlay?: MapOverlay;
+  /** If true, room creation and exit dragging are disabled (view + click-select only) */
+  readOnly?: boolean;
+  /** Room IDs to render at reduced opacity (other zones' rooms in world map view) */
+  dimmedRoomIds?: Set<string>;
+  /** Labels to draw at zone centroids for dimmed zones */
+  zoneLabels?: ZoneLabel[];
 }
 
 const CELL_SIZE = 80;
@@ -52,6 +77,10 @@ function MapCanvas({
   onCreateExit,
   verticalExits = [],
   crossZoneExits = [],
+  overlay,
+  readOnly = false,
+  dimmedRoomIds,
+  zoneLabels = [],
 }: MapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -198,6 +227,8 @@ function MapCanvas({
     const roomMap = new Map<string, RoomNode>();
     for (const r of rooms) roomMap.set(r.id, r);
 
+    const isDimmed = dimmedRoomIds ? (id: string) => dimmedRoomIds.has(id) : () => false;
+
     // Compute exit color for reuse in line + arrowhead passes
     const exitColor = (exit: ExitEdge): string => {
       if (exit.isHidden && exit.isLocked) return '#7b1fa2'; // purple
@@ -206,8 +237,69 @@ function MapCanvas({
       return '#888';
     };
 
-    // Pass 1: Draw exit lines (under rooms)
+    // --- Dimmed pass: draw other zones' exits and rooms as ghostly background ---
+    if (dimmedRoomIds && dimmedRoomIds.size > 0) {
+      // Dimmed exit lines
+      ctx.save();
+      ctx.globalAlpha = 0.2;
+      for (const exit of exits) {
+        const from = roomMap.get(exit.fromRoomId);
+        const to = roomMap.get(exit.toRoomId);
+        if (!from || !to) continue;
+        if (!isDimmed(exit.fromRoomId) && !isDimmed(exit.toRoomId)) continue;
+        const { px: x1, py: y1 } = gridToPixel(from.x, from.y);
+        const { px: x2, py: y2 } = gridToPixel(to.x, to.y);
+        ctx.strokeStyle = '#888';
+        ctx.setLineDash([]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Dimmed rooms
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      for (const room of rooms) {
+        if (!isDimmed(room.id)) continue;
+        const { px, py } = gridToPixel(room.x, room.y);
+        const x = px - CELL_SIZE / 2;
+        const y = py - CELL_SIZE / 2;
+        ctx.beginPath();
+        ctx.roundRect(x, y, CELL_SIZE, CELL_SIZE, ROOM_RADIUS);
+        ctx.closePath();
+        ctx.fillStyle = '#9e9e9e';
+        ctx.fill();
+        // Room name
+        ctx.fillStyle = '#fff';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const displayName = room.name.length > 10 ? room.name.substring(0, 9) + '...' : room.name;
+        ctx.fillText(displayName, px, py);
+      }
+      ctx.restore();
+
+      // Zone labels at centroids
+      for (const label of zoneLabels) {
+        const { px, py } = gridToPixel(label.cx, label.cy);
+        ctx.save();
+        ctx.fillStyle = 'rgba(100,100,100,0.5)';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label.zoneName, px, py - CELL_SIZE / 2 - 14);
+        ctx.restore();
+      }
+    }
+
+    // --- Normal pass: draw active zone exits and rooms ---
+
+    // Pass 1: Draw exit lines (under rooms) — skip dimmed exits
     for (const exit of exits) {
+      if (isDimmed(exit.fromRoomId) || isDimmed(exit.toRoomId)) continue;
       const from = roomMap.get(exit.fromRoomId);
       const to = roomMap.get(exit.toRoomId);
       if (!from || !to) continue;
@@ -255,8 +347,9 @@ function MapCanvas({
       }
     }
 
-    // Draw rooms
+    // Draw rooms — skip dimmed rooms (already drawn)
     for (const room of rooms) {
+      if (isDimmed(room.id)) continue;
       const { px, py } = gridToPixel(room.x, room.y);
       const x = px - CELL_SIZE / 2;
       const y = py - CELL_SIZE / 2;
@@ -284,8 +377,108 @@ function MapCanvas({
       ctx.fillText(displayName, px, py);
     }
 
-    // Pass 2: Draw exit arrowheads (on top of rooms so diagonals are visible)
+    // NPC behavior overlay pass
+    if (overlay) {
+      // Room tints (semi-transparent color overlay on rooms)
+      if (overlay.roomTints) {
+        for (const [roomId, color] of overlay.roomTints) {
+          const room = roomMap.get(roomId);
+          if (!room) continue;
+          const { px, py } = gridToPixel(room.x, room.y);
+          const x = px - CELL_SIZE / 2;
+          const y = py - CELL_SIZE / 2;
+          ctx.save();
+          ctx.globalAlpha = 0.35;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.roundRect(x, y, CELL_SIZE, CELL_SIZE, ROOM_RADIUS);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // Patrol route lines (dashed magenta connecting route rooms in sequence)
+      if (overlay.patrolRoute && overlay.patrolRoute.length >= 2) {
+        ctx.strokeStyle = '#e040fb';
+        ctx.setLineDash([8, 4]);
+        ctx.lineWidth = 3;
+        for (let i = 0; i < overlay.patrolRoute.length - 1; i++) {
+          const from = roomMap.get(overlay.patrolRoute[i]);
+          const to = roomMap.get(overlay.patrolRoute[i + 1]);
+          if (!from || !to) continue;
+          const { px: x1, py: y1 } = gridToPixel(from.x, from.y);
+          const { px: x2, py: y2 } = gridToPixel(to.x, to.y);
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // Numbered circles on patrol route rooms
+        for (let i = 0; i < overlay.patrolRoute.length; i++) {
+          const room = roomMap.get(overlay.patrolRoute[i]);
+          if (!room) continue;
+          const { px, py } = gridToPixel(room.x, room.y);
+          const cx = px + CELL_SIZE / 2 - 6;
+          const cy = py - CELL_SIZE / 2 + 6;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 9, 0, Math.PI * 2);
+          ctx.fillStyle = '#e040fb';
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(i + 1), cx, cy);
+        }
+      }
+
+      // Spawn point markers (cyan diamonds)
+      if (overlay.spawnPoints) {
+        for (const roomId of overlay.spawnPoints) {
+          const room = roomMap.get(roomId);
+          if (!room) continue;
+          const { px, py } = gridToPixel(room.x, room.y);
+          const dx = px - CELL_SIZE / 2 + 6;
+          const dy = py - CELL_SIZE / 2 + 6;
+          const s = 7;
+          ctx.fillStyle = '#00bcd4';
+          ctx.beginPath();
+          ctx.moveTo(dx, dy - s);
+          ctx.lineTo(dx + s, dy);
+          ctx.lineTo(dx, dy + s);
+          ctx.lineTo(dx - s, dy);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // Start room marker (gold star border)
+      if (overlay.startRoomId) {
+        const room = roomMap.get(overlay.startRoomId);
+        if (room) {
+          const { px, py } = gridToPixel(room.x, room.y);
+          const x = px - CELL_SIZE / 2 - 3;
+          const y = py - CELL_SIZE / 2 - 3;
+          ctx.strokeStyle = '#ffc107';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.roundRect(x, y, CELL_SIZE + 6, CELL_SIZE + 6, ROOM_RADIUS + 2);
+          ctx.stroke();
+          // Star icon top-left
+          ctx.fillStyle = '#ffc107';
+          ctx.font = '14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('\u2605', px - CELL_SIZE / 2 + 8, py + CELL_SIZE / 2 - 8);
+        }
+      }
+    }
+
+    // Pass 2: Draw exit arrowheads (on top of rooms so diagonals are visible) — skip dimmed
     for (const exit of exits) {
+      if (isDimmed(exit.fromRoomId) || isDimmed(exit.toRoomId)) continue;
       const from = roomMap.get(exit.fromRoomId);
       const to = roomMap.get(exit.toRoomId);
       if (!from || !to) continue;
@@ -420,7 +613,7 @@ function MapCanvas({
       ctx.fillText(cze.targetZone, 0, 0);
       ctx.restore();
     }
-  }, [rooms, exits, selectedRoomId, offset, canvasSize, gridToPixel, dragPreview, roomAtPixel, verticalExits, crossZoneExits]);
+  }, [rooms, exits, selectedRoomId, offset, canvasSize, gridToPixel, dragPreview, roomAtPixel, verticalExits, crossZoneExits, overlay, dimmedRoomIds, zoneLabels]);
 
   // Mouse handlers
   const handleMouseDown = useCallback(
@@ -431,13 +624,24 @@ function MapCanvas({
 
       const room = roomAtPixel(px, py);
 
-      if (e.shiftKey || e.button === 1) {
-        dragState.current = {
-          type: 'pan',
-          startX: e.clientX,
-          startY: e.clientY,
-          offsetStart: { ...offset },
-        };
+      if (readOnly || e.shiftKey || e.button === 1) {
+        // In readOnly mode, all drags are pans; clicks on rooms handled in mouseUp
+        if (readOnly && room) {
+          dragState.current = {
+            type: 'exit', // reuse 'exit' type to track click-on-room for select
+            startX: px,
+            startY: py,
+            offsetStart: offset,
+            fromRoomId: room.id,
+          };
+        } else {
+          dragState.current = {
+            type: 'pan',
+            startX: e.clientX,
+            startY: e.clientY,
+            offsetStart: { ...offset },
+          };
+        }
         return;
       }
 
@@ -458,7 +662,7 @@ function MapCanvas({
         };
       }
     },
-    [offset, roomAtPixel]
+    [offset, roomAtPixel, readOnly]
   );
 
   const handleMouseMove = useCallback(
@@ -470,7 +674,7 @@ function MapCanvas({
           x: dragState.current.offsetStart.x + dx,
           y: dragState.current.offsetStart.y + dy,
         });
-      } else if (dragState.current.type === 'exit' && dragState.current.fromRoomId) {
+      } else if (!readOnly && dragState.current.type === 'exit' && dragState.current.fromRoomId) {
         const rect = canvasRef.current!.getBoundingClientRect();
         const px = e.clientX - rect.left;
         const py = e.clientY - rect.top;
@@ -503,7 +707,9 @@ function MapCanvas({
         const dy = Math.abs(e.clientY - state.startY);
         if (dx < 3 && dy < 3) {
           const room = roomAtPixel(px, py);
-          if (!room) {
+          if (room) {
+            onSelectRoom(room.id);
+          } else if (!readOnly) {
             const { gx, gy } = pixelToGrid(px, py);
             const occupied = rooms.some((r) => r.x === gx && r.y === gy);
             if (!occupied) {
@@ -521,18 +727,18 @@ function MapCanvas({
 
         if (dx < 3 && dy < 3) {
           onSelectRoom(state.fromRoomId);
-        } else if (targetRoom && targetRoom.id !== state.fromRoomId) {
+        } else if (!readOnly && targetRoom && targetRoom.id !== state.fromRoomId) {
           onCreateExit(state.fromRoomId, targetRoom.id);
         }
       }
     },
-    [roomAtPixel, pixelToGrid, rooms, onCreateRoom, onSelectRoom, onCreateExit]
+    [roomAtPixel, pixelToGrid, rooms, onCreateRoom, onSelectRoom, onCreateExit, readOnly]
   );
 
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%', overflow: 'hidden', cursor: 'crosshair' }}
+      style={{ width: '100%', height: '100%', overflow: 'hidden', cursor: readOnly ? 'default' : 'crosshair' }}
     >
       <canvas
         ref={canvasRef}
@@ -547,3 +753,4 @@ function MapCanvas({
 }
 
 export default MapCanvas;
+export type { RoomNode, ExitEdge };

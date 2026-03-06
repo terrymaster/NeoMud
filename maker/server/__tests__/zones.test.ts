@@ -220,8 +220,8 @@ describe('Room BGM prompt fields', () => {
       id: 'bgm_room',
       name: 'BGM Room',
       description: 'A room with BGM prompt',
-      x: 0,
-      y: 0,
+      x: 20,
+      y: 20,
       bgmPrompt: 'Spooky cave echoes',
       bgmDuration: 30,
     })
@@ -251,8 +251,8 @@ describe('Room BGM prompt fields', () => {
       id: 'default_room',
       name: 'Default Room',
       description: 'No BGM fields',
-      x: 1,
-      y: 0,
+      x: 21,
+      y: 20,
     })
     expect(res.status).toBe(200)
     expect(res.body.bgmPrompt).toBe('')
@@ -336,13 +336,13 @@ describe('Cross-zone room move', () => {
     })
     expect(res.status).toBe(200)
 
-    // Create a room in the dungeon zone
+    // Create a room in the dungeon zone (unique coordinates — global coordinate space)
     const room = await request(app).post('/api/zones/dungeon/rooms').send({
       id: 'entrance',
       name: 'Dungeon Entrance',
       description: 'A dark entrance',
       x: 0,
-      y: 0,
+      y: -1,
     })
     expect(room.status).toBe(200)
 
@@ -425,7 +425,7 @@ describe('Room DELETE accepts fully-qualified IDs (#92)', () => {
   it('setup: create zone and room', async () => {
     await request(app).post('/api/zones').send({ id: 'id_test', name: 'ID Test', description: '' })
     const res = await request(app).post('/api/zones/id_test/rooms').send({
-      id: 'test_room', name: 'Test Room', description: '', x: 0, y: 0,
+      id: 'test_room', name: 'Test Room', description: '', x: 30, y: 30,
     })
     expect(res.status).toBe(200)
     expect(res.body.id).toBe('id_test:test_room')
@@ -440,7 +440,7 @@ describe('Room DELETE accepts fully-qualified IDs (#92)', () => {
 
   it('GET accepts fully-qualified ID', async () => {
     await request(app).post('/api/zones/id_test/rooms').send({
-      id: 'get_room', name: 'Get Room', description: '', x: 1, y: 1,
+      id: 'get_room', name: 'Get Room', description: '', x: 31, y: 31,
     })
     const res = await request(app).get('/api/zones/id_test/rooms/id_test:get_room')
     expect(res.status).toBe(200)
@@ -464,13 +464,13 @@ describe('Duplicate exit direction returns clear error (#93)', () => {
   it('setup: create zone and rooms', async () => {
     await request(app).post('/api/zones').send({ id: 'exit_test', name: 'Exit Test', description: '' })
     await request(app).post('/api/zones/exit_test/rooms').send({
-      id: 'room_a', name: 'Room A', description: '', x: 0, y: 0,
+      id: 'room_a', name: 'Room A', description: '', x: 40, y: 40,
     })
     await request(app).post('/api/zones/exit_test/rooms').send({
-      id: 'room_b', name: 'Room B', description: '', x: 1, y: 0,
+      id: 'room_b', name: 'Room B', description: '', x: 41, y: 40,
     })
     await request(app).post('/api/zones/exit_test/rooms').send({
-      id: 'room_c', name: 'Room C', description: '', x: 0, y: 1,
+      id: 'room_c', name: 'Room C', description: '', x: 40, y: 41,
     })
   })
 
@@ -573,6 +573,45 @@ describe('Room creation rejects overlapping coordinates (#91)', () => {
 
   it('cleanup', async () => {
     await request(app).delete('/api/zones/overlap_test')
+  })
+})
+
+describe('Cross-zone coordinate overlap rejection', () => {
+  it('setup: create two zones with a room at (3,5) in zone A', async () => {
+    await request(app).post('/api/zones').send({ id: 'czoneA', name: 'Zone A', description: '' })
+    await request(app).post('/api/zones').send({ id: 'czoneB', name: 'Zone B', description: '' })
+    const res = await request(app).post('/api/zones/czoneA/rooms').send({
+      id: 'room1', name: 'Room 1', description: '', x: 3, y: 5,
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects creating a room at same coordinates in a different zone', async () => {
+    const res = await request(app).post('/api/zones/czoneB/rooms').send({
+      id: 'room2', name: 'Room 2', description: '', x: 3, y: 5,
+    })
+    expect(res.status).toBe(409)
+    expect(res.body.error).toContain('coordinates')
+  })
+
+  it('allows creating a room at different coordinates in zone B', async () => {
+    const res = await request(app).post('/api/zones/czoneB/rooms').send({
+      id: 'room3', name: 'Room 3', description: '', x: 4, y: 5,
+    })
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects updating a room to coordinates occupied by another zone', async () => {
+    const res = await request(app).put('/api/zones/czoneB/rooms/room3').send({
+      x: 3, y: 5,
+    })
+    expect(res.status).toBe(409)
+    expect(res.body.error).toContain('coordinates')
+  })
+
+  it('cleanup', async () => {
+    await request(app).delete('/api/zones/czoneA')
+    await request(app).delete('/api/zones/czoneB')
   })
 })
 
