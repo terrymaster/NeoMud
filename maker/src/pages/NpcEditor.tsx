@@ -162,12 +162,50 @@ function parseJsonArray(val: string): string[] {
   } catch { return []; }
 }
 
+interface ItemRecord {
+  id: string;
+  name: string;
+}
+
+interface LootEntry {
+  itemId: string;
+  chance: number;
+  minQuantity: number;
+  maxQuantity: number;
+}
+
+const COIN_FIELDS = [
+  { key: 'minCopper', label: 'Min Copper' },
+  { key: 'maxCopper', label: 'Max Copper' },
+  { key: 'minSilver', label: 'Min Silver' },
+  { key: 'maxSilver', label: 'Max Silver' },
+  { key: 'minGold', label: 'Min Gold' },
+  { key: 'maxGold', label: 'Max Gold' },
+];
+
+function parseLootItems(val: string): LootEntry[] {
+  if (!val) return [];
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+
+function parseCoinDrop(val: string): Record<string, number> {
+  if (!val) return {};
+  try {
+    const parsed = JSON.parse(val);
+    return typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch { return {}; }
+}
+
 function NpcEditor() {
   // Data state
   const [zones, setZones] = useState<Zone[]>([]);
   const [npcs, setNpcs] = useState<NpcRecord[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]); // rooms for the selected NPC's zone
   const [allZoneRooms, setAllZoneRooms] = useState<Map<string, Room[]>>(new Map());
+  const [items, setItems] = useState<ItemRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
@@ -175,10 +213,11 @@ function NpcEditor() {
   const [search, setSearch] = useState('');
   const [mapMode, setMapMode] = useState<MapMode>('view');
 
-  // Load zones and NPCs
+  // Load zones, NPCs, and items
   useEffect(() => {
     api.get<Zone[]>('/zones').then(setZones).catch(() => {});
     api.get<NpcRecord[]>('/npcs').then(setNpcs).catch(() => {});
+    api.get<ItemRecord[]>('/items').then(setItems).catch(() => {});
   }, []);
 
   // Load all zone rooms for the map (cached per zone)
@@ -325,6 +364,13 @@ function NpcEditor() {
     for (const r of rooms) map.set(r.id, r.name);
     return map;
   }, [rooms]);
+
+  // Item name lookup
+  const itemNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const item of items) map.set(item.id, item.name);
+    return map;
+  }, [items]);
 
   // Parse patrol route and spawn points from form
   const patrolRoute = useMemo(() => parseJsonArray(form.patrolRoute), [form.patrolRoute]);
@@ -785,38 +831,182 @@ function NpcEditor() {
             </div>
 
             {/* Vendor Items (only for vendor NPCs) */}
-            {form.behaviorType === 'vendor' && (
-              <>
-                <div style={styles.sectionTitle}>Vendor Items</div>
-                <textarea
-                  style={styles.jsonTextarea}
-                  value={form.vendorItems ?? ''}
-                  placeholder='["item:health_potion", "item:iron_sword"]'
-                  rows={4}
-                  onChange={(e) => handleChange('vendorItems', e.target.value)}
-                />
-                <div style={{ fontSize: 10, color: '#888' }}>Array of item IDs this NPC sells</div>
-              </>
-            )}
+            {form.behaviorType === 'vendor' && (() => {
+              const vendorList = parseJsonArray(form.vendorItems);
+              return (
+                <>
+                  <div style={styles.sectionTitle}>Vendor Items</div>
+                  {vendorList.length === 0 && (
+                    <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>
+                      No vendor items. Add items this NPC sells.
+                    </div>
+                  )}
+                  {vendorList.map((itemId, i) => (
+                    <div key={`${itemId}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', backgroundColor: '#e8f5e9', borderRadius: 4, fontSize: 12, marginBottom: 2 }}>
+                      <span style={{ flex: 1 }}>{itemNameMap.get(itemId) || itemId}</span>
+                      <button
+                        onClick={() => {
+                          const arr = vendorList.filter((_, j) => j !== i);
+                          handleChange('vendorItems', arr.length > 0 ? JSON.stringify(arr) : '');
+                        }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, padding: '0 4px', color: '#d32f2f' }}
+                        title="Remove item"
+                      >x</button>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                    <select
+                      id="vendor-item-add"
+                      style={{ ...styles.select, flex: 1, fontSize: 12 }}
+                      defaultValue=""
+                    >
+                      <option value="">-- Select item --</option>
+                      {items.filter((it) => !vendorList.includes(it.id)).map((it) => (
+                        <option key={it.id} value={it.id}>{it.name} ({it.id})</option>
+                      ))}
+                    </select>
+                    <button
+                      style={{ ...styles.modeBtn, whiteSpace: 'nowrap' }}
+                      onClick={() => {
+                        const sel = (document.getElementById('vendor-item-add') as HTMLSelectElement)?.value;
+                        if (!sel) return;
+                        const arr = [...vendorList, sel];
+                        handleChange('vendorItems', JSON.stringify(arr));
+                        (document.getElementById('vendor-item-add') as HTMLSelectElement).value = '';
+                      }}
+                    >Add</button>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Loot */}
-            <div style={styles.sectionTitle}>Loot</div>
-            <label style={styles.label}>Loot Items</label>
-            <textarea
-              style={styles.jsonTextarea}
-              value={form.lootItems ?? ''}
-              placeholder='[{"itemId":"item:wolf_pelt","chance":0.8,"minQuantity":1,"maxQuantity":1}]'
-              rows={4}
-              onChange={(e) => handleChange('lootItems', e.target.value)}
-            />
-            <label style={styles.label}>Coin Drop</label>
-            <textarea
-              style={styles.jsonTextarea}
-              value={form.coinDrop ?? ''}
-              placeholder='{"minCopper":5,"maxCopper":20}'
-              rows={3}
-              onChange={(e) => handleChange('coinDrop', e.target.value)}
-            />
+            <div style={styles.sectionTitle}>Loot Items</div>
+            {(() => {
+              const lootList = parseLootItems(form.lootItems);
+              return (
+                <>
+                  {lootList.length === 0 && (
+                    <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>
+                      No loot entries. Add items this NPC can drop.
+                    </div>
+                  )}
+                  {lootList.map((entry, i) => (
+                    <div key={i} style={{ border: '1px solid #e0e0e0', borderRadius: 4, padding: 8, marginBottom: 6, backgroundColor: '#fff' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#666' }}>Loot Entry {i + 1}</span>
+                        <button
+                          onClick={() => {
+                            const arr = lootList.filter((_, j) => j !== i);
+                            handleChange('lootItems', arr.length > 0 ? JSON.stringify(arr) : '');
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, color: '#d32f2f' }}
+                        >x</button>
+                      </div>
+                      <label style={{ fontSize: 10, color: '#888' }}>Item</label>
+                      <select
+                        style={{ ...styles.select, fontSize: 12, marginBottom: 4 }}
+                        value={entry.itemId}
+                        onChange={(e) => {
+                          const arr = [...lootList];
+                          arr[i] = { ...arr[i], itemId: e.target.value };
+                          handleChange('lootItems', JSON.stringify(arr));
+                        }}
+                      >
+                        <option value="">-- Select --</option>
+                        {items.map((it) => (
+                          <option key={it.id} value={it.id}>{it.name} ({it.id})</option>
+                        ))}
+                      </select>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+                        <div>
+                          <label style={{ fontSize: 10, color: '#888' }}>Chance</label>
+                          <input
+                            style={styles.input}
+                            type="number"
+                            step="0.05"
+                            min="0"
+                            max="1"
+                            value={entry.chance}
+                            onChange={(e) => {
+                              const arr = [...lootList];
+                              arr[i] = { ...arr[i], chance: parseFloat(e.target.value) || 0 };
+                              handleChange('lootItems', JSON.stringify(arr));
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: '#888' }}>Min Qty</label>
+                          <input
+                            style={styles.input}
+                            type="number"
+                            min="0"
+                            value={entry.minQuantity}
+                            onChange={(e) => {
+                              const arr = [...lootList];
+                              arr[i] = { ...arr[i], minQuantity: parseInt(e.target.value) || 0 };
+                              handleChange('lootItems', JSON.stringify(arr));
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: '#888' }}>Max Qty</label>
+                          <input
+                            style={styles.input}
+                            type="number"
+                            min="0"
+                            value={entry.maxQuantity}
+                            onChange={(e) => {
+                              const arr = [...lootList];
+                              arr[i] = { ...arr[i], maxQuantity: parseInt(e.target.value) || 0 };
+                              handleChange('lootItems', JSON.stringify(arr));
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    style={{ ...styles.modeBtn, width: '100%', marginTop: 2 }}
+                    onClick={() => {
+                      const arr = [...lootList, { itemId: '', chance: 0.5, minQuantity: 1, maxQuantity: 1 }];
+                      handleChange('lootItems', JSON.stringify(arr));
+                    }}
+                  >+ Add Loot Entry</button>
+                </>
+              );
+            })()}
+
+            {/* Coin Drop */}
+            <div style={styles.sectionTitle}>Coin Drop</div>
+            {(() => {
+              const coins = parseCoinDrop(form.coinDrop);
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
+                  {COIN_FIELDS.map(({ key, label }) => (
+                    <div key={key}>
+                      <label style={{ fontSize: 10, color: '#888' }}>{label}</label>
+                      <input
+                        style={styles.input}
+                        type="number"
+                        min="0"
+                        value={coins[key] ?? 0}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value) || 0;
+                          const next = { ...coins, [key]: v };
+                          // Remove zero values
+                          const clean: Record<string, number> = {};
+                          for (const cf of COIN_FIELDS) {
+                            if (next[cf.key] && next[cf.key] > 0) clean[cf.key] = next[cf.key];
+                          }
+                          handleChange('coinDrop', Object.keys(clean).length > 0 ? JSON.stringify(clean) : '');
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* Sounds */}
             <div style={styles.sectionTitle}>Sounds</div>

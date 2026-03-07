@@ -16,7 +16,7 @@ function articleFor(word: string): string {
 export interface FieldConfig {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'number' | 'checkbox' | 'select' | 'json' | 'radio' | 'sfx';
+  type: 'text' | 'textarea' | 'number' | 'checkbox' | 'select' | 'json' | 'radio' | 'sfx' | 'stat-grid' | 'checklist' | 'school-levels';
   options?: { value: string; label: string }[];
   placeholder?: string;
   disabled?: boolean;
@@ -27,6 +27,12 @@ export interface FieldConfig {
   /** Audio subdirectory for sfx fields: 'general', 'npcs', 'items', 'spells', 'rooms' */
   audioCategory?: string;
   visibleWhen?: (form: Record<string, any>) => boolean;
+  /** stat-grid: stat keys to render (defaults to STAT_KEYS) */
+  statKeys?: string[];
+  /** stat-grid: whether negative values are allowed */
+  allowNegative?: boolean;
+  /** checklist: options for the checkbox grid */
+  checklistOptions?: { value: string; label: string; group?: string }[];
 }
 
 interface GenericCrudEditorProps {
@@ -40,6 +46,33 @@ interface GenericCrudEditorProps {
 }
 
 const IMAGE_PREVIEW_KEYS = new Set(['imagePrompt', 'imageStyle', 'imageNegativePrompt', 'imageWidth', 'imageHeight']);
+
+const STAT_KEYS = ['strength', 'agility', 'intellect', 'willpower', 'health', 'charm'];
+const STAT_LABELS: Record<string, string> = {
+  strength: 'Strength', agility: 'Agility', intellect: 'Intellect',
+  willpower: 'Willpower', health: 'Health', charm: 'Charm',
+};
+
+const MAGIC_SCHOOLS = ['mage', 'priest', 'druid', 'kai', 'bard'];
+const SCHOOL_LABELS: Record<string, string> = {
+  mage: 'Mage', priest: 'Priest', druid: 'Druid', kai: 'Kai', bard: 'Bard',
+};
+
+function parseJsonObj(val: string | undefined): Record<string, any> {
+  if (!val) return {};
+  try {
+    const parsed = JSON.parse(val);
+    return typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch { return {}; }
+}
+
+function parseJsonArr(val: string | undefined): string[] {
+  if (!val) return [];
+  try {
+    const parsed = JSON.parse(val);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
 
 const styles: Record<string, CSSProperties> = {
   container: {
@@ -511,6 +544,101 @@ function GenericCrudEditor({ entityName, apiPath, fields, idField = 'id', imageP
                       audioCategory={field.audioCategory}
                     />
                   )}
+                  {field.type === 'stat-grid' && (() => {
+                    const keys = field.statKeys || STAT_KEYS;
+                    const parsed = parseJsonObj(form[field.key]);
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px 12px' }}>
+                        {keys.map((stat) => (
+                          <div key={stat}>
+                            <label style={{ fontSize: 10, color: '#888' }}>{STAT_LABELS[stat] || stat}</label>
+                            <input
+                              style={styles.input}
+                              type="number"
+                              value={parsed[stat] ?? 0}
+                              min={field.allowNegative ? undefined : 0}
+                              onChange={(e) => {
+                                const v = parseInt(e.target.value) || 0;
+                                const next = { ...parsed, [stat]: v };
+                                // Remove zero values for cleaner JSON
+                                const clean: Record<string, number> = {};
+                                for (const k of keys) {
+                                  if (next[k] && next[k] !== 0) clean[k] = next[k];
+                                }
+                                handleChange(field.key, Object.keys(clean).length > 0 ? JSON.stringify(clean) : '');
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                  {field.type === 'checklist' && (() => {
+                    const checked = new Set(parseJsonArr(form[field.key]));
+                    const opts = field.checklistOptions || [];
+                    // Group options if groups exist
+                    const groups = new Map<string, typeof opts>();
+                    for (const opt of opts) {
+                      const g = opt.group || '';
+                      if (!groups.has(g)) groups.set(g, []);
+                      groups.get(g)!.push(opt);
+                    }
+                    return (
+                      <div>
+                        {Array.from(groups.entries()).map(([group, groupOpts]) => (
+                          <div key={group}>
+                            {group && <div style={{ fontSize: 10, fontWeight: 600, color: '#888', marginTop: 6, marginBottom: 2, textTransform: 'capitalize' }}>{group}</div>}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2px 8px' }}>
+                              {groupOpts.map((opt) => (
+                                <label key={opt.value} style={{ fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={checked.has(opt.value)}
+                                    onChange={(e) => {
+                                      const next = new Set(checked);
+                                      if (e.target.checked) next.add(opt.value);
+                                      else next.delete(opt.value);
+                                      const arr = Array.from(next);
+                                      handleChange(field.key, arr.length > 0 ? JSON.stringify(arr) : '');
+                                    }}
+                                  />
+                                  {opt.label}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                  {field.type === 'school-levels' && (() => {
+                    const parsed = parseJsonObj(form[field.key]);
+                    return (
+                      <div style={{ display: 'grid', gap: 4 }}>
+                        {MAGIC_SCHOOLS.map((school) => (
+                          <div key={school} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 12, width: 50, fontWeight: 500 }}>{SCHOOL_LABELS[school]}</span>
+                            <select
+                              style={{ ...styles.select, width: 80 }}
+                              value={parsed[school] ?? 0}
+                              onChange={(e) => {
+                                const level = parseInt(e.target.value) || 0;
+                                const next = { ...parsed };
+                                if (level === 0) delete next[school];
+                                else next[school] = level;
+                                handleChange(field.key, Object.keys(next).length > 0 ? JSON.stringify(next) : '');
+                              }}
+                            >
+                              <option value={0}>None</option>
+                              <option value={1}>Level 1</option>
+                              <option value={2}>Level 2</option>
+                              <option value={3}>Level 3</option>
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                   {field.help && <div style={styles.help}>{field.help}</div>}
                 </div>
               );

@@ -336,7 +336,7 @@ describe('NpcEditor', () => {
     expect(screen.getByText('New NPC')).toBeInTheDocument()
     expect(screen.getByText('Spawn Points')).toBeInTheDocument()
     expect(screen.getByText('Combat Stats')).toBeInTheDocument()
-    expect(screen.getByText('Loot')).toBeInTheDocument()
+    expect(screen.getByText('Loot Items')).toBeInTheDocument()
     expect(screen.getByText('Sounds')).toBeInTheDocument()
   })
 })

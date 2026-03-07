@@ -6,7 +6,7 @@ const fields: FieldConfig[] = [
   { key: 'name', label: 'Name', type: 'text', placeholder: 'Elf' },
   { key: 'description', label: 'Description', type: 'textarea', rows: 3 },
   { key: 'xpModifier', label: 'XP Modifier', type: 'number', help: '1.0 = normal rate' },
-  { key: 'statModifiers', label: 'Stat Modifiers (JSON)', type: 'json', rows: 5, help: 'e.g. {"strength":-1,"intellect":2,"agility":1}' },
+  { key: 'statModifiers', label: 'Stat Modifiers', type: 'stat-grid' as const, allowNegative: true, help: 'Stat bonuses/penalties for this race (can be negative)' },
   { key: 'imagePrompt', label: 'Image Prompt', type: 'textarea', rows: 3 },
   { key: 'imageStyle', label: 'Image Style', type: 'text' },
   { key: 'imageNegativePrompt', label: 'Negative Prompt', type: 'text' },
