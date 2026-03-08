@@ -125,7 +125,7 @@ The Maker is a full-featured web-based world editor for building and managing ga
 NeoMud/
 ├── shared/     Kotlin Multiplatform — models and protocol shared between client and server
 ├── server/     Ktor 3.x + Netty — WebSocket game server with SQLite persistence
-├── client/     Compose Multiplatform — game client (Android, Desktop planned)
+├── client/     Compose Multiplatform — game client (Android + Desktop)
 ├── maker/      React 18 + Express — web-based world editor and GM toolkit
 ├── scripts/    Utility scripts (background removal, game relay, etc.)
 └── .claude/    AI agents, skills, and memory for Claude Code tooling
@@ -133,7 +133,7 @@ NeoMud/
 
 **Server** runs a 1.5-second tick-based game loop. Combat actions queue on the player session and resolve each tick in initiative order: bash, kick, readied spell, then melee. NPC behaviors (wander, patrol, pursuit, attack) execute after combat. All NPC kills flow through a single handler for loot, XP, and state cleanup. The world is loaded from a `.nmd` bundle at startup — a self-contained ZIP archive, similar to DOOM's WAD files.
 
-**Client** is a Compose Multiplatform application — 89% of the code (UI components, screens, viewmodels, networking) lives in a shared `commonMain` source set, with only platform-specific glue (entry point, audio, logging) in `androidMain`. The client connects over WebSocket and renders the game as a layered scene. The protocol is type-safe sealed classes with `kotlinx.serialization` — client and server share the same Kotlin types at compile time via the shared module.
+**Client** is a Compose Multiplatform application — 89% of the code (UI components, screens, viewmodels, networking) lives in a shared `commonMain` source set, with only platform-specific glue (entry point, audio, logging) in `androidMain` and `desktopMain`. Runs on Android and Desktop (JVM) today, with iOS and Web planned. The client connects over WebSocket and renders the game as a layered scene. The protocol is type-safe sealed classes with `kotlinx.serialization` — client and server share the same Kotlin types at compile time via the shared module.
 
 **Maker** is a separate web application for world authoring. It has its own database, its own API, and exports `.nmd` bundles that the server consumes. The zone editor renders all zones on a single shared coordinate grid, enforcing global spatial consistency.
 
@@ -144,9 +144,9 @@ NeoMud/
 | Language | Kotlin 2.3 (JVM 21) |
 | Server | Ktor 3.4 + Netty |
 | Database | SQLite + Exposed ORM |
-| Client | Compose Multiplatform + Material 3 (Android now, Desktop/iOS/Web planned) |
+| Client | Compose Multiplatform + Material 3 (Android + Desktop, iOS/Web planned) |
 | Images | Coil 3 (WebP with transparency, multiplatform) |
-| Audio | Android MediaPlayer + SoundPool (via expect/actual `PlatformAudioManager`) |
+| Audio | Android MediaPlayer + SoundPool; Desktop JavaFX Media (via expect/actual `PlatformAudioManager`) |
 | Protocol | kotlinx.serialization over WebSocket |
 | Navigation | JetBrains Navigation Compose (multiplatform) |
 | Lifecycle | JetBrains Lifecycle ViewModel (multiplatform) |
@@ -180,11 +180,17 @@ export JAVA_HOME=/path/to/jdk21
 ./gradlew :server:run                  # Starts on :8080, WebSocket at /game
 ```
 
-### Client
+### Client (Android)
 ```bash
 ./gradlew :client:installDebug
 ```
 Connect to `10.0.2.2:8080` from the emulator (or your server's IP from a device).
+
+### Client (Desktop)
+```bash
+./gradlew :client:run
+```
+Launches a desktop window — defaults to `127.0.0.1:8080`.
 
 ### Maker
 ```bash
@@ -231,7 +237,7 @@ Agent memory in `.claude/agent-memory/` persists findings across sessions — th
 - [ ] Multiplayer stress testing — concurrent combat, reconnection, edge cases
 
 ### Multiplatform Clients
-- [ ] Desktop (JVM) client — first new target, shares 89% code via commonMain ([#140](https://github.com/terrymaster/NeoMud/issues/140))
+- [x] Desktop (JVM) client — JavaFX audio, Ktor CIO networking, full feature parity ([#140](https://github.com/terrymaster/NeoMud/issues/140))
 - [ ] iOS client — Kotlin/Native + AVFoundation audio ([#141](https://github.com/terrymaster/NeoMud/issues/141))
 - [ ] Web (Wasm) client — zero-install browser play ([#142](https://github.com/terrymaster/NeoMud/issues/142))
 
