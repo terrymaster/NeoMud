@@ -1945,7 +1945,7 @@ function ZoneEditor() {
         ) : (
           <div style={{ color: '#999', fontSize: 13, textAlign: 'center', marginTop: 40 }}>
             {selectedZoneId
-              ? 'Click a room on the map to edit, or click an empty cell to create one'
+              ? 'Click a room to edit, click an empty cell to create one, or Alt+drag a room to move it'
               : 'Select a zone first'}
           </div>
         )}

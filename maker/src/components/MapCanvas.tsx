@@ -927,22 +927,31 @@ function MapCanvas({
     [roomAtPixel, pixelToGrid, rooms, onCreateRoom, onSelectRoom, onCreateExit, onMoveRoom, readOnly]
   );
 
-  // Cancel move on Escape
+  // Track Alt key for cursor hint
+  const [altHeld, setAltHeld] = useState(false);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') setAltHeld(true);
       if (e.key === 'Escape' && dragState.current.type === 'move') {
         dragState.current = { type: 'none', startX: 0, startY: 0, offsetStart: { x: 0, y: 0 } };
         setMovePreview(null);
       }
     };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') setAltHeld(false);
+    };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, []);
 
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%', overflow: 'hidden', cursor: movePreview ? 'grabbing' : readOnly ? 'default' : 'crosshair' }}
+      style={{ width: '100%', height: '100%', overflow: 'hidden', cursor: movePreview ? 'grabbing' : altHeld && onMoveRoom ? 'grab' : readOnly ? 'default' : 'crosshair' }}
     >
       <canvas
         ref={canvasRef}
