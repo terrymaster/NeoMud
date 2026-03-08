@@ -14,6 +14,12 @@ kotlin {
         }
     }
 
+    jvm("desktop") {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(project(":shared"))
@@ -54,6 +60,36 @@ kotlin {
 
             // Image loading (Android-specific network backend)
             implementation(libs.coil.network.okhttp)
+        }
+
+        val desktopMain by getting {
+            dependencies {
+                // Compose Desktop
+                implementation(compose.desktop.currentOs)
+
+                // Networking (JVM engine)
+                implementation(libs.ktor.client.cio)
+
+                // Image loading (Ktor-based network backend for Desktop)
+                implementation(libs.coil.network.ktor3)
+
+                // Coroutines (Swing main dispatcher for Compose Desktop)
+                implementation(libs.kotlinx.coroutines.swing)
+
+                // Audio (JavaFX Media — need platform-classified JARs)
+                val javafxPlatform = when {
+                    org.gradle.internal.os.OperatingSystem.current().isWindows -> "win"
+                    org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "mac"
+                    else -> "linux"
+                }
+                val javafxVersion = libs.versions.javafx.get()
+                for (module in listOf("base", "graphics", "media", "swing")) {
+                    implementation("org.openjfx:javafx-$module:$javafxVersion:$javafxPlatform")
+                }
+
+                // Logging (SLF4J/Logback — shared with server)
+                implementation(libs.logback.classic)
+            }
         }
 
         val androidUnitTest by getting {
@@ -115,6 +151,25 @@ android {
 dependencies {
     "debugImplementation"(libs.compose.ui.tooling)
     "debugImplementation"(libs.compose.ui.test.manifest)
+}
+
+compose.desktop {
+    application {
+        mainClass = "com.neomud.client.MainKt"
+        nativeDistributions {
+            targetFormats(
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Dmg
+            )
+            packageName = "NeoMud"
+            packageVersion = "1.0.0"
+            windows {
+                menuGroup = "NeoMud"
+                upgradeUuid = "5a3e4b2c-1d7f-4e8a-9b6c-3f2e1d0a8b7c"
+            }
+        }
+    }
 }
 
 tasks.register<Exec>("startEmulator") {
