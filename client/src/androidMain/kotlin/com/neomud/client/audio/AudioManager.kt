@@ -4,12 +4,13 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.SoundPool
+import com.neomud.client.platform.PlatformAudioManager
 import com.neomud.client.platform.PlatformLogger
 import kotlinx.coroutines.*
 import java.io.File
 import java.net.URL
 
-class AudioManager(context: Context) {
+class AudioManager(context: Context) : PlatformAudioManager {
     private val tag = "AudioManager"
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -34,11 +35,11 @@ class AudioManager(context: Context) {
     // SoundPool IDs pending first play after load completes
     private val pendingFirstPlay = mutableSetOf<Int>()
 
-    var masterVolume: Float = 1f
+    override var masterVolume: Float = 1f
         private set
-    var sfxVolume: Float = 1f
+    override var sfxVolume: Float = 1f
         private set
-    var bgmVolume: Float = 0.5f
+    override var bgmVolume: Float = 0.5f
         private set
 
     init {
@@ -56,7 +57,7 @@ class AudioManager(context: Context) {
         }
     }
 
-    fun playSfx(serverBaseUrl: String, soundId: String, category: String) {
+    override fun playSfx(serverBaseUrl: String, soundId: String, category: String) {
         if (soundId.isBlank() || masterVolume == 0f || sfxVolume == 0f) return
 
         val cacheKey = "$category/$soundId"
@@ -93,7 +94,7 @@ class AudioManager(context: Context) {
         }
     }
 
-    fun playBgm(serverBaseUrl: String, trackId: String) {
+    override fun playBgm(serverBaseUrl: String, trackId: String) {
         if (trackId == currentBgmTrack) return
         if (trackId.isBlank()) {
             stopBgm()
@@ -132,7 +133,7 @@ class AudioManager(context: Context) {
         }
     }
 
-    fun stopBgm() {
+    override fun stopBgm() {
         try {
             mediaPlayer?.apply {
                 if (isPlaying) stop()
@@ -146,7 +147,7 @@ class AudioManager(context: Context) {
         currentBgmTrack = null
     }
 
-    fun setVolumes(master: Float, sfx: Float, bgm: Float) {
+    override fun setVolumes(master: Float, sfx: Float, bgm: Float) {
         masterVolume = master.coerceIn(0f, 1f)
         sfxVolume = sfx.coerceIn(0f, 1f)
         bgmVolume = bgm.coerceIn(0f, 1f)
@@ -166,7 +167,7 @@ class AudioManager(context: Context) {
             .apply()
     }
 
-    fun release() {
+    override fun release() {
         scope.cancel()
         stopBgm()
         soundPool.release()

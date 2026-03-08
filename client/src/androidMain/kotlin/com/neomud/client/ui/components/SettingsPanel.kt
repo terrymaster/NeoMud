@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.neomud.client.audio.AudioManager
+import com.neomud.client.platform.PlatformAudioManager
 
 private val CyanAccent = Color(0xFF55FFFF)
 private val YellowAccent = Color(0xFFFFFF55)
@@ -26,7 +26,7 @@ fun SettingsPanel(
     onSetLayoutPreference: (Boolean) -> Unit,
     onLogout: () -> Unit,
     onClose: () -> Unit,
-    audioManager: AudioManager? = null
+    audioManager: PlatformAudioManager? = null
 ) {
     var masterVolume by remember { mutableFloatStateOf(audioManager?.masterVolume ?: 1f) }
     var sfxVolume by remember { mutableFloatStateOf(audioManager?.sfxVolume ?: 1f) }

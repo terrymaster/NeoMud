@@ -44,7 +44,7 @@ import com.neomud.client.ui.components.MiniMap
 import com.neomud.client.ui.components.PlayerStatusPanel
 import com.neomud.client.ui.components.RoomBackground
 import com.neomud.client.ui.components.RoomItemsSidebar
-import com.neomud.client.audio.AudioManager
+import com.neomud.client.platform.PlatformAudioManager
 import com.neomud.client.ui.components.SettingsPanel
 import com.neomud.client.ui.components.SpellBar
 import com.neomud.client.ui.components.SpellPicker
@@ -64,7 +64,7 @@ import com.neomud.shared.model.RoomInteractable
 fun GameScreen(
     gameViewModel: GameViewModel,
     onLogout: () -> Unit = {},
-    audioManager: AudioManager? = null
+    audioManager: PlatformAudioManager? = null
 ) {
     val roomInfo by gameViewModel.roomInfo.collectAsState()
     val mapData by gameViewModel.mapData.collectAsState()

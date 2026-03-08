@@ -2,7 +2,7 @@ package com.neomud.client.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.neomud.client.audio.AudioManager
+import com.neomud.client.platform.PlatformAudioManager
 import com.neomud.client.platform.PlatformLogger
 import com.neomud.client.network.WebSocketClient
 import com.neomud.client.ui.theme.MudColors
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 class GameViewModel(
     private val wsClient: WebSocketClient,
     var serverBaseUrl: String = "",
-    private val audioManager: AudioManager? = null
+    private val audioManager: PlatformAudioManager? = null
 ) : ViewModel() {
 
     private val _roomInfo = MutableStateFlow<ServerMessage.RoomInfo?>(null)
