@@ -84,12 +84,12 @@
     {
       "id": "marsh:island",
       "name": "Mire Island",
-      "description": "A rare patch of solid ground rises from the swamp — a small island of packed earth and moss-covered stones. The remains of a campfire suggest someone or something shelters here. The island offers a commanding but unsettling view of the marsh in every direction, with the dark heart of the swamp visible to the west.",
+      "description": "A rare patch of solid ground rises from the swamp — a small island of packed earth and moss-covered stones. The remains of a campfire suggest someone or something shelters here. The island offers a commanding but unsettling view of the marsh in every direction, with the dark heart of the swamp visible to the northwest.",
       "x": 1,
       "y": 7,
       "exits": {
         "SOUTH": "marsh:shallows",
-        "WEST": "marsh:heart"
+        "NORTHWEST": "marsh:heart"
       },
       "backgroundImage": "/assets/images/rooms/marsh_island.webp",
       "departSound": "footstep_dirt",
@@ -107,7 +107,7 @@
       "y": 8,
       "exits": {
         "SOUTH": "marsh:trail",
-        "EAST": "marsh:island",
+        "SOUTHEAST": "marsh:island",
         "NORTH": "gorge:mouth"
       },
       "backgroundImage": "/assets/images/rooms/marsh_heart.webp",
