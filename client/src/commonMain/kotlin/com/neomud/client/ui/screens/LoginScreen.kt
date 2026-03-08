@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.neomud.client.network.ConnectionState
+import com.neomud.client.platform.defaultServerHost
 import com.neomud.client.viewmodel.AuthState
 import com.neomud.shared.NeoMudVersion
 
@@ -28,7 +29,7 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onClearError: () -> Unit
 ) {
-    var host by remember { mutableStateOf("10.0.2.2") }
+    var host by remember { mutableStateOf(defaultServerHost) }
     var port by remember { mutableStateOf("8080") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
