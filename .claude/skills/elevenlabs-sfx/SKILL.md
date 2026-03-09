@@ -1,30 +1,71 @@
 ---
 name: elevenlabs-sfx
 description: >
-  Generate sound effects for NeoMud using ElevenLabs AI. Use when creating or regenerating
-  SFX for combat, spells, footsteps, NPC interactions, item pickups, or ambient sounds.
-  Handles generation and placement in the asset directory.
+  Generate sound effects and background music for NeoMud using ElevenLabs AI. Use when creating
+  or regenerating SFX for combat, spells, footsteps, NPC interactions, item pickups, ambient
+  sounds, or BGM tracks. Handles generation and placement in the asset directory.
 ---
 
-# ElevenLabs SFX Generator
+# ElevenLabs SFX & Music Generator
 
-Generate sound effects for NeoMud using the ElevenLabs `text_to_sound_effects` MCP tool and the maker's built-in SFX generation endpoint.
+Generate sound effects and background music for NeoMud using ElevenLabs MCP tools and the maker's built-in generation endpoint.
 
 ---
 
-## Two Generation Paths
+## Generation Tools
 
-### Path 1: MCP Tool (Claude Code direct)
+### SFX: `text_to_sound_effects`
 
-Use the `mcp__elevenlabs-sfx__text_to_sound_effects` tool to generate SFX directly. This saves files to the configured base path (`maker/default_world_src/assets/audio/`).
+Use `mcp__elevenlabs-sfx__text_to_sound_effects` for short sound effects (0.5–5 seconds).
 
 **Parameters:**
 - `text` (required): Descriptive prompt for the sound effect
 - `duration_seconds` (optional): 0.5–5.0 seconds (default varies by sound type)
 - `output_format` (optional): `mp3_44100_128` (default)
 - `loop` (optional): Whether the sound should loop seamlessly
+- `output_directory` (optional): Where to save the file
 
-### Path 2: Maker Backend
+### BGM: `compose_music`
+
+Use `mcp__elevenlabs-sfx__compose_music` for background music tracks (10–300 seconds).
+
+**Two modes:**
+
+1. **Simple prompt** — pass a `prompt` string and optional `music_length_ms`:
+   ```
+   prompt: "Dark fantasy RPG dungeon theme, ominous drums, low strings"
+   music_length_ms: 60000
+   ```
+
+2. **Composition plan** — structured multi-section composition with styles and durations. Use `create_composition_plan` (free, no credits) to draft the plan first, then pass it to `compose_music`.
+
+**Composition plan structure:**
+```json
+{
+  "positive_global_styles": ["dark fantasy", "orchestral"],
+  "negative_global_styles": ["pop", "electronic", "vocals"],
+  "sections": [
+    {
+      "section_name": "intro",
+      "positive_local_styles": ["ominous", "building tension"],
+      "negative_local_styles": ["upbeat"],
+      "duration_ms": 15000,
+      "lines": ["Deep war drums, low rumbling strings"]
+    }
+  ]
+}
+```
+
+### Planning: `create_composition_plan` (FREE)
+
+Use `mcp__elevenlabs-sfx__create_composition_plan` to draft a composition plan before generating. This does NOT cost credits — use it to iterate on the structure before committing to generation.
+
+**Parameters:**
+- `prompt` (required): Text description of desired music
+- `music_length_ms` (optional): Target length 10000–300000ms
+- `source_composition_plan` (optional): Existing plan to refine
+
+### Maker Backend (alternative for SFX)
 
 The maker's Express backend has a `/generate/sound` endpoint that calls ElevenLabs and saves directly:
 
@@ -161,8 +202,10 @@ ElevenLabs sound effects work best with descriptive, evocative prompts:
 $ARGUMENTS
 
 1. **Identify** what sounds are needed (read relevant JSON data files)
-2. **Check** what SFX already exist in `maker/default_world_src/assets/audio/{npcs,items,spells,rooms,general}/`
-3. **Generate** missing sounds using `text_to_sound_effects` MCP tool
-4. **Rename** MCP output files to match the expected naming convention
+2. **Check** what already exists in `maker/default_world_src/assets/audio/{bgm,npcs,items,spells,rooms,general}/`
+3. **Generate**:
+   - SFX → `text_to_sound_effects` (short effects, 0.5–5s)
+   - BGM → `create_composition_plan` (free draft) → `compose_music` (generate track, 10–300s)
+4. **Rename** output files to match the expected naming convention
 5. **Update** JSON data files with sound IDs if they're currently empty
 6. **Rebuild** world bundle
