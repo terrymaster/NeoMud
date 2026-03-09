@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "prisma generate",
     "kill-vite": "tsx scripts/kill-port.ts",
     "predev": "tsx scripts/kill-port.ts",
     "dev": "vite",
