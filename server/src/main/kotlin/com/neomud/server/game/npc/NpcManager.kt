@@ -165,9 +165,8 @@ class NpcManager(
         for (npc in npcs) {
             if (!npc.isAlive) continue
 
-            // Hostile NPCs that detect a player stay to fight — skip wander/patrol
-            if (npc.hostile && npc.currentRoomId in roomsWithVisiblePlayers
-                && (npc.behavior is WanderBehavior || npc.behavior is PatrolBehavior)) {
+            // Hostile NPCs that detect a player (or are stunned) stay put — skip all movement behaviors
+            if (npc.hostile && (npc.currentRoomId in roomsWithVisiblePlayers || npc.stunTicks > 0)) {
                 continue
             }
 

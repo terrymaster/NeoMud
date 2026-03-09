@@ -44,6 +44,9 @@ kotlin {
 
             // Image loading (Coil 3 is multiplatform)
             implementation(libs.coil.compose)
+
+            // Compose Multiplatform resources (embedded images, etc.)
+            implementation(compose.components.resources)
         }
 
         commonTest.dependencies {

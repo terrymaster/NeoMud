@@ -12,21 +12,76 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.LocalPlatformContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.neomud.client.ui.theme.StoneTheme
 import com.neomud.shared.model.Coins
+import com.neomud.shared.model.EquipmentSlots
 import com.neomud.shared.model.InventoryItem
 import com.neomud.shared.model.Item
 import com.neomud.shared.model.VendorItem
 import com.neomud.shared.protocol.ServerMessage
+
+// TODO: Show item stats (DMG/ARM) and comparison indicators on vendor buy/sell lists,
+//  matching the EquipmentPanel's comparison UI so players can evaluate purchases at a glance.
+
+// ─────────────────────────────────────────────
+// Palette — shared medieval aesthetic
+// ─────────────────────────────────────────────
+private val DeepVoid = Color(0xFF080604)
+private val WornLeather = Color(0xFF1A1510)
+private val BurnishedGold = Color(0xFFCCA855)
+private val TorchAmber = Color(0xFFBBA060)
+private val EmberOrange = Color(0xFFAA6B3A)
+private val BoneWhite = Color(0xFFD8CCAA)
+private val AshGray = Color(0xFF5A5040)
+private val VerdantUpgrade = Color(0xFF44CC55)
+
+// ─────────────────────────────────────────────
+// Stone frame drawing
+// ─────────────────────────────────────────────
+private fun DrawScope.drawStoneFrame(borderPx: Float) {
+    val w = size.width
+    val h = size.height
+
+    drawRect(StoneTheme.frameMid, Offset.Zero, Size(w, borderPx))
+    drawRect(StoneTheme.frameMid, Offset(0f, h - borderPx), Size(w, borderPx))
+    drawRect(StoneTheme.frameMid, Offset(0f, borderPx), Size(borderPx, h - borderPx * 2))
+    drawRect(StoneTheme.frameMid, Offset(w - borderPx, borderPx), Size(borderPx, h - borderPx * 2))
+
+    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), strokeWidth = 1f)
+    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), strokeWidth = 1f)
+    drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), strokeWidth = 1f)
+    drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), strokeWidth = 1f)
+
+    drawLine(StoneTheme.innerShadow, Offset(borderPx, h - borderPx), Offset(w - borderPx, h - borderPx), strokeWidth = 1f)
+    drawLine(StoneTheme.innerShadow, Offset(w - borderPx, borderPx), Offset(w - borderPx, h - borderPx), strokeWidth = 1f)
+
+    drawLine(StoneTheme.runeGlow, Offset(borderPx, borderPx), Offset(w - borderPx, borderPx), strokeWidth = 1f)
+    drawLine(StoneTheme.runeGlow, Offset(borderPx, borderPx), Offset(borderPx, h - borderPx), strokeWidth = 1f)
+
+    val rivetRadius = 3f
+    val rivetOffset = borderPx / 2f
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(rivetOffset, rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(w - rivetOffset, rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(rivetOffset, h - rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(w - rivetOffset, h - rivetOffset))
+}
 
 @Composable
 fun VendorPanel(
@@ -42,24 +97,30 @@ fun VendorPanel(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xCC000000))
+            .background(Color.Black.copy(alpha = 0.92f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { /* consume clicks */ },
         contentAlignment = Alignment.Center
     ) {
-        Card(
+        val borderPx = 4.dp
+        Box(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A2E))
+                .fillMaxWidth(0.92f)
+                .fillMaxHeight(0.88f)
+                .drawBehind { drawStoneFrame(borderPx.toPx()) }
+                .padding(borderPx)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(WornLeather, Color(0xFF100E0B), DeepVoid, Color(0xFF100E0B), WornLeather)
+                    )
+                )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(10.dp)
             ) {
                 // Header
                 Row(
@@ -73,24 +134,42 @@ fun VendorPanel(
                     ) {
                         Text(
                             text = vendorInfo.vendorName,
-                            fontSize = 20.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFFD700)
+                            color = BurnishedGold
                         )
                         if (vendorInfo.hasHaggle) {
                             Text(
                                 text = "Haggle Active",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1A1A2E),
+                                color = DeepVoid,
                                 modifier = Modifier
-                                    .background(Color(0xFF66BB6A), RoundedCornerShape(4.dp))
+                                    .background(VerdantUpgrade, RoundedCornerShape(4.dp))
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
-                    TextButton(onClick = onClose) {
-                        Text("Close", color = Color(0xFFAAAAAA))
+                    // Close button — stone beveled
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(StoneTheme.frameLight, StoneTheme.frameDark)
+                                ),
+                                RoundedCornerShape(4.dp)
+                            )
+                            .drawBehind {
+                                drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(size.width, 0f), 1f)
+                                drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, size.height), 1f)
+                                drawLine(StoneTheme.innerShadow, Offset(0f, size.height - 1f), Offset(size.width, size.height - 1f), 1f)
+                                drawLine(StoneTheme.innerShadow, Offset(size.width - 1f, 0f), Offset(size.width - 1f, size.height), 1f)
+                            }
+                            .clickable(onClick = onClose),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("\u2715", color = BoneWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -98,34 +177,35 @@ fun VendorPanel(
                 Text(
                     text = "Your coins: ${vendorInfo.playerCoins.displayString()}",
                     fontSize = 13.sp,
-                    color = Color(0xFFFFD700),
+                    color = BurnishedGold,
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
 
-                // Tabs
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = Color(0xFF1A1A2E),
-                    contentColor = Color(0xFFFFD700),
-                    modifier = Modifier.padding(vertical = 4.dp)
+                // Tabs — stone-styled
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Tab(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        text = { Text("Buy", fontSize = 14.sp) },
-                        selectedContentColor = Color(0xFFFFD700),
-                        unselectedContentColor = Color(0xFF888888)
-                    )
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        text = { Text("Sell", fontSize = 14.sp) },
-                        selectedContentColor = Color(0xFFFFD700),
-                        unselectedContentColor = Color(0xFF888888)
-                    )
+                    VendorTab("Buy", selected = selectedTab == 0, onClick = { selectedTab = 0 },
+                        modifier = Modifier.weight(1f))
+                    VendorTab("Sell", selected = selectedTab == 1, onClick = { selectedTab = 1 },
+                        modifier = Modifier.weight(1f))
                 }
 
-                HorizontalDivider(color = Color(0xFF333355), modifier = Modifier.padding(vertical = 4.dp))
+                // Ornamental divider
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, BurnishedGold.copy(alpha = 0.4f), Color.Transparent)
+                            )
+                        )
+                )
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // Content
                 Column(
@@ -134,7 +214,6 @@ fun VendorPanel(
                         .verticalScroll(rememberScrollState())
                 ) {
                     if (selectedTab == 0) {
-                        // Buy tab
                         for (vendorItem in vendorInfo.items) {
                             val ownedQty = vendorInfo.playerInventory
                                 .filter { it.itemId == vendorItem.item.id }
@@ -144,18 +223,16 @@ fun VendorPanel(
                                 playerCoins = vendorInfo.playerCoins,
                                 playerLevel = playerLevel,
                                 ownedCount = ownedQty,
-
                                 onBuy = { onBuy(vendorItem.item.id) }
                             )
                         }
                     } else {
-                        // Sell tab - show unequipped inventory items
                         val sellableItems = vendorInfo.playerInventory.filter { !it.equipped }
                         if (sellableItems.isEmpty()) {
                             Text(
                                 text = "You have nothing to sell.",
                                 fontSize = 13.sp,
-                                color = Color(0xFF888888),
+                                color = AshGray,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
@@ -177,6 +254,45 @@ fun VendorPanel(
 }
 
 @Composable
+private fun VendorTab(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val bg = if (selected)
+        Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameMid))
+    else
+        Brush.verticalGradient(listOf(StoneTheme.frameDark, Color(0xFF0D0A08)))
+
+    Box(
+        modifier = modifier
+            .height(32.dp)
+            .background(bg, RoundedCornerShape(4.dp))
+            .drawBehind {
+                val w = size.width; val h = size.height
+                if (selected) {
+                    drawLine(BurnishedGold.copy(alpha = 0.6f), Offset(0f, 0f), Offset(w, 0f), 1f)
+                    drawLine(BurnishedGold.copy(alpha = 0.6f), Offset(0f, 0f), Offset(0f, h), 1f)
+                } else {
+                    drawLine(StoneTheme.frameLight.copy(alpha = 0.3f), Offset(0f, 0f), Offset(w, 0f), 1f)
+                }
+                drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+                drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), 1f)
+            }
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            label,
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) BurnishedGold else AshGray
+        )
+    }
+}
+
+@Composable
 private fun BuyItemRow(
     vendorItem: VendorItem,
     playerCoins: Coins,
@@ -193,21 +309,31 @@ private fun BuyItemRow(
 
     val nameColor = when {
         !meetsLevel -> Color(0xFF666666)
-        !canAfford -> Color(0xFF888888)
-        else -> Color(0xFFCCCCCC)
+        !canAfford -> AshGray
+        else -> BoneWhite
     }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 3.dp)
+            .background(
+                Brush.horizontalGradient(listOf(Color(0xFF14110E), DeepVoid)),
+                RoundedCornerShape(6.dp)
+            )
+            .drawBehind {
+                val w = size.width; val h = size.height
+                drawLine(AshGray.copy(alpha = 0.15f), Offset(0f, 0f), Offset(w, 0f), 1f)
+                drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+            }
+            .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .background(Color(0xFF16213E), RoundedCornerShape(6.dp))
-                .border(1.dp, Color(0xFF333355), RoundedCornerShape(6.dp)),
+                .background(DeepVoid, RoundedCornerShape(6.dp))
+                .border(1.dp, AshGray.copy(alpha = 0.3f), RoundedCornerShape(6.dp)),
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
@@ -235,28 +361,28 @@ private fun BuyItemRow(
                     Text(
                         text = " Lv${item.levelRequirement}",
                         fontSize = 11.sp,
-                        color = if (meetsLevel) Color(0xFF888888) else Color(0xFFCC4444)
+                        color = if (meetsLevel) AshGray else Color(0xFFCC4444)
                     )
                 }
                 if (ownedCount > 0) {
                     Text(
                         text = " Owned: $ownedCount",
                         fontSize = 11.sp,
-                        color = Color(0xFF66BB6A)
+                        color = VerdantUpgrade
                     )
                 }
             }
             val statsText = buildString {
-                if (item.slot.isNotEmpty()) append(item.slot)
-                if (item.armorValue > 0) append(" | Armor: ${item.armorValue}")
-                if (item.damageBonus > 0) append(" | Dmg+${item.damageBonus}")
-                if (item.damageRange > 0) append(" Range: ${item.damageRange}")
+                if (item.slot.isNotEmpty()) append(item.slot.replaceFirstChar { it.uppercase() })
+                if (item.armorValue > 0) append(" | ARM ${item.armorValue}")
+                if (item.damageBonus > 0) append(" | DMG +${item.damageBonus}")
+                if (item.damageRange > 0) append(" (1-${item.damageRange})")
             }
             if (statsText.isNotEmpty()) {
                 Text(
                     text = statsText,
                     fontSize = 11.sp,
-                    color = Color(0xFF888888)
+                    color = TorchAmber
                 )
             }
         }
@@ -264,21 +390,39 @@ private fun BuyItemRow(
         Text(
             text = vendorItem.price.displayString(),
             fontSize = 12.sp,
-            color = if (canAfford) Color(0xFFFFD700) else Color(0xFF884444),
+            color = if (canAfford) BurnishedGold else Color(0xFF884444),
             modifier = Modifier.padding(horizontal = 8.dp)
         )
 
-        Button(
-            onClick = onBuy,
-            enabled = canBuy,
-            modifier = Modifier.height(32.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF1565C0),
-                disabledContainerColor = Color(0xFF333333)
-            )
+        // Buy button — stone-styled
+        Box(
+            modifier = Modifier
+                .height(32.dp)
+                .background(
+                    if (canBuy)
+                        Brush.verticalGradient(listOf(Color(0xFF1565C0), Color(0xFF0D47A1)))
+                    else
+                        Brush.verticalGradient(listOf(StoneTheme.frameDark, Color(0xFF0D0A08))),
+                    RoundedCornerShape(4.dp)
+                )
+                .drawBehind {
+                    val w = size.width; val h = size.height
+                    if (canBuy) {
+                        drawLine(Color(0xFF42A5F5).copy(alpha = 0.5f), Offset(0f, 0f), Offset(w, 0f), 1f)
+                        drawLine(Color(0xFF42A5F5).copy(alpha = 0.5f), Offset(0f, 0f), Offset(0f, h), 1f)
+                    }
+                    drawLine(Color.Black.copy(alpha = 0.5f), Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+                    drawLine(Color.Black.copy(alpha = 0.5f), Offset(w - 1f, 0f), Offset(w - 1f, h), 1f)
+                }
+                .then(if (canBuy) Modifier.clickable(onClick = onBuy) else Modifier)
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Buy", fontSize = 12.sp)
+            Text(
+                "Buy", fontSize = 12.sp,
+                color = if (canBuy) Color.White else AshGray,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -302,14 +446,24 @@ private fun SellItemRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 3.dp)
+            .background(
+                Brush.horizontalGradient(listOf(Color(0xFF14110E), DeepVoid)),
+                RoundedCornerShape(6.dp)
+            )
+            .drawBehind {
+                val w = size.width; val h = size.height
+                drawLine(AshGray.copy(alpha = 0.15f), Offset(0f, 0f), Offset(w, 0f), 1f)
+                drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+            }
+            .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .background(Color(0xFF16213E), RoundedCornerShape(6.dp))
-                .border(1.dp, Color(0xFF333355), RoundedCornerShape(6.dp)),
+                .background(DeepVoid, RoundedCornerShape(6.dp))
+                .border(1.dp, AshGray.copy(alpha = 0.3f), RoundedCornerShape(6.dp)),
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
@@ -331,13 +485,15 @@ private fun SellItemRow(
                     text = itemName,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (canSell) Color(0xFFCCCCCC) else Color(0xFF666666)
+                    color = if (canSell) BoneWhite else Color(0xFF666666),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 if (inventoryItem.quantity > 1) {
                     Text(
                         text = " x${inventoryItem.quantity}",
                         fontSize = 11.sp,
-                        color = Color(0xFF888888)
+                        color = AshGray
                     )
                 }
             }
@@ -346,21 +502,39 @@ private fun SellItemRow(
         Text(
             text = if (canSell) sellPrice.displayString() else "No value",
             fontSize = 12.sp,
-            color = if (canSell) Color(0xFFFFD700) else Color(0xFF666666),
+            color = if (canSell) BurnishedGold else AshGray,
             modifier = Modifier.padding(horizontal = 8.dp)
         )
 
-        Button(
-            onClick = onSell,
-            enabled = canSell,
-            modifier = Modifier.height(32.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2E7D32),
-                disabledContainerColor = Color(0xFF333333)
-            )
+        // Sell button — stone-styled
+        Box(
+            modifier = Modifier
+                .height(32.dp)
+                .background(
+                    if (canSell)
+                        Brush.verticalGradient(listOf(Color(0xFF2E7D32), Color(0xFF1B5E20)))
+                    else
+                        Brush.verticalGradient(listOf(StoneTheme.frameDark, Color(0xFF0D0A08))),
+                    RoundedCornerShape(4.dp)
+                )
+                .drawBehind {
+                    val w = size.width; val h = size.height
+                    if (canSell) {
+                        drawLine(VerdantUpgrade.copy(alpha = 0.5f), Offset(0f, 0f), Offset(w, 0f), 1f)
+                        drawLine(VerdantUpgrade.copy(alpha = 0.5f), Offset(0f, 0f), Offset(0f, h), 1f)
+                    }
+                    drawLine(Color.Black.copy(alpha = 0.5f), Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+                    drawLine(Color.Black.copy(alpha = 0.5f), Offset(w - 1f, 0f), Offset(w - 1f, h), 1f)
+                }
+                .then(if (canSell) Modifier.clickable(onClick = onSell) else Modifier)
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Sell", fontSize = 12.sp)
+            Text(
+                "Sell", fontSize = 12.sp,
+                color = if (canSell) Color.White else AshGray,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

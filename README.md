@@ -173,6 +173,29 @@ NeoMud/
 - Android emulator or device (min SDK 26)
 - Node.js 18+ (for the Maker)
 
+### macOS Setup
+
+```bash
+# Install JDK 21 via Homebrew
+brew install --cask corretto@21
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+
+# Install Android SDK via Homebrew (or use Android Studio)
+brew install --cask android-commandlinetools
+sdkmanager "platforms;android-34" "build-tools;34.0.0"
+export ANDROID_HOME=$HOME/Library/Android/sdk
+
+# Add to your shell profile (~/.zshrc or ~/.bash_profile) to persist:
+echo 'export JAVA_HOME=$(/usr/libexec/java_home -v 21)' >> ~/.zshrc
+echo 'export ANDROID_HOME=$HOME/Library/Android/sdk' >> ~/.zshrc
+
+# Install Node.js (for the Maker)
+brew install node@18
+
+# After cloning, generate the Prisma client before running the Maker:
+cd maker && npm install   # postinstall runs prisma generate automatically
+```
+
 ### Server
 ```bash
 export JAVA_HOME=/path/to/jdk21

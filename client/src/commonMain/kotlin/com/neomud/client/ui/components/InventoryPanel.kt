@@ -20,7 +20,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.LocalPlatformContext
 import androidx.compose.ui.text.font.FontWeight
@@ -32,17 +38,59 @@ import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.neomud.client.ui.theme.StoneTheme
 import com.neomud.shared.model.Coins
 import com.neomud.shared.model.InventoryItem
 import com.neomud.shared.model.Item
+
+// ─────────────────────────────────────────────
+// Palette — shared medieval aesthetic
+// ─────────────────────────────────────────────
+private val DeepVoid = Color(0xFF080604)
+private val WornLeather = Color(0xFF1A1510)
+private val BurnishedGold = Color(0xFFCCA855)
+private val TorchAmber = Color(0xFFBBA060)
+private val BoneWhite = Color(0xFFD8CCAA)
+private val AshGray = Color(0xFF5A5040)
+private val ConsumableBorder = Color(0xFF55CCAA)
+private val DefaultBorder = Color(0xFF3A3228)
+private val CellBgColor = Color(0xFF0E0B08)
 
 private val CopperColor = Color(0xFFCD7F32)
 private val SilverColor = Color(0xFFC0C0C0)
 private val GoldColor = Color(0xFFFFD700)
 private val PlatinumColor = Color(0xFFE5E4E2)
-private val ConsumableBorder = Color(0xFF55FFFF)
-private val DefaultBorder = Color(0xFF555555)
-private val CellBgColor = Color(0xFF1A1A2E)
+
+// ─────────────────────────────────────────────
+// Stone frame drawing
+// ─────────────────────────────────────────────
+private fun DrawScope.drawStoneFrame(borderPx: Float) {
+    val w = size.width
+    val h = size.height
+
+    drawRect(StoneTheme.frameMid, Offset.Zero, Size(w, borderPx))
+    drawRect(StoneTheme.frameMid, Offset(0f, h - borderPx), Size(w, borderPx))
+    drawRect(StoneTheme.frameMid, Offset(0f, borderPx), Size(borderPx, h - borderPx * 2))
+    drawRect(StoneTheme.frameMid, Offset(w - borderPx, borderPx), Size(borderPx, h - borderPx * 2))
+
+    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), strokeWidth = 1f)
+    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), strokeWidth = 1f)
+    drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), strokeWidth = 1f)
+    drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), strokeWidth = 1f)
+
+    drawLine(StoneTheme.innerShadow, Offset(borderPx, h - borderPx), Offset(w - borderPx, h - borderPx), strokeWidth = 1f)
+    drawLine(StoneTheme.innerShadow, Offset(w - borderPx, borderPx), Offset(w - borderPx, h - borderPx), strokeWidth = 1f)
+
+    drawLine(StoneTheme.runeGlow, Offset(borderPx, borderPx), Offset(w - borderPx, borderPx), strokeWidth = 1f)
+    drawLine(StoneTheme.runeGlow, Offset(borderPx, borderPx), Offset(borderPx, h - borderPx), strokeWidth = 1f)
+
+    val rivetRadius = 3f
+    val rivetOffset = borderPx / 2f
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(rivetOffset, rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(w - rivetOffset, rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(rivetOffset, h - rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(w - rivetOffset, h - rivetOffset))
+}
 
 /** Format raw item ID as display name: "item:leather_cap" -> "Leather Cap" */
 internal fun displayName(item: Item?, itemId: String): String {
@@ -59,54 +107,95 @@ fun InventoryPanel(
     onUseItem: (String) -> Unit,
     onClose: () -> Unit
 ) {
-    val serverBaseUrl = LocalServerBaseUrl.current
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f))
+            .background(Color.Black.copy(alpha = 0.92f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { /* consume all backdrop touches */ }
-            .padding(16.dp)
+            .padding(8.dp)
     ) {
-        Column(
+        val borderPx = 4.dp
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .border(1.dp, Color(0xFF55FFFF), RoundedCornerShape(8.dp))
-                .padding(12.dp)
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Inventory",
-                    color = Color(0xFF55FFFF),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                .drawBehind { drawStoneFrame(borderPx.toPx()) }
+                .padding(borderPx)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(WornLeather, Color(0xFF100E0B), DeepVoid, Color(0xFF100E0B), WornLeather)
+                    )
                 )
-                Button(
-                    onClick = onClose,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF333333)),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { /* block backdrop dismiss */ }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("X", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(
+                        "\u2727 Inventory",
+                        color = BurnishedGold,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    // Close button — stone beveled
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(StoneTheme.frameLight, StoneTheme.frameDark)
+                                ),
+                                RoundedCornerShape(4.dp)
+                            )
+                            .drawBehind {
+                                drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(size.width, 0f), 1f)
+                                drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, size.height), 1f)
+                                drawLine(StoneTheme.innerShadow, Offset(0f, size.height - 1f), Offset(size.width, size.height - 1f), 1f)
+                                drawLine(StoneTheme.innerShadow, Offset(size.width - 1f, 0f), Offset(size.width - 1f, size.height), 1f)
+                            }
+                            .clickable(onClick = onClose),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("\u2715", color = BoneWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
+
+                // Gold ornamental line
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, BurnishedGold.copy(alpha = 0.5f), Color.Transparent)
+                            )
+                        )
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                CoinsDisplay(playerCoins)
+
+                BagGrid(
+                    inventory = inventory,
+                    itemCatalog = itemCatalog,
+                    onUseItem = onUseItem,
+                    modifier = Modifier.weight(1f)
+                )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            CoinsDisplay(playerCoins)
-
-            BagGrid(
-                inventory = inventory,
-                itemCatalog = itemCatalog,
-                onUseItem = onUseItem,
-                modifier = Modifier.weight(1f)
-            )
         }
     }
 }
@@ -116,7 +205,7 @@ private fun CoinsDisplay(playerCoins: Coins) {
     if (!playerCoins.isEmpty()) {
         Text(
             "Coins",
-            color = Color(0xFFFFFF55),
+            color = TorchAmber,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold
         )
@@ -131,7 +220,24 @@ private fun CoinsDisplay(playerCoins: Coins) {
             if (playerCoins.copper > 0) CoinBadge("${playerCoins.copper} CP", CopperColor)
         }
         Spacer(modifier = Modifier.height(8.dp))
-        HorizontalDivider(color = Color(0xFF555555))
+        // Runic divider
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(modifier = Modifier.weight(1f).height(1.dp).background(
+                Brush.horizontalGradient(listOf(Color.Transparent, AshGray.copy(alpha = 0.4f)))
+            ))
+            Text(
+                "\u2500\u2500 \u2726 \u2500\u2500",
+                color = AshGray.copy(alpha = 0.5f),
+                fontSize = 10.sp,
+                modifier = Modifier.padding(horizontal = 6.dp)
+            )
+            Box(modifier = Modifier.weight(1f).height(1.dp).background(
+                Brush.horizontalGradient(listOf(AshGray.copy(alpha = 0.4f), Color.Transparent))
+            ))
+        }
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
@@ -145,7 +251,7 @@ private fun BagGrid(
 ) {
     Text(
         "Consumables & Items",
-        color = Color(0xFFFFFF55),
+        color = TorchAmber,
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold
     )
@@ -155,7 +261,6 @@ private fun BagGrid(
         .filter { invItem ->
             if (invItem.equipped) return@filter false
             val catalogItem = itemCatalog[invItem.itemId]
-            // Exclude items with equipment slots — they show in EquipmentPanel
             val hasSlot = catalogItem?.slot?.isNotEmpty() ?: invItem.slot.isNotEmpty()
             !hasSlot
         }
@@ -167,7 +272,7 @@ private fun BagGrid(
             }
         )
     if (bagItems.isEmpty()) {
-        Text("Your bag is empty.", color = Color(0xFF555555), fontSize = 12.sp)
+        Text("Your bag is empty.", color = AshGray, fontSize = 12.sp)
     } else {
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
@@ -198,9 +303,7 @@ private fun BagItemCell(
     val borderColor = if (isConsumable) ConsumableBorder else DefaultBorder
     val context = LocalPlatformContext.current
 
-    // Debounce: ignore rapid taps within 500ms
     var lastTapTime by remember { mutableStateOf(0L) }
-    // Flash animation on tap
     var tapped by remember { mutableStateOf(false) }
     val flashAlpha by animateFloatAsState(
         targetValue = if (tapped) 0.4f else 0f,
@@ -227,7 +330,13 @@ private fun BagItemCell(
             modifier = Modifier
                 .size(56.dp)
                 .background(CellBgColor, RoundedCornerShape(6.dp))
-                .border(1.dp, borderColor, RoundedCornerShape(6.dp)),
+                .border(1.dp, borderColor, RoundedCornerShape(6.dp))
+                .drawBehind {
+                    // Inner bevel for depth
+                    val w = size.width; val h = size.height
+                    drawLine(StoneTheme.innerShadow, Offset(1f, h - 1f), Offset(w - 1f, h - 1f), 1f)
+                    drawLine(StoneTheme.innerShadow, Offset(w - 1f, 1f), Offset(w - 1f, h - 1f), 1f)
+                },
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
@@ -273,7 +382,7 @@ private fun BagItemCell(
                     color = Color.White,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .background(Color(0xCC00AAAA), RoundedCornerShape(3.dp))
+                        .background(ConsumableBorder.copy(alpha = 0.8f), RoundedCornerShape(3.dp))
                         .padding(horizontal = 3.dp, vertical = 1.dp)
                 )
             }
@@ -281,7 +390,7 @@ private fun BagItemCell(
         Text(
             text = displayName(item, invItem.itemId),
             fontSize = 10.sp,
-            color = Color(0xFFCCCCCC),
+            color = BoneWhite,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -297,8 +406,8 @@ private fun CoinBadge(text: String, color: Color) {
         color = color,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
-            .background(Color(0xFF2A2A2A), RoundedCornerShape(4.dp))
-            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+            .background(DeepVoid, RoundedCornerShape(4.dp))
+            .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp)
     )
 }

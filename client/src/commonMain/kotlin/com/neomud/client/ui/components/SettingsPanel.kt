@@ -6,19 +6,59 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neomud.client.platform.PlatformAudioManager
+import com.neomud.client.ui.theme.StoneTheme
 
-private val CyanAccent = Color(0xFF55FFFF)
-private val YellowAccent = Color(0xFFFFFF55)
-private val DimText = Color(0xFFAAAAAA)
+// ─────────────────────────────────────────────
+// Palette — Stone & Torchlight
+// ─────────────────────────────────────────────
+private val DeepVoid = Color(0xFF080604)
+private val WornLeather = Color(0xFF1A1510)
+private val BurnishedGold = Color(0xFFCCA855)
+private val TorchAmber = Color(0xFFBBA060)
+private val BoneWhite = Color(0xFFD8CCAA)
+private val AshGray = Color(0xFF5A5040)
+private val CrimsonError = Color(0xFFCC4444)
+private val EmptySlotEdge = Color(0xFF2A2218)
+
+// ─────────────────────────────────────────────
+// Stone frame drawing
+// ─────────────────────────────────────────────
+private fun DrawScope.drawStoneFrame(borderPx: Float) {
+    val w = size.width; val h = size.height
+    drawRect(StoneTheme.frameMid, Offset.Zero, Size(w, borderPx))
+    drawRect(StoneTheme.frameMid, Offset(0f, h - borderPx), Size(w, borderPx))
+    drawRect(StoneTheme.frameMid, Offset(0f, borderPx), Size(borderPx, h - borderPx * 2))
+    drawRect(StoneTheme.frameMid, Offset(w - borderPx, borderPx), Size(borderPx, h - borderPx * 2))
+    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), 1f)
+    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), 1f)
+    drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+    drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), 1f)
+    drawLine(StoneTheme.innerShadow, Offset(borderPx, h - borderPx), Offset(w - borderPx, h - borderPx), 1f)
+    drawLine(StoneTheme.innerShadow, Offset(w - borderPx, borderPx), Offset(w - borderPx, h - borderPx), 1f)
+    drawLine(StoneTheme.runeGlow, Offset(borderPx, borderPx), Offset(w - borderPx, borderPx), 1f)
+    drawLine(StoneTheme.runeGlow, Offset(borderPx, borderPx), Offset(borderPx, h - borderPx), 1f)
+    val rivetRadius = 3f; val rivetOffset = borderPx / 2f
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(rivetOffset, rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(w - rivetOffset, rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(rivetOffset, h - rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(w - rivetOffset, h - rivetOffset))
+}
 
 @Composable
 fun SettingsPanel(
@@ -35,7 +75,7 @@ fun SettingsPanel(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f))
+            .background(Color.Black.copy(alpha = 0.92f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -43,95 +83,190 @@ fun SettingsPanel(
             .padding(if (isLandscape) 8.dp else 16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(
+        val borderPx = 4.dp
+        Box(
             modifier = Modifier
                 .then(
                     if (isLandscape) Modifier.fillMaxSize()
                     else Modifier.fillMaxWidth()
                 )
-                .border(1.dp, CyanAccent, RoundedCornerShape(8.dp))
-                .padding(12.dp)
-        ) {
-            // Header row with close button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Settings",
-                    color = CyanAccent,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                .drawBehind { drawStoneFrame(borderPx.toPx()) }
+                .padding(borderPx)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(WornLeather, Color(0xFF100E0B), DeepVoid, Color(0xFF100E0B), WornLeather)
+                    )
                 )
-                Button(
-                    onClick = onClose,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF333333)),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                ) {
-                    Text("X", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (isLandscape) {
-                // Landscape: two-column layout
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp)
+            ) {
+                // Header row
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Left column: Layout + Logout
-                    Column(modifier = Modifier.weight(1f)) {
-                        LayoutSection(isLandscape, onSetLayoutPreference)
-                        Spacer(modifier = Modifier.weight(1f))
-                        LogoutButton(onLogout)
-                    }
-
-                    // Vertical divider
+                    Text(
+                        "\u2699 Settings",
+                        color = BurnishedGold,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    // Stone close button
                     Box(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .width(1.dp)
-                            .background(Color(0xFF555555))
-                    )
-
-                    // Right column: Audio
-                    Column(modifier = Modifier.weight(1f)) {
-                        if (audioManager != null) {
-                            AudioSection(
-                                masterVolume, sfxVolume, bgmVolume,
-                                onMasterChange = { masterVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) },
-                                onSfxChange = { sfxVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) },
-                                onBgmChange = { bgmVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) }
+                            .size(26.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(StoneTheme.frameLight, StoneTheme.frameDark)
+                                ),
+                                RoundedCornerShape(3.dp)
                             )
-                        }
+                            .drawBehind {
+                                val w = size.width; val h = size.height
+                                drawLine(StoneTheme.frameLight.copy(alpha = 0.5f), Offset(0f, 0f), Offset(w, 0f), 1f)
+                                drawLine(StoneTheme.frameLight.copy(alpha = 0.5f), Offset(0f, 0f), Offset(0f, h), 1f)
+                                drawLine(Color.Black.copy(alpha = 0.5f), Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+                                drawLine(Color.Black.copy(alpha = 0.5f), Offset(w - 1f, 0f), Offset(w - 1f, h), 1f)
+                            }
+                            .clickable(onClick = onClose),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("\u2715", color = BoneWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-            } else {
-                // Portrait: single-column vertical stack
-                LayoutSection(isLandscape, onSetLayoutPreference)
 
-                if (audioManager != null) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    AudioSection(
-                        masterVolume, sfxVolume, bgmVolume,
-                        onMasterChange = { masterVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) },
-                        onSfxChange = { sfxVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) },
-                        onBgmChange = { bgmVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) }
-                    )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Gold ornamental line
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, BurnishedGold.copy(alpha = 0.5f), Color.Transparent)
+                            )
+                        )
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                if (isLandscape) {
+                    // Landscape: two-column layout
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Left column: Layout + Logout
+                        Column(modifier = Modifier.weight(1f)) {
+                            LayoutSection(isLandscape, onSetLayoutPreference)
+                            Spacer(modifier = Modifier.weight(1f))
+                            LogoutButton(onLogout)
+                        }
+
+                        // Vertical divider — gradient fade
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(1.dp)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color.Transparent,
+                                            AshGray.copy(alpha = 0.4f),
+                                            AshGray.copy(alpha = 0.4f),
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
+
+                        // Right column: Audio
+                        Column(modifier = Modifier.weight(1f)) {
+                            if (audioManager != null) {
+                                AudioSection(
+                                    masterVolume, sfxVolume, bgmVolume,
+                                    onMasterChange = { masterVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) },
+                                    onSfxChange = { sfxVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) },
+                                    onBgmChange = { bgmVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Portrait: single-column vertical stack
+                    LayoutSection(isLandscape, onSetLayoutPreference)
+
+                    if (audioManager != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        RunicDivider()
+                        Spacer(modifier = Modifier.height(10.dp))
+                        AudioSection(
+                            masterVolume, sfxVolume, bgmVolume,
+                            onMasterChange = { masterVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) },
+                            onSfxChange = { sfxVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) },
+                            onBgmChange = { bgmVolume = it; audioManager.setVolumes(masterVolume, sfxVolume, bgmVolume) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    RunicDivider()
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LogoutButton(onLogout)
                 }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                LogoutButton(onLogout)
             }
         }
     }
 }
 
+// ─────────────────────────────────────────────
+// Runic divider
+// ─────────────────────────────────────────────
+@Composable
+private fun RunicDivider() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(Color.Transparent, AshGray.copy(alpha = 0.4f))
+                    )
+                )
+        )
+        Text(
+            "\u2726",
+            fontSize = 10.sp,
+            color = AshGray.copy(alpha = 0.5f),
+            modifier = Modifier.padding(horizontal = 6.dp)
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(AshGray.copy(alpha = 0.4f), Color.Transparent)
+                    )
+                )
+        )
+    }
+}
+
+// ─────────────────────────────────────────────
+// Layout toggle — stone selection tabs
+// ─────────────────────────────────────────────
 @Composable
 private fun LayoutSection(
     isLandscape: Boolean,
@@ -139,7 +274,7 @@ private fun LayoutSection(
 ) {
     Text(
         "Layout",
-        color = YellowAccent,
+        color = TorchAmber,
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold
     )
@@ -147,43 +282,61 @@ private fun LayoutSection(
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        OutlinedButton(
-            onClick = { onSetLayoutPreference(false) },
-            shape = RoundedCornerShape(8.dp),
-            border = androidx.compose.foundation.BorderStroke(
-                width = if (!isLandscape) 2.dp else 1.dp,
-                color = if (!isLandscape) CyanAccent else Color.Gray
-            ),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = if (!isLandscape) CyanAccent.copy(alpha = 0.15f) else Color.Transparent
-            )
-        ) {
-            Text(
-                "Portrait",
-                color = if (!isLandscape) CyanAccent else DimText,
-                fontWeight = if (!isLandscape) FontWeight.Bold else FontWeight.Normal
-            )
-        }
-        OutlinedButton(
-            onClick = { onSetLayoutPreference(true) },
-            shape = RoundedCornerShape(8.dp),
-            border = androidx.compose.foundation.BorderStroke(
-                width = if (isLandscape) 2.dp else 1.dp,
-                color = if (isLandscape) CyanAccent else Color.Gray
-            ),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = if (isLandscape) CyanAccent.copy(alpha = 0.15f) else Color.Transparent
-            )
-        ) {
-            Text(
-                "Landscape",
-                color = if (isLandscape) CyanAccent else DimText,
-                fontWeight = if (isLandscape) FontWeight.Bold else FontWeight.Normal
-            )
-        }
+        SettingsTab(
+            text = "Portrait",
+            isSelected = !isLandscape,
+            onClick = { onSetLayoutPreference(false) }
+        )
+        SettingsTab(
+            text = "Landscape",
+            isSelected = isLandscape,
+            onClick = { onSetLayoutPreference(true) }
+        )
     }
 }
 
+@Composable
+private fun SettingsTab(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val bg = if (isSelected)
+        Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameMid))
+    else
+        Brush.verticalGradient(listOf(StoneTheme.frameDark, Color(0xFF0D0A08)))
+
+    val borderColor = if (isSelected) BurnishedGold else EmptySlotEdge
+
+    Box(
+        modifier = Modifier
+            .background(bg, RoundedCornerShape(4.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(4.dp))
+            .drawBehind {
+                val w = size.width; val h = size.height
+                if (isSelected) {
+                    drawLine(BurnishedGold.copy(alpha = 0.3f), Offset(0f, 0f), Offset(w, 0f), 1f)
+                    drawLine(BurnishedGold.copy(alpha = 0.2f), Offset(0f, 0f), Offset(0f, h), 1f)
+                }
+                drawLine(Color.Black.copy(alpha = 0.5f), Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+                drawLine(Color.Black.copy(alpha = 0.5f), Offset(w - 1f, 0f), Offset(w - 1f, h), 1f)
+            }
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text,
+            color = if (isSelected) BurnishedGold else AshGray,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            fontSize = 13.sp
+        )
+    }
+}
+
+// ─────────────────────────────────────────────
+// Audio section with stone-themed sliders
+// ─────────────────────────────────────────────
 @Composable
 private fun AudioSection(
     masterVolume: Float,
@@ -195,7 +348,7 @@ private fun AudioSection(
 ) {
     Text(
         "Audio",
-        color = YellowAccent,
+        color = TorchAmber,
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold
     )
@@ -205,27 +358,41 @@ private fun AudioSection(
     VolumeSlider("Music", bgmVolume, onBgmChange)
 }
 
+// ─────────────────────────────────────────────
+// Logout button — ember/crimson stone beveled
+// ─────────────────────────────────────────────
 @Composable
 private fun LogoutButton(onLogout: () -> Unit) {
-    HorizontalDivider(color = Color(0xFF555555))
-    Spacer(modifier = Modifier.height(12.dp))
-    Button(
-        onClick = onLogout,
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFCC3333)
-        ),
-        shape = RoundedCornerShape(8.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(38.dp)
+            .background(
+                Brush.verticalGradient(listOf(CrimsonError, Color(0xFF882222))),
+                RoundedCornerShape(4.dp)
+            )
+            .drawBehind {
+                val w = size.width; val h = size.height
+                drawLine(CrimsonError.copy(alpha = 0.5f), Offset(0f, 0f), Offset(w, 0f), 1f)
+                drawLine(CrimsonError.copy(alpha = 0.3f), Offset(0f, 0f), Offset(0f, h), 1f)
+                drawLine(Color.Black.copy(alpha = 0.5f), Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+                drawLine(Color.Black.copy(alpha = 0.5f), Offset(w - 1f, 0f), Offset(w - 1f, h), 1f)
+            }
+            .clickable(onClick = onLogout),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             "Logout & Exit",
-            color = Color.White,
+            color = BoneWhite,
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp
         )
     }
 }
 
+// ─────────────────────────────────────────────
+// Volume slider — stone-themed
+// ─────────────────────────────────────────────
 @Composable
 private fun VolumeSlider(
     label: String,
@@ -238,8 +405,8 @@ private fun VolumeSlider(
     ) {
         Text(
             label,
-            color = DimText,
-            fontSize = 13.sp,
+            color = AshGray,
+            fontSize = 12.sp,
             modifier = Modifier.width(52.dp)
         )
         Slider(
@@ -247,15 +414,15 @@ private fun VolumeSlider(
             onValueChange = onValueChange,
             modifier = Modifier.weight(1f),
             colors = SliderDefaults.colors(
-                thumbColor = CyanAccent,
-                activeTrackColor = CyanAccent,
-                inactiveTrackColor = Color(0xFF333333)
+                thumbColor = BurnishedGold,
+                activeTrackColor = TorchAmber,
+                inactiveTrackColor = StoneTheme.frameDark
             )
         )
         Text(
             "${(value * 100).toInt()}",
-            color = DimText,
-            fontSize = 13.sp,
+            color = BoneWhite,
+            fontSize = 12.sp,
             modifier = Modifier.width(32.dp)
         )
     }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -13,26 +14,97 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.LocalPlatformContext
 import com.neomud.client.platform.LocalIsLandscape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.crossfade
+import com.neomud.client.ui.theme.StoneTheme
 import com.neomud.shared.model.*
+
+// ─────────────────────────────────────────────
+// Palette — shared medieval aesthetic
+// ─────────────────────────────────────────────
+private val DeepVoid = Color(0xFF080604)
+private val WornLeather = Color(0xFF1A1510)
+private val BurnishedGold = Color(0xFFCCA855)
+private val TorchAmber = Color(0xFFBBA060)
+private val BoneWhite = Color(0xFFD8CCAA)
+private val AshGray = Color(0xFF5A5040)
+private val DimText = Color(0xFFAAAAAA)
+private val BrightText = Color(0xFFCCCCCC)
 
 private val CopperColor = Color(0xFFCD7F32)
 private val SilverColor = Color(0xFFC0C0C0)
 private val GoldColor = Color(0xFFFFD700)
 private val PlatinumColor = Color(0xFFE5E4E2)
-private val CyanAccent = Color(0xFF55FFFF)
-private val YellowAccent = Color(0xFFFFFF55)
-private val DimText = Color(0xFFAAAAAA)
-private val BrightText = Color(0xFFCCCCCC)
+
+// ─────────────────────────────────────────────
+// Stone frame drawing — beveled edges, rivets
+// ─────────────────────────────────────────────
+private fun DrawScope.drawStoneFrame(borderPx: Float) {
+    val w = size.width
+    val h = size.height
+
+    drawRect(StoneTheme.frameMid, Offset.Zero, Size(w, borderPx))
+    drawRect(StoneTheme.frameMid, Offset(0f, h - borderPx), Size(w, borderPx))
+    drawRect(StoneTheme.frameMid, Offset(0f, borderPx), Size(borderPx, h - borderPx * 2))
+    drawRect(StoneTheme.frameMid, Offset(w - borderPx, borderPx), Size(borderPx, h - borderPx * 2))
+
+    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), strokeWidth = 1f)
+    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), strokeWidth = 1f)
+    drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), strokeWidth = 1f)
+    drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), strokeWidth = 1f)
+
+    drawLine(StoneTheme.innerShadow, Offset(borderPx, h - borderPx), Offset(w - borderPx, h - borderPx), strokeWidth = 1f)
+    drawLine(StoneTheme.innerShadow, Offset(w - borderPx, borderPx), Offset(w - borderPx, h - borderPx), strokeWidth = 1f)
+
+    drawLine(StoneTheme.runeGlow, Offset(borderPx, borderPx), Offset(w - borderPx, borderPx), strokeWidth = 1f)
+    drawLine(StoneTheme.runeGlow, Offset(borderPx, borderPx), Offset(borderPx, h - borderPx), strokeWidth = 1f)
+
+    val rivetRadius = 3f
+    val rivetOffset = borderPx / 2f
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(rivetOffset, rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(w - rivetOffset, rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(rivetOffset, h - rivetOffset))
+    drawCircle(StoneTheme.metalGold, rivetRadius, Offset(w - rivetOffset, h - rivetOffset))
+}
+
+// ─────────────────────────────────────────────
+// Ornamental divider
+// ─────────────────────────────────────────────
+@Composable
+private fun RunicDivider() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(modifier = Modifier.weight(1f).height(1.dp).background(
+            Brush.horizontalGradient(listOf(Color.Transparent, AshGray.copy(alpha = 0.4f)))
+        ))
+        Text(
+            "\u2500\u2500 \u2726 \u2500\u2500",
+            color = AshGray.copy(alpha = 0.5f),
+            fontSize = 10.sp,
+            modifier = Modifier.padding(horizontal = 6.dp)
+        )
+        Box(modifier = Modifier.weight(1f).height(1.dp).background(
+            Brush.horizontalGradient(listOf(AshGray.copy(alpha = 0.4f), Color.Transparent))
+        ))
+    }
+}
 
 @Composable
 fun CharacterSheet(
@@ -52,66 +124,108 @@ fun CharacterSheet(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f))
+            .background(Color.Black.copy(alpha = 0.92f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { /* consume backdrop touches */ }
-            .padding(16.dp)
+            .padding(8.dp)
     ) {
-        Column(
+        val borderPx = 4.dp
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .border(1.dp, CyanAccent, RoundedCornerShape(8.dp))
-                .padding(12.dp)
+                .drawBehind { drawStoneFrame(borderPx.toPx()) }
+                .padding(borderPx)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(WornLeather, Color(0xFF100E0B), DeepVoid, Color(0xFF100E0B), WornLeather)
+                    )
+                )
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { /* block backdrop dismiss */ }
         ) {
-            // Header row with close button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp)
             ) {
-                Text(
-                    "Character Sheet",
-                    color = CyanAccent,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Button(
-                    onClick = onClose,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF333333)),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("X", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(
+                        "\u2726 Character Sheet",
+                        color = BurnishedGold,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    // Close button — stone beveled
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(StoneTheme.frameLight, StoneTheme.frameDark)
+                                ),
+                                RoundedCornerShape(4.dp)
+                            )
+                            .drawBehind {
+                                drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(size.width, 0f), 1f)
+                                drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, size.height), 1f)
+                                drawLine(StoneTheme.innerShadow, Offset(0f, size.height - 1f), Offset(size.width, size.height - 1f), 1f)
+                                drawLine(StoneTheme.innerShadow, Offset(size.width - 1f, 0f), Offset(size.width - 1f, size.height), 1f)
+                            }
+                            .clickable(onClick = onClose),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("\u2715", color = BoneWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                // Gold ornamental line
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, BurnishedGold.copy(alpha = 0.5f), Color.Transparent)
+                            )
+                        )
+                )
+                Spacer(modifier = Modifier.height(6.dp))
 
-            if (isLandscape) {
-                CharacterSheetLandscape(
-                    player = player,
-                    classCatalog = classCatalog,
-                    equipment = equipment,
-                    itemCatalog = itemCatalog,
-                    activeEffects = activeEffects,
-                    playerCoins = playerCoins,
-                    skillCatalog = skillCatalog,
-                    spellCatalog = spellCatalog,
-                    isHidden = isHidden
-                )
-            } else {
-                CharacterSheetPortrait(
-                    player = player,
-                    classCatalog = classCatalog,
-                    equipment = equipment,
-                    itemCatalog = itemCatalog,
-                    activeEffects = activeEffects,
-                    playerCoins = playerCoins,
-                    skillCatalog = skillCatalog,
-                    spellCatalog = spellCatalog,
-                    isHidden = isHidden
-                )
+                if (isLandscape) {
+                    CharacterSheetLandscape(
+                        player = player,
+                        classCatalog = classCatalog,
+                        equipment = equipment,
+                        itemCatalog = itemCatalog,
+                        activeEffects = activeEffects,
+                        playerCoins = playerCoins,
+                        skillCatalog = skillCatalog,
+                        spellCatalog = spellCatalog,
+                        isHidden = isHidden
+                    )
+                } else {
+                    CharacterSheetPortrait(
+                        player = player,
+                        classCatalog = classCatalog,
+                        equipment = equipment,
+                        itemCatalog = itemCatalog,
+                        activeEffects = activeEffects,
+                        playerCoins = playerCoins,
+                        skillCatalog = skillCatalog,
+                        spellCatalog = spellCatalog,
+                        isHidden = isHidden
+                    )
+                }
             }
         }
     }
@@ -135,17 +249,25 @@ private fun ColumnScope.CharacterSheetPortrait(
             .verticalScroll(rememberScrollState())
     ) {
         NameAndVitals(player, classCatalog)
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+        RunicDivider()
+        Spacer(modifier = Modifier.height(10.dp))
         StatsSection(player)
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+        RunicDivider()
+        Spacer(modifier = Modifier.height(10.dp))
         EquipmentSection(equipment, itemCatalog)
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+        RunicDivider()
+        Spacer(modifier = Modifier.height(10.dp))
         SkillsSection(player, classCatalog, skillCatalog)
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         SpellsSection(player, classCatalog, spellCatalog)
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+        RunicDivider()
+        Spacer(modifier = Modifier.height(10.dp))
         ActiveEffectsSection(activeEffects, isHidden)
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         CoinsSection(playerCoins)
     }
 }
@@ -163,37 +285,54 @@ private fun ColumnScope.CharacterSheetLandscape(
     isHidden: Boolean = false
 ) {
     Row(
-        modifier = Modifier
-            .weight(1f),
+        modifier = Modifier.weight(1f),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Left column: Name, Vitals, Stats, Skills, Spells
+        // Left column
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
             NameAndVitals(player, classCatalog)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            RunicDivider()
+            Spacer(modifier = Modifier.height(10.dp))
             StatsSection(player)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            RunicDivider()
+            Spacer(modifier = Modifier.height(10.dp))
             SkillsSection(player, classCatalog, skillCatalog)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             SpellsSection(player, classCatalog, spellCatalog)
         }
 
-        VerticalDivider(color = Color(0xFF555555), thickness = 1.dp)
+        // Vertical divider — stone-styled
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(2.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Transparent, AshGray.copy(alpha = 0.4f), AshGray.copy(alpha = 0.4f), Color.Transparent)
+                    )
+                )
+        )
 
-        // Right column: Equipment, Effects, Coins
+        // Right column
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
             EquipmentSection(equipment, itemCatalog)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            RunicDivider()
+            Spacer(modifier = Modifier.height(10.dp))
             ActiveEffectsSection(activeEffects, isHidden)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            RunicDivider()
+            Spacer(modifier = Modifier.height(10.dp))
             CoinsSection(playerCoins)
         }
     }
@@ -204,7 +343,7 @@ private fun NameAndVitals(player: Player, classCatalog: Map<String, CharacterCla
     val className = classCatalog[player.characterClass]?.name ?: player.characterClass
     val serverBaseUrl = LocalServerBaseUrl.current
 
-    // Sprite + name row
+    // Sprite + name
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (serverBaseUrl.isNotBlank() && player.race.isNotEmpty()) {
             val raceId = player.race.lowercase()
@@ -212,25 +351,32 @@ private fun NameAndVitals(player: Player, classCatalog: Map<String, CharacterCla
             val gender = player.gender
             val spriteUrl = "$serverBaseUrl/assets/images/players/${raceId}_${gender}_${classId}.webp"
             val context = LocalPlatformContext.current
-            AsyncImage(
-                model = coil3.request.ImageRequest.Builder(context)
-                    .data(spriteUrl)
-                    .crossfade(200)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .build(),
-                contentDescription = "${player.name} portrait",
-                contentScale = ContentScale.Fit,
+            Box(
                 modifier = Modifier
                     .height(72.dp)
                     .widthIn(max = 54.dp)
-            )
+                    .border(1.dp, AshGray, RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(DeepVoid)
+            ) {
+                AsyncImage(
+                    model = coil3.request.ImageRequest.Builder(context)
+                        .data(spriteUrl)
+                        .crossfade(200)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .build(),
+                    contentDescription = "${player.name} portrait",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.matchParentSize()
+                )
+            }
             Spacer(modifier = Modifier.width(8.dp))
         }
         Column {
             Text(
                 text = player.name,
-                color = Color.White,
+                color = BurnishedGold,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -246,7 +392,7 @@ private fun NameAndVitals(player: Player, classCatalog: Map<String, CharacterCla
         }
     }
 
-    Spacer(modifier = Modifier.height(12.dp))
+    Spacer(modifier = Modifier.height(10.dp))
 
     SectionHeader("Vitals")
     Spacer(modifier = Modifier.height(4.dp))
@@ -274,15 +420,16 @@ private fun NameAndVitals(player: Player, classCatalog: Map<String, CharacterCla
             label = "XP",
             current = player.currentXp.toInt(),
             max = player.xpToNextLevel.toInt(),
-            color = Color(0xFF55FFFF)
+            color = BurnishedGold
         )
     }
     if (player.unspentCp > 0) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "Unspent CP: ${player.unspentCp}",
+            text = "\u2726 Unspent CP: ${player.unspentCp}",
             fontSize = 12.sp,
-            color = Color(0xFFFFFF55)
+            color = TorchAmber,
+            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -302,20 +449,44 @@ private fun EquipmentSection(equipment: Map<String, String>, itemCatalog: Map<St
         val equippedItemId = equipment[slot]
         val item = equippedItemId?.let { itemCatalog[it] }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 1.dp)
+                .background(
+                    if (item != null) Color(0xFF0E0B08) else Color.Transparent,
+                    RoundedCornerShape(3.dp)
+                )
+                .padding(horizontal = 4.dp, vertical = 1.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = slot.replaceFirstChar { it.uppercase() },
-                color = DimText,
+                color = AshGray,
                 fontSize = 12.sp,
                 modifier = Modifier.width(64.dp)
             )
             Text(
                 text = item?.name ?: "-- empty --",
-                color = if (item != null) Color(0xFF55FF55) else Color(0xFF555555),
-                fontSize = 12.sp
+                color = if (item != null) BoneWhite else Color(0xFF3A3228),
+                fontSize = 12.sp,
+                modifier = Modifier.weight(1f)
             )
+            if (item != null) {
+                val statText = when {
+                    item.slot == EquipmentSlots.WEAPON && item.damageBonus > 0 ->
+                        "DMG +${item.damageBonus}"
+                    item.armorValue > 0 -> "ARM ${item.armorValue}"
+                    else -> null
+                }
+                if (statText != null) {
+                    Text(
+                        text = statText,
+                        fontSize = 10.sp,
+                        color = TorchAmber,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }
@@ -331,7 +502,7 @@ private fun SkillsSection(
     val classDef = classCatalog[player.characterClass]
     val classSkillIds = classDef?.skills ?: emptyList()
     if (classSkillIds.isEmpty() || skillCatalog.isEmpty()) {
-        Text("No skills", color = Color(0xFF555555), fontSize = 12.sp)
+        Text("No skills", color = AshGray, fontSize = 12.sp)
     } else {
         for (skillId in classSkillIds) {
             val skill = skillCatalog[skillId] ?: continue
@@ -341,7 +512,7 @@ private fun SkillsSection(
             ) {
                 Text(
                     text = skill.name,
-                    color = BrightText,
+                    color = BoneWhite,
                     fontSize = 12.sp,
                     modifier = Modifier.width(80.dp)
                 )
@@ -371,10 +542,14 @@ private fun SpellsSection(
         .filter { spell -> spell.school in schools && spell.levelRequired <= player.level }
         .sortedWith(compareBy({ it.school }, { it.levelRequired }, { it.name }))
 
+    Spacer(modifier = Modifier.height(10.dp))
+    RunicDivider()
+    Spacer(modifier = Modifier.height(10.dp))
+
     SectionHeader("Spells")
     Spacer(modifier = Modifier.height(4.dp))
     if (knownSpells.isEmpty()) {
-        Text("No spells learned yet", color = Color(0xFF555555), fontSize = 12.sp)
+        Text("No spells learned yet", color = AshGray, fontSize = 12.sp)
     } else {
         for (spell in knownSpells) {
             Row(
@@ -410,22 +585,33 @@ private fun ActiveEffectsSection(activeEffects: List<ActiveEffect>, isHidden: Bo
     SectionHeader("Active Effects")
     Spacer(modifier = Modifier.height(4.dp))
     if (activeEffects.isEmpty() && !isHidden) {
-        Text("No active effects", color = Color(0xFF555555), fontSize = 12.sp)
+        Text("No active effects", color = AshGray, fontSize = 12.sp)
     } else {
         if (isHidden) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF555555).copy(alpha = 0.8f))
+                        .border(1.dp, AshGray, CircleShape)
+                ) {
+                    Text("\uD83D\uDC41", fontSize = 8.sp, color = Color.White)
+                }
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "Hidden",
-                    color = Color(0xFF888888),
+                    color = BoneWhite,
                     fontSize = 12.sp,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     text = "stealth",
-                    color = Color(0xFF666666),
+                    color = AshGray,
                     fontSize = 11.sp
                 )
             }
@@ -437,7 +623,7 @@ private fun ActiveEffectsSection(activeEffects: List<ActiveEffect>, isHidden: Bo
             ) {
                 Text(
                     text = effect.name,
-                    color = BrightText,
+                    color = BoneWhite,
                     fontSize = 12.sp,
                     modifier = Modifier.weight(1f)
                 )
@@ -456,7 +642,7 @@ private fun CoinsSection(playerCoins: Coins) {
     SectionHeader("Coins")
     Spacer(modifier = Modifier.height(4.dp))
     if (playerCoins.isEmpty()) {
-        Text("No coins", color = Color(0xFF555555), fontSize = 12.sp)
+        Text("No coins", color = AshGray, fontSize = 12.sp)
     } else {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -473,7 +659,7 @@ private fun CoinsSection(playerCoins: Coins) {
 private fun SectionHeader(title: String) {
     Text(
         text = title,
-        color = YellowAccent,
+        color = TorchAmber,
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold
     )
@@ -489,12 +675,26 @@ private fun VitalBar(label: String, current: Int, max: Int, color: Color) {
             color = BrightText,
             modifier = Modifier.width(100.dp)
         )
-        LinearProgressIndicator(
-            progress = { fraction },
-            modifier = Modifier.weight(1f).height(10.dp),
-            color = color,
-            trackColor = Color(0xFF333333),
-        )
+        // Stone-styled progress bar
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(10.dp)
+                .background(DeepVoid, RoundedCornerShape(2.dp))
+                .border(1.dp, AshGray.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(color.copy(alpha = 0.7f), color)
+                        ),
+                        RoundedCornerShape(2.dp)
+                    )
+            )
+        }
     }
 }
 
@@ -513,9 +713,15 @@ private fun StatsGrid(stats: Stats) {
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         for ((name, value) in statEntries) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = name, color = DimText, fontSize = 11.sp)
-                Text(text = value.toString(), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .background(DeepVoid, RoundedCornerShape(4.dp))
+                    .border(1.dp, AshGray.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 3.dp)
+            ) {
+                Text(text = name, color = AshGray, fontSize = 10.sp)
+                Text(text = value.toString(), color = BurnishedGold, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -529,8 +735,8 @@ private fun CoinBadge(text: String, color: Color) {
         color = color,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
-            .background(Color(0xFF2A2A2A), RoundedCornerShape(4.dp))
-            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+            .background(DeepVoid, RoundedCornerShape(4.dp))
+            .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp)
     )
 }

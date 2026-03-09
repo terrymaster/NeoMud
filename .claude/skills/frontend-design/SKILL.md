@@ -40,3 +40,19 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 **IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
 
 Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+
+## NeoMud-Specific Design System
+
+When building NeoMud game client UI (Kotlin/Compose), **always** consult the design system document at `.claude/skills/frontend-design/DESIGN_SYSTEM.md`. This file defines:
+
+- The **Stone & Torchlight** color palette (forged iron, worn leather, torchlight gold)
+- Stone frame drawing pattern (beveled edges, corner rivets, runic inner glow)
+- Panel backgrounds (vertical gradients from WornLeather through DeepVoid)
+- Button styles (stone-beveled with `drawBehind`, NOT Material3 Button)
+- Section dividers (runic ornamental `── ✦ ──`)
+- Typography hierarchy (BurnishedGold titles, TorchAmber headers, BoneWhite body)
+- Custom progress bars (NOT Material3 LinearProgressIndicator)
+- Animation patterns (pulsing highlights, consumable flash)
+- Spacing rhythm (10dp sections, 3dp items, 6dp header gap)
+
+**Every new NeoMud panel MUST use the stone frame, palette, and patterns defined there.** Do not fall back to Material3 defaults or cyan/terminal-style borders.

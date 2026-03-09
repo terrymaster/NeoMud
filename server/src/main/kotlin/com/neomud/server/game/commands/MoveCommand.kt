@@ -131,11 +131,12 @@ class MoveCommand(
             session.send(ServerMessage.AttackModeUpdate(false))
         }
 
-        // Trigger pursuit: hostile NPCs engaged with this player chase them
+        // Trigger pursuit: hostile non-idle NPCs that detected this player chase them.
+        // Idle NPCs (bosses) guard their room and never pursue.
         if (!sneaking && movementTrailManager != null) {
-            val engagedHostiles = npcManager.getLivingHostileNpcsInRoom(currentRoomId)
-                .filter { playerName in it.engagedPlayerIds && it.originalBehavior == null }
-            for (npc in engagedHostiles) {
+            val detectingHostiles = npcManager.getLivingHostileNpcsInRoom(currentRoomId)
+                .filter { it.behaviorType != "idle" && it.originalBehavior == null }
+            for (npc in detectingHostiles) {
                 npcManager.engagePursuit(npc.id, playerName, movementTrailManager, sessionManager)
             }
         }
