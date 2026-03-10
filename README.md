@@ -3,16 +3,16 @@
 A love letter to the MUDs of the '90s, built with modern tools and vibes. 100% vibe-coded with AI.
 
 <p align="center">
-  <img src="docs/screenshots/client_exploration.png" width="230" alt="Exploring the Whispering Forest — room art, minimap, and game log" />
-  <img src="docs/screenshots/client_combat.png" width="230" alt="Combat with spells, skills, and loot drops" />
+  <img src="docs/screenshots/splashscreen.png" width="400" alt="Login screen — forge splash with Stone & Torchlight UI" />
+  <img src="docs/screenshots/town_square.png" width="400" alt="Town Square — room art, NPC sprites, minimap, and game log" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/client_character.png" width="230" alt="Character sheet with stats, equipment, and skills" />
-  <img src="docs/screenshots/client_landscape.png" width="500" alt="Landscape mode — side-by-side room art and game log" />
+  <img src="docs/screenshots/whispering_forest.png" width="400" alt="Combat in the Whispering Forest — backstab from stealth" />
+  <img src="docs/screenshots/character_sheet.png" width="400" alt="Character sheet — stone-themed stats, vitals, skills, and equipment" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/maker_zones.png" width="500" alt="Maker world map — all zones on a shared coordinate grid" />
-  <img src="docs/screenshots/maker_npcs.png" width="500" alt="Maker NPC editor with patrol route visualization" />
+  <img src="docs/screenshots/maker_zones.png" width="400" alt="Maker world map — all zones on a shared coordinate grid" />
+  <img src="docs/screenshots/maker_npcs.png" width="400" alt="Maker NPC editor with patrol route visualization" />
 </p>
 
 ## What Is This?
