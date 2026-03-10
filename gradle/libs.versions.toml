@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.3.10"
-compose-multiplatform = "1.10.1"
+compose-multiplatform = "1.10.2"
 ktor = "3.4.0"
 exposed = "1.0.0"
 sqlite = "3.51.2.0"
