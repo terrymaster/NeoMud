@@ -172,65 +172,159 @@ NeoMud/
 
 ## Running It
 
-### Prerequisites
-- JDK 21 (e.g., Amazon Corretto)
-- Android SDK with platform 34+
-- Android emulator or device (min SDK 26)
-- Node.js 18+ (for the Maker)
+There are two ways to play: **download the fat JAR** (easiest — just need Java) or **build from source** (for development).
 
-### macOS Setup
+---
+
+### Quick Start: Fat JAR
+
+The server ships as a self-contained fat JAR with the default world bundled inside. No cloning, no Gradle, no build steps.
+
+**Prerequisites:** JDK 21+ (e.g., [Amazon Corretto](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html))
 
 ```bash
-# Install JDK 21 via Homebrew
+# Build the fat JAR (from source checkout)
+./gradlew :server:shadowJar
+
+# Run from anywhere — no working directory requirements
+java -jar server/build/libs/neomud-server.jar
+```
+
+The server starts on port 8080 with defaults:
+- WebSocket: `ws://localhost:8080/game`
+- Health check: `http://localhost:8080/health`
+- Database: `neomud.db` in the current directory
+- World: extracted from the bundled classpath resource
+
+#### CLI Options
+
+```
+Usage: java -jar neomud-server.jar [options]
+
+Options:
+  --port, -p <port>       Server port (default: 8080, env: NEOMUD_PORT)
+  --world, -w <path>      World bundle .nmd file (default: bundled world, env: NEOMUD_WORLD)
+  --db <path>             SQLite database path (default: neomud.db, env: NEOMUD_DB)
+  --admins <users>        Comma-separated admin usernames (env: NEOMUD_ADMINS)
+  --help, -h              Show this help message
+```
+
+Examples:
+```bash
+java -jar neomud-server.jar --port 9090 --admins alice,bob
+java -jar neomud-server.jar --world custom-world.nmd --db /data/neomud.db
+NEOMUD_PORT=9090 java -jar neomud-server.jar   # env vars work too
+```
+
+---
+
+### Development Setup
+
+For building from source, running clients, or working on the Maker.
+
+#### Prerequisites
+
+| Component | Requirement |
+|-----------|-------------|
+| Server | JDK 21 (e.g., Amazon Corretto) |
+| Android client | JDK 21 + Android SDK (platform 34+) + emulator or device (min SDK 26) |
+| Desktop client | JDK 21 (no extra dependencies) |
+| Maker | Node.js 18+ |
+
+#### macOS
+
+```bash
+# JDK 21
 brew install --cask corretto@21
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 
-# Install Android SDK via Homebrew (or use Android Studio)
+# Android SDK (or install Android Studio which bundles it)
 brew install --cask android-commandlinetools
 sdkmanager "platforms;android-34" "build-tools;34.0.0"
 export ANDROID_HOME=$HOME/Library/Android/sdk
 
-# Add to your shell profile (~/.zshrc or ~/.bash_profile) to persist:
+# Persist in shell profile
 echo 'export JAVA_HOME=$(/usr/libexec/java_home -v 21)' >> ~/.zshrc
 echo 'export ANDROID_HOME=$HOME/Library/Android/sdk' >> ~/.zshrc
 
-# Install Node.js (for the Maker)
+# Node.js (for the Maker)
 brew install node@18
-
-# After cloning, generate the Prisma client before running the Maker:
-cd maker && npm install   # postinstall runs prisma generate automatically
 ```
 
-### Server
+#### Windows
+
+```powershell
+# Install JDK 21 from https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html
+# Set JAVA_HOME in System Environment Variables to the JDK install path
+
+# Install Android Studio from https://developer.android.com/studio
+# Set ANDROID_HOME in System Environment Variables (typically %LOCALAPPDATA%\Android\Sdk)
+
+# Install Node.js from https://nodejs.org/ (LTS 18+)
+```
+
+#### Linux
+
 ```bash
-export JAVA_HOME=/path/to/jdk21
-./gradlew packageWorld --rerun-tasks   # Build the .nmd world bundle
+# JDK 21 (Ubuntu/Debian)
+sudo apt install -y openjdk-21-jdk
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+
+# Android SDK (or install Android Studio)
+sudo apt install -y android-sdk
+export ANDROID_HOME=$HOME/Android/Sdk
+
+# Node.js 18+
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+#### Server (Dev Mode)
+
+```bash
+./gradlew packageWorld --rerun-tasks   # Build the .nmd world bundle from source
 ./gradlew :server:run                  # Starts on :8080, WebSocket at /game
 ```
 
-### Client (Android)
-```bash
-./gradlew :client:installDebug
-```
-Connect to `10.0.2.2:8080` from the emulator (or your server's IP from a device).
+The dev server loads the world from `server/build/worlds/default-world.nmd` (built by `packageWorld` from `maker/default_world_src/`). You must re-run `packageWorld --rerun-tasks` after any change to world data files.
 
-### Client (Desktop)
-```bash
-./gradlew :client:run
-```
-Launches a desktop window — defaults to `127.0.0.1:8080`.
+#### Client (Android)
 
-### Maker
+```bash
+./gradlew :client:installDebug   # Build and install on connected device/emulator
+```
+
+From an Android emulator, connect to `10.0.2.2:8080`. From a physical device on the same network, use your machine's local IP (e.g., `192.168.1.x:8080`). The host and port are configurable on the login screen.
+
+#### Client (Desktop)
+
+```bash
+./gradlew :client:run   # Launches a desktop window (JVM)
+```
+
+Defaults to `127.0.0.1:8080`. The host and port are configurable on the login screen. Works on Windows, macOS, and Linux — no Android SDK required.
+
+To build native installers:
+
+```bash
+./gradlew :client:packageMsi    # Windows .msi
+./gradlew :client:packageDmg    # macOS .dmg
+./gradlew :client:packageDeb    # Linux .deb
+```
+
+#### Maker (World Editor)
+
 ```bash
 cd maker
-npm install
-npm run dev
+npm install          # postinstall runs prisma generate automatically
+npm run dev          # http://localhost:5173
 ```
-Opens the world editor at `http://localhost:5173`. On first run, it auto-imports the default world.
 
-### Tests
+On first run, it auto-imports the default world. The Maker is a standalone web application — it has its own database and exports `.nmd` bundles that the server consumes.
+
+#### Tests
+
 ```bash
-export JAVA_HOME=/path/to/jdk21
 ./gradlew :shared:jvmTest :server:test   # Server + shared tests (537 tests)
 cd maker && npx vitest run               # Maker tests (293 tests)
 ```
