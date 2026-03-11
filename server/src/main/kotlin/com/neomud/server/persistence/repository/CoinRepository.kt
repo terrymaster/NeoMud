@@ -9,10 +9,10 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.slf4j.LoggerFactory
 
-class CoinRepository {
+open class CoinRepository {
     private val logger = LoggerFactory.getLogger(CoinRepository::class.java)
 
-    fun getCoins(playerName: String): Coins = transaction {
+    open fun getCoins(playerName: String): Coins = transaction {
         PlayerCoinsTable.selectAll().where {
             PlayerCoinsTable.playerName eq playerName
         }.firstOrNull()?.let { row ->

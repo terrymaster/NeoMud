@@ -59,7 +59,7 @@ open class InventoryRepository(private val itemCatalog: ItemCatalog) {
         true
     }
 
-    fun removeItem(playerName: String, itemId: String, quantity: Int = 1): Boolean = transaction {
+    open fun removeItem(playerName: String, itemId: String, quantity: Int = 1): Boolean = transaction {
         val existing = InventoryTable.selectAll().where {
             (InventoryTable.playerName eq playerName) and
             (InventoryTable.itemId eq itemId) and
@@ -166,7 +166,7 @@ open class InventoryRepository(private val itemCatalog: ItemCatalog) {
         true
     }
 
-    fun getEquippedItems(playerName: String): Map<String, String> = transaction {
+    open fun getEquippedItems(playerName: String): Map<String, String> = transaction {
         InventoryTable.selectAll().where {
             (InventoryTable.playerName eq playerName) and
             (InventoryTable.equipped eq true)

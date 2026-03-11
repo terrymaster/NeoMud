@@ -22,12 +22,14 @@ import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.SpellCatalog
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.ActiveEffect
+import com.neomud.shared.model.Direction
 import com.neomud.shared.model.EffectType
 import com.neomud.shared.model.GroundItem
 import com.neomud.shared.model.RoomId
 import com.neomud.shared.protocol.ServerMessage
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class GameLoop(
     private val sessionManager: SessionManager,
@@ -58,6 +60,19 @@ class GameLoop(
     private val broadcastedWarnings = mutableSetOf<Int>()
 
     val isShuttingDown: Boolean get() = shutdownSecondsRemaining >= 0
+
+    // Pending player departures for NPC pursuit processing during tick
+    data class PendingDeparture(
+        val playerName: String,
+        val fromRoomId: String,
+        val direction: Direction
+    )
+
+    private val pendingDepartures = ConcurrentLinkedQueue<PendingDeparture>()
+
+    fun recordDeparture(playerName: String, fromRoomId: String, direction: Direction) {
+        pendingDepartures.add(PendingDeparture(playerName, fromRoomId, direction))
+    }
 
     /**
      * Initiate a graceful shutdown countdown.
@@ -167,6 +182,19 @@ class GameLoop(
             }
         }
 
+        // 0b. Process pending departures — trigger NPC pursuit before NPC behavior
+        val departures = mutableListOf<PendingDeparture>()
+        while (true) { departures.add(pendingDepartures.poll() ?: break) }
+        if (movementTrailManager != null) {
+            for (departure in departures) {
+                val detectingHostiles = npcManager.getLivingHostileNpcsInRoom(departure.fromRoomId)
+                    .filter { it.behaviorType != "idle" && it.originalBehavior == null }
+                for (npc in detectingHostiles) {
+                    npcManager.engagePursuit(npc.id, departure.playerName, movementTrailManager, sessionManager)
+                }
+            }
+        }
+
         // 1. NPC behavior
         // Collect rooms with visible players so hostile NPCs stay to fight
         val roomsWithVisiblePlayers = sessionManager.getAllAuthenticatedSessions()
@@ -264,6 +292,10 @@ class GameLoop(
                 is PendingSkill.Sneak -> {
                     session.pendingSkill = null
                     resolveSneak(session)
+                }
+                is PendingSkill.PickLock -> {
+                    session.pendingSkill = null
+                    resolvePickLock(session, skill.targetId)
                 }
                 else -> {} // Bash/Kick handled by CombatManager
             }
@@ -1039,6 +1071,55 @@ class GameLoop(
             ServerMessage.PlayerLeft(playerName, roomId, com.neomud.shared.model.Direction.NORTH),
             exclude = playerName
         )
+    }
+
+    private suspend fun resolvePickLock(session: PlayerSession, targetId: String) {
+        val roomId = session.currentRoomId ?: return
+        val room = worldGraph.getRoom(roomId) ?: return
+
+        session.skillCooldowns["PICK_LOCK"] = GameConfig.Skills.PICK_LOCK_COOLDOWN_TICKS
+
+        val stats = session.effectiveStats()
+        val roll = (1..GameConfig.Skills.PICK_LOCK_DICE_SIZE).random()
+        val check = stats.agility + stats.intellect / GameConfig.Skills.PICK_LOCK_INT_DIVISOR + roll
+
+        if (targetId.startsWith("feature:")) {
+            val featureId = targetId.removePrefix("feature:")
+            val interactableDefs = worldGraph.getInteractableDefs(roomId)
+            val feat = interactableDefs.find { it.id == featureId }
+            if (feat == null) {
+                try { session.send(ServerMessage.SystemMessage("You don't see anything like that to pick.")) } catch (_: Exception) {}
+                return
+            }
+            if (check >= feat.difficulty) {
+                try { session.send(ServerMessage.SystemMessage("You successfully pick the lock on the ${feat.label}.")) } catch (_: Exception) {}
+            } else {
+                val failMsg = feat.failureMessage.ifEmpty { "You fail to pick the lock on the ${feat.label}." }
+                try { session.send(ServerMessage.SystemMessage(failMsg)) } catch (_: Exception) {}
+            }
+            return
+        }
+
+        if (targetId.startsWith("exit:")) {
+            val dirName = targetId.removePrefix("exit:")
+            val direction = try { Direction.valueOf(dirName) } catch (_: IllegalArgumentException) {
+                try { session.send(ServerMessage.SystemMessage("Invalid direction: $dirName")) } catch (_: Exception) {}
+                return
+            }
+            val difficulty = room.lockedExits[direction]
+            if (difficulty == null) {
+                try { session.send(ServerMessage.SystemMessage("${direction.lockedExitPhrase.replaceFirstChar { it.uppercase() }} is not locked.")) } catch (_: Exception) {}
+                return
+            }
+            if (check >= difficulty) {
+                worldGraph.unlockExit(roomId, direction)
+                try { session.send(ServerMessage.SystemMessage("You pick the lock on ${direction.lockedExitPhrase}.")) } catch (_: Exception) {}
+                // Refresh room info for all players in the room so they see the unlocked exit
+                resendRoomInfoToPlayersInRoom(roomId)
+            } else {
+                try { session.send(ServerMessage.SystemMessage("You fail to pick the lock.")) } catch (_: Exception) {}
+            }
+        }
     }
 
     private suspend fun meditationPhase() {

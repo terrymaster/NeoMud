@@ -578,6 +578,23 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testDropItemRoundTrip() {
+        val original = ClientMessage.DropItem("item:health_potion", 2)
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testDropItemDefaultQuantity() {
+        val original = ClientMessage.DropItem("item:wolf_pelt")
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+        assertEquals(1, (decoded as ClientMessage.DropItem).quantity)
+    }
+
+    @Test
     fun testSneakToggleRoundTrip() {
         val original = ClientMessage.SneakToggle(true)
         val json = MessageSerializer.encodeClientMessage(original)

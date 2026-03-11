@@ -6,12 +6,12 @@ import com.neomud.server.game.RestUtils
 import com.neomud.server.game.StealthUtils
 
 import com.neomud.server.game.RoomFilter
+import com.neomud.server.session.PendingSkill
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.game.npc.NpcManager
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.model.Direction
-import com.neomud.shared.model.Stats
 import com.neomud.shared.protocol.ServerMessage
 
 // TODO: Consider lockable containers/chests as future pickable targets
@@ -20,9 +20,13 @@ class PickLockCommand(
     private val sessionManager: SessionManager,
     private val npcManager: NpcManager
 ) {
-    suspend fun execute(session: PlayerSession, targetId: String? = null): Boolean {
-        val roomId = session.currentRoomId ?: return false
-        val player = session.player ?: return false
+    /**
+     * Validates prerequisites and queues a PendingSkill.PickLock for tick resolution.
+     * Discovery/prompting for multiple targets remains immediate (interactive UI flow).
+     */
+    suspend fun execute(session: PlayerSession, targetId: String? = null) {
+        val roomId = session.currentRoomId ?: return
+        val player = session.player ?: return
 
         // Picking a lock breaks meditation, rest, and stealth
         MeditationUtils.breakMeditation(session, "You stop meditating.")
@@ -32,10 +36,10 @@ class PickLockCommand(
         val cooldown = session.skillCooldowns["PICK_LOCK"]
         if (cooldown != null && cooldown > 0) {
             session.send(ServerMessage.SystemMessage("Pick Lock is on cooldown ($cooldown ticks remaining)."))
-            return false
+            return
         }
 
-        val room = worldGraph.getRoom(roomId) ?: return false
+        val room = worldGraph.getRoom(roomId) ?: return
 
         // Build list of pickable locks: regular locked exits + discovered hidden+locked exits
         // Exclude unpickable exits (interaction-only locks)
@@ -48,7 +52,7 @@ class PickLockCommand(
 
         if (pickableExits.isEmpty()) {
             session.send(ServerMessage.SystemMessage("You don't see anything locked here."))
-            return false
+            return
         }
 
         // Build list of pickable interactables (features with difficulty checks)
@@ -57,113 +61,66 @@ class PickLockCommand(
 
         // Resolve target
         if (targetId != null && targetId.startsWith("feature:")) {
-            // Picking an interactable lock
             val featureId = targetId.removePrefix("feature:")
             val feat = pickableFeatures.find { it.id == featureId }
             if (feat == null) {
                 session.send(ServerMessage.SystemMessage("You don't see anything like that to pick."))
-                return false
+                return
             }
-
-            setCooldown(session)
-            val check = rollPickLockCheck(session.effectiveStats())
-
-            if (check >= feat.difficulty) {
-                session.send(ServerMessage.SystemMessage("You successfully pick the lock on the ${feat.label}."))
-                // Trigger the interactable's action (e.g. EXIT_OPEN)
-                return true
-            } else {
-                val failMsg = feat.failureMessage.ifEmpty { "You fail to pick the lock on the ${feat.label}." }
-                session.send(ServerMessage.SystemMessage(failMsg))
-                return false
-            }
+            session.pendingSkill = PendingSkill.PickLock(targetId)
+            return
         }
-
-        val direction: Direction
-        val difficulty: Int
 
         if (targetId != null) {
             // Parse "exit:DIRECTION" format
             if (!targetId.startsWith("exit:")) {
                 session.send(ServerMessage.SystemMessage("Invalid lock target."))
-                return false
+                return
             }
             val dirName = targetId.removePrefix("exit:")
             val parsedDir = try { Direction.valueOf(dirName) } catch (_: IllegalArgumentException) {
                 session.send(ServerMessage.SystemMessage("Invalid direction: $dirName"))
-                return false
+                return
             }
             if (parsedDir in unpickable && parsedDir in room.lockedExits) {
                 session.send(ServerMessage.SystemMessage("This lock cannot be picked — it must be opened another way."))
-                return false
+                return
             }
             val diff = pickableExits[parsedDir]
             if (diff == null) {
                 session.send(ServerMessage.SystemMessage("${parsedDir.lockedExitPhrase.replaceFirstChar { it.uppercase() }} is not locked."))
-                return false
+                return
             }
-            direction = parsedDir
-            difficulty = diff
-        } else {
-            // No target specified — discover all locks for the client
-            for (dir in pickableExits.keys) {
-                session.discoverLock(roomId, dir)
-            }
+            // Mark lock as discovered so direction pad and map show it
+            session.discoverLock(roomId, parsedDir)
+            session.pendingSkill = PendingSkill.PickLock(targetId)
+            return
+        }
 
-            val totalTargets = pickableExits.size + pickableFeatures.size
-            if (totalTargets == 1) {
-                // Only one target exists — auto-pick it
-                if (pickableExits.size == 1) {
-                    val entry = pickableExits.entries.first()
-                    direction = entry.key
-                    difficulty = entry.value
-                } else {
-                    val feat = pickableFeatures.first()
-                    setCooldown(session)
-                    val check = rollPickLockCheck(session.effectiveStats())
-                    if (check >= feat.difficulty) {
-                        session.send(ServerMessage.SystemMessage("You successfully pick the lock on the ${feat.label}."))
-                        return true
-                    } else {
-                        val failMsg = feat.failureMessage.ifEmpty { "You fail to pick the lock on the ${feat.label}." }
-                        session.send(ServerMessage.SystemMessage(failMsg))
-                        return false
-                    }
-                }
+        // No target specified — discover all locks for the client
+        for (dir in pickableExits.keys) {
+            session.discoverLock(roomId, dir)
+        }
+
+        val totalTargets = pickableExits.size + pickableFeatures.size
+        if (totalTargets == 1) {
+            // Only one target exists — auto-pick it
+            if (pickableExits.size == 1) {
+                val entry = pickableExits.entries.first()
+                session.discoverLock(roomId, entry.key)
+                session.pendingSkill = PendingSkill.PickLock("exit:${entry.key.name}")
             } else {
-                // Multiple targets — resend RoomInfo with newly discovered locks and prompt
-                val filteredRoom = RoomFilter.forPlayer(room, session, worldGraph)
-                val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(roomId)
-                    .filter { it.name != player.name }
-                val npcsInRoom = npcManager.getNpcsInRoom(roomId)
-                session.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
-                session.send(ServerMessage.SystemMessage("You notice several locks here. Choose a target."))
-                return false
+                val feat = pickableFeatures.first()
+                session.pendingSkill = PendingSkill.PickLock("feature:${feat.id}")
             }
-        }
-
-        // Mark lock as discovered so direction pad and map show it
-        session.discoverLock(roomId, direction)
-
-        setCooldown(session)
-        val check = rollPickLockCheck(session.effectiveStats())
-
-        if (check >= difficulty) {
-            worldGraph.unlockExit(roomId, direction)
-            session.send(ServerMessage.SystemMessage("You pick the lock on ${direction.lockedExitPhrase}."))
-            return true
         } else {
-            session.send(ServerMessage.SystemMessage("You fail to pick the lock."))
-            return false
+            // Multiple targets — resend RoomInfo with newly discovered locks and prompt
+            val filteredRoom = RoomFilter.forPlayer(room, session, worldGraph)
+            val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(roomId)
+                .filter { it.name != player.name }
+            val npcsInRoom = npcManager.getNpcsInRoom(roomId)
+            session.send(ServerMessage.RoomInfo(filteredRoom, playersInRoom, npcsInRoom))
+            session.send(ServerMessage.SystemMessage("You notice several locks here. Choose a target."))
         }
-    }
-
-    private fun setCooldown(session: PlayerSession) {
-        session.skillCooldowns["PICK_LOCK"] = GameConfig.Skills.PICK_LOCK_COOLDOWN_TICKS
-    }
-
-    private fun rollPickLockCheck(stats: Stats): Int {
-        val roll = (1..GameConfig.Skills.PICK_LOCK_DICE_SIZE).random()
-        return stats.agility + stats.intellect / GameConfig.Skills.PICK_LOCK_INT_DIVISOR + roll
     }
 }

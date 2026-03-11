@@ -16,6 +16,7 @@ sealed class PendingSkill {
     data class UseItem(val itemId: String) : PendingSkill()
     data class CastSpell(val spellId: String, val targetId: String?) : PendingSkill()
     object Sneak : PendingSkill()
+    data class PickLock(val targetId: String) : PendingSkill()
 }
 
 class PlayerSession(

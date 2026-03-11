@@ -11,6 +11,7 @@ import com.neomud.server.game.commands.RestCommand
 import com.neomud.server.game.commands.MoveCommand
 import com.neomud.server.game.commands.InteractCommand
 import com.neomud.server.game.commands.PickLockCommand
+import com.neomud.server.game.commands.DropCommand
 import com.neomud.server.game.commands.PickupCommand
 import com.neomud.server.game.commands.SayCommand
 import com.neomud.server.game.commands.SneakCommand
@@ -73,6 +74,7 @@ class CommandProcessor(
     )
     fun setGameLoop(loop: GameLoop) {
         adminCommand.setGameLoop(loop)
+        moveCommand.departureRecorder = loop::recordDeparture
     }
 
     private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, skillCatalog, classCatalog, movementTrailManager)
@@ -86,6 +88,7 @@ class CommandProcessor(
     private val restCommand = RestCommand()
     private val trackCommand = TrackCommand()
     private val pickLockCommand = PickLockCommand(worldGraph, sessionManager, npcManager)
+    private val dropCommand = DropCommand(roomItemManager, inventoryRepository, coinRepository, itemCatalog, sessionManager)
     private val interactCommand = InteractCommand(worldGraph, sessionManager, npcManager, roomItemManager, lootService, lootTableCatalog)
 
     suspend fun sendCatalogSync(session: PlayerSession) {
@@ -142,6 +145,9 @@ class CommandProcessor(
             is ClientMessage.PickupCoins -> {
                 requireAuth(session) { pickupCommand.handlePickupCoins(session, message.coinType) }
             }
+            is ClientMessage.DropItem -> {
+                requireAuth(session) { dropCommand.execute(session, message.itemId, message.quantity) }
+            }
             is ClientMessage.SneakToggle -> {
                 requireAuth(session) {
                     if (message.enabled && !canUseSkill(session, "SNEAK")) return@requireAuth
@@ -158,10 +164,7 @@ class CommandProcessor(
                         "MEDITATE" -> meditateCommand.execute(session)
                         "REST" -> restCommand.execute(session)
                         "TRACK" -> trackCommand.execute(session, message.targetId)
-                        "PICK_LOCK" -> {
-                            val unlocked = pickLockCommand.execute(session, message.targetId)
-                            if (unlocked) lookCommand.execute(session)
-                        }
+                        "PICK_LOCK" -> pickLockCommand.execute(session, message.targetId)
                         else -> session.send(ServerMessage.SystemMessage("Unknown skill: $skillId"))
                     }
                 }

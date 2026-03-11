@@ -31,6 +31,7 @@ class MoveCommand(
     private val classCatalog: ClassCatalog,
     private val movementTrailManager: com.neomud.server.game.MovementTrailManager? = null
 ) {
+    var departureRecorder: ((String, String, Direction) -> Unit)? = null
     suspend fun execute(session: PlayerSession, direction: Direction) {
         MeditationUtils.breakMeditation(session, "You stop meditating.")
         RestUtils.breakRest(session, "You stop resting.")
@@ -131,14 +132,11 @@ class MoveCommand(
             session.send(ServerMessage.AttackModeUpdate(false))
         }
 
-        // Trigger pursuit: hostile non-idle NPCs that detected this player chase them.
-        // Idle NPCs (bosses) guard their room and never pursue.
-        if (!sneaking && movementTrailManager != null) {
-            val detectingHostiles = npcManager.getLivingHostileNpcsInRoom(currentRoomId)
-                .filter { it.behaviorType != "idle" && it.originalBehavior == null }
-            for (npc in detectingHostiles) {
-                npcManager.engagePursuit(npc.id, playerName, movementTrailManager, sessionManager)
-            }
+        // Record departure for tick-based NPC pursuit processing.
+        // Pursuit engagement is deferred to the game tick so NPCs evaluate
+        // pursuit during their behavior phase, not between ticks.
+        if (!sneaking) {
+            departureRecorder?.invoke(playerName, currentRoomId, direction)
         }
 
         // Broadcast enter to new room (only if not sneaking)
