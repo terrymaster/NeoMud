@@ -418,14 +418,7 @@ internal fun targetableSlottedSpells(
         .filter { it.targetType != TargetType.SELF && it.school in classSchools }
 }
 
-private fun schoolColor(school: String): Color = when (school) {
-    "mage" -> Color(0xFF5599FF)
-    "priest" -> Color(0xFFFFDD44)
-    "druid" -> Color(0xFF55CC55)
-    "kai" -> Color(0xFFFF7744)
-    "bard" -> Color(0xFFCC77FF)
-    else -> Color(0xFF9B59FF)
-}
+// schoolColor() is defined in SpellBar.kt (same package)
 
 @Composable
 private fun NpcContextMenu(

@@ -883,7 +883,7 @@ private data class SkillButtonInfo(
 )
 
 private val SKILL_BUTTON_MAP = mapOf(
-    "BASH" to SkillButtonInfo("\uD83D\uDCA5", Color(0xFFFF8833)),        // 💥 Orange
+    "BASH" to SkillButtonInfo("\u270A", Color(0xFFFF8833)),              // ✊ Fist Orange
     "KICK" to SkillButtonInfo("\uD83E\uDDB6", Color(0xFFFF5533)),        // 🦶 Red-orange
     "SNEAK" to SkillButtonInfo("\uD83E\uDDE5", Color(0xFF888888)),       // 🧥 Gray
     "MEDITATE" to SkillButtonInfo("\uD83E\uDDD8", Color(0xFF7755CC)),    // 🧘 Blue-purple
@@ -1094,14 +1094,7 @@ private fun SpellUtilityButton(
     if (!hasMagic) return
 
     val primarySchool = classDef?.magicSchools?.keys?.firstOrNull() ?: ""
-    val spellColor = when (primarySchool) {
-        "mage" -> Color(0xFF5599FF)
-        "priest" -> Color(0xFFFFDD44)
-        "druid" -> Color(0xFF55CC55)
-        "kai" -> Color(0xFFFF7744)
-        "bard" -> Color(0xFFCC77FF)
-        else -> Color(0xFF9B59FF)
-    }
+    val spellColor = com.neomud.client.ui.components.schoolColor(primarySchool)
     val stoneBg = Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark))
     Box(
         modifier = Modifier
@@ -1112,7 +1105,7 @@ private fun SpellUtilityButton(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "\u2728",
+            text = com.neomud.client.ui.components.schoolIcon(primarySchool),
             fontSize = 16.sp,
             color = spellColor
         )

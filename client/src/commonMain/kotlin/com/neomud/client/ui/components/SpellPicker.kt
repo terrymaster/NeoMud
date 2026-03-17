@@ -22,14 +22,7 @@ import com.neomud.shared.model.SpellDef
 
 private fun schoolDisplayName(school: String): String = school.replaceFirstChar { it.uppercase() }
 
-private fun schoolColor(school: String): Color = when (school) {
-    "mage" -> Color(0xFF5599FF)
-    "priest" -> Color(0xFFFFDD44)
-    "druid" -> Color(0xFF55CC55)
-    "kai" -> Color(0xFFFF7744)
-    "bard" -> Color(0xFFCC77FF)
-    else -> MudColors.spell
-}
+// schoolColor() and spellIcon() are defined in SpellBar.kt (same package)
 
 @Composable
 fun SpellPicker(
@@ -142,16 +135,9 @@ private fun SpellRow(
             .padding(vertical = 6.dp, horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // School icon
+        // Spell icon
         Text(
-            text = when (school) {
-                "mage" -> "\u2728"
-                "priest" -> "\u2721"
-                "druid" -> "\uD83C\uDF3F"
-                "kai" -> "\uD83D\uDD25"
-                "bard" -> "\uD83C\uDFB5"
-                else -> "\u2B50"
-            },
+            text = spellIcon(spell.id),
             fontSize = 16.sp,
             modifier = Modifier.width(24.dp)
         )
