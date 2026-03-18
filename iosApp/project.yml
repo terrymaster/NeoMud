@@ -16,6 +16,12 @@ targets:
     info:
       path: NeoMud/Info.plist
       properties:
+        CFBundleIdentifier: com.neomud.NeoMud
+        CFBundleExecutable: NeoMud
+        CFBundleName: NeoMud
+        CFBundlePackageType: APPL
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
         CADisableMinimumFrameDurationOnPhone: true
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
