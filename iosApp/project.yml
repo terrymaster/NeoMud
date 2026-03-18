@@ -22,14 +22,21 @@ targets:
         CFBundlePackageType: APPL
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
+        CFBundleDevelopmentRegion: $(DEVELOPMENT_LANGUAGE)
+        CFBundleInfoDictionaryVersion: "6.0"
         UILaunchScreen: {}
         CADisableMinimumFrameDurationOnPhone: true
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     settings:
       FRAMEWORK_SEARCH_PATHS:
+        - "$(inherited)"
         - "$(SRCROOT)/../client/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+      LD_RUNPATH_SEARCH_PATHS:
+        - "$(inherited)"
+        - "@executable_path/Frameworks"
       OTHER_LDFLAGS:
+        - "$(inherited)"
         - "-framework"
         - "NeoMudClient"
     dependencies:
