@@ -9,6 +9,9 @@ build/
 *.iws
 *.ipr
 out/
+**/xcuserdata/
+**/*xcuserstate
+DerivedData
 
 # Android
 local.properties
