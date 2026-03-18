@@ -1,6 +1,11 @@
 package com.neomud.client.ui.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -58,6 +63,9 @@ fun NeoMudApp(
         }
     }
 
+    // Dark background fills edge-to-edge (including safe area zones on iOS)
+    // so notch/home indicator areas show dark instead of white
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF080604))) {
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
             // Play intro BGM from embedded resource (no server needed)
@@ -118,4 +126,5 @@ fun NeoMudApp(
             )
         }
     }
+    } // end edge-to-edge dark background
 }
