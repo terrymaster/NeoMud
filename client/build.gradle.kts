@@ -197,6 +197,12 @@ compose.desktop {
 tasks.register<Exec>("startEmulator") {
     group = "emulator"
     description = "Start the Android emulator"
-    val emulatorPath = "${System.getenv("LOCALAPPDATA")}\\Android\\Sdk\\emulator\\emulator.exe"
-    commandLine(emulatorPath, "-avd", "Medium_Phone_API_35")
+    val androidHome = System.getenv("ANDROID_HOME")
+        ?: System.getenv("ANDROID_SDK_ROOT")
+        ?: if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
+            "${System.getProperty("user.home")}/Library/Android/sdk"
+        else
+            "${System.getenv("LOCALAPPDATA")}/Android/Sdk"
+    val emulatorBin = if (org.gradle.internal.os.OperatingSystem.current().isWindows) "emulator.exe" else "emulator"
+    commandLine("$androidHome/emulator/$emulatorBin", "-avd", "Medium_Phone_API_35")
 }
