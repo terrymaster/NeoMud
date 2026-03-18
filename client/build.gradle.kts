@@ -224,7 +224,7 @@ tasks.register<Exec>("installIosClient") {
         "-project", "NeoMud.xcodeproj",
         "-scheme", "NeoMud",
         "-configuration", "Debug",
-        "-destination", "platform=iOS Simulator,name=iPhone 16",
-        "build"
+        "-destination", "platform=iOS Simulator,name=iPhone 17",
+        "clean", "build"
     )
 }
