@@ -206,3 +206,25 @@ tasks.register<Exec>("startEmulator") {
     val emulatorBin = if (org.gradle.internal.os.OperatingSystem.current().isWindows) "emulator.exe" else "emulator"
     commandLine("$androidHome/emulator/$emulatorBin", "-avd", "Medium_Phone_API_35")
 }
+
+tasks.register<Exec>("startSimulator") {
+    group = "simulator"
+    description = "Boot the iOS Simulator and open the Simulator app"
+    onlyIf { org.gradle.internal.os.OperatingSystem.current().isMacOsX }
+    commandLine("open", "-a", "Simulator")
+}
+
+tasks.register<Exec>("installIosClient") {
+    group = "simulator"
+    description = "Build and install the iOS client on the Simulator"
+    onlyIf { org.gradle.internal.os.OperatingSystem.current().isMacOsX }
+    workingDir(project.rootDir.resolve("iosApp"))
+    commandLine(
+        "xcodebuild",
+        "-project", "NeoMud.xcodeproj",
+        "-scheme", "NeoMud",
+        "-configuration", "Debug",
+        "-destination", "platform=iOS Simulator,name=iPhone 16",
+        "build"
+    )
+}
