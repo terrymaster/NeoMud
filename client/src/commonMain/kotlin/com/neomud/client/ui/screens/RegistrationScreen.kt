@@ -150,10 +150,11 @@ fun RegistrationScreen(
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.5f))
         )
-        // Main stone-framed card
+        // Main stone-framed card (safe area padding keeps card clear of notch/home indicator)
         val borderPx = 4.dp
         Box(
             modifier = Modifier
+                .windowInsetsPadding(WindowInsets.safeDrawing)
                 .widthIn(max = 420.dp)
                 .fillMaxWidth(0.95f)
                 .fillMaxHeight(0.95f)

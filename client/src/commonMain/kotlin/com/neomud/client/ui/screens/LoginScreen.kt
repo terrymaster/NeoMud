@@ -98,7 +98,7 @@ fun LoginScreen(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // Splash background image
+        // Splash background image (edge-to-edge, behind safe areas)
         Image(
             painter = painterResource(Res.drawable.splash_forge),
             contentDescription = null,
@@ -111,10 +111,11 @@ fun LoginScreen(
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.5f))
         )
-        // Center card with stone frame
+        // Center card with stone frame (safe area padding keeps card clear of notch/home indicator)
         val borderPx = 4.dp
         Box(
             modifier = Modifier
+                .windowInsetsPadding(WindowInsets.safeDrawing)
                 .widthIn(max = 360.dp)
                 .fillMaxWidth(0.9f)
                 .drawBehind { drawStoneFrame(borderPx.toPx()) }
