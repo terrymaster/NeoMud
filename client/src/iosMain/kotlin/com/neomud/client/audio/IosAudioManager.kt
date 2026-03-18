@@ -2,10 +2,12 @@ package com.neomud.client.audio
 
 import com.neomud.client.platform.PlatformAudioManager
 import com.neomud.client.platform.PlatformLogger
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.*
 import platform.AVFAudio.*
 import platform.Foundation.*
 
+@OptIn(ExperimentalForeignApi::class)
 class IosAudioManager : PlatformAudioManager {
     private val tag = "IosAudioManager"
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
