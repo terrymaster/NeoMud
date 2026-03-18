@@ -16,6 +16,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -52,7 +53,7 @@ import com.neomud.client.ui.components.KickDirectionPicker
 import com.neomud.client.ui.components.LockTargetPicker
 import com.neomud.client.ui.components.MapOverlay
 import com.neomud.client.ui.components.PlayerTooltip
-import com.neomud.client.ui.components.EmojiText
+import com.neomud.client.ui.components.MudIcons
 import com.neomud.client.viewmodel.GameViewModel
 import com.neomud.shared.model.Direction
 import com.neomud.shared.model.PlayerInfo
@@ -471,7 +472,7 @@ private fun GameScreenPortrait(
                 ) {
                     if (showTrainerButton) {
                         RoomOverlayButton(
-                            icon = "\u2B50",
+                            icon = MudIcons.Trainer,
                             label = "Train",
                             color = Color(0xFFFFD700),
                             onClick = { gameViewModel.interactTrainer() }
@@ -479,7 +480,7 @@ private fun GameScreenPortrait(
                     }
                     if (showVendorButton) {
                         RoomOverlayButton(
-                            icon = "\uD83D\uDEE0\uFE0F",
+                            icon = MudIcons.Vendor,
                             label = "Shop",
                             color = Color(0xFFCC8833),
                             onClick = { gameViewModel.interactVendor() }
@@ -720,7 +721,7 @@ private fun GameScreenLandscape(
                     ) {
                         if (showTrainerButton) {
                             RoomOverlayButton(
-                                icon = "\u2B50",
+                                icon = MudIcons.Trainer,
                                 label = "Train",
                                 color = Color(0xFFFFD700),
                                 onClick = { gameViewModel.interactTrainer() }
@@ -728,7 +729,7 @@ private fun GameScreenLandscape(
                         }
                         if (showVendorButton) {
                             RoomOverlayButton(
-                                icon = "\uD83D\uDEE0\uFE0F",
+                                icon = MudIcons.Vendor,
                                 label = "Shop",
                                 color = Color(0xFFCC8833),
                                 onClick = { gameViewModel.interactVendor() }
@@ -879,23 +880,23 @@ private fun GameScreenLandscape(
 
 /** Skill icon/color mapping for action buttons */
 private data class SkillButtonInfo(
-    val icon: String,
+    val icon: ImageVector,
     val activeColor: Color
 )
 
 private val SKILL_BUTTON_MAP = mapOf(
-    "BASH" to SkillButtonInfo("\u270A", Color(0xFFFF8833)),              // ✊ Fist Orange
-    "KICK" to SkillButtonInfo("\uD83E\uDDB6", Color(0xFFFF5533)),        // 🦶 Red-orange
-    "SNEAK" to SkillButtonInfo("\uD83E\uDDE5", Color(0xFF888888)),       // 🧥 Gray
-    "MEDITATE" to SkillButtonInfo("\uD83E\uDDD8", Color(0xFF7755CC)),    // 🧘 Blue-purple
-    "TRACK" to SkillButtonInfo("\uD83D\uDC3E", Color(0xFF55AA55)),       // 🐾 Green
-    "PICK_LOCK" to SkillButtonInfo("\uD83D\uDD13", Color(0xFFCCAA33)),   // 🔓 Gold
-    "REST" to SkillButtonInfo("\uD83D\uDCA4", Color(0xFF55AA77))           // 💤 Green
+    "BASH" to SkillButtonInfo(MudIcons.Bash, Color(0xFFFF8833)),
+    "KICK" to SkillButtonInfo(MudIcons.Kick, Color(0xFFFF5533)),
+    "SNEAK" to SkillButtonInfo(MudIcons.Sneak, Color(0xFF888888)),
+    "MEDITATE" to SkillButtonInfo(MudIcons.Meditate, Color(0xFF7755CC)),
+    "TRACK" to SkillButtonInfo(MudIcons.Track, Color(0xFF55AA55)),
+    "PICK_LOCK" to SkillButtonInfo(MudIcons.PickLock, Color(0xFFCCAA33)),
+    "REST" to SkillButtonInfo(MudIcons.Rest, Color(0xFF55AA77))
 )
 
 @Composable
 private fun ActionButton(
-    icon: String,
+    icon: ImageVector,
     color: Color,
     isActive: Boolean = false,
     enabled: Boolean = true,
@@ -950,7 +951,7 @@ private fun ActionButtonRow(
             else -> Color.Gray
         }
         ActionButton(
-            icon = if (showBackstab) "\uD83D\uDDE1\uFE0F" else "\u2694\uFE0F",
+            icon = MudIcons.Attack,
             color = attackColor,
             isActive = attackMode,
             enabled = hasHostiles || attackMode || showBackstab,
@@ -1042,21 +1043,20 @@ private fun ActionButtonRow(
     } // end Column
 }
 
-private fun interactableStyle(feat: RoomInteractable): Pair<String, Color> {
-    if (feat.icon.isNotEmpty()) return feat.icon to Color(0xFFAABBCC)
+private fun interactableStyle(feat: RoomInteractable): Pair<ImageVector, Color> {
     return when (feat.actionType) {
-        "EXIT_OPEN"      -> "\uD83D\uDD13" to Color(0xFFFFAA00)
-        "TREASURE_DROP"  -> "\uD83D\uDCE6" to Color(0xFFFFD700)
-        "MONSTER_SPAWN"  -> "\u26A0\uFE0F" to Color(0xFFFF4444)
-        "ROOM_EFFECT"    -> "\u2728" to Color(0xFF44DDFF)
-        "TELEPORT"       -> "\uD83C\uDF00" to Color(0xFFAA44FF)
-        else             -> "\u2699\uFE0F" to Color(0xFFAAAAAA)
+        "EXIT_OPEN"      -> MudIcons.ExitOpen to Color(0xFFFFAA00)
+        "TREASURE_DROP"  -> MudIcons.TreasureDrop to Color(0xFFFFD700)
+        "MONSTER_SPAWN"  -> MudIcons.MonsterSpawn to Color(0xFFFF4444)
+        "ROOM_EFFECT"    -> MudIcons.RoomEffect to Color(0xFF44DDFF)
+        "TELEPORT"       -> MudIcons.Teleport to Color(0xFFAA44FF)
+        else             -> MudIcons.InteractDefault to Color(0xFFAAAAAA)
     }
 }
 
 @Composable
 private fun RoomOverlayButton(
-    icon: String,
+    icon: ImageVector,
     label: String,
     color: Color,
     onClick: () -> Unit
@@ -1073,7 +1073,12 @@ private fun RoomOverlayButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            EmojiText(text = icon, fontSize = 14.sp, color = color)
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = color,
+                modifier = Modifier.size(16.dp)
+            )
             Text(
                 text = label,
                 fontSize = 12.sp,
@@ -1105,10 +1110,11 @@ private fun SpellUtilityButton(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        EmojiText(
-            text = com.neomud.client.ui.components.schoolIcon(primarySchool),
-            fontSize = 16.sp,
-            color = spellColor
+        Icon(
+            imageVector = MudIcons.schoolIcon(primarySchool),
+            contentDescription = "Spells",
+            tint = spellColor,
+            modifier = Modifier.size(18.dp)
         )
     }
 }
@@ -1124,10 +1130,11 @@ private fun InventoryIconButton(active: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        EmojiText(
-            text = "\uD83C\uDF92",
-            fontSize = 16.sp,
-            color = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8)
+        Icon(
+            imageVector = MudIcons.Inventory,
+            contentDescription = "Inventory",
+            tint = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8),
+            modifier = Modifier.size(18.dp)
         )
     }
 }
@@ -1143,10 +1150,11 @@ private fun EquipmentIconButton(active: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        EmojiText(
-            text = "\uD83D\uDEE1\uFE0F",
-            fontSize = 16.sp,
-            color = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8)
+        Icon(
+            imageVector = MudIcons.Equipment,
+            contentDescription = "Equipment",
+            tint = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8),
+            modifier = Modifier.size(18.dp)
         )
     }
 }
@@ -1162,10 +1170,11 @@ private fun MapIconButton(active: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        EmojiText(
-            text = "\uD83D\uDDFA\uFE0F",
-            fontSize = 16.sp,
-            color = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8)
+        Icon(
+            imageVector = MudIcons.Map,
+            contentDescription = "Map",
+            tint = if (active) Color(0xFFFFD700) else Color(0xFFA8A8A8),
+            modifier = Modifier.size(18.dp)
         )
     }
 }
@@ -1181,10 +1190,11 @@ private fun SettingsGearButton(onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "\u2699\uFE0F",
-            fontSize = 16.sp,
-            color = Color(0xFFA8A8A8)
+        Icon(
+            imageVector = MudIcons.Settings,
+            contentDescription = "Settings",
+            tint = Color(0xFFA8A8A8),
+            modifier = Modifier.size(18.dp)
         )
     }
 }

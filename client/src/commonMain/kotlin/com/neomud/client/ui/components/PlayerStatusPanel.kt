@@ -5,15 +5,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
-import com.neomud.client.ui.components.EmojiText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neomud.shared.model.ActiveEffect
@@ -52,14 +52,14 @@ fun PlayerStatusPanel(
                 modifier = Modifier.height(14.dp)
             ) {
                 if (isHidden) {
-                    CompactEffectDot(Color(0xFF555555), "\uD83D\uDC41")
+                    CompactEffectDot(Color(0xFF555555), MudIcons.Hidden)
                 }
                 if (isMeditating) {
-                    CompactEffectDot(Color(0xFF7755CC), "\uD83E\uDDD8")
+                    CompactEffectDot(Color(0xFF7755CC), MudIcons.Meditating)
                 }
                 for (effect in activeEffects) {
-                    val (bgColor, _) = effectStyle(effect.type)
-                    CompactEffectDot(bgColor)
+                    val (bgColor, icon) = effectStyle(effect.type)
+                    CompactEffectDot(bgColor, icon)
                 }
             }
 
@@ -135,36 +135,10 @@ fun PlayerStatusPanel(
                 modifier = Modifier.height(18.dp)
             ) {
                 if (isHidden) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF555555).copy(alpha = 0.8f))
-                            .border(1.dp, Color(0xFF888888), CircleShape)
-                    ) {
-                        EmojiText(
-                            text = "\uD83D\uDC41",
-                            fontSize = 10.sp,
-                            color = Color.White
-                        )
-                    }
+                    EffectDot(Color(0xFF555555), Color(0xFF888888), MudIcons.Hidden)
                 }
                 if (isMeditating) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF7755CC).copy(alpha = 0.8f))
-                            .border(1.dp, Color(0xFF9977EE), CircleShape)
-                    ) {
-                        EmojiText(
-                            text = "\uD83E\uDDD8",
-                            fontSize = 10.sp,
-                            color = Color.White
-                        )
-                    }
+                    EffectDot(Color(0xFF7755CC), Color(0xFF9977EE), MudIcons.Meditating)
                 }
                 for (effect in activeEffects) {
                     EffectIcon(effect)
@@ -175,7 +149,7 @@ fun PlayerStatusPanel(
 }
 
 @Composable
-private fun CompactEffectDot(color: Color, label: String? = null) {
+private fun CompactEffectDot(color: Color, icon: ImageVector) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -184,28 +158,50 @@ private fun CompactEffectDot(color: Color, label: String? = null) {
             .background(color.copy(alpha = 0.8f))
             .border(1.dp, color, CircleShape)
     ) {
-        if (label != null) {
-            EmojiText(text = label, fontSize = 8.sp, color = Color.White)
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(9.dp)
+        )
     }
 }
 
-private fun effectStyle(type: EffectType): Pair<Color, String> = when (type) {
-    EffectType.POISON -> Color(0xFF4CAF50) to "\u2620"
-    EffectType.HEAL_OVER_TIME -> Color(0xFFE91E63) to "\u2764"
-    EffectType.BUFF_STRENGTH -> Color(0xFFF44336) to "\u2694"
-    EffectType.BUFF_AGILITY -> Color(0xFFFFEB3B) to "\u26A1"
-    EffectType.BUFF_INTELLECT -> Color(0xFF2196F3) to "\uD83D\uDCA0"
-    EffectType.BUFF_WILLPOWER -> Color(0xFF9C27B0) to "\uD83D\uDD2E"
-    EffectType.HASTE -> Color(0xFF00BCD4) to "\u21BB"
-    EffectType.DAMAGE -> Color(0xFFFF5722) to "\uD83D\uDD25"
-    EffectType.MANA_REGEN -> Color(0xFF3F51B5) to "\u2728"
-    EffectType.MANA_DRAIN -> Color(0xFF7B1FA2) to "\uD83C\uDF00"
+@Composable
+private fun EffectDot(bgColor: Color, borderColor: Color, icon: ImageVector) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(18.dp)
+            .clip(CircleShape)
+            .background(bgColor.copy(alpha = 0.8f))
+            .border(1.dp, borderColor, CircleShape)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(12.dp)
+        )
+    }
+}
+
+private fun effectStyle(type: EffectType): Pair<Color, ImageVector> = when (type) {
+    EffectType.POISON -> Color(0xFF4CAF50) to MudIcons.EffectPoison
+    EffectType.HEAL_OVER_TIME -> Color(0xFFE91E63) to MudIcons.EffectHealOverTime
+    EffectType.BUFF_STRENGTH -> Color(0xFFF44336) to MudIcons.EffectBuffStrength
+    EffectType.BUFF_AGILITY -> Color(0xFFFFEB3B) to MudIcons.EffectBuffAgility
+    EffectType.BUFF_INTELLECT -> Color(0xFF2196F3) to MudIcons.EffectBuffIntellect
+    EffectType.BUFF_WILLPOWER -> Color(0xFF9C27B0) to MudIcons.EffectBuffWillpower
+    EffectType.HASTE -> Color(0xFF00BCD4) to MudIcons.EffectHaste
+    EffectType.DAMAGE -> Color(0xFFFF5722) to MudIcons.EffectDamage
+    EffectType.MANA_REGEN -> Color(0xFF3F51B5) to MudIcons.EffectManaRegen
+    EffectType.MANA_DRAIN -> Color(0xFF7B1FA2) to MudIcons.EffectManaDrain
 }
 
 @Composable
 private fun EffectIcon(effect: ActiveEffect) {
-    val (bgColor, label) = effectStyle(effect.type)
+    val (bgColor, icon) = effectStyle(effect.type)
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -214,11 +210,11 @@ private fun EffectIcon(effect: ActiveEffect) {
             .background(bgColor.copy(alpha = 0.8f))
             .border(1.dp, bgColor, CircleShape)
     ) {
-        EmojiText(
-            text = label,
-            fontSize = 10.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Bold
+        Icon(
+            imageVector = icon,
+            contentDescription = effect.type.name,
+            tint = Color.White,
+            modifier = Modifier.size(12.dp)
         )
     }
 }

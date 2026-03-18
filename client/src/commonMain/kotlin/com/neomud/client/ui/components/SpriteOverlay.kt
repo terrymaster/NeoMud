@@ -8,8 +8,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import com.neomud.client.ui.components.EmojiText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -456,7 +456,12 @@ private fun NpcContextMenu(
                 .clickable { onAttackTarget() },
             contentAlignment = Alignment.Center
         ) {
-            EmojiText(text = "\u2694\uFE0F", fontSize = 14.sp)
+            Icon(
+                imageVector = MudIcons.Attack,
+                contentDescription = "Attack",
+                tint = Color.White,
+                modifier = Modifier.size(16.dp)
+            )
         }
 
         // Track button
@@ -469,7 +474,12 @@ private fun NpcContextMenu(
                     .clickable { onTrackTarget() },
                 contentAlignment = Alignment.Center
             ) {
-                EmojiText(text = "\uD83D\uDC3E", fontSize = 14.sp)
+                Icon(
+                    imageVector = MudIcons.TrackNpc,
+                    contentDescription = "Track",
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
 
@@ -483,7 +493,12 @@ private fun NpcContextMenu(
                     .clickable { onKickTarget() },
                 contentAlignment = Alignment.Center
             ) {
-                EmojiText(text = "\uD83E\uDDB6", fontSize = 14.sp)
+                Icon(
+                    imageVector = MudIcons.KickNpc,
+                    contentDescription = "Kick",
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
 

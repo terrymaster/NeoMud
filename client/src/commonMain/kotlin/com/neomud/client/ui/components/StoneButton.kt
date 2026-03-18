@@ -5,7 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,15 +15,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.neomud.client.ui.theme.StoneTheme
 
 @Composable
 fun StoneButton(
-    icon: String,
+    icon: ImageVector,
     color: Color,
     size: Dp = 36.dp,
     isActive: Boolean = false,
@@ -48,10 +48,11 @@ fun StoneButton(
                 modifier = Modifier.size(size * 0.6f)
             )
         } else {
-            EmojiText(
-                text = icon,
-                fontSize = (size.value * 0.5f).sp,
-                color = if (enabled) color else Color.Gray
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (enabled) color else Color.Gray,
+                modifier = Modifier.size(size * 0.55f)
             )
         }
     }

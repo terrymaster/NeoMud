@@ -54,6 +54,9 @@ kotlin {
 
             // Compose Multiplatform resources (embedded images, etc.)
             implementation(compose.components.resources)
+
+            // Material Icons Extended (cross-platform vector icons for UI)
+            implementation(compose.materialIconsExtended)
         }
 
         commonTest.dependencies {
