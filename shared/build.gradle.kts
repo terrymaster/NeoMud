@@ -7,6 +7,10 @@ plugins {
 kotlin {
     jvm()
 
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
     androidTarget {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)

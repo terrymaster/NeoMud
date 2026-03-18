@@ -20,6 +20,13 @@ kotlin {
         }
     }
 
+    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
+        target.binaries.framework {
+            baseName = "NeoMudClient"
+            isStatic = true
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             implementation(project(":shared"))
@@ -84,6 +91,23 @@ kotlin {
 
                 // Logging (SLF4J/Logback — shared with server)
                 implementation(libs.logback.classic)
+            }
+        }
+
+        val iosX64Main by getting
+        val iosArm64Main by getting
+        val iosSimulatorArm64Main by getting
+        val iosMain by creating {
+            dependsOn(commonMain.get())
+            iosX64Main.dependsOn(this)
+            iosArm64Main.dependsOn(this)
+            iosSimulatorArm64Main.dependsOn(this)
+            dependencies {
+                // Networking (Darwin engine for iOS)
+                implementation(libs.ktor.client.darwin)
+
+                // Image loading (Ktor-based network backend for iOS)
+                implementation(libs.coil.network.ktor3)
             }
         }
 
