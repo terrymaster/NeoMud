@@ -1,0 +1,32 @@
+name: NeoMud
+options:
+  bundleIdPrefix: com.neomud
+  deploymentTarget:
+    iOS: "16.0"
+
+settings:
+  SWIFT_VERSION: "5.0"
+
+targets:
+  NeoMud:
+    type: application
+    platform: iOS
+    sources:
+      - NeoMud
+    info:
+      path: NeoMud/Info.plist
+    settings:
+      FRAMEWORK_SEARCH_PATHS:
+        - "$(SRCROOT)/../client/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+      OTHER_LDFLAGS:
+        - "-framework"
+        - "NeoMudClient"
+    dependencies:
+      - framework: ../client/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)/NeoMudClient.framework
+        embed: false
+    preBuildScripts:
+      - name: "Build Kotlin Framework"
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :client:embedAndSignAppleFrameworkForXcode
+        basedOnDependencyAnalysis: false

@@ -55,3 +55,8 @@ nanobanana-output/
 scripts/relay-state.json
 scripts/relay-command.json
 scripts/relay.lock
+
+# Xcode
+**/xcuserdata/
+**.xcuserstate
+DerivedData/
