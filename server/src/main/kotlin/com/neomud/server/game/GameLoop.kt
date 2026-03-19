@@ -555,8 +555,20 @@ class GameLoop(
                         session.send(ServerMessage.EffectTick(effect.name, result.message, result.newHp, newMp = result.newMp))
                     } catch (_: Exception) { /* session closing */ }
                 } else {
-                    // Stat buff effects or no-op effects
-                    val message = "${effect.name} continues to affect you."
+                    // Stat buff effects — show what stat is boosted
+                    val statName = when (effect.type) {
+                        com.neomud.shared.model.EffectType.BUFF_STRENGTH -> "strength"
+                        com.neomud.shared.model.EffectType.BUFF_AGILITY -> "agility"
+                        com.neomud.shared.model.EffectType.BUFF_INTELLECT -> "intellect"
+                        com.neomud.shared.model.EffectType.BUFF_WILLPOWER -> "willpower"
+                        com.neomud.shared.model.EffectType.HASTE -> "haste"
+                        else -> null
+                    }
+                    val message = if (statName != null) {
+                        "${effect.name} boosts your $statName by ${effect.magnitude}. (${effect.remainingTicks - 1} ticks remaining)"
+                    } else {
+                        "${effect.name} continues to affect you."
+                    }
                     try {
                         session.send(ServerMessage.EffectTick(effect.name, message, player.currentHp))
                     } catch (_: Exception) { /* session closing */ }
@@ -572,6 +584,13 @@ class GameLoop(
             }
 
             session.activeEffects.removeAll(expired)
+
+            // Notify player about expired effects
+            for (effect in expired) {
+                try {
+                    session.send(ServerMessage.SystemMessage("${effect.name} has worn off."))
+                } catch (_: Exception) { /* session closing */ }
+            }
 
             // Send updated active effects list to client
             try {
