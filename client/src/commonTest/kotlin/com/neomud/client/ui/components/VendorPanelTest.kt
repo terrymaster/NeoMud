@@ -1,34 +1,33 @@
 package com.neomud.client.ui.components
 
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
-import com.neomud.client.testutil.CoilTestRule
+import com.neomud.client.testutil.ComposeTestBase
 import com.neomud.client.testutil.TestData
 import com.neomud.client.testutil.TestThemeWrapper
+import com.neomud.client.testutil.installTestCoil
+import com.neomud.client.testutil.resetTestCoil
 import com.neomud.shared.model.Coins
 import com.neomud.shared.model.Item
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.RuleChain
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
+import kotlin.test.BeforeTest
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
-class VendorPanelTest {
+@OptIn(ExperimentalTestApi::class)
+class VendorPanelTest : ComposeTestBase() {
 
-    private val coilRule = CoilTestRule()
-    private val composeRule = createComposeRule()
+    @BeforeTest
+    fun setup() { installTestCoil() }
 
-    @get:Rule
-    val chain: RuleChain = RuleChain.outerRule(coilRule).around(composeRule)
+    @AfterTest
+    fun teardown() { resetTestCoil() }
 
     private val catalog = TestData.itemCatalog()
 
     @Test
-    fun `shows vendor name`() {
-        composeRule.setContent {
+    fun shows_vendor_name() = runComposeUiTest {
+        setContent {
             TestThemeWrapper {
                 VendorPanel(
                     vendorInfo = TestData.vendorInfo(vendorName = "Grimjaw's Weapons"),
@@ -41,11 +40,11 @@ class VendorPanelTest {
             }
         }
 
-        composeRule.onNodeWithText("Grimjaw's Weapons").assertIsDisplayed()
+        onNodeWithText("Grimjaw's Weapons").assertIsDisplayed()
     }
 
     @Test
-    fun `buy tab shows vendor items`() {
+    fun buy_tab_shows_vendor_items() = runComposeUiTest {
         val vendorItem = TestData.vendorItem(
             item = Item(
                 id = "magic_staff",
@@ -59,7 +58,7 @@ class VendorPanelTest {
             price = Coins(gold = 2)
         )
 
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 VendorPanel(
                     vendorInfo = TestData.vendorInfo(items = listOf(vendorItem)),
@@ -72,18 +71,18 @@ class VendorPanelTest {
             }
         }
 
-        composeRule.onNodeWithText("Magic Staff").assertIsDisplayed()
+        onNodeWithText("Magic Staff").assertIsDisplayed()
     }
 
     @Test
-    fun `buy callback fires on buy button click`() {
+    fun buy_callback_fires_on_buy_button_click() = runComposeUiTest {
         var boughtItem: String? = null
         val vendorItem = TestData.vendorItem(
             item = TestData.item(id = "cheap_sword", name = "Cheap Sword", value = 10),
             price = Coins(copper = 10)
         )
 
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 VendorPanel(
                     vendorInfo = TestData.vendorInfo(
@@ -100,17 +99,17 @@ class VendorPanelTest {
         }
 
         // "Buy" appears as both a Tab and a Button; the Button is the second match
-        composeRule.onAllNodesWithText("Buy")[1].performClick()
-        assert(boughtItem == "cheap_sword") { "Expected cheap_sword, got $boughtItem" }
+        onAllNodesWithText("Buy")[1].performClick()
+        assertEquals("cheap_sword", boughtItem)
     }
 
     @Test
-    fun `sell tab shows player inventory items`() {
+    fun sell_tab_shows_player_inventory_items() = runComposeUiTest {
         val inventory = listOf(
             TestData.inventoryItem(itemId = "health_potion", quantity = 3)
         )
 
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 VendorPanel(
                     vendorInfo = TestData.vendorInfo(playerInventory = inventory),
@@ -123,15 +122,14 @@ class VendorPanelTest {
             }
         }
 
-        // Switch to Sell tab
-        composeRule.onNodeWithText("Sell").performClick()
-        composeRule.onNodeWithText("Health Potion").assertIsDisplayed()
+        onNodeWithText("Sell").performClick()
+        onNodeWithText("Health Potion").assertIsDisplayed()
     }
 
     @Test
-    fun `close button fires onClose`() {
+    fun close_button_fires_onClose() = runComposeUiTest {
         var closed = false
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 VendorPanel(
                     vendorInfo = TestData.vendorInfo(),
@@ -144,13 +142,13 @@ class VendorPanelTest {
             }
         }
 
-        composeRule.onNodeWithText("Close").performClick()
-        assert(closed) { "Expected onClose to fire" }
+        onNodeWithText("\u2715").performClick()
+        assertTrue(closed)
     }
 
     @Test
-    fun `haggle active badge displayed when hasHaggle is true`() {
-        composeRule.setContent {
+    fun haggle_active_badge_displayed_when_hasHaggle_is_true() = runComposeUiTest {
+        setContent {
             TestThemeWrapper {
                 VendorPanel(
                     vendorInfo = TestData.vendorInfo(hasHaggle = true),
@@ -163,12 +161,12 @@ class VendorPanelTest {
             }
         }
 
-        composeRule.onNodeWithText("Haggle Active", substring = true).assertIsDisplayed()
+        onNodeWithText("Haggle Active", substring = true).assertIsDisplayed()
     }
 
     @Test
-    fun `haggle badge not shown when hasHaggle is false`() {
-        composeRule.setContent {
+    fun haggle_badge_not_shown_when_hasHaggle_is_false() = runComposeUiTest {
+        setContent {
             TestThemeWrapper {
                 VendorPanel(
                     vendorInfo = TestData.vendorInfo(hasHaggle = false),
@@ -181,6 +179,6 @@ class VendorPanelTest {
             }
         }
 
-        composeRule.onNodeWithText("Haggle Active", substring = true).assertDoesNotExist()
+        onNodeWithText("Haggle Active", substring = true).assertDoesNotExist()
     }
 }

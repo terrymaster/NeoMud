@@ -61,6 +61,9 @@ kotlin {
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.compose.ui.test)
+            implementation(libs.coil.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
 
         androidMain.dependencies {
@@ -114,14 +117,20 @@ kotlin {
             }
         }
 
+        val iosX64Test by getting
+        val iosArm64Test by getting
+        val iosSimulatorArm64Test by getting
+        val iosTest by creating {
+            dependsOn(commonTest.get())
+            iosX64Test.dependsOn(this)
+            iosArm64Test.dependsOn(this)
+            iosSimulatorArm64Test.dependsOn(this)
+        }
+
         val androidUnitTest by getting {
             dependencies {
-                implementation(libs.kotlin.test)
                 implementation(libs.robolectric)
-                implementation(libs.compose.ui.test)
                 implementation(libs.compose.ui.test.junit4)
-                implementation(libs.coil.test)
-                implementation(libs.kotlinx.coroutines.test)
             }
         }
 

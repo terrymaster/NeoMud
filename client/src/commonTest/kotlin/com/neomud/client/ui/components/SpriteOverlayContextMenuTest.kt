@@ -3,7 +3,7 @@ package com.neomud.client.ui.components
 import com.neomud.client.testutil.TestData
 import com.neomud.shared.model.SpellType
 import com.neomud.shared.model.TargetType
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -70,7 +70,7 @@ class SpriteOverlayContextMenuTest {
     // --- targetableSlottedSpells filtering ---
 
     @Test
-    fun `mage sees enemy-targeted mage spells`() {
+    fun mage_sees_enemy_targeted_mage_spells() {
         val result = targetableSlottedSpells(
             spellSlots = listOf("fireball", null, null, null),
             spellCatalog = catalog,
@@ -83,7 +83,7 @@ class SpriteOverlayContextMenuTest {
     }
 
     @Test
-    fun `self-targeted spells are excluded`() {
+    fun self_targeted_spells_are_excluded() {
         val result = targetableSlottedSpells(
             spellSlots = listOf("heal", "mage_shield", null, null),
             spellCatalog = catalog,
@@ -95,7 +95,7 @@ class SpriteOverlayContextMenuTest {
     }
 
     @Test
-    fun `priest sees only targetable priest spells not self spells`() {
+    fun priest_sees_only_targetable_priest_spells_not_self_spells() {
         val result = targetableSlottedSpells(
             spellSlots = listOf("heal", "smite", "fireball", null),
             spellCatalog = catalog,
@@ -109,7 +109,7 @@ class SpriteOverlayContextMenuTest {
     }
 
     @Test
-    fun `warrior with no magic schools sees no spells`() {
+    fun warrior_with_no_magic_schools_sees_no_spells() {
         val result = targetableSlottedSpells(
             spellSlots = listOf("fireball", "smite", null, null),
             spellCatalog = catalog,
@@ -121,7 +121,7 @@ class SpriteOverlayContextMenuTest {
     }
 
     @Test
-    fun `null player class returns empty list`() {
+    fun null_player_class_returns_empty_list() {
         val result = targetableSlottedSpells(
             spellSlots = listOf("fireball", null, null, null),
             spellCatalog = catalog,
@@ -133,7 +133,7 @@ class SpriteOverlayContextMenuTest {
     }
 
     @Test
-    fun `empty spell slots returns empty list`() {
+    fun empty_spell_slots_returns_empty_list() {
         val result = targetableSlottedSpells(
             spellSlots = listOf(null, null, null, null),
             spellCatalog = catalog,
@@ -145,7 +145,7 @@ class SpriteOverlayContextMenuTest {
     }
 
     @Test
-    fun `duplicate spell ids in slots are deduplicated`() {
+    fun duplicate_spell_ids_in_slots_are_deduplicated() {
         val result = targetableSlottedSpells(
             spellSlots = listOf("fireball", "fireball", null, null),
             spellCatalog = catalog,
@@ -157,7 +157,7 @@ class SpriteOverlayContextMenuTest {
     }
 
     @Test
-    fun `multiple targetable spells from same school all returned`() {
+    fun multiple_targetable_spells_from_same_school_all_returned() {
         val result = targetableSlottedSpells(
             spellSlots = listOf("fireball", "frostbolt", null, null),
             spellCatalog = catalog,
@@ -170,7 +170,7 @@ class SpriteOverlayContextMenuTest {
     }
 
     @Test
-    fun `spells from wrong school are excluded`() {
+    fun spells_from_wrong_school_are_excluded() {
         val result = targetableSlottedSpells(
             spellSlots = listOf("fireball", "druid_wrath", null, null),
             spellCatalog = catalog,
@@ -183,7 +183,7 @@ class SpriteOverlayContextMenuTest {
     }
 
     @Test
-    fun `unknown spell id in slot is skipped gracefully`() {
+    fun unknown_spell_id_in_slot_is_skipped_gracefully() {
         val result = targetableSlottedSpells(
             spellSlots = listOf("fireball", "nonexistent_spell", null, null),
             spellCatalog = catalog,

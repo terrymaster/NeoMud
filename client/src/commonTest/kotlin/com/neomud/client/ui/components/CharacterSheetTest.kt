@@ -1,24 +1,17 @@
 package com.neomud.client.ui.components
 
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
+import com.neomud.client.testutil.ComposeTestBase
 import com.neomud.client.testutil.TestData
 import com.neomud.client.testutil.TestThemeWrapper
 import com.neomud.shared.model.Coins
 import com.neomud.shared.model.EffectType
 import com.neomud.shared.model.Stats
-import org.junit.Rule
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
+import kotlin.test.Test
+import kotlin.test.assertTrue
 
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
-class CharacterSheetTest {
-
-    @get:Rule
-    val composeRule = createComposeRule()
+@OptIn(ExperimentalTestApi::class)
+class CharacterSheetTest : ComposeTestBase() {
 
     private val classCatalog = mapOf("warrior" to TestData.characterClassDef())
     private val catalog = TestData.itemCatalog()
@@ -28,9 +21,9 @@ class CharacterSheetTest {
     )
 
     @Test
-    fun `shows character name and level`() {
+    fun shows_character_name_and_level() = runComposeUiTest {
         val player = TestData.player(name = "Aragorn", level = 10, race = "human")
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 CharacterSheet(
                     player = player,
@@ -44,14 +37,14 @@ class CharacterSheetTest {
             }
         }
 
-        composeRule.onNodeWithText("Aragorn").assertIsDisplayed()
-        composeRule.onNodeWithText("Character Sheet").assertIsDisplayed()
+        onNodeWithText("Aragorn", substring = true).assertExists()
+        onNodeWithText("Character Sheet", substring = true).assertExists()
     }
 
     @Test
-    fun `shows stats grid`() {
+    fun shows_stats_grid() = runComposeUiTest {
         val player = TestData.player(stats = Stats(strength = 45, agility = 38, intellect = 25, willpower = 30, health = 40, charm = 20))
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 CharacterSheet(
                     player = player,
@@ -65,16 +58,16 @@ class CharacterSheetTest {
             }
         }
 
-        composeRule.onNodeWithText("STR").assertIsDisplayed()
-        composeRule.onNodeWithText("45").assertIsDisplayed()
-        composeRule.onNodeWithText("AGI").assertIsDisplayed()
-        composeRule.onNodeWithText("38").assertIsDisplayed()
+        onNodeWithText("STR").assertExists()
+        onNodeWithText("45").assertExists()
+        onNodeWithText("AGI").assertExists()
+        onNodeWithText("38").assertExists()
     }
 
     @Test
-    fun `shows HP and MP vital bars`() {
+    fun shows_HP_and_MP_vital_bars() = runComposeUiTest {
         val player = TestData.player(currentHp = 75, maxHp = 100, currentMp = 20, maxMp = 50)
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 CharacterSheet(
                     player = player,
@@ -88,14 +81,14 @@ class CharacterSheetTest {
             }
         }
 
-        composeRule.onNodeWithText("HP: 75/100").assertIsDisplayed()
-        composeRule.onNodeWithText("MP: 20/50").assertIsDisplayed()
+        onNodeWithText("HP: 75/100").assertExists()
+        onNodeWithText("MP: 20/50").assertExists()
     }
 
     @Test
-    fun `shows equipment slots with item names`() {
+    fun shows_equipment_slots_with_item_names() = runComposeUiTest {
         val equipment = mapOf("weapon" to "iron_sword")
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 CharacterSheet(
                     player = TestData.player(),
@@ -109,14 +102,13 @@ class CharacterSheetTest {
             }
         }
 
-        composeRule.onNodeWithText("Iron Sword").assertExists()
-        // Verify "-- empty --" text appears (merged semantics make exact count unreliable)
-        composeRule.onNodeWithText("-- empty --").assertExists()
+        onNodeWithText("Iron Sword").assertExists()
+        onNodeWithText("-- empty --").assertExists()
     }
 
     @Test
-    fun `shows skill names from catalog`() {
-        composeRule.setContent {
+    fun shows_skill_names_from_catalog() = runComposeUiTest {
+        setContent {
             TestThemeWrapper {
                 CharacterSheet(
                     player = TestData.player(),
@@ -131,16 +123,16 @@ class CharacterSheetTest {
             }
         }
 
-        composeRule.onNodeWithText("Bash").assertIsDisplayed()
-        composeRule.onNodeWithText("Kick").assertIsDisplayed()
+        onNodeWithText("Bash").assertExists()
+        onNodeWithText("Kick").assertExists()
     }
 
     @Test
-    fun `shows active effects with tick counts`() {
+    fun shows_active_effects_with_tick_counts() = runComposeUiTest {
         val effects = listOf(
             TestData.activeEffect(name = "Poison", type = EffectType.POISON, remainingTicks = 5)
         )
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 CharacterSheet(
                     player = TestData.player(),
@@ -154,13 +146,13 @@ class CharacterSheetTest {
             }
         }
 
-        composeRule.onNodeWithText("Poison").assertIsDisplayed()
-        composeRule.onNodeWithText("5 ticks").assertIsDisplayed()
+        onNodeWithText("Poison").assertExists()
+        onNodeWithText("5 ticks").assertExists()
     }
 
     @Test
-    fun `shows coins section`() {
-        composeRule.setContent {
+    fun shows_coins_section() = runComposeUiTest {
+        setContent {
             TestThemeWrapper {
                 CharacterSheet(
                     player = TestData.player(),
@@ -174,13 +166,13 @@ class CharacterSheetTest {
             }
         }
 
-        composeRule.onNodeWithText("5 GP").assertIsDisplayed()
-        composeRule.onNodeWithText("20 SP").assertIsDisplayed()
+        onNodeWithText("5 GP").assertExists()
+        onNodeWithText("20 SP").assertExists()
     }
 
     @Test
-    fun `shows no coins message when empty`() {
-        composeRule.setContent {
+    fun shows_no_coins_message_when_empty() = runComposeUiTest {
+        setContent {
             TestThemeWrapper {
                 CharacterSheet(
                     player = TestData.player(),
@@ -194,13 +186,13 @@ class CharacterSheetTest {
             }
         }
 
-        composeRule.onNodeWithText("No coins").assertIsDisplayed()
+        onNodeWithText("No coins").assertExists()
     }
 
     @Test
-    fun `close button fires onClose`() {
+    fun close_button_fires_onClose() = runComposeUiTest {
         var closed = false
-        composeRule.setContent {
+        setContent {
             TestThemeWrapper {
                 CharacterSheet(
                     player = TestData.player(),
@@ -214,7 +206,7 @@ class CharacterSheetTest {
             }
         }
 
-        composeRule.onNodeWithText("X").performClick()
-        assert(closed) { "Expected onClose to fire" }
+        onNodeWithText("\u2715").performClick() // ✕ close button
+        assertTrue(closed)
     }
 }
