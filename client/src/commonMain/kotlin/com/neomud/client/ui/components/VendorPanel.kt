@@ -355,20 +355,27 @@ private fun BuyItemRow(
                     text = item.name,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = nameColor
+                    color = nameColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
                 if (item.levelRequirement > 1) {
                     Text(
                         text = " Lv${item.levelRequirement}",
                         fontSize = 11.sp,
-                        color = if (meetsLevel) AshGray else Color(0xFFCC4444)
+                        color = if (meetsLevel) AshGray else Color(0xFFCC4444),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
                 if (ownedCount > 0) {
                     Text(
                         text = " Owned: $ownedCount",
                         fontSize = 11.sp,
-                        color = VerdantUpgrade
+                        color = VerdantUpgrade,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
