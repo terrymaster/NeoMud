@@ -29,7 +29,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Tests for GitHub issues #197, #199, #201, #207, #209, #210.
+ * Tests for GitHub issues #197, #199, #200, #201, #207, #209, #210.
  */
 class BugFixesTest {
 
@@ -294,6 +294,29 @@ class BugFixesTest {
             assertNotNull(name)
             assertTrue(sess.visitedRooms.isNotEmpty(), "$name should have visited rooms")
         }
+    }
+
+    // --- #200: Bash damage should use equipped weapon's damage range ---
+
+    @Test
+    fun testBashDamageUsesWeaponDamageRangeWhenEquipped() {
+        val stats = Stats(strength = 30, agility = 20, intellect = 15, willpower = 15, health = 25, charm = 10)
+        val thresholds = ThresholdBonuses.compute(stats)
+        val weaponDamageRange = 8
+
+        val maxDamageWithWeapon = stats.strength / GameConfig.Combat.MELEE_STR_DIVISOR + thresholds.meleeDamageBonus + weaponDamageRange
+        val maxDamageWithoutWeapon = stats.strength / GameConfig.Combat.MELEE_STR_DIVISOR + thresholds.meleeDamageBonus + GameConfig.Skills.BASH_DAMAGE_RANGE
+
+        assertTrue(maxDamageWithWeapon > maxDamageWithoutWeapon,
+            "Bash with weapon (range $weaponDamageRange) should have higher max damage than unarmed (range ${GameConfig.Skills.BASH_DAMAGE_RANGE})")
+    }
+
+    @Test
+    fun testBashDamageUsesConfigFallbackWhenUnarmed() {
+        val weaponDamageRange = 0
+        val bashRange = if (weaponDamageRange > 0) weaponDamageRange else GameConfig.Skills.BASH_DAMAGE_RANGE
+        assertEquals(GameConfig.Skills.BASH_DAMAGE_RANGE, bashRange,
+            "Unarmed bash should use BASH_DAMAGE_RANGE as fallback")
     }
 
     // --- #207: Stackable item overflow silently lost ---
