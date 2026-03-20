@@ -154,6 +154,10 @@ fun Application.configureRouting(
                     if (roomId != null) {
                         sessionManager.broadcastToRoom(
                             roomId,
+                            ServerMessage.PlayerLeft(playerName, roomId, com.neomud.shared.model.Direction.NORTH)
+                        )
+                        sessionManager.broadcastToRoom(
+                            roomId,
                             ServerMessage.SystemMessage("$playerName has disconnected.")
                         )
                     }
