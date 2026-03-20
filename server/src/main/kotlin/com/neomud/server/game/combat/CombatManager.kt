@@ -635,13 +635,30 @@ class CombatManager(
                 .filter { it.currentHp > 0 }
             if (hostiles.isEmpty()) continue
 
-            // Guards attack hostile NPCs (simplified: damage + variance, no hit/miss)
+            // Guards attack hostile NPCs with configurable hit chance
             for (guard in guards) {
                 if (guard.currentHp <= 0) continue
                 // Prioritize hostiles that are attacking players, then any hostile
                 val target = hostiles.filter { it.currentHp > 0 }
                     .sortedByDescending { it.engagedPlayerIds.size }
                     .firstOrNull() ?: continue
+
+                // Hit/miss check — guards are strong but not infallible
+                val roll = (1..100).random()
+                if (roll > GameConfig.Combat.GUARD_HIT_CHANCE) {
+                    events.add(CombatEvent.Hit(
+                        attackerName = guard.name,
+                        defenderName = target.name,
+                        damage = 0,
+                        defenderHp = target.currentHp,
+                        defenderMaxHp = target.maxHp,
+                        isPlayerDefender = false,
+                        roomId = roomId,
+                        isMiss = true,
+                        defenderId = target.id
+                    ))
+                    continue
+                }
 
                 val variance = maxOf(guard.damage / GameConfig.Combat.NPC_VARIANCE_DIVISOR, 1)
                 val damage = guard.damage + (1..variance).random()

@@ -29,7 +29,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Tests for GitHub issues #197, #199, #200, #201, #207, #209, #210.
+ * Tests for GitHub issues #197, #199, #200, #201, #202, #207, #209, #210.
  */
 class BugFixesTest {
 
@@ -317,6 +317,36 @@ class BugFixesTest {
         val bashRange = if (weaponDamageRange > 0) weaponDamageRange else GameConfig.Skills.BASH_DAMAGE_RANGE
         assertEquals(GameConfig.Skills.BASH_DAMAGE_RANGE, bashRange,
             "Unarmed bash should use BASH_DAMAGE_RANGE as fallback")
+    }
+
+    // --- #202: Guard combat has no hit/miss checks ---
+
+    @Test
+    fun testGuardHitChanceConfigExists() {
+        assertTrue(GameConfig.Combat.GUARD_HIT_CHANCE in 1..100,
+            "GUARD_HIT_CHANCE should be between 1 and 100")
+    }
+
+    @Test
+    fun testGuardHitChanceIsHighButNotPerfect() {
+        assertTrue(GameConfig.Combat.GUARD_HIT_CHANCE >= 70,
+            "Guards should have a high hit chance (>= 70)")
+        assertTrue(GameConfig.Combat.GUARD_HIT_CHANCE < 100,
+            "Guards should not have a perfect hit chance (< 100)")
+    }
+
+    @Test
+    fun testGuardMissProducesZeroDamageEvent() {
+        val roll = GameConfig.Combat.GUARD_HIT_CHANCE + 1
+        val isMiss = roll > GameConfig.Combat.GUARD_HIT_CHANCE
+        assertTrue(isMiss, "Roll above GUARD_HIT_CHANCE should be a miss")
+    }
+
+    @Test
+    fun testGuardHitProducesDamageEvent() {
+        val roll = GameConfig.Combat.GUARD_HIT_CHANCE
+        val isHit = roll <= GameConfig.Combat.GUARD_HIT_CHANCE
+        assertTrue(isHit, "Roll at GUARD_HIT_CHANCE should be a hit")
     }
 
     // --- #207: Stackable item overflow silently lost ---

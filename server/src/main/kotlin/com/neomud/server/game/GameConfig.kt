@@ -41,6 +41,7 @@ object GameConfig {
         const val CRIT_DAMAGE_MULTIPLIER = 1.5
         const val BACKSTAB_DAMAGE_MULTIPLIER = 3
         const val NPC_VARIANCE_DIVISOR = 3
+        const val GUARD_HIT_CHANCE = 85 // Guards are strong but not infallible (out of 100)
     }
     object Thresholds {
         // STR thresholds
