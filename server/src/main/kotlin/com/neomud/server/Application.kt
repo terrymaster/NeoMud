@@ -298,10 +298,24 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     monitor.subscribe(ApplicationStopped) {
         logger.info("Saving player states...")
         for (session in sessionManager.getAllAuthenticatedSessions()) {
+            val playerName = session.playerName ?: continue
             try {
                 session.player?.let { playerRepository.savePlayerState(it) }
             } catch (e: Exception) {
-                logger.error("Failed to save player ${session.playerName}: ${e.message}")
+                logger.error("Failed to save player $playerName: ${e.message}")
+            }
+            try {
+                discoveryRepository.savePlayerDiscovery(
+                    playerName,
+                    com.neomud.server.persistence.repository.PlayerDiscoveryData(
+                        visitedRooms = session.visitedRooms.toSet(),
+                        discoveredHiddenExits = session.discoveredHiddenExits.toSet(),
+                        discoveredLockedExits = session.discoveredLockedExits.toSet(),
+                        discoveredInteractables = session.discoveredInteractables.toSet()
+                    )
+                )
+            } catch (e: Exception) {
+                logger.error("Failed to save discovery data for $playerName: ${e.message}")
             }
         }
         logger.info("Closing world bundle...")
