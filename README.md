@@ -166,7 +166,7 @@ NeoMud/
 |--------|-------|
 | Lines of code | ~46,700 (35.8k Kotlin, 10.9k TypeScript) |
 | Commits | 321 |
-| Tests | 867 (386 server, 151 shared, 330 maker) |
+| Tests | 1,364 (439 server, 392 shared, 203 client, 330 maker) |
 | Assets | 461 (357 images, 104 audio) |
 | Player sprites | 270 (6 races x 3 genders x 15 classes) |
 | World content | 4 zones, 25 rooms, 17 NPCs, 41 items, 23 spells, 12 skills, 15 classes, 6 races |
@@ -335,9 +335,12 @@ On first run, it auto-imports the default world. The Maker is a standalone web a
 #### Tests
 
 ```bash
-./gradlew :shared:jvmTest :server:test   # Server + shared tests (537 tests)
-cd maker && npx vitest run               # Maker tests (293 tests)
+./gradlew :shared:jvmTest :server:test              # Server + shared tests (831 tests)
+./gradlew :client:testDebugUnitTest :client:desktopTest  # Client tests — Android + Desktop (203 tests)
+cd maker && npx vitest run                           # Maker tests (330 tests)
 ```
+
+Client UI tests live in `commonTest` and run on both Android (via Robolectric) and Desktop (via Skiko). Paparazzi screenshot tests remain Android-only. iOS tests compile-check on all platforms and run on macOS with a simulator.
 
 #### Creating a Release
 
@@ -368,10 +371,11 @@ Agent memory in `.claude/agent-memory/` persists findings across sessions — th
 ## Roadmap
 
 ### Near Term
-- [ ] Game balance pass — melee vs. magic disparity, class viability, difficulty curve smoothing
-- [ ] Fill dead-end rooms with content (Forest Cave, Marsh Island, Gorge Alcove)
-- [ ] BGM seamless looping
+- [ ] Game balance pass — L4 equipment tier, T3 damage spells for Priest/Kai/Bard, class viability fixes ([#188](https://github.com/terrymaster/NeoMud/issues/188)-[#196](https://github.com/terrymaster/NeoMud/issues/196))
+- [ ] Fill dead-end rooms with content (Forest Cave, Marsh Island, Gorge Alcove) ([#194](https://github.com/terrymaster/NeoMud/issues/194))
+- [ ] BGM seamless looping ([#113](https://github.com/terrymaster/NeoMud/issues/113))
 - [x] Replace raw JSON fields in maker editors with structured UI controls
+- [x] Multiplatform UI test infrastructure — client tests run on Android, Desktop, and iOS
 
 ### Medium Term
 - [ ] Quest system — kill quests, fetch quests, quest log, NPC dialogue trees
