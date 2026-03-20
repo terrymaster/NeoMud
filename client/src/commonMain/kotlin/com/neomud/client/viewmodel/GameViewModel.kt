@@ -577,8 +577,12 @@ class GameViewModel(
                 if (_showVendor.value) interactVendor()
             }
             is ServerMessage.XpGained -> {
-                val prefix = if (message.amount >= 0) "+" else ""
-                addLog("${prefix}${message.amount} XP (${message.currentXp}/${message.xpToNextLevel})", MudColors.xp)
+                val logText = if (message.amount >= 0) {
+                    "+${message.amount} XP (${message.currentXp}/${message.xpToNextLevel})"
+                } else {
+                    "Lost ${-message.amount} XP (${message.currentXp}/${message.xpToNextLevel})"
+                }
+                addLog(logText, MudColors.xp)
                 _player.value = _player.value?.copy(
                     currentXp = message.currentXp,
                     xpToNextLevel = message.xpToNextLevel

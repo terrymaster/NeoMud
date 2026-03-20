@@ -477,7 +477,10 @@ const handlers = {
       state.player.xp = msg.currentXp;
       state.player.xpToNextLevel = msg.xpToNextLevel;
     }
-    pushEvent('xp', `Gained ${msg.amount} XP (${msg.currentXp}/${msg.xpToNextLevel})`);
+    const xpText = msg.amount >= 0
+      ? `Gained ${msg.amount} XP (${msg.currentXp}/${msg.xpToNextLevel})`
+      : `Lost ${-msg.amount} XP (${msg.currentXp}/${msg.xpToNextLevel})`;
+    pushEvent('xp', xpText);
   },
   level_up(msg) {
     if (state.player) {
