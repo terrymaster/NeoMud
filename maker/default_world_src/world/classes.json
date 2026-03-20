@@ -162,7 +162,7 @@
       "hpPerLevelMin": 4, "hpPerLevelMax": 7,
       "mpPerLevelMin": 1, "mpPerLevelMax": 4,
       "xpModifier": 1.1,
-      "magicSchools": { "mage": 1 },
+      "magicSchools": { "mage": 2 },
       "skills": ["SNEAK", "PICK_LOCK", "HAGGLE", "MEDITATE", "REST"]
     }
   ]
