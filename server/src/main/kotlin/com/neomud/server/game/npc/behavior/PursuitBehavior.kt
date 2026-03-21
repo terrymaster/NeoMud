@@ -63,6 +63,11 @@ class PursuitBehavior(
             }
             val targetRoomId = currentRoom.exits[direction]
             if (targetRoomId != null) {
+                if (!canMoveTo(targetRoomId)) {
+                    // Target fled to a sanctuary or blocked room — give up pursuit
+                    pursuitEnded = true
+                    return NpcAction.None
+                }
                 // Pursuit crosses zone boundaries intentionally
                 return NpcAction.MoveTo(targetRoomId)
             }

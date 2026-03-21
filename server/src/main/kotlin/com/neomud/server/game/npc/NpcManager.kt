@@ -168,7 +168,9 @@ class NpcManager(
             if (!npc.isAlive) continue
 
             // Hostile NPCs that detect a player (or are stunned) stay put — skip all movement behaviors
-            if (npc.hostile && (npc.currentRoomId in roomsWithVisiblePlayers || npc.stunTicks > 0)) {
+            // Exception: sanctuary rooms suppress combat, so NPCs should not stay to fight there
+            val inSanctuary = npc.hostile && worldGraph.getRoom(npc.currentRoomId)?.effects?.any { it.type == "SANCTUARY" } == true
+            if (npc.hostile && !inSanctuary && (npc.currentRoomId in roomsWithVisiblePlayers || npc.stunTicks > 0)) {
                 continue
             }
 

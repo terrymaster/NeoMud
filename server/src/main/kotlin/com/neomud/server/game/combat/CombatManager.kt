@@ -314,6 +314,10 @@ class CombatManager(
                     }
 
                     val roomId = combatant.roomId
+
+                    // Sanctuary rooms suppress all NPC combat
+                    val room = worldGraph.getRoom(roomId)
+                    if (room != null && room.effects.any { it.type == "SANCTUARY" }) continue
                     val playersInRoom = playersByRoom[roomId] ?: continue
                     val visiblePlayers = playersInRoom.filter { !it.isHidden && !it.godMode && (it.player?.currentHp ?: 0) > 0 && it.combatGraceTicks <= 0 }
                     val targetSession = visiblePlayers.randomOrNull() ?: continue
