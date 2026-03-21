@@ -44,6 +44,7 @@ interface NpcRecord {
   evasion: number;
   agility: number;
   vendorItems: string;
+  crafterRecipes: string;
   spawnPoints: string;
   lootItems: string;
   coinDrop: string;
@@ -67,6 +68,7 @@ const BEHAVIOR_OPTIONS = [
   { value: 'patrol', label: 'Patrol' },
   { value: 'vendor', label: 'Vendor' },
   { value: 'trainer', label: 'Trainer' },
+  { value: 'crafter', label: 'Crafter' },
   { value: 'quest', label: 'Quest Giver' },
 ];
 
@@ -76,6 +78,7 @@ const BEHAVIOR_DESCRIPTIONS: Record<string, string> = {
   patrol: 'Walks a fixed route of rooms in sequence.',
   vendor: 'Stays in start room. Players can buy/sell items.',
   trainer: 'Stays in start room. Players can train skills/levels.',
+  crafter: 'Stays in start room. Players can craft items from recipes.',
   quest: 'Stays in start room. Quest giver.',
 };
 
@@ -167,6 +170,11 @@ interface ItemRecord {
   name: string;
 }
 
+interface RecipeRecord {
+  id: string;
+  name: string;
+}
+
 interface LootEntry {
   itemId: string;
   chance: number;
@@ -206,6 +214,7 @@ function NpcEditor() {
   const [rooms, setRooms] = useState<Room[]>([]); // rooms for the selected NPC's zone
   const [allZoneRooms, setAllZoneRooms] = useState<Map<string, Room[]>>(new Map());
   const [items, setItems] = useState<ItemRecord[]>([]);
+  const [recipes, setRecipes] = useState<RecipeRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
@@ -218,6 +227,7 @@ function NpcEditor() {
     api.get<Zone[]>('/zones').then(setZones).catch(() => {});
     api.get<NpcRecord[]>('/npcs').then(setNpcs).catch(() => {});
     api.get<ItemRecord[]>('/items').then(setItems).catch(() => {});
+    api.get<RecipeRecord[]>('/recipes').then(setRecipes).catch(() => {});
   }, []);
 
   // Load all zone rooms for the map (cached per zone)
@@ -278,6 +288,7 @@ function NpcEditor() {
     setForm({
       ...npc,
       vendorItems: prettyJson(npc.vendorItems),
+      crafterRecipes: prettyJson(npc.crafterRecipes),
       lootItems: prettyJson(npc.lootItems),
       coinDrop: prettyJson(npc.coinDrop),
     });
@@ -292,7 +303,7 @@ function NpcEditor() {
       id: '', name: '', description: '', zoneId: zones[0]?.id || '', startRoomId: '',
       behaviorType: 'idle', hostile: false, level: 1, maxHp: 10, damage: 1,
       accuracy: 0, defense: 0, evasion: 0, agility: 10, perception: 0, xpReward: 0,
-      patrolRoute: '', vendorItems: '', spawnPoints: '[]', lootItems: '', coinDrop: '',
+      patrolRoute: '', vendorItems: '', crafterRecipes: '', spawnPoints: '[]', lootItems: '', coinDrop: '',
       attackSound: '', missSound: '', deathSound: '', interactSound: '', exitSound: '',
       imagePrompt: '', imageStyle: '', imageNegativePrompt: '', imageWidth: 384, imageHeight: 512,
     });
@@ -309,7 +320,7 @@ function NpcEditor() {
     if (!form.zoneId) { setError('Zone is required'); return; }
 
     // Validate JSON fields
-    for (const key of ['vendorItems', 'lootItems', 'coinDrop']) {
+    for (const key of ['vendorItems', 'crafterRecipes', 'lootItems', 'coinDrop']) {
       const val = form[key];
       if (val && val.trim()) {
         try { JSON.parse(val); } catch { setError(`Invalid JSON in ${key}`); return; }
@@ -325,6 +336,7 @@ function NpcEditor() {
         setForm({
           ...created,
           vendorItems: prettyJson(created.vendorItems),
+          crafterRecipes: prettyJson(created.crafterRecipes),
           lootItems: prettyJson(created.lootItems),
           coinDrop: prettyJson(created.coinDrop),
         });
@@ -335,6 +347,7 @@ function NpcEditor() {
         setForm({
           ...updated,
           vendorItems: prettyJson(updated.vendorItems),
+          crafterRecipes: prettyJson(updated.crafterRecipes),
           lootItems: prettyJson(updated.lootItems),
           coinDrop: prettyJson(updated.coinDrop),
         });
@@ -873,6 +886,59 @@ function NpcEditor() {
                         const arr = [...vendorList, sel];
                         handleChange('vendorItems', JSON.stringify(arr));
                         (document.getElementById('vendor-item-add') as HTMLSelectElement).value = '';
+                      }}
+                    >Add</button>
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* Crafter Recipes (only for crafter NPCs) */}
+            {form.behaviorType === 'crafter' && (() => {
+              const recipeList = parseJsonArray(form.crafterRecipes);
+              return (
+                <>
+                  <div style={styles.sectionTitle}>Crafter Recipes</div>
+                  {recipeList.length === 0 && (
+                    <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>
+                      No recipes assigned. Add recipes this NPC can craft.
+                    </div>
+                  )}
+                  {recipeList.map((recipeId, i) => {
+                    const recipe = recipes.find((r) => r.id === recipeId);
+                    return (
+                      <div key={`${recipeId}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', backgroundColor: '#fff3e0', borderRadius: 4, fontSize: 12, marginBottom: 2 }}>
+                        <span style={{ flex: 1 }}>{recipe?.name || recipeId}</span>
+                        <button
+                          onClick={() => {
+                            const arr = recipeList.filter((_, j) => j !== i);
+                            handleChange('crafterRecipes', arr.length > 0 ? JSON.stringify(arr) : '');
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, padding: '0 4px', color: '#d32f2f' }}
+                          title="Remove recipe"
+                        >x</button>
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                    <select
+                      id="crafter-recipe-add"
+                      style={{ ...styles.select, flex: 1, fontSize: 12 }}
+                      defaultValue=""
+                    >
+                      <option value="">-- Select recipe --</option>
+                      {recipes.filter((r) => !recipeList.includes(r.id)).map((r) => (
+                        <option key={r.id} value={r.id}>{r.name} ({r.id})</option>
+                      ))}
+                    </select>
+                    <button
+                      style={{ ...styles.modeBtn, whiteSpace: 'nowrap' }}
+                      onClick={() => {
+                        const sel = (document.getElementById('crafter-recipe-add') as HTMLSelectElement)?.value;
+                        if (!sel) return;
+                        const arr = [...recipeList, sel];
+                        handleChange('crafterRecipes', JSON.stringify(arr));
+                        (document.getElementById('crafter-recipe-add') as HTMLSelectElement).value = '';
                       }}
                     >Add</button>
                   </div>

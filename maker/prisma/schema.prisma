@@ -109,8 +109,9 @@ model Npc {
   defense      Int     @default(0)
   evasion      Int     @default(0)
   agility      Int     @default(10)
-  vendorItems  String  @default("")
-  spawnPoints  String  @default("[]")
+  vendorItems     String  @default("")
+  crafterRecipes  String  @default("")
+  spawnPoints     String  @default("[]")
   attackSound  String  @default("")
   missSound    String  @default("")
   deathSound   String  @default("")
@@ -202,6 +203,19 @@ model Spell {
   imageNegativePrompt String @default("")
   imageWidth          Int    @default(256)
   imageHeight         Int    @default(256)
+}
+
+model Recipe {
+  id               String @id
+  name             String
+  description      String
+  category         String
+  materials        String @default("[]")
+  cost             String @default("{}")
+  outputItemId     String
+  outputQuantity   Int    @default(1)
+  levelRequirement Int    @default(1)
+  classRestriction String @default("")
 }
 
 model PcSprite {

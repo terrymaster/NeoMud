@@ -36,6 +36,7 @@ const fields: FieldConfig[] = [
       { value: 'hands', label: 'Hands' },
       { value: 'neck', label: 'Neck' },
       { value: 'ring', label: 'Ring' },
+      { value: 'back', label: 'Back' },
     ],
   },
   { key: 'damageBonus', label: 'Damage Bonus', type: 'number', visibleWhen: isEquipment },

@@ -7,6 +7,7 @@ import type { CSSProperties } from 'react';
 const navItems = [
   { label: 'Zones', path: 'zones' },
   { label: 'Items', path: 'items' },
+  { label: 'Recipes', path: 'recipes' },
   { label: 'NPCs', path: 'npcs' },
   { label: 'Classes', path: 'classes' },
   { label: 'Races', path: 'races' },

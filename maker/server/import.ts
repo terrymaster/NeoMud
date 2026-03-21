@@ -195,6 +195,28 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
     }
   }
 
+  // ─── Recipes ──────────────────────────────────────────
+  const recipesEntry = zip.getEntry('world/recipes.json')
+  if (recipesEntry) {
+    const { recipes } = JSON.parse(zip.readAsText(recipesEntry))
+    for (const recipe of recipes) {
+      await prisma.recipe.create({
+        data: {
+          id: recipe.id,
+          name: recipe.name,
+          description: recipe.description ?? '',
+          category: recipe.category ?? '',
+          materials: JSON.stringify(recipe.materials ?? []),
+          cost: JSON.stringify(recipe.cost ?? {}),
+          outputItemId: recipe.outputItemId ?? '',
+          outputQuantity: recipe.outputQuantity ?? 1,
+          levelRequirement: recipe.levelRequirement ?? 1,
+          classRestriction: recipe.classRestriction ?? '',
+        },
+      })
+    }
+  }
+
   // ─── Legacy Loot Tables (backward-compat: merge into NPCs) ───
   const lootEntry = zip.getEntry('world/loot_tables.json')
   if (lootEntry) {
@@ -336,6 +358,7 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
           evasion: npc.evasion ?? 0,
           agility: npc.agility ?? 10,
           vendorItems: JSON.stringify(npc.vendorItems ?? []),
+          crafterRecipes: JSON.stringify(npc.crafterRecipes ?? []),
           spawnPoints: JSON.stringify(npc.spawnPoints ?? []),
           attackSound: npc.attackSound ?? '',
           missSound: npc.missSound ?? '',

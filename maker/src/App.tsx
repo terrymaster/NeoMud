@@ -8,6 +8,7 @@ import ClassEditor from './pages/ClassEditor';
 import RaceEditor from './pages/RaceEditor';
 import SkillEditor from './pages/SkillEditor';
 import SpellEditor from './pages/SpellEditor';
+import RecipeEditor from './pages/RecipeEditor';
 import PcSpriteEditor from './pages/PcSpriteEditor';
 import DefaultSfxEditor from './pages/DefaultSfxEditor';
 import SettingsEditor from './pages/SettingsEditor';
@@ -21,6 +22,7 @@ function App() {
           <Route index element={<Navigate to="zones" replace />} />
           <Route path="zones" element={<ZoneEditor />} />
           <Route path="items" element={<ItemEditor />} />
+          <Route path="recipes" element={<RecipeEditor />} />
           <Route path="npcs" element={<NpcEditor />} />
           <Route path="classes" element={<ClassEditor />} />
           <Route path="races" element={<RaceEditor />} />

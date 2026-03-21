@@ -35,12 +35,13 @@ export async function validateProject(
   const errors: string[] = []
   const warnings: string[] = []
 
-  const [zones, items, npcs, spells, pcSprites] = await Promise.all([
+  const [zones, items, npcs, spells, pcSprites, recipes] = await Promise.all([
     prisma.zone.findMany({ include: { rooms: { include: { exits: true } } } }),
     prisma.item.findMany(),
     prisma.npc.findMany(),
     prisma.spell.findMany(),
     prisma.pcSprite.findMany(),
+    prisma.recipe.findMany(),
   ])
 
   // Build lookup sets
@@ -59,7 +60,7 @@ export async function validateProject(
   }
 
   // ─── Item validation ─────────────────────────────────
-  const validSlots = new Set(['weapon', 'head', 'chest', 'legs', 'feet', 'shield', 'hands', 'neck', 'ring'])
+  const validSlots = new Set(['weapon', 'head', 'chest', 'legs', 'feet', 'shield', 'hands', 'neck', 'ring', 'back'])
   for (const item of items) {
     if (item.type === 'weapon') {
       if (!item.slot) warnings.push(`Weapon '${item.id}' missing slot (should be "weapon")`)
@@ -113,11 +114,15 @@ export async function validateProject(
     if (!allRoomIds.has(npc.startRoomId)) {
       warnings.push(`NPC '${npc.id}' startRoomId '${npc.startRoomId}' not found in loaded rooms`)
     }
-    if (['vendor', 'trainer'].includes(npc.behaviorType) && !npc.interactSound) {
+    if (['vendor', 'trainer', 'crafter'].includes(npc.behaviorType) && !npc.interactSound) {
       warnings.push(`NPC '${npc.id}' (${npc.behaviorType}) missing interactSound`)
     }
-    if (['vendor', 'trainer'].includes(npc.behaviorType) && !npc.exitSound) {
+    if (['vendor', 'trainer', 'crafter'].includes(npc.behaviorType) && !npc.exitSound) {
       warnings.push(`NPC '${npc.id}' (${npc.behaviorType}) missing exitSound`)
+    }
+    const crafterRecipes = parseJsonField(npc.crafterRecipes, []) as string[]
+    if (npc.behaviorType === 'crafter' && crafterRecipes.length === 0) {
+      warnings.push(`Crafter NPC '${npc.id}' has empty crafterRecipes`)
     }
   }
 
@@ -152,6 +157,32 @@ export async function validateProject(
     for (const entry of lootItems) {
       if (!allItemIds.has(entry.itemId)) {
         warnings.push(`NPC '${npc.id}' loot references unknown item '${entry.itemId}'`)
+      }
+    }
+  }
+
+  // ─── Recipe validation ─────────────────────────────
+  const allRecipeIds = new Set(recipes.map((r) => r.id))
+  for (const recipe of recipes) {
+    if (!recipe.outputItemId || !allItemIds.has(recipe.outputItemId)) {
+      warnings.push(`Recipe '${recipe.id}' output item '${recipe.outputItemId}' not found in items`)
+    }
+    const materials = parseJsonField(recipe.materials, []) as { itemId: string; quantity: number }[]
+    if (materials.length === 0) {
+      warnings.push(`Recipe '${recipe.id}' has no materials`)
+    }
+    for (const mat of materials) {
+      if (!allItemIds.has(mat.itemId)) {
+        warnings.push(`Recipe '${recipe.id}' material '${mat.itemId}' not found in items`)
+      }
+    }
+  }
+  // Crafter NPC recipe cross-reference
+  for (const npc of npcs) {
+    const crafterRecipes = parseJsonField(npc.crafterRecipes, []) as string[]
+    for (const recipeId of crafterRecipes) {
+      if (!allRecipeIds.has(recipeId)) {
+        warnings.push(`Crafter NPC '${npc.id}' references unknown recipe '${recipeId}'`)
       }
     }
   }

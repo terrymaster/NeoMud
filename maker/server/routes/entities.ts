@@ -457,3 +457,56 @@ entitiesRouter.delete('/spells/:id', rejectIfReadOnly, async (req, res) => {
   }
 })
 
+// ─── Recipes ──────────────────────────────────────────────────
+
+entitiesRouter.get('/recipes', async (_req, res) => {
+  try {
+    const recipes = await db().recipe.findMany()
+    res.json(recipes)
+  } catch (err: any) {
+    handlePrismaError(err, 'entity', res)
+  }
+})
+
+entitiesRouter.get('/recipes/:id', async (req, res) => {
+  try {
+    const recipe = await db().recipe.findUnique({ where: { id: req.params.id } })
+    if (!recipe) { res.status(404).json({ error: 'Recipe not found' }); return }
+    res.json(recipe)
+  } catch (err: any) {
+    handlePrismaError(err, 'entity', res)
+  }
+})
+
+entitiesRouter.post('/recipes', rejectIfReadOnly, async (req, res) => {
+  sanitizeTextFields(req.body)
+  if (!validateId(req.body.id, 'Recipe', res)) return
+  if (!validateName(req.body.name, 'Recipe', res)) return
+  try {
+    const recipe = await db().recipe.create({ data: req.body })
+    res.json(recipe)
+  } catch (err: any) {
+    handlePrismaError(err, 'recipe', res)
+  }
+})
+
+entitiesRouter.put('/recipes/:id', rejectIfReadOnly, async (req, res) => {
+  sanitizeTextFields(req.body)
+  if (req.body.name !== undefined && !validateName(req.body.name, 'Recipe', res)) return
+  try {
+    const recipe = await db().recipe.update({ where: { id: req.params.id }, data: req.body })
+    res.json(recipe)
+  } catch (err: any) {
+    handlePrismaError(err, 'entity', res)
+  }
+})
+
+entitiesRouter.delete('/recipes/:id', rejectIfReadOnly, async (req, res) => {
+  try {
+    await db().recipe.delete({ where: { id: req.params.id } })
+    res.json({ ok: true })
+  } catch (err: any) {
+    handlePrismaError(err, 'entity', res)
+  }
+})
+
