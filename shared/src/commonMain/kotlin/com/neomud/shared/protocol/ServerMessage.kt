@@ -150,6 +150,10 @@ sealed class ServerMessage {
     data class SystemMessage(val message: String) : ServerMessage()
 
     @Serializable
+    @SerialName("tutorial")
+    data class Tutorial(val key: String, val title: String, val content: String) : ServerMessage()
+
+    @Serializable
     @SerialName("pong")
     data object Pong : ServerMessage()
 

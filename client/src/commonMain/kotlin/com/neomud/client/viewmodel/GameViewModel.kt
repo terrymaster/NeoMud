@@ -169,6 +169,10 @@ class GameViewModel(
     private val _showHelp = MutableStateFlow(false)
     val showHelp: StateFlow<Boolean> = _showHelp
 
+    // Tutorial modal
+    private val _tutorialMessage = MutableStateFlow<ServerMessage.Tutorial?>(null)
+    val tutorialMessage: StateFlow<ServerMessage.Tutorial?> = _tutorialMessage
+
     private val _classCatalog = MutableStateFlow<Map<String, CharacterClassDef>>(emptyMap())
     val classCatalog: StateFlow<Map<String, CharacterClassDef>> = _classCatalog
 
@@ -203,6 +207,10 @@ class GameViewModel(
             _visitedRooms.value = _visitedRooms.value + mapData.visitedRooms
         }
         _visitedRooms.value = _visitedRooms.value + mapData.playerRoomId
+    }
+
+    fun setInitialTutorial(tutorial: ServerMessage.Tutorial) {
+        _tutorialMessage.value = tutorial
     }
 
     fun setInitialCatalogs(
@@ -422,6 +430,7 @@ class GameViewModel(
                 }
             }
             is ServerMessage.SystemMessage -> addLog("[System] ${message.message}", MudColors.system)
+            is ServerMessage.Tutorial -> _tutorialMessage.value = message
             is ServerMessage.Error -> addLog("[Error] ${message.message}", MudColors.error)
             is ServerMessage.LoginOk -> _player.value = message.player
             is ServerMessage.Pong -> { /* ignore */ }
@@ -832,6 +841,10 @@ class GameViewModel(
 
     fun toggleHelp() {
         _showHelp.value = !_showHelp.value
+    }
+
+    fun dismissTutorial() {
+        _tutorialMessage.value = null
     }
 
     fun interactTrainer() {

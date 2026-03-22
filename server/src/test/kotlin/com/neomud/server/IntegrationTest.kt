@@ -87,10 +87,11 @@ class IntegrationTest {
             assertEquals("WARRIOR", loginResponse.player.characterClass)
             assertEquals("town:temple", loginResponse.player.currentRoomId)
 
-            // Should receive first-login welcome message
+            // Should receive first-login welcome tutorial
             val welcome = receiveServerMessage()
-            assertIs<ServerMessage.SystemMessage>(welcome)
-            assertTrue(welcome.message.contains("Welcome to NeoMud"))
+            assertIs<ServerMessage.Tutorial>(welcome)
+            assertEquals("welcome", welcome.key)
+            assertTrue(welcome.content.contains("Greetings, TestHero"))
 
             // Should receive RoomInfo
             val roomInfo = receiveServerMessage()
@@ -734,9 +735,9 @@ class IntegrationTest {
             assertIs<ServerMessage.LoginOk>(loginOk)
 
             val welcome = receiveServerMessage()
-            assertIs<ServerMessage.SystemMessage>(welcome)
-            assertTrue(welcome.message.contains("Welcome to NeoMud"), "First login should get welcome: ${welcome.message}")
-            assertTrue(welcome.message.contains("WelcomeHero"), "Welcome should include character name: ${welcome.message}")
+            assertIs<ServerMessage.Tutorial>(welcome)
+            assertEquals("welcome", welcome.key, "Should have key 'welcome'")
+            assertTrue(welcome.content.contains("WelcomeHero"), "Welcome should include character name: ${welcome.content}")
 
             receiveServerMessage() // RoomInfo
             receiveServerMessage() // MapData

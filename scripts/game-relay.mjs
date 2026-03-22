@@ -569,6 +569,9 @@ const handlers = {
   system_message(msg) {
     pushEvent('system_message', msg.message);
   },
+  tutorial(msg) {
+    pushEvent('tutorial', `[${msg.title}] ${msg.content}`);
+  },
   error(msg) {
     pushEvent('error', msg.message);
   },

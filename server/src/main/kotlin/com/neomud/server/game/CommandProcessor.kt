@@ -360,16 +360,18 @@ class CommandProcessor(
 
                 session.send(ServerMessage.LoginOk(effectivePlayer))
 
-                // First-time welcome message for new characters (sent right after LoginOk for predictable ordering)
+                // First-time welcome tutorial for new characters (sent right after LoginOk for predictable ordering)
                 if ("welcome" !in session.seenTutorials) {
                     session.seenTutorials.add("welcome")
                     discoveryRepository.markTutorialSeen(effectivePlayer.name, "welcome")
-                    session.send(ServerMessage.SystemMessage(
-                        "Welcome to NeoMud, ${effectivePlayer.name}! " +
-                        "Use the directional pad to move between rooms. " +
-                        "Tap hostile NPCs to select a target, then toggle attack mode (crossed swords) to fight. " +
-                        "Open the tome (\u2753) in the toolbar for a full guide to all game systems. " +
-                        "May your blade stay sharp and your mana never run dry!"
+                    session.send(ServerMessage.Tutorial(
+                        key = "welcome",
+                        title = "Welcome to NeoMud!",
+                        content = "Greetings, ${effectivePlayer.name}!\n\n" +
+                            "Use the directional pad to move between rooms. " +
+                            "Tap hostile NPCs to select a target, then toggle attack mode (crossed swords) to fight.\n\n" +
+                            "Open the Adventurer's Tome (\u2753) in the toolbar for a full guide to all game systems.\n\n" +
+                            "May your blade stay sharp and your mana never run dry!"
                     ))
                 }
 

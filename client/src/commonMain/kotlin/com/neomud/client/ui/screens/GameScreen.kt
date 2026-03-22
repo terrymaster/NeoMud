@@ -90,6 +90,7 @@ fun GameScreen(
     val showHelp by gameViewModel.showHelp.collectAsState()
     val classCatalog by gameViewModel.classCatalog.collectAsState()
     val deathMessage by gameViewModel.deathMessage.collectAsState()
+    val tutorialMessage by gameViewModel.tutorialMessage.collectAsState()
     val showTrainer by gameViewModel.showTrainer.collectAsState()
     val trainerInfo by gameViewModel.trainerInfo.collectAsState()
     val showVendor by gameViewModel.showVendor.collectAsState()
@@ -352,6 +353,15 @@ fun GameScreen(
                 onDismiss = { gameViewModel.dismissDeath() }
             )
         }
+
+        // Tutorial modal
+        if (tutorialMessage != null) {
+            TutorialModal(
+                title = tutorialMessage!!.title,
+                content = tutorialMessage!!.content,
+                onDismiss = { gameViewModel.dismissTutorial() }
+            )
+        }
     }
     } // CompositionLocalProvider
 }
@@ -393,6 +403,83 @@ private fun DeathOverlay(
                 fontSize = 12.sp,
                 color = Color(0xFF666666)
             )
+        }
+    }
+}
+
+@Composable
+private fun TutorialModal(
+    title: String,
+    content: String,
+    onDismiss: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xCC000000))
+            .clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .drawBehind {
+                    val w = size.width; val h = size.height
+                    // Stone panel background
+                    drawRect(StoneTheme.panelBg)
+                    // Border frame
+                    drawRect(StoneTheme.frameMid, size = size)
+                    drawRect(StoneTheme.panelBg, topLeft = androidx.compose.ui.geometry.Offset(3f, 3f),
+                        size = androidx.compose.ui.geometry.Size(w - 6f, h - 6f))
+                    // Bevel highlights
+                    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), 2f)
+                    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), 2f)
+                    drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), 2f)
+                    drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), 2f)
+                    // Gold accent line under title area
+                    drawLine(StoneTheme.metalGold, Offset(12f, 52f), Offset(w - 12f, 52f), 1f)
+                }
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Title
+            Text(
+                text = title,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFCCA855) // BurnishedGold
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            // Content
+            Text(
+                text = content,
+                fontSize = 14.sp,
+                color = Color(0xFFCCCCCC),
+                lineHeight = 20.sp
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            // Dismiss button
+            Box(
+                modifier = Modifier
+                    .drawBehind {
+                        val w = size.width; val h = size.height
+                        drawRect(Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark)))
+                        drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), 1f)
+                        drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), 1f)
+                        drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+                        drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), 1f)
+                    }
+                    .clickable { onDismiss() }
+                    .padding(horizontal = 32.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Begin Your Adventure",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFCCA855)
+                )
+            }
         }
     }
 }

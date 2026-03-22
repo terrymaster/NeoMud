@@ -228,6 +228,20 @@ class MessageSerializerTest {
     }
 
     @Test
+    fun testTutorialRoundTrip() {
+        val tutorial = ServerMessage.Tutorial(
+            key = "welcome",
+            title = "Welcome to NeoMud!",
+            content = "Greetings, adventurer!\n\nYour journey begins here."
+        )
+        val json = MessageSerializer.encodeServerMessage(tutorial)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(tutorial, decoded)
+        assertTrue(json.contains("\"type\":\"tutorial\""), "Expected type discriminator: $json")
+        assertTrue(json.contains("\"key\":\"welcome\""), "Expected key in JSON: $json")
+    }
+
+    @Test
     fun testMoveMessageJsonFormat() {
         val msg = ClientMessage.Move(Direction.NORTH)
         val json = MessageSerializer.encodeClientMessage(msg)

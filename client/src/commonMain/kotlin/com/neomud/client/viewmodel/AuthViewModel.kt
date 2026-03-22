@@ -51,6 +51,9 @@ class AuthViewModel : ViewModel() {
     private val _initialMapData = MutableStateFlow<ServerMessage.MapData?>(null)
     val initialMapData: StateFlow<ServerMessage.MapData?> = _initialMapData
 
+    private val _initialTutorial = MutableStateFlow<ServerMessage.Tutorial?>(null)
+    val initialTutorial: StateFlow<ServerMessage.Tutorial?> = _initialTutorial
+
     private var _serverHost: String = ""
     private var _serverPort: Int = 0
     val serverBaseUrl: String get() = "http://$_serverHost:$_serverPort"
@@ -65,6 +68,7 @@ class AuthViewModel : ViewModel() {
                             pendingLoginPassword = null
                             _initialRoomInfo.value = null
                             _initialMapData.value = null
+                            _initialTutorial.value = null
                             _authState.value = AuthState.LoggedIn(message.player)
                         }
                         is ServerMessage.RoomInfo -> {
@@ -77,6 +81,11 @@ class AuthViewModel : ViewModel() {
                         is ServerMessage.MapData -> {
                             if (_authState.value is AuthState.LoggedIn) {
                                 _initialMapData.value = message
+                            }
+                        }
+                        is ServerMessage.Tutorial -> {
+                            if (_authState.value is AuthState.LoggedIn) {
+                                _initialTutorial.value = message
                             }
                         }
                         is ServerMessage.RegisterOk -> {
