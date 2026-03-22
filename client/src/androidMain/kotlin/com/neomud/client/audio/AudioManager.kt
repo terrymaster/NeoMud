@@ -118,7 +118,20 @@ class AudioManager(context: Context) : PlatformAudioManager {
                             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                             .build()
                     )
-                    mp.setDataSource(uri)
+
+                    val assetPrefix = "file:///android_asset/"
+                    if (uri.startsWith(assetPrefix)) {
+                        // Compose Multiplatform resource URI — strip the virtual prefix
+                        // and use AssetManager to get a file descriptor that MediaPlayer
+                        // can play directly from the APK.
+                        val assetPath = uri.removePrefix(assetPrefix)
+                        val afd = appContext.assets.openFd(assetPath)
+                        mp.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                        afd.close()
+                    } else {
+                        mp.setDataSource(uri)
+                    }
+
                     mp.isLooping = true
                     val vol = masterVolume * bgmVolume
                     mp.setVolume(vol, vol)
