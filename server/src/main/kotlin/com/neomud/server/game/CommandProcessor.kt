@@ -68,7 +68,8 @@ class CommandProcessor(
     private val craftCommand: CraftCommand? = null,
     private val adminUsernames: Set<String> = emptySet(),
     private val movementTrailManager: MovementTrailManager? = null,
-    private val pcSpriteCatalog: PcSpriteCatalog? = null
+    private val pcSpriteCatalog: PcSpriteCatalog? = null,
+    private val tutorialService: TutorialService? = null
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
 
@@ -108,7 +109,7 @@ class CommandProcessor(
         moveCommand.departureRecorder = loop::recordDeparture
     }
 
-    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, skillCatalog, classCatalog, movementTrailManager)
+    private val moveCommand = MoveCommand(worldGraph, sessionManager, npcManager, playerRepository, roomItemManager, skillCatalog, classCatalog, movementTrailManager, tutorialService)
     private val lookCommand = LookCommand(worldGraph, sessionManager, npcManager, roomItemManager, skillCatalog, classCatalog)
     private val sayCommand = SayCommand(sessionManager, adminCommand)
     private val attackCommand = AttackCommand(npcManager, worldGraph)
@@ -361,7 +362,16 @@ class CommandProcessor(
                 session.send(ServerMessage.LoginOk(effectivePlayer))
 
                 // First-time welcome tutorial for new characters (sent right after LoginOk for predictable ordering)
-                if ("welcome" !in session.seenTutorials) {
+                if (tutorialService != null) {
+                    tutorialService.trySend(session, "welcome",
+                        contentOverride = "Greetings, ${effectivePlayer.name}!\n\n" +
+                            "Use the directional pad to move between rooms. " +
+                            "Tap hostile NPCs to select a target, then toggle attack mode (crossed swords) to fight.\n\n" +
+                            "Open the Adventurer's Tome (\u2753) in the toolbar for a full guide to all game systems.\n\n" +
+                            "May your blade stay sharp and your mana never run dry!"
+                    )
+                } else if ("welcome" !in session.seenTutorials) {
+                    // Fallback for tests without TutorialService
                     session.seenTutorials.add("welcome")
                     discoveryRepository.markTutorialSeen(effectivePlayer.name, "welcome")
                     session.send(ServerMessage.Tutorial(

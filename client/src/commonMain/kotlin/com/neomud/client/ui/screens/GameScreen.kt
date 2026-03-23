@@ -12,7 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -354,12 +358,22 @@ fun GameScreen(
             )
         }
 
-        // Tutorial modal
+        // Tutorial modal (blocking)
         if (tutorialMessage != null) {
             TutorialModal(
                 title = tutorialMessage!!.title,
                 content = tutorialMessage!!.content,
                 onDismiss = { gameViewModel.dismissTutorial() }
+            )
+        }
+
+        // Coach mark overlay (non-blocking)
+        val currentCoachMark by gameViewModel.coachMark.collectAsState()
+        if (currentCoachMark != null) {
+            CoachMarkOverlay(
+                tutorial = currentCoachMark!!,
+                targetCoordinates = currentCoachMark!!.targetElement?.let { gameViewModel.coachMarkTargets[it] },
+                onDismiss = { gameViewModel.dismissCoachMark() }
             )
         }
     }
@@ -429,13 +443,13 @@ private fun TutorialModal(
                     drawRect(StoneTheme.panelBg)
                     // Border frame
                     drawRect(StoneTheme.frameMid, size = size)
-                    drawRect(StoneTheme.panelBg, topLeft = androidx.compose.ui.geometry.Offset(3f, 3f),
+                    drawRect(StoneTheme.panelBg, topLeft = Offset(3f, 3f),
                         size = androidx.compose.ui.geometry.Size(w - 6f, h - 6f))
-                    // Bevel highlights
-                    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), 2f)
-                    drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), 2f)
-                    drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), 2f)
-                    drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), 2f)
+                    // Bevel highlights (inset by 1px so strokes stay within bounds)
+                    drawLine(StoneTheme.frameLight, Offset(1f, 1f), Offset(w - 1f, 1f), 2f)
+                    drawLine(StoneTheme.frameLight, Offset(1f, 1f), Offset(1f, h - 1f), 2f)
+                    drawLine(StoneTheme.innerShadow, Offset(1f, h - 2f), Offset(w - 1f, h - 2f), 2f)
+                    drawLine(StoneTheme.innerShadow, Offset(w - 2f, 1f), Offset(w - 2f, h - 1f), 2f)
                     // Gold accent line under title area
                     drawLine(StoneTheme.metalGold, Offset(12f, 52f), Offset(w - 12f, 52f), 1f)
                 }
@@ -464,10 +478,10 @@ private fun TutorialModal(
                     .drawBehind {
                         val w = size.width; val h = size.height
                         drawRect(Brush.verticalGradient(listOf(StoneTheme.frameLight, StoneTheme.frameDark)))
-                        drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(w, 0f), 1f)
-                        drawLine(StoneTheme.frameLight, Offset(0f, 0f), Offset(0f, h), 1f)
-                        drawLine(StoneTheme.innerShadow, Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
-                        drawLine(StoneTheme.innerShadow, Offset(w - 1f, 0f), Offset(w - 1f, h), 1f)
+                        drawLine(StoneTheme.frameLight, Offset(0f, 0.5f), Offset(w, 0.5f), 1f)
+                        drawLine(StoneTheme.frameLight, Offset(0.5f, 0f), Offset(0.5f, h), 1f)
+                        drawLine(StoneTheme.innerShadow, Offset(0f, h - 0.5f), Offset(w, h - 0.5f), 1f)
+                        drawLine(StoneTheme.innerShadow, Offset(w - 0.5f, 0f), Offset(w - 0.5f, h), 1f)
                     }
                     .clickable { onDismiss() }
                     .padding(horizontal = 32.dp, vertical = 8.dp),
@@ -480,6 +494,75 @@ private fun TutorialModal(
                     color = Color(0xFFCCA855)
                 )
             }
+        }
+    }
+}
+
+/**
+ * Modifier extension that registers the element bounds with GameViewModel for coach mark targeting.
+ */
+fun Modifier.coachMarkTarget(key: String, gameViewModel: GameViewModel): Modifier =
+    this.onGloballyPositioned { coordinates ->
+        gameViewModel.registerCoachMarkTarget(key, coordinates)
+    }
+
+/**
+ * Passive floating coach mark. Fades in/out, fully pass-through for input.
+ * No dismiss action needed — auto-fades after 6 seconds.
+ */
+@Composable
+private fun CoachMarkOverlay(
+    tutorial: com.neomud.shared.protocol.ServerMessage.Tutorial,
+    targetCoordinates: LayoutCoordinates?,
+    onDismiss: () -> Unit
+) {
+    val hasTarget = targetCoordinates != null && targetCoordinates.isAttached
+
+    // Animate: fade in 300ms, hold, fade out 500ms
+    val alpha = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(tutorial.key) {
+        alpha.animateTo(1f, animationSpec = androidx.compose.animation.core.tween(300))
+        kotlinx.coroutines.delay(5200) // hold visible
+        alpha.animateTo(0f, animationSpec = androidx.compose.animation.core.tween(500))
+        onDismiss()
+    }
+
+    // Fully pass-through — no clickable, no background, no input interception
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 8.dp, start = 12.dp, end = 12.dp)
+                .fillMaxWidth(0.92f)
+                .graphicsLayer { this.alpha = alpha.value }
+                .drawBehind {
+                    val w = size.width; val h = size.height
+                    // Semi-transparent stone background
+                    drawRect(Color(0xD9302820)) // panelBg at ~85% opacity
+                    // Thin gold top accent
+                    drawLine(StoneTheme.metalGold, Offset(0f, 0f), Offset(w, 0f), 2f)
+                    // Subtle bottom border
+                    drawLine(Color(0x40000000), Offset(0f, h - 1f), Offset(w, h - 1f), 1f)
+                }
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            // Gold title
+            Text(
+                text = tutorial.title,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFCCA855),
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(3.dp))
+            // Content below title, wraps naturally
+            Text(
+                text = tutorial.content.replace("\n\n", " ").replace("\n", " "),
+                fontSize = 12.sp,
+                color = Color(0xAABBBBBB),
+                maxLines = 3,
+                lineHeight = 16.sp
+            )
         }
     }
 }
@@ -565,6 +648,7 @@ private fun GameScreenPortrait(
                 onTrackTarget = if (hasTrackSkill) { npcId: String -> gameViewModel.useSkill("TRACK", npcId) } else null,
                 onKickTarget = if (hasKickSkill) { npcId: String -> gameViewModel.showKickDirectionPicker(npcId) } else null,
                 modifier = Modifier.fillMaxSize()
+                    .coachMarkTarget("npc_sprites", gameViewModel)
             )
 
             // Layer 2: Floating minimap
@@ -659,6 +743,7 @@ private fun GameScreenPortrait(
                     compact = true,
                     onClick = { gameViewModel.toggleCharacterSheet() },
                     modifier = Modifier.fillMaxWidth()
+                        .coachMarkTarget("status_effects", gameViewModel)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
             }
@@ -1088,13 +1173,15 @@ private fun ActionButtonRow(
             hasHostiles -> MaterialTheme.colorScheme.primary
             else -> Color.Gray
         }
-        ActionButton(
-            icon = MudIcons.Attack,
-            color = attackColor,
-            isActive = attackMode,
-            enabled = hasHostiles || attackMode || showBackstab,
-            onClick = { gameViewModel.toggleAttackMode(!attackMode) }
-        )
+        Box(modifier = Modifier.coachMarkTarget("attack_button", gameViewModel)) {
+            ActionButton(
+                icon = MudIcons.Attack,
+                color = attackColor,
+                isActive = attackMode,
+                enabled = hasHostiles || attackMode || showBackstab,
+                onClick = { gameViewModel.toggleAttackMode(!attackMode) }
+            )
+        }
 
         // Class skill buttons (filtered: non-passive)
         val classSkills = classDef?.skills ?: emptyList()
@@ -1107,13 +1194,15 @@ private fun ActionButtonRow(
             // SNEAK is a special toggle
             if (skillId == "SNEAK") {
                 val sneakEnabled = !attackMode || isHidden
-                ActionButton(
-                    icon = btnInfo.icon,
-                    color = if (isHidden) MudColors.stealth else btnInfo.activeColor,
-                    isActive = isHidden,
-                    enabled = sneakEnabled,
-                    onClick = { gameViewModel.toggleSneakMode(!isHidden) }
-                )
+                Box(modifier = Modifier.coachMarkTarget("sneak_button", gameViewModel)) {
+                    ActionButton(
+                        icon = btnInfo.icon,
+                        color = if (isHidden) MudColors.stealth else btnInfo.activeColor,
+                        isActive = isHidden,
+                        enabled = sneakEnabled,
+                        onClick = { gameViewModel.toggleSneakMode(!isHidden) }
+                    )
+                }
             } else if (skillId == "MEDITATE") {
                 ActionButton(
                     icon = btnInfo.icon,
@@ -1169,14 +1258,16 @@ private fun ActionButtonRow(
     // Row 2: Spell bar (magic classes only)
     if (hasMagic) {
         Spacer(modifier = Modifier.height(4.dp))
-        SpellBar(
-            spellSlots = spellSlots,
-            spellCatalog = spellCatalog,
-            readiedSpellId = readiedSpellId,
-            currentMp = currentMp,
-            onReadySpell = { gameViewModel.readySpell(it) },
-            onOpenSpellPicker = { gameViewModel.openSpellPicker(it) }
-        )
+        Box(modifier = Modifier.coachMarkTarget("spell_bar", gameViewModel)) {
+            SpellBar(
+                spellSlots = spellSlots,
+                spellCatalog = spellCatalog,
+                readiedSpellId = readiedSpellId,
+                currentMp = currentMp,
+                onReadySpell = { gameViewModel.readySpell(it) },
+                onOpenSpellPicker = { gameViewModel.openSpellPicker(it) }
+            )
+        }
     }
     } // end Column
 }

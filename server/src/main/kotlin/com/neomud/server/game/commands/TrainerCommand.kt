@@ -21,7 +21,8 @@ class TrainerCommand(
     private val raceCatalog: RaceCatalog,
     private val playerRepository: PlayerRepository,
     private val sessionManager: SessionManager,
-    private val npcManager: NpcManager
+    private val npcManager: NpcManager,
+    private val tutorialService: com.neomud.server.game.TutorialService? = null
 ) {
     suspend fun handleInteract(session: PlayerSession) {
         val roomId = session.currentRoomId ?: return
@@ -49,6 +50,11 @@ class TrainerCommand(
             interactSound = trainer.interactSound,
             exitSound = trainer.exitSound
         ))
+
+        // tut_cp_spend: player has unspent CP when interacting with trainer
+        if (player.unspentCp > 0 && tutorialService != null) {
+            tutorialService.trySend(session, "tut_cp_spend")
+        }
     }
 
     suspend fun handleLevelUp(session: PlayerSession) {

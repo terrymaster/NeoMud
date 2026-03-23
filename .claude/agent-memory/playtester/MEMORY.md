@@ -5,6 +5,7 @@
 - **Aelindra Starweave** (username: elfmage02, password: testpass123) -- ELF MAGE, Level 1, 66/100 XP
 - **Gromm Thunderfist** (username: audiotest1, password: testpass123) -- HALF_ORC WARRIOR, Level 1, 329/100 XP (cannot level up)
 - **Sister Meridia** (username: clerictest1, password: testpass123) -- HUMAN CLERIC, Level 1, 176/100 XP (cannot level up)
+- **Newbie** (username: tutorial_tester, password: test1234) -- HUMAN WARRIOR, Level 1, 177/100 XP (new player experience test)
 
 ## Areas Explored
 - **Town**: Temple of the Dawn (respawn, healing aura), Town Square (trainer), Market Street (blacksmith vendor), The Enchanted Emporium (magic vendor), The Rusty Tankard (barkeep vendor), North Gate (guard), Grimjaw's Forge (NPC crafter, not a vendor)
@@ -29,13 +30,26 @@
 - #224 -- NPC respawn is too fast -- new hostile spawns 1 second after kill
 - #225 -- Rest skill event shows raw roll number -- debug info leaking to players
 - #226 -- Consumable items outclass Cleric healing spells at level 1
+- #233 -- No welcome message, tutorial, or gameplay hints on first login
+- #234 -- Non-combat NPCs display 0/0 HP
+- #235 -- No vendor announcement when entering shop rooms
+- #236 -- No crafter announcement or discoverable interaction for Grimjaw's Forge
+- #237 -- Purchased items not auto-equipped into empty slots
+- #238 -- Loot items have no description -- players can't tell their purpose
+- #239 -- Hostile NPCs attack instantly with no warning for new players
+- #240 -- Tavern cellar locked with no hint about how to unlock
+- #241 -- Vendor shop does not show item stats or comparison to equipped gear
+- #242 -- NPC targeting requires exact instance ID with # suffix
+- #243 -- Say command produces no visible feedback to the speaker
+- #244 -- Forest Edge often empty -- new player waits for first enemy
 
 ## Game State Observations
 - **Warrior Combat**: Iron Sword does 21-25 damage per hit (STR 35). One-shots rats (15 HP), spiders (20 HP), bandits (20 HP). Two-shots wolves (30 HP).
 - **Cleric Combat**: Iron Sword does 21-24 damage per hit (STR 25). Smite does 26-31 damage (WIL 28, basePower 10). Minor Heal restores only 6 HP (basePower 10). Bash does 20 damage.
 - **Warrior Skills**: Bash does ~23 damage. Kick does ~17 damage + requires direction (targetId:DIRECTION format). REST heals 4 HP/tick.
 - **Cleric Skills**: Bash does 20 damage. REST heals 3 HP/tick. Meditate restores 4 MP/tick.
-- **Consumables**: Grom's Stout Ale heals 10 HP (5c), Hearty Bread Loaf heals 15 HP (12c), Health Potion heals 20 HP (20c), Mana Potion restores 20 MP (25c).
+- **Human Warrior Combat**: Iron Sword does 25 damage per hit (STR 30). One-shots rats (15 HP), bandits (20 HP), spiders (20 HP). Two-shots wolves (30 HP). HP: 22.
+- **Consumables**: Grom's Stout Ale heals 5 HP (5c) [post-rebalance], Hearty Bread Loaf heals 15 HP (12c), Health Potion heals 20 HP (20c), Mana Potion restores 20 MP (25c).
 - **Economy**: Rat drops 1-7c, Spider drops 30c + Spider Fang x1, Bandit drops 9-17c, Wolf drops 6-14c + Wolf Pelt (sells 4c) + sometimes 1s. Wolf Pelt sells for 4c.
 - **XP**: Rats 15 XP, Bandits 18 XP, Spiders 44 XP, Wolves 28 XP. Level 2 = 100 XP total.
 - **Leveling**: BLOCKED -- cannot find level up command. Trainer says "ready to level up" but provides no action. Tried: interact_trainer, level_up command, train_level command, use_skill level_up. None work.

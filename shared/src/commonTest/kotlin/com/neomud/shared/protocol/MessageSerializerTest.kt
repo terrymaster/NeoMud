@@ -239,6 +239,26 @@ class MessageSerializerTest {
         assertEquals(tutorial, decoded)
         assertTrue(json.contains("\"type\":\"tutorial\""), "Expected type discriminator: $json")
         assertTrue(json.contains("\"key\":\"welcome\""), "Expected key in JSON: $json")
+        // Default blocking=true should be present
+        assertEquals(true, (decoded as ServerMessage.Tutorial).blocking)
+        assertEquals(null, decoded.targetElement)
+    }
+
+    @Test
+    fun testTutorialNonBlockingRoundTrip() {
+        val tutorial = ServerMessage.Tutorial(
+            key = "tut_hostile_npc",
+            title = "Hostile Creatures",
+            content = "Watch out!",
+            blocking = false,
+            targetElement = "npc_sprites"
+        )
+        val json = MessageSerializer.encodeServerMessage(tutorial)
+        val decoded = MessageSerializer.decodeServerMessage(json) as ServerMessage.Tutorial
+        assertEquals(tutorial, decoded)
+        assertEquals(false, decoded.blocking)
+        assertEquals("npc_sprites", decoded.targetElement)
+        assertTrue(json.contains("\"target_element\":\"npc_sprites\""), "Expected target_element in JSON: $json")
     }
 
     @Test

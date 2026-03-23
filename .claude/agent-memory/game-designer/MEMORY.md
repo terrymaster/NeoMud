@@ -66,6 +66,8 @@
 - Cutting Words basePower (8) below other T1 damage spells (10-13)
 - Crafting materials drop but no crafting system exists -- **design filed as issue #214**
 - No loot_tables.json file exists; loot is embedded in zone NPC definitions
+- **Heal spell scaling uses same formula as damage** -- heals overflow tiny L1 HP pools (#223, #227)
+- **Consumables outclass heal spells at L1** -- Health Potion (25 HP) > full HP pool (#226, #228)
 
 ## Economy Analysis (Mar 2026)
 - Forest farming: ~30 kills/hr, ~186c/hr from mats, ~45c/hr coins

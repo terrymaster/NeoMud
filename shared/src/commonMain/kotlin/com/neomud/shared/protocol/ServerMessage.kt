@@ -151,7 +151,14 @@ sealed class ServerMessage {
 
     @Serializable
     @SerialName("tutorial")
-    data class Tutorial(val key: String, val title: String, val content: String) : ServerMessage()
+    data class Tutorial(
+        val key: String,
+        val title: String,
+        val content: String,
+        val blocking: Boolean = true,
+        @SerialName("target_element")
+        val targetElement: String? = null
+    ) : ServerMessage()
 
     @Serializable
     @SerialName("pong")

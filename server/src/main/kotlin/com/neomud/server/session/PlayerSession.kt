@@ -42,6 +42,8 @@ class PlayerSession(
 
     // Tutorial tracking
     val seenTutorials: MutableSet<String> = mutableSetOf()
+    var firstKillDone: Boolean = false
+    var inCombat: Boolean = false
 
     // Interactable state
     val discoveredInteractables: MutableSet<String> = mutableSetOf()  // "roomId::featureId"

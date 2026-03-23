@@ -29,7 +29,8 @@ class MoveCommand(
     private val roomItemManager: RoomItemManager,
     private val skillCatalog: SkillCatalog,
     private val classCatalog: ClassCatalog,
-    private val movementTrailManager: com.neomud.server.game.MovementTrailManager? = null
+    private val movementTrailManager: com.neomud.server.game.MovementTrailManager? = null,
+    private val tutorialService: com.neomud.server.game.TutorialService? = null
 ) {
     var departureRecorder: ((String, String, Direction) -> Unit)? = null
     suspend fun execute(session: PlayerSession, direction: Direction) {
@@ -225,6 +226,39 @@ class MoveCommand(
         // Auto-detect trainer in room
         if (npcManager.getTrainerInRoom(targetRoomId) != null) {
             session.send(ServerMessage.SystemMessage("A trainer is here. You can interact to train your skills."))
+        }
+
+        // Tutorial triggers on room enter
+        if (tutorialService != null && player != null) {
+            val hostileNpcs = npcManager.getLivingHostileNpcsInRoom(targetRoomId)
+            val hasHostilesHere = hostileNpcs.isNotEmpty()
+
+            // tut_hostile_npc: first time entering a room with hostiles
+            if (hasHostilesHere) {
+                tutorialService.trySend(session, "tut_hostile_npc")
+            }
+
+            // tut_vendor: room has a vendor
+            if (npcManager.getVendorInRoom(targetRoomId) != null) {
+                tutorialService.trySend(session, "tut_vendor")
+            }
+
+            // tut_crafter: room has a crafter
+            if (npcManager.getCrafterInRoom(targetRoomId) != null) {
+                tutorialService.trySend(session, "tut_crafter")
+            }
+
+            // tut_magic: magic class enters first combat zone
+            if (hasHostilesHere && tutorialService.classHasMagic(player.characterClass)) {
+                tutorialService.trySend(session, "tut_magic")
+            }
+
+            // tut_danger_ahead: entering a danger zone from a safe zone
+            val currentZone = currentRoom.zoneId
+            val targetZone = targetRoom.zoneId
+            if (currentZone != targetZone && targetZone in tutorialService.dangerZones) {
+                tutorialService.trySend(session, "tut_danger_ahead")
+            }
         }
 
         // Persist position async

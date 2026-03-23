@@ -15,7 +15,7 @@ data class PlayerDiscoveryData(
     val tutorials: Set<String> = emptySet()
 )
 
-class DiscoveryRepository {
+open class DiscoveryRepository {
 
     fun loadPlayerDiscovery(playerName: String): PlayerDiscoveryData = transaction {
         val rows = PlayerDiscoveryTable.selectAll().where {
@@ -59,7 +59,7 @@ class DiscoveryRepository {
         }
     }
 
-    fun markTutorialSeen(playerName: String, tutorialKey: String): Unit = transaction {
+    open fun markTutorialSeen(playerName: String, tutorialKey: String): Unit = transaction {
         PlayerDiscoveryTable.insertIgnore {
             it[PlayerDiscoveryTable.playerName] = playerName
             it[discoveryType] = "tutorial"

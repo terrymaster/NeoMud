@@ -173,6 +173,9 @@ object GameConfig {
         const val EXPIRY_MS = 600_000L // 10 minutes
         const val MAX_ITEMS_PER_ROOM = 50
     }
+    object Tutorial {
+        const val TOAST_DISPLAY_MS = 8_000L
+    }
     object Trails {
         const val MAX_ENTRIES_PER_ROOM = 20
         const val LIFETIME_MS = 90_000L

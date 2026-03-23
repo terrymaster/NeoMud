@@ -3,6 +3,7 @@ package com.neomud.server
 import com.neomud.server.game.CommandProcessor
 import com.neomud.server.game.GameLoop
 import com.neomud.server.game.MovementTrailManager
+import com.neomud.server.game.TutorialService
 import com.neomud.server.game.combat.CombatManager
 import com.neomud.server.game.commands.InventoryCommand
 import com.neomud.server.game.commands.PickupCommand
@@ -275,7 +276,8 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     val movementTrailManager = MovementTrailManager()
     val spellCommand = SpellCommand(spellCatalog, classCatalog, npcManager, sessionManager, playerRepository)
     val combatManager = CombatManager(npcManager, sessionManager, worldGraph, equipmentService, skillCatalog, spellCommand, spellCatalog, movementTrailManager)
-    val trainerCommand = TrainerCommand(classCatalog, raceCatalog, playerRepository, sessionManager, npcManager)
+    val tutorialService = TutorialService(discoveryRepository, classCatalog)
+    val trainerCommand = TrainerCommand(classCatalog, raceCatalog, playerRepository, sessionManager, npcManager, tutorialService)
     val vendorCommand = VendorCommand(npcManager, itemCatalog, inventoryRepository, coinRepository, inventoryCommand, sessionManager, skillCatalog)
     val craftingService = CraftingService(recipeCatalog, itemCatalog, inventoryRepository, coinRepository)
     val craftCommand = CraftCommand(npcManager, craftingService, recipeCatalog, inventoryCommand, sessionManager, inventoryRepository, coinRepository)
@@ -294,9 +296,9 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
         classCatalog, itemCatalog, skillCatalog, raceCatalog, inventoryCommand, pickupCommand, roomItemManager,
         trainerCommand, spellCommand, spellCatalog, vendorCommand, lootService, lootTableCatalog,
         inventoryRepository, coinRepository, discoveryRepository, craftCommand, adminUsernames, movementTrailManager,
-        pcSpriteCatalog
+        pcSpriteCatalog, tutorialService
     )
-    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository, skillCatalog, classCatalog, itemCatalog, inventoryRepository, coinRepository, movementTrailManager, spellCommand, spellCatalog)
+    val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository, skillCatalog, classCatalog, itemCatalog, inventoryRepository, coinRepository, movementTrailManager, spellCommand, spellCatalog, tutorialService)
     commandProcessor.setGameLoop(gameLoop)
 
     // Save players and close resources when the application stops
