@@ -4,7 +4,7 @@
   "description": "An ancient forest where the trees seem to murmur secrets to one another.",
   "safe": false,
   "bgm": "forest_danger",
-  "spawnConfig": { "maxEntities": 6, "maxPerRoom": 2, "rateTicks": 25 },
+  "spawnConfig": { "maxEntities": 6, "maxPerRoom": 2, "rateTicks": 15 },
   "imageStyle": "fantasy digital painting, rich colors, atmospheric lighting, slightly painterly, fixed perspective, JRPG background, stage-like composition",
   "imageNegativePrompt": "modern, cars, electricity, sci-fi, top-down, isometric, characters, people, figures",
   "rooms": [

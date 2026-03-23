@@ -74,7 +74,13 @@ class MoveCommand(
                 )
                 session.send(ServerMessage.MapData(mapRooms, currentRoomId))
             }
-            session.send(ServerMessage.MoveError("${direction.lockedExitPhrase.replaceFirstChar { it.uppercase() }} is locked."))
+            val isUnpickable = direction in currentRoom.unpickableExits
+            val hint = if (isUnpickable) {
+                " Perhaps a key or quest will grant access."
+            } else {
+                " A skilled lockpick might be able to open it."
+            }
+            session.send(ServerMessage.MoveError("${direction.lockedExitPhrase.replaceFirstChar { it.uppercase() }} is locked.$hint"))
             return
         }
 
