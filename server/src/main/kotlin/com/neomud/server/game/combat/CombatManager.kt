@@ -213,9 +213,7 @@ class CombatManager(
                     if (target.currentHp <= 0) continue
 
                     val isBackstab = session.isHidden
-                    if (session.isHidden) {
-                        session.isHidden = false
-                    }
+                    // Don't clear stealth yet — only break on a confirmed hit
 
                     val effStats = session.effectiveStats()
                     val bonuses = equipmentService.getCombatBonuses(player.name)
@@ -234,8 +232,10 @@ class CombatManager(
                             isPlayerDefender = false,
                             roomId = roomId,
                             isMiss = true,
+                            isBackstab = isBackstab,
                             defenderId = target.id
                         ))
+                        // Stealth preserved on miss — thief stays hidden
                         continue
                     }
 
@@ -250,8 +250,10 @@ class CombatManager(
                             isPlayerDefender = false,
                             roomId = roomId,
                             isDodge = true,
+                            isBackstab = isBackstab,
                             defenderId = target.id
                         ))
+                        // Stealth preserved on dodge — thief stays hidden
                         continue
                     }
 
@@ -268,6 +270,7 @@ class CombatManager(
                     }
 
                     if (isBackstab) {
+                        session.isHidden = false  // Break stealth only on confirmed hit
                         damage *= GameConfig.Combat.BACKSTAB_DAMAGE_MULTIPLIER
                         logger.info("${player.name} backstabs ${target.name} for $damage damage in $roomId")
                     }

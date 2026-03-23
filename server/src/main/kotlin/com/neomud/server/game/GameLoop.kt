@@ -47,7 +47,8 @@ class GameLoop(
     private val coinRepository: CoinRepository,
     private val movementTrailManager: MovementTrailManager? = null,
     private val spellCommand: SpellCommand? = null,
-    private val spellCatalog: SpellCatalog? = null
+    private val spellCatalog: SpellCatalog? = null,
+    private val tutorialService: TutorialService? = null
 ) {
     private val logger = LoggerFactory.getLogger(GameLoop::class.java)
 
@@ -307,8 +308,8 @@ class GameLoop(
         for (event in combatEvents) {
             when (event) {
                 is CombatEvent.Hit -> {
-                    // If this was a backstab, notify the attacker their stealth broke
-                    if (event.isBackstab) {
+                    // Only reveal on a CONNECTED backstab (not miss/dodge/parry — stealth preserved)
+                    if (event.isBackstab && !event.isMiss && !event.isDodge && !event.isParry) {
                         val attackerSession = sessionManager.getSession(event.attackerName)
                         if (attackerSession != null) {
                             try {
@@ -338,6 +339,22 @@ class GameLoop(
                             defenderId = event.defenderId
                         )
                     )
+
+                    // Track combat state for deferred tutorials
+                    if (event.isPlayerDefender) {
+                        val defenderSession = sessionManager.getSession(event.defenderName)
+                        if (defenderSession != null) {
+                            defenderSession.inCombat = true
+                            // tut_low_hp: fire immediately as a non-blocking coach mark
+                            if (tutorialService != null && event.defenderHp > 0 &&
+                                event.defenderHp < (defenderSession.player?.maxHp ?: 0) / 2) {
+                                tutorialService.trySend(defenderSession, "tut_low_hp")
+                            }
+                        }
+                    }
+                    // Mark attackers as in combat too
+                    val atkSession = sessionManager.getSession(event.attackerName)
+                    if (atkSession != null) atkSession.inCombat = true
                 }
                 is CombatEvent.NpcKilled -> {
                     handleNpcKillEvent(event)
@@ -472,6 +489,13 @@ class GameLoop(
                             val groundCoins = roomItemManager.getGroundCoins(event.respawnRoomId)
                             session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
                         } catch (_: Exception) { }
+                    }
+
+                    // tut_death: first death tutorial
+                    if (tutorialService != null) {
+                        val lvl = session.player?.level ?: 1
+                        tutorialService.trySend(session, "tut_death",
+                            contentOverride = tutorialService.deathContent(lvl))
                     }
 
                     // Persist death state
@@ -617,6 +641,11 @@ class GameLoop(
             try {
                 session.send(ServerMessage.ActiveEffectsUpdate(session.activeEffects.toList()))
             } catch (_: Exception) { /* session closing */ }
+
+            // tut_status_effect: first buff/debuff applied
+            if (tutorialService != null && session.activeEffects.isNotEmpty()) {
+                tutorialService.trySend(session, "tut_status_effect")
+            }
         }
 
         // 5b. Process active effects on NPCs (DoT, HoT, etc.)
@@ -699,10 +728,29 @@ class GameLoop(
             }
         }
 
-        // 7. Prune stale movement trails
+        // 7. Post-combat tutorials
+        if (tutorialService != null) {
+            for (session in sessionManager.getAllAuthenticatedSessions()) {
+                val roomId = session.currentRoomId ?: continue
+                val hostiles = npcManager.getLivingHostileNpcsInRoom(roomId)
+
+                // Check if combat just ended (was in combat, no more hostiles, not attacking)
+                if (session.inCombat && hostiles.isEmpty() && !session.attackMode) {
+                    session.inCombat = false
+
+                    // tut_stealth: deferred to post-first-combat for stealth classes
+                    val player = session.player
+                    if (player != null && tutorialService.classHasStealth(player.characterClass)) {
+                        tutorialService.trySend(session, "tut_stealth")
+                    }
+                }
+            }
+        }
+
+        // 8. Prune stale movement trails
         movementTrailManager?.pruneStale()
 
-        // 8. Prune expired ground items
+        // 9. Prune expired ground items
         roomItemManager.pruneExpired()
     }
 
@@ -1065,8 +1113,16 @@ class GameLoop(
                     killerSession.send(ServerMessage.XpGained(xpGained, newXp, killerPlayer.xpToNextLevel))
                     if (XpCalculator.isReadyToLevel(newXp, killerPlayer.xpToNextLevel, killerPlayer.level)) {
                         killerSession.send(ServerMessage.SystemMessage("You have enough experience to level up! Visit a trainer."))
+                        // tut_level_up: non-blocking coach mark, fires immediately
+                        tutorialService?.trySend(killerSession, "tut_level_up")
                     }
                     playerRepository.savePlayerState(killerSession.player!!)
+
+                    // tut_first_kill: first NPC kill
+                    if (tutorialService != null && !killerSession.firstKillDone) {
+                        killerSession.firstKillDone = true
+                        tutorialService.trySend(killerSession, "tut_first_kill")
+                    }
                 } catch (_: Exception) { }
             }
         }

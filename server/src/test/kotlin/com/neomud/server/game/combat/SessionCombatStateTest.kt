@@ -185,23 +185,67 @@ class SessionCombatStateTest {
     }
 
     @Test
-    fun testAttackingWhileHiddenIsBackstabAndBreaksStealth() {
+    fun testAttackingWhileHiddenIsBackstabAndBreaksStealthOnHit() {
         val session = createTestSession()
         session.isHidden = true
         session.attackMode = true
 
-        // CombatManager logic: check hidden, then clear
+        // CombatManager logic: check hidden, only clear on confirmed hit
         val isBackstab = session.isHidden
-        if (session.isHidden) {
+        assertTrue(isBackstab, "First melee while hidden should be backstab")
+
+        // Simulate confirmed hit — stealth breaks
+        if (isBackstab) {
             session.isHidden = false
         }
-
-        assertTrue(isBackstab, "First melee while hidden should be backstab")
-        assertFalse(session.isHidden, "Hidden should be cleared after backstab")
+        assertFalse(session.isHidden, "Hidden should be cleared after confirmed backstab hit")
 
         // Second attack is not a backstab
         val secondBackstab = session.isHidden
         assertFalse(secondBackstab)
+    }
+
+    @Test
+    fun testBackstabMissPreservesStealth() {
+        val session = createTestSession()
+        session.isHidden = true
+        session.attackMode = true
+
+        // CombatManager logic: check hidden
+        val isBackstab = session.isHidden
+        assertTrue(isBackstab, "Attack while hidden should flag as backstab")
+
+        // Simulate miss — stealth is NOT cleared
+        // (CombatManager continues without clearing isHidden)
+        assertTrue(session.isHidden, "Stealth should be preserved on miss")
+
+        // Next attack is still a backstab
+        val nextBackstab = session.isHidden
+        assertTrue(nextBackstab, "Player should still be hidden for next attack")
+    }
+
+    @Test
+    fun testBackstabDodgedPreservesStealth() {
+        val session = createTestSession()
+        session.isHidden = true
+        session.attackMode = true
+
+        // CombatManager logic: check hidden
+        val isBackstab = session.isHidden
+        assertTrue(isBackstab, "Attack while hidden should flag as backstab")
+
+        // Simulate dodge — stealth is NOT cleared
+        assertTrue(session.isHidden, "Stealth should be preserved on dodge")
+    }
+
+    @Test
+    fun testNonHiddenPlayerMeleeIsNotBackstab() {
+        val session = createTestSession()
+        session.isHidden = false
+        session.attackMode = true
+
+        val isBackstab = session.isHidden
+        assertFalse(isBackstab, "Non-hidden player should not get backstab")
     }
 
     // --- Cooldown prevents queueing ---

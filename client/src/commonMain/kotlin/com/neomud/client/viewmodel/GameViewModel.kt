@@ -169,9 +169,24 @@ class GameViewModel(
     private val _showHelp = MutableStateFlow(false)
     val showHelp: StateFlow<Boolean> = _showHelp
 
-    // Tutorial modal
+    // Tutorial modal (blocking)
     private val _tutorialMessage = MutableStateFlow<ServerMessage.Tutorial?>(null)
     val tutorialMessage: StateFlow<ServerMessage.Tutorial?> = _tutorialMessage
+
+    // Coach mark (non-blocking)
+    private val _coachMark = MutableStateFlow<ServerMessage.Tutorial?>(null)
+    val coachMark: StateFlow<ServerMessage.Tutorial?> = _coachMark
+
+    // Coach mark target element positions
+    val coachMarkTargets: MutableMap<String, androidx.compose.ui.layout.LayoutCoordinates> = mutableMapOf()
+
+    fun registerCoachMarkTarget(key: String, coordinates: androidx.compose.ui.layout.LayoutCoordinates) {
+        coachMarkTargets[key] = coordinates
+    }
+
+    fun unregisterCoachMarkTarget(key: String) {
+        coachMarkTargets.remove(key)
+    }
 
     private val _classCatalog = MutableStateFlow<Map<String, CharacterClassDef>>(emptyMap())
     val classCatalog: StateFlow<Map<String, CharacterClassDef>> = _classCatalog
@@ -210,7 +225,11 @@ class GameViewModel(
     }
 
     fun setInitialTutorial(tutorial: ServerMessage.Tutorial) {
-        _tutorialMessage.value = tutorial
+        if (tutorial.blocking) {
+            _tutorialMessage.value = tutorial
+        } else {
+            _coachMark.value = tutorial
+        }
     }
 
     fun setInitialCatalogs(
@@ -324,6 +343,14 @@ class GameViewModel(
             }
             is ServerMessage.CombatHit -> {
                 when {
+                    message.isMiss && message.isBackstab -> {
+                        addLog("${message.attackerName} strikes from the shadows but misses! (still hidden)", MudColors.stealth)
+                        sfx("miss", "general")
+                    }
+                    message.isDodge && message.isBackstab -> {
+                        addLog("${message.defenderName} dodges ${message.attackerName}'s backstab! (still hidden)", MudColors.stealth)
+                        sfx("dodge", "general")
+                    }
                     message.isMiss -> {
                         addLog("${message.attackerName} misses ${message.defenderName}!", MudColors.combatYou)
                         if (!message.isPlayerDefender) {
@@ -430,7 +457,13 @@ class GameViewModel(
                 }
             }
             is ServerMessage.SystemMessage -> addLog("[System] ${message.message}", MudColors.system)
-            is ServerMessage.Tutorial -> _tutorialMessage.value = message
+            is ServerMessage.Tutorial -> {
+                if (message.blocking) {
+                    _tutorialMessage.value = message
+                } else {
+                    _coachMark.value = message
+                }
+            }
             is ServerMessage.Error -> addLog("[Error] ${message.message}", MudColors.error)
             is ServerMessage.LoginOk -> _player.value = message.player
             is ServerMessage.Pong -> { /* ignore */ }
@@ -845,6 +878,10 @@ class GameViewModel(
 
     fun dismissTutorial() {
         _tutorialMessage.value = null
+    }
+
+    fun dismissCoachMark() {
+        _coachMark.value = null
     }
 
     fun interactTrainer() {
