@@ -128,6 +128,24 @@ class TutorialService(
             content = "Check the icons near your health bar \u2014 buffs help, debuffs hurt. They wear off over time.",
             blocking = false,
             targetElement = "status_effects"
+        ),
+        "tut_inventory" to TutorialDef(
+            key = "tut_inventory",
+            title = "Item Collected",
+            content = "Open your Inventory (bag icon) to view, equip, use, or drop items. Keep healing potions handy!",
+            blocking = false
+        ),
+        "tut_locked_exit" to TutorialDef(
+            key = "tut_locked_exit",
+            title = "Locked Passage",
+            content = "Rogues with Pick Lock can attempt to force locked doors. Others must find a key or hidden mechanism.",
+            blocking = false
+        ),
+        "tut_hidden_exit" to TutorialDef(
+            key = "tut_hidden_exit",
+            title = "Hidden Passage Found",
+            content = "Sharp eyes! The Perception skill helps reveal concealed routes. Not every secret is found on the first visit.",
+            blocking = false
         )
     )
 

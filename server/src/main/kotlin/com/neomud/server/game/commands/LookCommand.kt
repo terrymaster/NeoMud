@@ -19,7 +19,8 @@ class LookCommand(
     private val npcManager: NpcManager,
     private val roomItemManager: RoomItemManager,
     private val skillCatalog: SkillCatalog,
-    private val classCatalog: ClassCatalog
+    private val classCatalog: ClassCatalog,
+    private val tutorialService: com.neomud.server.game.TutorialService? = null
 ) {
     suspend fun execute(session: PlayerSession) {
         val currentRoomId = session.currentRoomId ?: return
@@ -114,6 +115,7 @@ class LookCommand(
                 session.discoverExit(roomId, dir)
                 worldGraph.revealHiddenExit(roomId, dir)
                 session.send(ServerMessage.SystemMessage("You notice a hidden passage to the ${dir.name.lowercase()}!"))
+                tutorialService?.trySend(session, "tut_hidden_exit")
             }
         }
     }

@@ -1038,6 +1038,7 @@ class GameLoop(
                 session.discoverExit(roomId, dir)
                 worldGraph.revealHiddenExit(roomId, dir)
                 try { session.send(ServerMessage.SystemMessage("Your tracking skills reveal a hidden passage to the ${dir.name.lowercase()}!")) } catch (_: Exception) {}
+                tutorialService?.trySend(session, "tut_hidden_exit")
                 found = true
             }
         }

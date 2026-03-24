@@ -17,7 +17,8 @@ class PickupCommand(
     private val inventoryRepository: InventoryRepository,
     private val coinRepository: CoinRepository,
     private val itemCatalog: ItemCatalog,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val tutorialService: com.neomud.server.game.TutorialService? = null
 ) {
     suspend fun handlePickupItem(session: PlayerSession, itemId: String, quantity: Int) {
         if (quantity < 1) return
@@ -45,6 +46,9 @@ class PickupCommand(
 
         val itemName = itemCatalog.getItem(itemId)?.name ?: itemId
         session.send(ServerMessage.PickupResult(itemName, removed))
+
+        // tut_inventory: first item pickup
+        tutorialService?.trySend(session, "tut_inventory")
 
         // Send updated inventory to the picker
         sendInventoryUpdate(session, playerName)

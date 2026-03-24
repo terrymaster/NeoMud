@@ -231,4 +231,52 @@ class TutorialServiceTest {
         assertFalse(session.firstKillDone)
         assertFalse(session.inCombat)
     }
+
+    @Test
+    fun testInventoryTutorialIsNonBlocking() = runBlocking {
+        val service = createService()
+        val outgoing = Channel<Frame>(Channel.UNLIMITED)
+        val session = createTestSession(outgoing)
+        session.playerName = "TestPlayer"
+
+        service.trySend(session, "tut_inventory")
+
+        val messages = drainMessages(outgoing)
+        val tutorials = messages.filterIsInstance<ServerMessage.Tutorial>()
+        assertEquals(1, tutorials.size)
+        assertEquals("tut_inventory", tutorials[0].key)
+        assertFalse(tutorials[0].blocking, "Inventory tutorial should be non-blocking")
+    }
+
+    @Test
+    fun testLockedExitTutorialIsNonBlocking() = runBlocking {
+        val service = createService()
+        val outgoing = Channel<Frame>(Channel.UNLIMITED)
+        val session = createTestSession(outgoing)
+        session.playerName = "TestPlayer"
+
+        service.trySend(session, "tut_locked_exit")
+
+        val messages = drainMessages(outgoing)
+        val tutorials = messages.filterIsInstance<ServerMessage.Tutorial>()
+        assertEquals(1, tutorials.size)
+        assertEquals("tut_locked_exit", tutorials[0].key)
+        assertFalse(tutorials[0].blocking, "Locked exit tutorial should be non-blocking")
+    }
+
+    @Test
+    fun testHiddenExitTutorialIsNonBlocking() = runBlocking {
+        val service = createService()
+        val outgoing = Channel<Frame>(Channel.UNLIMITED)
+        val session = createTestSession(outgoing)
+        session.playerName = "TestPlayer"
+
+        service.trySend(session, "tut_hidden_exit")
+
+        val messages = drainMessages(outgoing)
+        val tutorials = messages.filterIsInstance<ServerMessage.Tutorial>()
+        assertEquals(1, tutorials.size)
+        assertEquals("tut_hidden_exit", tutorials[0].key)
+        assertFalse(tutorials[0].blocking, "Hidden exit tutorial should be non-blocking")
+    }
 }

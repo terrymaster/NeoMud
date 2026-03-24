@@ -81,6 +81,7 @@ class MoveCommand(
                 " A skilled lockpick might be able to open it."
             }
             session.send(ServerMessage.MoveError("${direction.lockedExitPhrase.replaceFirstChar { it.uppercase() }} is locked.$hint"))
+            tutorialService?.trySend(session, "tut_locked_exit")
             return
         }
 
@@ -309,6 +310,7 @@ class MoveCommand(
                 session.discoverExit(roomId, dir)
                 worldGraph.revealHiddenExit(roomId, dir)
                 session.send(ServerMessage.SystemMessage("You notice a hidden passage to the ${dir.name.lowercase()}!"))
+                tutorialService?.trySend(session, "tut_hidden_exit")
             }
         }
     }
