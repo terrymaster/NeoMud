@@ -361,6 +361,7 @@ fun GameScreen(
         // Tutorial modal (blocking)
         if (tutorialMessage != null) {
             TutorialModal(
+                key = tutorialMessage!!.key,
                 title = tutorialMessage!!.title,
                 content = tutorialMessage!!.content,
                 onDismiss = { gameViewModel.dismissTutorial() }
@@ -422,7 +423,17 @@ private fun DeathOverlay(
 }
 
 @Composable
+private fun tutorialDismissText(key: String): String = when (key) {
+    "welcome" -> "Begin Your Adventure"
+    "tut_vendor" -> "Browse Wares"
+    "tut_crafter" -> "View Recipes"
+    "tut_cp_spend" -> "Allocate Points"
+    else -> "Got It"
+}
+
+@Composable
 private fun TutorialModal(
+    key: String,
     title: String,
     content: String,
     onDismiss: () -> Unit
@@ -488,7 +499,7 @@ private fun TutorialModal(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Begin Your Adventure",
+                    text = tutorialDismissText(key),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFCCA855)
