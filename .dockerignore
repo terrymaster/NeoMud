@@ -1,0 +1,27 @@
+# IDE and tools
+.git
+.github
+.idea
+.kotlin
+.claude
+.playwright-mcp
+.run
+.gradle
+
+# Modules not needed for server build
+client
+iosApp
+maker
+docs
+scripts
+
+# Build artifacts
+build
+*/build
+node_modules
+nanobanana-output
+
+# Files
+*.md
+*.sh
+*.bat
