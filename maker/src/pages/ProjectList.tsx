@@ -10,7 +10,6 @@ interface ProjectInfo {
 
 interface ProjectsResponse {
   projects: ProjectInfo[];
-  active: string | null;
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -83,6 +82,19 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 13,
     marginBottom: 12,
   },
+  toast: {
+    position: 'fixed',
+    bottom: 24,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    padding: '10px 20px',
+    backgroundColor: '#1a1a2e',
+    color: '#fff',
+    borderRadius: 6,
+    fontSize: 13,
+    fontWeight: 500,
+    zIndex: 1000,
+  },
   badge: {
     fontSize: 11,
     fontWeight: 600,
@@ -101,6 +113,17 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     fontWeight: 600,
     backgroundColor: '#3949ab',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 4,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  publishBtn: {
+    padding: '6px 12px',
+    fontSize: 12,
+    fontWeight: 600,
+    backgroundColor: '#2e7d32',
     color: '#fff',
     border: 'none',
     borderRadius: 4,
@@ -126,7 +149,13 @@ function ProjectList() {
   const [importPath, setImportPath] = useState('');
   const [importName, setImportName] = useState('');
   const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
   const navigate = useNavigate();
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  };
 
   const loadProjects = () => {
     api
@@ -152,14 +181,9 @@ function ProjectList() {
     }
   };
 
-  const handleOpen = async (name: string) => {
-    setError('');
-    try {
-      await api.post(`/projects/${encodeURIComponent(name)}/open`);
-      navigate(`/project/${encodeURIComponent(name)}/zones`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to open project');
-    }
+  // Navigate directly — no "open" needed (per-request project context)
+  const handleNavigate = (name: string) => {
+    navigate(`/project/${encodeURIComponent(name)}/zones`);
   };
 
   const handleFork = async (sourceName: string) => {
@@ -187,6 +211,10 @@ function ProjectList() {
     }
   };
 
+  const handlePublish = (name: string) => {
+    showToast(`Publishing "${name}" — coming soon!`);
+  };
+
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedPath = importPath.trim();
@@ -197,7 +225,6 @@ function ProjectList() {
         path: trimmedPath,
         name: importName.trim() || undefined,
       });
-      await api.post(`/projects/${encodeURIComponent(result.name)}/open`);
       navigate(`/project/${encodeURIComponent(result.name)}/zones`);
     } catch (err: any) {
       setError(err.message || 'Import failed');
@@ -257,7 +284,7 @@ function ProjectList() {
               >
                 <span
                   style={styles.projectName}
-                  onClick={() => handleOpen(proj.name)}
+                  onClick={() => handleNavigate(proj.name)}
                 >
                   {proj.name}
                 </span>
@@ -275,7 +302,18 @@ function ProjectList() {
                     </button>
                   </>
                 )}
-                {proj.name !== '_default_world' && (
+                {!proj.readOnly && (
+                  <button
+                    style={styles.publishBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePublish(proj.name);
+                    }}
+                  >
+                    Publish
+                  </button>
+                )}
+                {!proj.name.startsWith('_') && (
                   <button
                     style={styles.deleteBtn}
                     onClick={(e) => {
@@ -291,6 +329,7 @@ function ProjectList() {
           </ul>
         )}
       </div>
+      {toast && <div style={styles.toast}>{toast}</div>}
     </div>
   );
 }

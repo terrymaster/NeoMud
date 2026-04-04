@@ -1,5 +1,5 @@
 import { app, autoImportDefaultWorld } from './app.js'
-import { disconnectDb } from './db.js'
+import { closeAllConnections } from './projectContext.js'
 
 const port = parseInt(process.env.MAKER_PORT || '3001', 10)
 
@@ -16,10 +16,11 @@ function shutdown() {
   shuttingDown = true
   console.log('[shutdown] Closing maker server...')
   server.close(async () => {
-    await disconnectDb()
+    await closeAllConnections()
+    console.log('[shutdown] All project connections closed. Goodbye.')
     process.exit(0)
   })
-  setTimeout(() => process.exit(0), 3000)
+  setTimeout(() => process.exit(0), 5000)
 }
 
 process.on('SIGINT', shutdown)

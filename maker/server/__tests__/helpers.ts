@@ -10,7 +10,12 @@ import { projectsRouter } from '../routes/projects.js'
 import { exportRouter } from '../routes/export.js'
 import { pcSpritesRouter } from '../routes/pcSprites.js'
 import { defaultSfxRouter } from '../routes/defaultSfx.js'
-import { createProject, openProject, deleteProject, getProjectsDir } from '../db.js'
+import { createProject, deleteProject } from '../db.js'
+import { getProjectsDir, getProjectClient, assetsRoot } from '../projectContext.js'
+
+const TEST_USER_ID = 'test-user'
+// Ensure auth middleware in dev mode picks up a consistent user
+process.env.MAKER_DEV_USER_ID = TEST_USER_ID
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const projectsDir = getProjectsDir()
@@ -26,13 +31,14 @@ function registerExitHandler() {
   if (exitHandlerRegistered) return
   exitHandlerRegistered = true
   process.on('exit', () => {
+    const userDir = path.join(projectsDir, TEST_USER_ID)
     for (const name of activeTestProjects) {
       try {
-        const dbPath = path.join(projectsDir, `${name}.db`)
+        const dbPath = path.join(userDir, `${name}.db`)
         if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath)
       } catch {}
       try {
-        const assetsPath = path.join(projectsDir, `${name}_assets`)
+        const assetsPath = path.join(userDir, `${name}_assets`)
         if (fs.existsSync(assetsPath)) fs.rmSync(assetsPath, { recursive: true, force: true })
       } catch {}
     }
@@ -53,11 +59,23 @@ export async function createTestApp(projectName?: string): Promise<{
   registerExitHandler()
   activeTestProjects.add(name)
 
-  // Create project (pushes schema + opens it)
-  await createProject(name)
+  // Create project (pushes schema + seeds defaults)
+  await createProject(TEST_USER_ID, name)
+
+  // Get pooled client for setting req context
+  const pooled = await getProjectClient(TEST_USER_ID, name)
 
   const app = express()
   app.use(express.json())
+  // Inject project context on every request (simulates projectMiddleware + auth)
+  app.use((req, _res, next) => {
+    req.user = { userId: TEST_USER_ID, role: 'CREATOR' }
+    req.db = pooled.client
+    req.projectName = name
+    req.projectDir = assetsRoot(TEST_USER_ID, name)
+    req.readOnly = pooled.readOnly
+    next()
+  })
   app.use('/api/projects', projectsRouter)
   app.use('/api', zonesRouter)
   app.use('/api', entitiesRouter)
@@ -67,7 +85,7 @@ export async function createTestApp(projectName?: string): Promise<{
 
   const cleanup = async () => {
     try {
-      await deleteProject(name)
+      await deleteProject(TEST_USER_ID, name)
     } catch {}
     activeTestProjects.delete(name)
   }
@@ -88,10 +106,22 @@ export async function createReadOnlyTestApp(): Promise<{
   registerExitHandler()
   activeTestProjects.add(name)
 
-  await createProject(name, true)
+  await createProject(TEST_USER_ID, name, true)
+
+  // Get pooled client for setting req context
+  const pooled = await getProjectClient(TEST_USER_ID, name)
 
   const app = express()
   app.use(express.json())
+  // Inject project context on every request (simulates projectMiddleware + auth)
+  app.use((req, _res, next) => {
+    req.user = { userId: TEST_USER_ID, role: 'CREATOR' }
+    req.db = pooled.client
+    req.projectName = name
+    req.projectDir = assetsRoot(TEST_USER_ID, name)
+    req.readOnly = pooled.readOnly
+    next()
+  })
   app.use('/api/projects', projectsRouter)
   app.use('/api', zonesRouter)
   app.use('/api', entitiesRouter)
@@ -101,7 +131,7 @@ export async function createReadOnlyTestApp(): Promise<{
 
   const cleanup = async () => {
     try {
-      await deleteProject(name)
+      await deleteProject(TEST_USER_ID, name)
     } catch {}
     activeTestProjects.delete(name)
   }

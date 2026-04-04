@@ -1,20 +1,33 @@
 import AdmZip from 'adm-zip'
 import fs from 'fs'
 import path from 'path'
-import { createProject, db, getProjectsDir } from './db.js'
+import { PrismaClient } from './generated/prisma/client.js'
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
+import { createProject } from './db.js'
+import { getProjectsDir } from './projectContext.js'
 
 /**
  * Import an .nmd bundle (ZIP) into a new maker project.
+ * @param nmdPath - Path to the .nmd file
+ * @param userId - User ID who owns the project (or '_shared' for templates)
+ * @param projectName - Name for the new project
+ * @param readOnly - Whether the project should be read-only
  */
-export async function importNmd(nmdPath: string, projectName: string, readOnly = false): Promise<void> {
+export async function importNmd(nmdPath: string, userId: string, projectName: string, readOnly = false): Promise<void> {
   const zip = new AdmZip(nmdPath)
 
   // Create the project DB
-  await createProject(projectName, readOnly)
-  const prisma = db()
+  await createProject(userId, projectName, readOnly)
+
+  // Open a temporary client for importing data
+  const dbFile = path.join(getProjectsDir(), userId, `${projectName}.db`)
+  const adapter = new PrismaBetterSqlite3({ url: `file:${dbFile}` })
+  const prisma = new PrismaClient({ adapter })
+
+  try {
 
   // ─── Extract assets ──────────────────────────────────────
-  const assetsDir = path.join(getProjectsDir(), `${projectName}_assets`)
+  const assetsDir = path.join(getProjectsDir(), userId, `${projectName}_assets`)
   const assetEntries = zip.getEntries().filter(
     (e) => e.entryName.startsWith('assets/') && !e.isDirectory
   )
@@ -420,5 +433,9 @@ export async function importNmd(nmdPath: string, projectName: string, readOnly =
         })
       }
     }
+  }
+
+  } finally {
+    await prisma.$disconnect()
   }
 }

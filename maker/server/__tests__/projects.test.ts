@@ -30,9 +30,11 @@ describe('Project management', () => {
     expect(found).toBeDefined()
   })
 
-  it('GET /api/projects shows active project', async () => {
+  it('GET /api/projects returns project list without global active state', async () => {
     const res = await request(app).get('/api/projects')
-    expect(res.body.active).toBe(projectName)
+    // Multi-tenant: no global "active" project, just a list
+    expect(res.body.projects).toBeDefined()
+    expect(res.body.active).toBeUndefined()
   })
 
   it('POST /api/projects creates a new project', async () => {

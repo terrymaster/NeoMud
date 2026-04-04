@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AuthGuard from './components/AuthGuard';
 import ProjectList from './pages/ProjectList';
 import Dashboard from './pages/Dashboard';
 import ZoneEditor from './pages/ZoneEditor';
@@ -15,6 +16,7 @@ import SettingsEditor from './pages/SettingsEditor';
 
 function App() {
   return (
+    <AuthGuard>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<ProjectList />} />
@@ -34,6 +36,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </AuthGuard>
   );
 }
 

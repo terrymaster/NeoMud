@@ -1,15 +1,13 @@
-import { Router } from 'express'
+import { Router, Request } from 'express'
 import fs from 'fs'
 import path from 'path'
-import { getProjectsDir, getActiveProject } from '../db.js'
 import { readSettings } from '../settings.js'
 
 export const generateRouter = Router()
 
-function getAssetsRoot(): string {
-  const active = getActiveProject()
-  if (!active) throw new Error('No project is open')
-  return path.join(getProjectsDir(), `${active}_assets`, 'assets')
+function getAssetsRoot(req: Request): string {
+  if (!req.projectDir) throw new Error('No project context')
+  return req.projectDir
 }
 
 function backupAsset(filePath: string): void {
@@ -105,7 +103,7 @@ generateRouter.post('/image', async (req, res) => {
       imageBuffer = Buffer.from(data.images[0], 'base64')
     }
 
-    const fullPath = path.join(getAssetsRoot(), assetPath)
+    const fullPath = path.join(getAssetsRoot(req), assetPath)
     fs.mkdirSync(path.dirname(fullPath), { recursive: true })
     backupAsset(fullPath)
     fs.writeFileSync(fullPath, imageBuffer)
@@ -149,7 +147,7 @@ generateRouter.post('/sound', async (req, res) => {
         throw new Error(`ElevenLabs API error (${response.status}): ${errText}`)
       }
       const audioBuffer = Buffer.from(await response.arrayBuffer())
-      const fullPath = path.join(getAssetsRoot(), assetPath)
+      const fullPath = path.join(getAssetsRoot(req), assetPath)
       fs.mkdirSync(path.dirname(fullPath), { recursive: true })
       backupAsset(fullPath)
       fs.writeFileSync(fullPath, audioBuffer)
@@ -173,7 +171,7 @@ generateRouter.post('/sound', async (req, res) => {
         throw new Error(`Sound API error (${response.status}): ${errText}`)
       }
       const audioBuffer = Buffer.from(await response.arrayBuffer())
-      const fullPath = path.join(getAssetsRoot(), assetPath)
+      const fullPath = path.join(getAssetsRoot(req), assetPath)
       fs.mkdirSync(path.dirname(fullPath), { recursive: true })
       backupAsset(fullPath)
       fs.writeFileSync(fullPath, audioBuffer)

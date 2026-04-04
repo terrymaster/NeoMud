@@ -5,60 +5,79 @@ import { randomUUID } from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { getProjectsDir, evictProject } from './projectContext.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const projectsDir = path.join(__dirname, '..', 'projects')
-
-if (!fs.existsSync(projectsDir)) {
-  fs.mkdirSync(projectsDir, { recursive: true })
-}
-
-let activeProject: string | null = null
-let activeReadOnly = false
-let prisma: PrismaClient | null = null
-
-function dbUrl(projectName: string): string {
-  const dbPath = path.join(projectsDir, `${projectName}.db`)
-  return `file:${dbPath}`
-}
-
-export function getProjectsDir(): string {
-  return projectsDir
-}
 
 export interface ProjectInfo {
   name: string
   readOnly: boolean
 }
 
-export async function listProjects(): Promise<ProjectInfo[]> {
-  const names = fs
-    .readdirSync(projectsDir)
-    .filter((f) => f.endsWith('.db'))
-    .map((f) => f.replace('.db', ''))
-
-  const results: ProjectInfo[] = []
-  for (const name of names) {
-    // Check if project has readOnly meta by peeking at its DB
-    const readOnly = await isProjectReadOnly(name)
-    results.push({ name, readOnly })
+/** Resolve the user's project directory, creating it if needed. */
+function userDir(userId: string): string {
+  const dir = path.join(getProjectsDir(), userId)
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
   }
-  return results
+  return dir
 }
 
-async function isProjectReadOnly(name: string): Promise<boolean> {
-  // If it's the currently open project, use the active client
-  if (name === activeProject && prisma) {
-    try {
-      const meta = await prisma.projectMeta.findUnique({ where: { key: 'readOnly' } })
-      return meta?.value === 'true'
-    } catch {
-      return false
+/** Resolve the DB path for a user's project. */
+function userDbPath(userId: string, projectName: string): string {
+  return path.join(userDir(userId), `${projectName}.db`)
+}
+
+/** Resolve the DB URL for Prisma. */
+function dbUrl(userId: string, projectName: string): string {
+  return `file:${userDbPath(userId, projectName)}`
+}
+
+/**
+ * List projects for a specific user.
+ * Includes shared read-only templates from the _shared directory.
+ */
+export async function listProjects(userId: string): Promise<ProjectInfo[]> {
+  const results: ProjectInfo[] = []
+
+  // User's own projects
+  const dir = path.join(getProjectsDir(), userId)
+  if (fs.existsSync(dir)) {
+    const names = fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.db'))
+      .map((f) => f.replace('.db', ''))
+
+    for (const name of names) {
+      const readOnly = await isProjectReadOnly(userId, name)
+      results.push({ name, readOnly })
     }
   }
 
-  // Otherwise open a temporary client to check
-  const adapter = new PrismaBetterSqlite3({ url: dbUrl(name) })
+  // Shared templates (e.g., _default_world)
+  const sharedDir = path.join(getProjectsDir(), '_shared')
+  if (fs.existsSync(sharedDir)) {
+    const sharedNames = fs
+      .readdirSync(sharedDir)
+      .filter((f) => f.endsWith('.db'))
+      .map((f) => f.replace('.db', ''))
+
+    for (const name of sharedNames) {
+      // Don't duplicate if user already has a project with the same name
+      if (!results.some((r) => r.name === name)) {
+        results.push({ name, readOnly: true })
+      }
+    }
+  }
+
+  return results
+}
+
+async function isProjectReadOnly(userId: string, name: string): Promise<boolean> {
+  const dbFile = userDbPath(userId, name)
+  if (!fs.existsSync(dbFile)) return false
+
+  const adapter = new PrismaBetterSqlite3({ url: `file:${dbFile}` })
   const tmpClient = new PrismaClient({ adapter })
   try {
     const meta = await tmpClient.projectMeta.findUnique({ where: { key: 'readOnly' } })
@@ -70,120 +89,103 @@ async function isProjectReadOnly(name: string): Promise<boolean> {
   }
 }
 
-export async function openProject(name: string): Promise<PrismaClient> {
-  if (prisma) {
-    await prisma.$disconnect()
-  }
-
-  // Ensure schema is up-to-date (adds new columns with defaults, drops removed tables)
-  const dbPath = path.join(projectsDir, `${name}.db`)
-  if (fs.existsSync(dbPath)) {
-    const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma')
-    execSync(`npx prisma db push --accept-data-loss --schema="${schemaPath}"`, {
-      env: { ...process.env, DATABASE_URL: `file:${dbPath}` },
-      cwd: path.join(__dirname, '..'),
-      stdio: 'pipe',
-    })
-  }
-
-  activeProject = name
-  const adapter = new PrismaBetterSqlite3({ url: dbUrl(name) })
-  prisma = new PrismaClient({ adapter })
-
-  // Cache the read-only flag
-  try {
-    const meta = await prisma.projectMeta.findUnique({ where: { key: 'readOnly' } })
-    activeReadOnly = meta?.value === 'true'
-  } catch {
-    activeReadOnly = false
-  }
-
-  // Auto-seed DefaultSfx if table is empty (for projects created before this feature)
-  try {
-    const sfxCount = await prisma.defaultSfx.count()
-    if (sfxCount === 0) {
-      const { seedDefaultSfx } = await import('./defaultSfxDefaults.js')
-      await seedDefaultSfx(prisma)
-    }
-  } catch {
-    // Table may not exist yet on very old DBs — ignore
-  }
-
-  return prisma
-}
-
-export async function createProject(name: string, readOnly = false): Promise<PrismaClient> {
-  const dbPath = path.join(projectsDir, `${name}.db`)
-  if (fs.existsSync(dbPath)) {
+/**
+ * Create a new project for a user.
+ * Returns a temporary PrismaClient for seeding (caller should close it or let the pool manage it).
+ */
+export async function createProject(userId: string, name: string, readOnly = false): Promise<PrismaClient> {
+  const dbFile = userDbPath(userId, name)
+  if (fs.existsSync(dbFile)) {
     throw new Error(`Project "${name}" already exists`)
   }
+
+  // Ensure user directory exists
+  userDir(userId)
 
   // Push schema to the new database
   const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma')
   execSync(`npx prisma db push --schema="${schemaPath}"`, {
-    env: { ...process.env, DATABASE_URL: `file:${dbPath}` },
+    env: { ...process.env, DATABASE_URL: `file:${dbFile}` },
     cwd: path.join(__dirname, '..'),
     stdio: 'pipe',
   })
 
-  const client = await openProject(name)
+  // Open a temporary client for seeding
+  const adapter = new PrismaBetterSqlite3({ url: `file:${dbFile}` })
+  const client = new PrismaClient({ adapter })
 
   if (readOnly) {
     await client.projectMeta.create({ data: { key: 'readOnly', value: 'true' } })
-    activeReadOnly = true
   }
 
-  // Generate unique world ID for new projects
+  // Generate unique world ID
   await client.projectMeta.create({ data: { key: 'worldId', value: randomUUID() } })
 
   // Seed default PC sprites
   const { seedPcSprites, generatePlaceholderSprites } = await import('./pcSpriteDefaults.js')
   await seedPcSprites(client)
-  generatePlaceholderSprites(path.join(projectsDir, `${name}_assets`))
+  generatePlaceholderSprites(path.join(userDir(userId), `${name}_assets`))
 
   // Seed default SFX entries
   const { seedDefaultSfx } = await import('./defaultSfxDefaults.js')
   await seedDefaultSfx(client)
 
+  await client.$disconnect()
   return client
 }
 
-export async function deleteProject(name: string): Promise<void> {
-  if (activeProject === name && prisma) {
-    await prisma.$disconnect()
-    prisma = null
-    activeProject = null
-    activeReadOnly = false
+/**
+ * Delete a project and its assets.
+ */
+export async function deleteProject(userId: string, name: string): Promise<void> {
+  // Evict from connection pool
+  await evictProject(userId, name)
+
+  const dbFile = userDbPath(userId, name)
+  if (fs.existsSync(dbFile)) {
+    fs.unlinkSync(dbFile)
   }
-  const dbPath = path.join(projectsDir, `${name}.db`)
-  if (fs.existsSync(dbPath)) {
-    fs.unlinkSync(dbPath)
-  }
-  const assetsPath = path.join(projectsDir, `${name}_assets`)
+  const assetsPath = path.join(userDir(userId), `${name}_assets`)
   if (fs.existsSync(assetsPath)) {
     fs.rmSync(assetsPath, { recursive: true, force: true })
   }
 }
 
-export async function forkProject(source: string, newName: string): Promise<void> {
-  const srcPath = path.join(projectsDir, `${source}.db`)
-  const destPath = path.join(projectsDir, `${newName}.db`)
+/**
+ * Fork a project within the user's directory.
+ * Can fork from _shared templates or the user's own projects.
+ */
+export async function forkProject(userId: string, source: string, newName: string): Promise<void> {
+  // Try user's own directory first, then _shared
+  let srcPath = userDbPath(userId, source)
+  let srcAssetsBase = path.join(userDir(userId), `${source}_assets`)
 
   if (!fs.existsSync(srcPath)) {
-    throw new Error(`Source project "${source}" not found`)
+    // Try _shared directory
+    const sharedPath = path.join(getProjectsDir(), '_shared', `${source}.db`)
+    if (fs.existsSync(sharedPath)) {
+      srcPath = sharedPath
+      srcAssetsBase = path.join(getProjectsDir(), '_shared', `${source}_assets`)
+    } else {
+      throw new Error(`Source project "${source}" not found`)
+    }
   }
+
+  const destPath = userDbPath(userId, newName)
   if (fs.existsSync(destPath)) {
     throw new Error(`Project "${newName}" already exists`)
   }
+
+  // Ensure user directory exists
+  userDir(userId)
 
   // Copy the DB file
   fs.copyFileSync(srcPath, destPath)
 
   // Copy assets directory if it exists
-  const srcAssets = path.join(projectsDir, `${source}_assets`)
-  const destAssets = path.join(projectsDir, `${newName}_assets`)
-  if (fs.existsSync(srcAssets)) {
-    fs.cpSync(srcAssets, destAssets, { recursive: true })
+  const destAssets = path.join(userDir(userId), `${newName}_assets`)
+  if (fs.existsSync(srcAssetsBase)) {
+    fs.cpSync(srcAssetsBase, destAssets, { recursive: true })
   }
 
   // Open the copy: remove read-only flag and generate new worldId
@@ -201,26 +203,8 @@ export async function forkProject(source: string, newName: string): Promise<void
   }
 }
 
-export function db(): PrismaClient {
-  if (!prisma) {
-    throw new Error('No project is open. Call openProject() first.')
-  }
-  return prisma
-}
+// ─── Legacy exports for backward compatibility during migration ───
+// These will be removed once all routes use req.db from projectContext
 
-export function getActiveProject(): string | null {
-  return activeProject
-}
-
-export function isReadOnly(): boolean {
-  return activeReadOnly
-}
-
-export async function disconnectDb(): Promise<void> {
-  if (prisma) {
-    await prisma.$disconnect()
-    prisma = null
-    activeProject = null
-    activeReadOnly = false
-  }
-}
+/** @deprecated Use getProjectsDir() from projectContext.ts instead */
+export { getProjectsDir }

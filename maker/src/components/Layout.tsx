@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useParams } from 'react-router-dom';
-import api from '../api';
+import api, { setProjectScope } from '../api';
 import MenuBar from './MenuBar';
 import type { CSSProperties } from 'react';
 
@@ -100,15 +100,12 @@ function Layout() {
   const { name } = useParams<{ name: string }>();
   const [readOnly, setReadOnly] = useState(false);
 
+  // Set the project scope so all API calls are prefixed with /projects/{name}
   useEffect(() => {
-    api
-      .get<{ active: string | null; activeReadOnly: boolean }>('/projects')
-      .then((data) => {
-        if (data.active === name) {
-          setReadOnly(data.activeReadOnly);
-        }
-      })
-      .catch(() => {});
+    if (name) {
+      setProjectScope(name);
+    }
+    return () => setProjectScope(null);
   }, [name]);
 
   return (

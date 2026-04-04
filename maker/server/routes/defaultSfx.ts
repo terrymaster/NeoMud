@@ -1,16 +1,14 @@
-import { Router, Request, Response, NextFunction } from 'express'
-import { db, isReadOnly } from '../db.js'
+import { Router, Request, Response } from 'express'
+import { rejectIfReadOnly } from '../middleware/readOnly.js'
 import { seedDefaultSfx } from '../defaultSfxDefaults.js'
 
-export const defaultSfxRouter = Router()
-
-function rejectIfReadOnly(_req: Request, res: Response, next: NextFunction) {
-  if (isReadOnly()) {
-    res.status(403).json({ error: 'Project is read-only. Fork it to make changes.' })
-    return
-  }
-  next()
+/** Extract a route parameter as a string (Express 5 types return string | string[]). */
+function param(req: Request, name: string): string {
+  const val = req.params[name]
+  return Array.isArray(val) ? val[0] : val ?? ''
 }
+
+export const defaultSfxRouter = Router()
 
 // GET / — list all, with optional ?category= filter
 defaultSfxRouter.get('/', async (req, res) => {
@@ -18,7 +16,7 @@ defaultSfxRouter.get('/', async (req, res) => {
     const where: Record<string, string> = {}
     if (req.query.category) where.category = req.query.category as string
 
-    const entries = await db().defaultSfx.findMany({
+    const entries = await req.db!.defaultSfx.findMany({
       where,
       orderBy: { id: 'asc' },
     })
@@ -31,7 +29,7 @@ defaultSfxRouter.get('/', async (req, res) => {
 // GET /:id
 defaultSfxRouter.get('/:id', async (req, res) => {
   try {
-    const entry = await db().defaultSfx.findUnique({ where: { id: req.params.id } })
+    const entry = await req.db!.defaultSfx.findUnique({ where: { id: param(req, 'id') } })
     if (!entry) { res.status(404).json({ error: 'DefaultSfx not found' }); return }
     res.json(entry)
   } catch (err: any) {
@@ -43,8 +41,8 @@ defaultSfxRouter.get('/:id', async (req, res) => {
 defaultSfxRouter.put('/:id', rejectIfReadOnly, async (req, res) => {
   try {
     const { prompt, duration } = req.body
-    const entry = await db().defaultSfx.update({
-      where: { id: req.params.id },
+    const entry = await req.db!.defaultSfx.update({
+      where: { id: param(req, 'id') },
       data: {
         ...(prompt !== undefined && { prompt }),
         ...(duration !== undefined && { duration }),
@@ -63,9 +61,9 @@ defaultSfxRouter.put('/:id', rejectIfReadOnly, async (req, res) => {
 // POST /reset — re-seed to defaults
 defaultSfxRouter.post('/reset', rejectIfReadOnly, async (req, res) => {
   try {
-    await db().defaultSfx.deleteMany()
-    await seedDefaultSfx(db())
-    const count = await db().defaultSfx.count()
+    await req.db!.defaultSfx.deleteMany()
+    await seedDefaultSfx(req.db!)
+    const count = await req.db!.defaultSfx.count()
     res.json({ ok: true, count })
   } catch (err: any) {
     res.status(500).json({ error: err.message })

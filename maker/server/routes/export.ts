@@ -3,7 +3,6 @@ import fs from 'fs'
 import path from 'path'
 import AdmZip from 'adm-zip'
 import { PrismaClient } from '../generated/prisma/client.js'
-import { db, getActiveProject, getProjectsDir } from '../db.js'
 import { validateProject } from '../validate.js'
 
 export const exportRouter = Router()
@@ -22,7 +21,7 @@ function parseJsonField(value: string, fallback: any = {}): any {
 }
 
 /** Build a .nmd ZIP bundle from the active project's data + assets. */
-export async function buildNmdBundle(prisma: PrismaClient, projectName: string): Promise<Buffer> {
+export async function buildNmdBundle(prisma: PrismaClient, assetsDir: string): Promise<Buffer> {
   const zip = new AdmZip()
 
   // ─── Manifest ───────────────────────────────────────
@@ -362,7 +361,6 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
   }
 
   // ─── Assets ─────────────────────────────────────────
-  const assetsDir = path.join(getProjectsDir(), `${projectName}_assets`, 'assets')
   if (fs.existsSync(assetsDir)) {
     function addDirToZip(dirPath: string, zipPrefix: string) {
       for (const entry of fs.readdirSync(dirPath)) {
@@ -382,9 +380,9 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
 }
 
 // GET /json — export all data as NeoMUD-format JSON
-exportRouter.get('/json', async (_req, res) => {
+exportRouter.get('/json', async (req, res) => {
   try {
-    const prisma = db()
+    const prisma = req.db!
 
     // Fetch all data in parallel
     const [
@@ -650,16 +648,12 @@ exportRouter.get('/json', async (_req, res) => {
 })
 
 // GET /nmd — export complete .nmd bundle (JSON data + assets), no validation
-exportRouter.get('/nmd', async (_req, res) => {
+exportRouter.get('/nmd', async (req, res) => {
   try {
-    const prisma = db()
-    const projectName = getActiveProject()
-    if (!projectName) {
-      res.status(400).json({ error: 'No project is open' })
-      return
-    }
+    const prisma = req.db!
+    const projectName = req.projectName!
 
-    const buffer = await buildNmdBundle(prisma, projectName)
+    const buffer = await buildNmdBundle(prisma, req.projectDir!)
     res.set({
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="${projectName}.nmd"`,
@@ -672,17 +666,11 @@ exportRouter.get('/nmd', async (_req, res) => {
 })
 
 // GET /validate — run validation checks, return results as JSON
-exportRouter.get('/validate', async (_req, res) => {
+exportRouter.get('/validate', async (req, res) => {
   try {
-    const prisma = db()
-    const projectName = getActiveProject()
-    if (!projectName) {
-      res.status(400).json({ error: 'No project is open' })
-      return
-    }
+    const prisma = req.db!
 
-    const assetsBase = path.join(getProjectsDir(), `${projectName}_assets`)
-    const assetExists = (p: string) => fs.existsSync(path.join(assetsBase, p))
+    const assetExists = (p: string) => fs.existsSync(path.join(req.projectDir!, p))
     const result = await validateProject(prisma, assetExists)
 
     res.json(result)
@@ -692,17 +680,12 @@ exportRouter.get('/validate', async (_req, res) => {
 })
 
 // GET /package — validate then export .nmd bundle
-exportRouter.get('/package', async (_req, res) => {
+exportRouter.get('/package', async (req, res) => {
   try {
-    const prisma = db()
-    const projectName = getActiveProject()
-    if (!projectName) {
-      res.status(400).json({ error: 'No project is open' })
-      return
-    }
+    const prisma = req.db!
+    const projectName = req.projectName!
 
-    const assetsBase = path.join(getProjectsDir(), `${projectName}_assets`)
-    const assetExists = (p: string) => fs.existsSync(path.join(assetsBase, p))
+    const assetExists = (p: string) => fs.existsSync(path.join(req.projectDir!, p))
     const result = await validateProject(prisma, assetExists)
 
     if (result.errors.length > 0) {
@@ -710,7 +693,7 @@ exportRouter.get('/package', async (_req, res) => {
       return
     }
 
-    const buffer = await buildNmdBundle(prisma, projectName)
+    const buffer = await buildNmdBundle(prisma, req.projectDir!)
     res.set({
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="${projectName}.nmd"`,

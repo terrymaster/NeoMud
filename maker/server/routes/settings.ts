@@ -68,11 +68,14 @@ settingsRouter.post('/test-provider', async (req, res) => {
 
     res.json(status)
   } catch (err: any) {
+    const pid = req.body?.providerId as string | undefined
     const status = { ok: false as const, error: err.message, testedAt: new Date().toISOString() }
     try {
-      const updated = readSettings()
-      updated.providerStatus[providerId] = status
-      writeSettings(updated)
+      if (pid) {
+        const updated = readSettings()
+        updated.providerStatus[pid] = status
+        writeSettings(updated)
+      }
     } catch { /* ignore persistence errors */ }
     res.json(status)
   }

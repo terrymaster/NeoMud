@@ -1,6 +1,12 @@
-import { Router, Request, Response, NextFunction } from 'express'
-import { db, isReadOnly } from '../db.js'
+import { Router, Request, Response } from 'express'
 import { Prisma } from '../generated/prisma/client.js'
+import { rejectIfReadOnly } from '../middleware/readOnly.js'
+
+/** Extract a route parameter as a string (Express 5 types return string | string[]). */
+function param(req: Request, name: string): string {
+  const val = req.params[name]
+  return Array.isArray(val) ? val[0] : val ?? ''
+}
 
 export const entitiesRouter = Router()
 
@@ -118,19 +124,11 @@ function handlePrismaError(err: unknown, entityLabel: string, res: Response) {
   res.status(500).json({ error: (err as any)?.message || 'Internal server error' })
 }
 
-function rejectIfReadOnly(_req: Request, res: Response, next: NextFunction) {
-  if (isReadOnly()) {
-    res.status(403).json({ error: 'Project is read-only. Fork it to make changes.' })
-    return
-  }
-  next()
-}
-
 // ─── Items ─────────────────────────────────────────────────────
 
-entitiesRouter.get('/items', async (_req, res) => {
+entitiesRouter.get('/items', async (req, res) => {
   try {
-    const items = await db().item.findMany()
+    const items = await req.db!.item.findMany()
     res.json(items)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -139,7 +137,7 @@ entitiesRouter.get('/items', async (_req, res) => {
 
 entitiesRouter.get('/items/:id', async (req, res) => {
   try {
-    const item = await db().item.findUnique({ where: { id: req.params.id } })
+    const item = await req.db!.item.findUnique({ where: { id: param(req, 'id') } })
     if (!item) { res.status(404).json({ error: 'Item not found' }); return }
     res.json(item)
   } catch (err: any) {
@@ -153,7 +151,7 @@ entitiesRouter.post('/items', rejectIfReadOnly, async (req, res) => {
   if (!validateName(req.body.name, 'Item', res)) return
   if (!validateNumericRanges(req.body, ITEM_NUMERIC_RULES, res)) return
   try {
-    const item = await db().item.create({ data: req.body })
+    const item = await req.db!.item.create({ data: req.body })
     res.json(item)
   } catch (err: any) {
     handlePrismaError(err, 'item', res)
@@ -165,7 +163,7 @@ entitiesRouter.put('/items/:id', rejectIfReadOnly, async (req, res) => {
   if (req.body.name !== undefined && !validateName(req.body.name, 'Item', res)) return
   if (!validateNumericRanges(req.body, ITEM_NUMERIC_RULES, res)) return
   try {
-    const item = await db().item.update({ where: { id: req.params.id }, data: req.body })
+    const item = await req.db!.item.update({ where: { id: param(req, 'id') }, data: req.body })
     res.json(item)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -174,7 +172,7 @@ entitiesRouter.put('/items/:id', rejectIfReadOnly, async (req, res) => {
 
 entitiesRouter.delete('/items/:id', rejectIfReadOnly, async (req, res) => {
   try {
-    await db().item.delete({ where: { id: req.params.id } })
+    await req.db!.item.delete({ where: { id: param(req, 'id') } })
     res.json({ ok: true })
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -186,7 +184,7 @@ entitiesRouter.delete('/items/:id', rejectIfReadOnly, async (req, res) => {
 entitiesRouter.get('/npcs', async (req, res) => {
   try {
     const where = req.query.zoneId ? { zoneId: req.query.zoneId as string } : {}
-    const npcs = await db().npc.findMany({ where })
+    const npcs = await req.db!.npc.findMany({ where })
     res.json(npcs)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -195,7 +193,7 @@ entitiesRouter.get('/npcs', async (req, res) => {
 
 entitiesRouter.get('/npcs/:id', async (req, res) => {
   try {
-    const npc = await db().npc.findUnique({ where: { id: req.params.id } })
+    const npc = await req.db!.npc.findUnique({ where: { id: param(req, 'id') } })
     if (!npc) { res.status(404).json({ error: 'NPC not found' }); return }
     res.json(npc)
   } catch (err: any) {
@@ -213,11 +211,11 @@ entitiesRouter.post('/npcs', rejectIfReadOnly, async (req, res) => {
     if (!zoneId || !zoneId.trim()) {
       res.status(400).json({ error: 'zoneId is required — every NPC must belong to a zone' }); return
     }
-    const zone = await db().zone.findUnique({ where: { id: zoneId } })
+    const zone = await req.db!.zone.findUnique({ where: { id: zoneId } })
     if (!zone) {
       res.status(400).json({ error: `Zone "${zoneId}" does not exist` }); return
     }
-    const npc = await db().npc.create({ data: req.body })
+    const npc = await req.db!.npc.create({ data: req.body })
     res.json(npc)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -229,7 +227,7 @@ entitiesRouter.put('/npcs/:id', rejectIfReadOnly, async (req, res) => {
   if (req.body.name !== undefined && !validateName(req.body.name, 'NPC', res)) return
   if (!validateNumericRanges(req.body, NPC_NUMERIC_RULES, res)) return
   try {
-    const npc = await db().npc.update({ where: { id: req.params.id }, data: req.body })
+    const npc = await req.db!.npc.update({ where: { id: param(req, 'id') }, data: req.body })
     res.json(npc)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -238,7 +236,7 @@ entitiesRouter.put('/npcs/:id', rejectIfReadOnly, async (req, res) => {
 
 entitiesRouter.delete('/npcs/:id', rejectIfReadOnly, async (req, res) => {
   try {
-    await db().npc.delete({ where: { id: req.params.id } })
+    await req.db!.npc.delete({ where: { id: param(req, 'id') } })
     res.json({ ok: true })
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -247,9 +245,9 @@ entitiesRouter.delete('/npcs/:id', rejectIfReadOnly, async (req, res) => {
 
 // ─── Character Classes ─────────────────────────────────────────
 
-entitiesRouter.get('/character-classes', async (_req, res) => {
+entitiesRouter.get('/character-classes', async (req, res) => {
   try {
-    const classes = await db().characterClass.findMany()
+    const classes = await req.db!.characterClass.findMany()
     res.json(classes)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -258,7 +256,7 @@ entitiesRouter.get('/character-classes', async (_req, res) => {
 
 entitiesRouter.get('/character-classes/:id', async (req, res) => {
   try {
-    const cls = await db().characterClass.findUnique({ where: { id: req.params.id } })
+    const cls = await req.db!.characterClass.findUnique({ where: { id: param(req, 'id') } })
     if (!cls) { res.status(404).json({ error: 'Class not found' }); return }
     res.json(cls)
   } catch (err: any) {
@@ -271,7 +269,7 @@ entitiesRouter.post('/character-classes', rejectIfReadOnly, async (req, res) => 
   if (!validateId(req.body.id, 'Class', res)) return
   if (!validateName(req.body.name, 'Class', res)) return
   try {
-    const cls = await db().characterClass.create({ data: req.body })
+    const cls = await req.db!.characterClass.create({ data: req.body })
     res.json(cls)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -282,7 +280,7 @@ entitiesRouter.put('/character-classes/:id', rejectIfReadOnly, async (req, res) 
   sanitizeTextFields(req.body)
   if (req.body.name !== undefined && !validateName(req.body.name, 'Class', res)) return
   try {
-    const cls = await db().characterClass.update({ where: { id: req.params.id }, data: req.body })
+    const cls = await req.db!.characterClass.update({ where: { id: param(req, 'id') }, data: req.body })
     res.json(cls)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -291,7 +289,7 @@ entitiesRouter.put('/character-classes/:id', rejectIfReadOnly, async (req, res) 
 
 entitiesRouter.delete('/character-classes/:id', rejectIfReadOnly, async (req, res) => {
   try {
-    await db().characterClass.delete({ where: { id: req.params.id } })
+    await req.db!.characterClass.delete({ where: { id: param(req, 'id') } })
     res.json({ ok: true })
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -300,9 +298,9 @@ entitiesRouter.delete('/character-classes/:id', rejectIfReadOnly, async (req, re
 
 // ─── Races ─────────────────────────────────────────────────────
 
-entitiesRouter.get('/races', async (_req, res) => {
+entitiesRouter.get('/races', async (req, res) => {
   try {
-    const races = await db().race.findMany()
+    const races = await req.db!.race.findMany()
     res.json(races)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -311,7 +309,7 @@ entitiesRouter.get('/races', async (_req, res) => {
 
 entitiesRouter.get('/races/:id', async (req, res) => {
   try {
-    const race = await db().race.findUnique({ where: { id: req.params.id } })
+    const race = await req.db!.race.findUnique({ where: { id: param(req, 'id') } })
     if (!race) { res.status(404).json({ error: 'Race not found' }); return }
     res.json(race)
   } catch (err: any) {
@@ -324,7 +322,7 @@ entitiesRouter.post('/races', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Race', res)) return
   if (!validateName(req.body.name, 'Race', res)) return
   try {
-    const race = await db().race.create({ data: req.body })
+    const race = await req.db!.race.create({ data: req.body })
     res.json(race)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -335,7 +333,7 @@ entitiesRouter.put('/races/:id', rejectIfReadOnly, async (req, res) => {
   sanitizeTextFields(req.body)
   if (req.body.name !== undefined && !validateName(req.body.name, 'Race', res)) return
   try {
-    const race = await db().race.update({ where: { id: req.params.id }, data: req.body })
+    const race = await req.db!.race.update({ where: { id: param(req, 'id') }, data: req.body })
     res.json(race)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -344,7 +342,7 @@ entitiesRouter.put('/races/:id', rejectIfReadOnly, async (req, res) => {
 
 entitiesRouter.delete('/races/:id', rejectIfReadOnly, async (req, res) => {
   try {
-    await db().race.delete({ where: { id: req.params.id } })
+    await req.db!.race.delete({ where: { id: param(req, 'id') } })
     res.json({ ok: true })
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -353,9 +351,9 @@ entitiesRouter.delete('/races/:id', rejectIfReadOnly, async (req, res) => {
 
 // ─── Skills ────────────────────────────────────────────────────
 
-entitiesRouter.get('/skills', async (_req, res) => {
+entitiesRouter.get('/skills', async (req, res) => {
   try {
-    const skills = await db().skill.findMany()
+    const skills = await req.db!.skill.findMany()
     res.json(skills)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -364,7 +362,7 @@ entitiesRouter.get('/skills', async (_req, res) => {
 
 entitiesRouter.get('/skills/:id', async (req, res) => {
   try {
-    const skill = await db().skill.findUnique({ where: { id: req.params.id } })
+    const skill = await req.db!.skill.findUnique({ where: { id: param(req, 'id') } })
     if (!skill) { res.status(404).json({ error: 'Skill not found' }); return }
     res.json(skill)
   } catch (err: any) {
@@ -377,7 +375,7 @@ entitiesRouter.post('/skills', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Skill', res)) return
   if (!validateName(req.body.name, 'Skill', res)) return
   try {
-    const skill = await db().skill.create({ data: req.body })
+    const skill = await req.db!.skill.create({ data: req.body })
     res.json(skill)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -388,7 +386,7 @@ entitiesRouter.put('/skills/:id', rejectIfReadOnly, async (req, res) => {
   sanitizeTextFields(req.body)
   if (req.body.name !== undefined && !validateName(req.body.name, 'Skill', res)) return
   try {
-    const skill = await db().skill.update({ where: { id: req.params.id }, data: req.body })
+    const skill = await req.db!.skill.update({ where: { id: param(req, 'id') }, data: req.body })
     res.json(skill)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -397,7 +395,7 @@ entitiesRouter.put('/skills/:id', rejectIfReadOnly, async (req, res) => {
 
 entitiesRouter.delete('/skills/:id', rejectIfReadOnly, async (req, res) => {
   try {
-    await db().skill.delete({ where: { id: req.params.id } })
+    await req.db!.skill.delete({ where: { id: param(req, 'id') } })
     res.json({ ok: true })
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -406,9 +404,9 @@ entitiesRouter.delete('/skills/:id', rejectIfReadOnly, async (req, res) => {
 
 // ─── Spells ────────────────────────────────────────────────────
 
-entitiesRouter.get('/spells', async (_req, res) => {
+entitiesRouter.get('/spells', async (req, res) => {
   try {
-    const spells = await db().spell.findMany()
+    const spells = await req.db!.spell.findMany()
     res.json(spells)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -417,7 +415,7 @@ entitiesRouter.get('/spells', async (_req, res) => {
 
 entitiesRouter.get('/spells/:id', async (req, res) => {
   try {
-    const spell = await db().spell.findUnique({ where: { id: req.params.id } })
+    const spell = await req.db!.spell.findUnique({ where: { id: param(req, 'id') } })
     if (!spell) { res.status(404).json({ error: 'Spell not found' }); return }
     res.json(spell)
   } catch (err: any) {
@@ -430,7 +428,7 @@ entitiesRouter.post('/spells', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Spell', res)) return
   if (!validateName(req.body.name, 'Spell', res)) return
   try {
-    const spell = await db().spell.create({ data: req.body })
+    const spell = await req.db!.spell.create({ data: req.body })
     res.json(spell)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -441,7 +439,7 @@ entitiesRouter.put('/spells/:id', rejectIfReadOnly, async (req, res) => {
   sanitizeTextFields(req.body)
   if (req.body.name !== undefined && !validateName(req.body.name, 'Spell', res)) return
   try {
-    const spell = await db().spell.update({ where: { id: req.params.id }, data: req.body })
+    const spell = await req.db!.spell.update({ where: { id: param(req, 'id') }, data: req.body })
     res.json(spell)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -450,7 +448,7 @@ entitiesRouter.put('/spells/:id', rejectIfReadOnly, async (req, res) => {
 
 entitiesRouter.delete('/spells/:id', rejectIfReadOnly, async (req, res) => {
   try {
-    await db().spell.delete({ where: { id: req.params.id } })
+    await req.db!.spell.delete({ where: { id: param(req, 'id') } })
     res.json({ ok: true })
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -459,9 +457,9 @@ entitiesRouter.delete('/spells/:id', rejectIfReadOnly, async (req, res) => {
 
 // ─── Recipes ──────────────────────────────────────────────────
 
-entitiesRouter.get('/recipes', async (_req, res) => {
+entitiesRouter.get('/recipes', async (req, res) => {
   try {
-    const recipes = await db().recipe.findMany()
+    const recipes = await req.db!.recipe.findMany()
     res.json(recipes)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -470,7 +468,7 @@ entitiesRouter.get('/recipes', async (_req, res) => {
 
 entitiesRouter.get('/recipes/:id', async (req, res) => {
   try {
-    const recipe = await db().recipe.findUnique({ where: { id: req.params.id } })
+    const recipe = await req.db!.recipe.findUnique({ where: { id: param(req, 'id') } })
     if (!recipe) { res.status(404).json({ error: 'Recipe not found' }); return }
     res.json(recipe)
   } catch (err: any) {
@@ -483,7 +481,7 @@ entitiesRouter.post('/recipes', rejectIfReadOnly, async (req, res) => {
   if (!validateId(req.body.id, 'Recipe', res)) return
   if (!validateName(req.body.name, 'Recipe', res)) return
   try {
-    const recipe = await db().recipe.create({ data: req.body })
+    const recipe = await req.db!.recipe.create({ data: req.body })
     res.json(recipe)
   } catch (err: any) {
     handlePrismaError(err, 'recipe', res)
@@ -494,7 +492,7 @@ entitiesRouter.put('/recipes/:id', rejectIfReadOnly, async (req, res) => {
   sanitizeTextFields(req.body)
   if (req.body.name !== undefined && !validateName(req.body.name, 'Recipe', res)) return
   try {
-    const recipe = await db().recipe.update({ where: { id: req.params.id }, data: req.body })
+    const recipe = await req.db!.recipe.update({ where: { id: param(req, 'id') }, data: req.body })
     res.json(recipe)
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)
@@ -503,7 +501,7 @@ entitiesRouter.put('/recipes/:id', rejectIfReadOnly, async (req, res) => {
 
 entitiesRouter.delete('/recipes/:id', rejectIfReadOnly, async (req, res) => {
   try {
-    await db().recipe.delete({ where: { id: req.params.id } })
+    await req.db!.recipe.delete({ where: { id: param(req, 'id') } })
     res.json({ ok: true })
   } catch (err: any) {
     handlePrismaError(err, 'entity', res)

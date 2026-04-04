@@ -1,8 +1,7 @@
-import { Router } from 'express'
+import { Router, Request } from 'express'
 import multer from 'multer'
 import fs from 'fs'
 import path from 'path'
-import { getProjectsDir, getActiveProject } from '../db.js'
 
 export const assetMgmtRouter = Router()
 
@@ -10,10 +9,9 @@ const MAX_HISTORY = 5
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } })
 
-function getAssetsRoot(): string {
-  const active = getActiveProject()
-  if (!active) throw new Error('No project is open')
-  return path.join(getProjectsDir(), `${active}_assets`, 'assets')
+function getAssetsRoot(req: Request): string {
+  if (!req.projectDir) throw new Error('No project context')
+  return req.projectDir
 }
 
 function historyDir(filePath: string): string {
@@ -91,7 +89,7 @@ assetMgmtRouter.post('/upload', upload.single('file'), (req, res) => {
       res.status(400).json({ error: 'assetPath and file are required' })
       return
     }
-    const fullPath = path.join(getAssetsRoot(), assetPath)
+    const fullPath = path.join(getAssetsRoot(req), assetPath)
     fs.mkdirSync(path.dirname(fullPath), { recursive: true })
     backupAsset(fullPath)
     fs.writeFileSync(fullPath, req.file.buffer)
@@ -109,7 +107,7 @@ assetMgmtRouter.post('/undo', (req, res) => {
       res.status(400).json({ error: 'assetPath is required' })
       return
     }
-    const fullPath = path.join(getAssetsRoot(), assetPath)
+    const fullPath = path.join(getAssetsRoot(req), assetPath)
     const restored = restoreAsset(fullPath)
     if (!restored) {
       res.status(404).json({ error: 'No history available' })
@@ -129,7 +127,7 @@ assetMgmtRouter.post('/clear', (req, res) => {
       res.status(400).json({ error: 'assetPath is required' })
       return
     }
-    const fullPath = path.join(getAssetsRoot(), assetPath)
+    const fullPath = path.join(getAssetsRoot(req), assetPath)
     clearAsset(fullPath)
     res.json({ ok: true, assetPath })
   } catch (err: any) {
@@ -145,7 +143,7 @@ assetMgmtRouter.get('/history', (req, res) => {
       res.status(400).json({ error: 'path query parameter is required' })
       return
     }
-    const fullPath = path.join(getAssetsRoot(), assetPath)
+    const fullPath = path.join(getAssetsRoot(req), assetPath)
     const depth = getHistoryDepth(fullPath)
     res.json({ depth })
   } catch (err: any) {

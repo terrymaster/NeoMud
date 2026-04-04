@@ -1,16 +1,14 @@
-import { Router, Request, Response, NextFunction } from 'express'
-import { db, isReadOnly } from '../db.js'
+import { Router, Request, Response } from 'express'
+import { rejectIfReadOnly } from '../middleware/readOnly.js'
 import { seedPcSprites } from '../pcSpriteDefaults.js'
 
-export const pcSpritesRouter = Router()
-
-function rejectIfReadOnly(_req: Request, res: Response, next: NextFunction) {
-  if (isReadOnly()) {
-    res.status(403).json({ error: 'Project is read-only. Fork it to make changes.' })
-    return
-  }
-  next()
+/** Extract a route parameter as a string (Express 5 types return string | string[]). */
+function param(req: Request, name: string): string {
+  const val = req.params[name]
+  return Array.isArray(val) ? val[0] : val ?? ''
 }
+
+export const pcSpritesRouter = Router()
 
 // GET /api/pc-sprites — list all, with optional race/gender/class filters
 pcSpritesRouter.get('/', async (req, res) => {
@@ -20,7 +18,7 @@ pcSpritesRouter.get('/', async (req, res) => {
     if (req.query.gender) where.gender = req.query.gender as string
     if (req.query.class) where.characterClass = req.query.class as string
 
-    const sprites = await db().pcSprite.findMany({
+    const sprites = await req.db!.pcSprite.findMany({
       where,
       orderBy: { id: 'asc' },
     })
@@ -33,7 +31,7 @@ pcSpritesRouter.get('/', async (req, res) => {
 // GET /api/pc-sprites/:id
 pcSpritesRouter.get('/:id', async (req, res) => {
   try {
-    const sprite = await db().pcSprite.findUnique({ where: { id: req.params.id } })
+    const sprite = await req.db!.pcSprite.findUnique({ where: { id: param(req, 'id') } })
     if (!sprite) { res.status(404).json({ error: 'PcSprite not found' }); return }
     res.json(sprite)
   } catch (err: any) {
@@ -45,8 +43,8 @@ pcSpritesRouter.get('/:id', async (req, res) => {
 pcSpritesRouter.put('/:id', rejectIfReadOnly, async (req, res) => {
   try {
     const { imagePrompt, imageStyle, imageNegativePrompt, imageWidth, imageHeight } = req.body
-    const sprite = await db().pcSprite.update({
-      where: { id: req.params.id },
+    const sprite = await req.db!.pcSprite.update({
+      where: { id: param(req, 'id') },
       data: {
         ...(imagePrompt !== undefined && { imagePrompt }),
         ...(imageStyle !== undefined && { imageStyle }),
@@ -68,9 +66,9 @@ pcSpritesRouter.put('/:id', rejectIfReadOnly, async (req, res) => {
 // POST /api/pc-sprites/reset — re-seed all rows to defaults
 pcSpritesRouter.post('/reset', rejectIfReadOnly, async (req, res) => {
   try {
-    await db().pcSprite.deleteMany()
-    await seedPcSprites(db())
-    const count = await db().pcSprite.count()
+    await req.db!.pcSprite.deleteMany()
+    await seedPcSprites(req.db!)
+    const count = await req.db!.pcSprite.count()
     res.json({ ok: true, count })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
