@@ -1,3 +1,11 @@
 package com.neomud.client.platform
 
-actual val defaultServerHost: String = "10.0.2.2"
+import com.neomud.client.BuildConfig
+
+actual val serverConfig: ServerConfig = ServerConfig(
+    defaultHost = BuildConfig.DEFAULT_HOST,
+    defaultPort = BuildConfig.DEFAULT_PORT,
+    useTls = BuildConfig.USE_TLS,
+    showServerConfig = BuildConfig.SHOW_SERVER_CONFIG,
+    platformApiUrl = BuildConfig.PLATFORM_API_URL
+)

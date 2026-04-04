@@ -24,6 +24,7 @@ class AdminCommandTest {
     }
 
     private suspend fun DefaultClientWebSocketSession.consumeCatalogSync() {
+        assertIs<ServerMessage.ServerHello>(receiveServerMessage())
         assertIs<ServerMessage.ClassCatalogSync>(receiveServerMessage())
         assertIs<ServerMessage.ItemCatalogSync>(receiveServerMessage())
         assertIs<ServerMessage.SkillCatalogSync>(receiveServerMessage())

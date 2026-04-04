@@ -40,6 +40,9 @@ class PlayerSession(
     val discoveredHiddenExits: MutableSet<String> = mutableSetOf()
     val discoveredLockedExits: MutableSet<String> = mutableSetOf()
 
+    // Protocol versioning
+    var clientProtocolVersion: Int = 1
+
     // Tutorial tracking
     val seenTutorials: MutableSet<String> = mutableSetOf()
     var firstKillDone: Boolean = false

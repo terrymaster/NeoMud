@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Dev flavor: allow cleartext for LAN testing, emulator, and local servers -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

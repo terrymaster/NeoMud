@@ -1,14 +1,14 @@
 package com.neomud.client.ui.components
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.*
 import com.neomud.client.testutil.ComposeTestBase
 import com.neomud.client.testutil.TestThemeWrapper
 import com.neomud.client.testutil.installTestCoil
 import com.neomud.client.testutil.resetTestCoil
+import neomud.client.generated.resources.Res
+import neomud.client.generated.resources.icon_attack
+import neomud.client.generated.resources.icon_settings
 import kotlin.test.BeforeTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -30,7 +30,7 @@ class StoneButtonTest : ComposeTestBase() {
         setContent {
             TestThemeWrapper {
                 StoneButton(
-                    icon = Icons.Filled.Star,
+                    icon = Res.drawable.icon_attack,
                     color = Color.Red,
                     enabled = true,
                     onClick = { clicked = true }
@@ -48,7 +48,7 @@ class StoneButtonTest : ComposeTestBase() {
         setContent {
             TestThemeWrapper {
                 StoneButton(
-                    icon = Icons.Filled.Star,
+                    icon = Res.drawable.icon_attack,
                     color = Color.Red,
                     enabled = false,
                     onClick = { clicked = true }
@@ -65,7 +65,7 @@ class StoneButtonTest : ComposeTestBase() {
         setContent {
             TestThemeWrapper {
                 StoneButton(
-                    icon = Icons.Filled.Shield,
+                    icon = Res.drawable.icon_settings,
                     color = Color.Blue,
                     onClick = {}
                 )

@@ -4,5 +4,9 @@
   "author": "NeoMud Team",
   "version": "0.1.0",
   "description": "The default NeoMud world with town and forest zones.",
-  "createdAt": "2026-02-15"
+  "createdAt": "2026-02-15",
+  "engineVersion": "0.1.0.0",
+  "engineVersionMin": "0.1.0.0",
+  "worldId": "00000000-0000-0000-0000-000000000001",
+  "createdWithMaker": true
 }

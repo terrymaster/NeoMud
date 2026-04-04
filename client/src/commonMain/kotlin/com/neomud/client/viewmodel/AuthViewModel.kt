@@ -3,8 +3,10 @@ package com.neomud.client.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neomud.client.network.ConnectionState
+import com.neomud.client.network.GameConnection
 import com.neomud.client.platform.PlatformLogger
 import com.neomud.client.network.WebSocketClient
+import com.neomud.shared.NeoMudVersion
 import com.neomud.shared.model.CharacterClassDef
 import com.neomud.shared.model.Item
 import com.neomud.shared.model.Player
@@ -18,8 +20,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class AuthViewModel : ViewModel() {
-    val wsClient = WebSocketClient()
+class AuthViewModel(
+    val wsClient: GameConnection = WebSocketClient()
+) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
@@ -54,9 +57,16 @@ class AuthViewModel : ViewModel() {
     private val _initialTutorial = MutableStateFlow<ServerMessage.Tutorial?>(null)
     val initialTutorial: StateFlow<ServerMessage.Tutorial?> = _initialTutorial
 
+    private val _serverInfo = MutableStateFlow(ServerInfo())
+    val serverInfo: StateFlow<ServerInfo> = _serverInfo
+
     private var _serverHost: String = ""
     private var _serverPort: Int = 0
-    val serverBaseUrl: String get() = "http://$_serverHost:$_serverPort"
+    private var _useTls: Boolean = false
+    val serverBaseUrl: String get() {
+        val scheme = if (_useTls) "https" else "http"
+        return "$scheme://$_serverHost:$_serverPort"
+    }
 
     init {
         viewModelScope.launch {
@@ -118,6 +128,18 @@ class AuthViewModel : ViewModel() {
                         is ServerMessage.SkillCatalogSync -> {
                             _availableSkills.value = message.skills
                         }
+                        is ServerMessage.ServerHello -> {
+                            _serverInfo.value = ServerInfo(
+                                engineVersion = message.engineVersion,
+                                protocolVersion = message.protocolVersion,
+                                worldName = message.worldName,
+                                worldVersion = message.worldVersion
+                            )
+                            wsClient.send(ClientMessage.ClientHello(
+                                clientVersion = NeoMudVersion.ENGINE_VERSION,
+                                protocolVersion = NeoMudVersion.PROTOCOL_VERSION
+                            ))
+                        }
                         else -> { /* handled by GameViewModel */ }
                     }
                 } catch (e: Exception) {
@@ -127,10 +149,11 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun connect(host: String, port: Int) {
+    fun connect(host: String, port: Int, useTls: Boolean = false) {
         _serverHost = host
         _serverPort = port
-        wsClient.connect(host, port, viewModelScope)
+        _useTls = useTls
+        wsClient.connect(host, port, useTls, viewModelScope)
     }
 
     fun login(username: String, password: String) {
@@ -181,3 +204,10 @@ sealed class AuthState {
     data class LoggedIn(val player: Player) : AuthState()
     data class Error(val message: String) : AuthState()
 }
+
+data class ServerInfo(
+    val engineVersion: String = "",
+    val protocolVersion: Int = 1,
+    val worldName: String = "",
+    val worldVersion: String = ""
+)

@@ -139,4 +139,12 @@ sealed class ClientMessage {
     @Serializable
     @SerialName("craft_item")
     data class CraftItem(val recipeId: String) : ClientMessage()
+
+    // Handshake — sent in response to ServerHello
+    @Serializable
+    @SerialName("client_hello")
+    data class ClientHello(
+        val clientVersion: String,
+        val protocolVersion: Int
+    ) : ClientMessage()
 }

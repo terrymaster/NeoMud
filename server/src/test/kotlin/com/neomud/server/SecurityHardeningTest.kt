@@ -40,7 +40,7 @@ class SecurityHardeningTest {
     }
 
     private suspend fun DefaultClientWebSocketSession.consumeCatalogSync() {
-        repeat(5) { receiveServerMessage() } // ClassCatalog, ItemCatalog, SkillCatalog, RaceCatalog, SpellCatalog
+        repeat(6) { receiveServerMessage() } // ServerHello, ClassCatalog, ItemCatalog, SkillCatalog, RaceCatalog, SpellCatalog
     }
 
     private val defaultStats = Stats(30, 22, 18, 18, 30, 18)

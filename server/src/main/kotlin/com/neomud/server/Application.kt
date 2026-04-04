@@ -332,7 +332,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
 
     // Install plugins
     configureWebSockets()
-    configureRouting(sessionManager, commandProcessor, playerRepository, discoveryRepository, dataSource)
+    configureRouting(sessionManager, commandProcessor, playerRepository, discoveryRepository, dataSource, loadResult.manifest)
 
     // Launch game loop
     launch {

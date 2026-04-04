@@ -8,6 +8,8 @@ import com.neomud.server.persistence.repository.PlayerRepository
 import com.neomud.server.session.PlayerSession
 import com.neomud.server.session.SessionManager
 import com.neomud.server.world.WorldDataSource
+import com.neomud.server.world.WorldManifest
+import com.neomud.shared.NeoMudVersion
 import com.neomud.shared.protocol.MessageSerializer
 import com.neomud.shared.protocol.ServerMessage
 import io.ktor.http.*
@@ -42,7 +44,8 @@ fun Application.configureRouting(
     commandProcessor: CommandProcessor,
     playerRepository: PlayerRepository,
     discoveryRepository: DiscoveryRepository,
-    dataSource: WorldDataSource
+    dataSource: WorldDataSource,
+    worldManifest: WorldManifest? = null
 ) {
     routing {
         get("/assets/{path...}") {
@@ -97,6 +100,14 @@ fun Application.configureRouting(
             logger.info("New WebSocket connection from $remoteIp")
 
             try {
+                // Send server hello with version info
+                session.send(ServerMessage.ServerHello(
+                    engineVersion = NeoMudVersion.ENGINE_VERSION,
+                    protocolVersion = NeoMudVersion.PROTOCOL_VERSION,
+                    worldName = worldManifest?.name ?: "",
+                    worldVersion = worldManifest?.version ?: ""
+                ))
+
                 // Send catalog data before auth so registration screen can populate
                 commandProcessor.sendCatalogSync(session)
 

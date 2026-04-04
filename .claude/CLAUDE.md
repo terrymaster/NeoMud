@@ -98,11 +98,14 @@ Everything is JSON-defined, loaded into catalogs at startup:
 - Discovery system tracks visited rooms, hidden/locked exits, interactables, and tutorials per player
 
 ### Tutorial System
-- One-time tutorials tracked via `PlayerDiscoveryTable` with type `"tutorial"` and a key (e.g., `"welcome"`)
-- Server sends `ServerMessage.Tutorial(key, title, content)` — client renders as a modal dialog
+- `TutorialService` (`server/.../game/TutorialService.kt`) — centralized service with all tutorial definitions and `trySend()` for dedup + persist + send
+- One-time tutorials tracked via `PlayerDiscoveryTable` with type `"tutorial"` and a key (e.g., `"welcome"`, `"tut_hostile_npc"`)
+- `ServerMessage.Tutorial(key, title, content, blocking, targetElement?)` — `blocking=true` renders as modal dialog, `blocking=false` renders as auto-fading coach mark toast
 - Tutorial state loaded from DB on login (`session.seenTutorials`), persisted via `DiscoveryRepository.markTutorialSeen()`
-- Welcome tutorial fires immediately after `LoginOk` on first login for new characters
+- Triggers wired into: `GameLoop` (combat, death, effects), `CommandProcessor` (welcome), `MoveCommand` (room-enter: hostiles, vendors, crafters, zones), `TrainerCommand` (CP spend)
+- Client: `TutorialModal` (blocking stone-themed dialog), `CoachMarkOverlay` (passive fade-in/out banner, 6s), `coachMarkTarget()` Modifier for UI element targeting
 - **Auth transition**: `Tutorial` messages arrive before `GameViewModel` is mounted. `AuthViewModel` captures them in `initialTutorial` and passes them through via `NeoMudApp.kt` → `GameViewModel.setInitialTutorial()`. Any new message types sent during the post-login sequence must follow this same pattern.
+- Help panel ("Adventurer's Tome") with 10 accordion sections accessible via toolbar icon — static client-side content
 
 ### Client
 - Jetpack Compose + Material 3

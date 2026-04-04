@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
 import com.neomud.client.network.ConnectionState
-import com.neomud.client.platform.defaultServerHost
+import com.neomud.client.platform.serverConfig
 import com.neomud.client.ui.theme.StoneTheme
 import com.neomud.client.viewmodel.AuthState
 import com.neomud.shared.NeoMudVersion
@@ -88,8 +88,8 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onClearError: () -> Unit
 ) {
-    var host by remember { mutableStateOf(defaultServerHost) }
-    var port by remember { mutableStateOf("8080") }
+    var host by remember { mutableStateOf(serverConfig.defaultHost) }
+    var port by remember { mutableStateOf(serverConfig.defaultPort.toString()) }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
@@ -174,30 +174,32 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    StoneTextField(
-                        value = host,
-                        onValueChange = { host = it },
-                        label = "Server Host",
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    if (serverConfig.showServerConfig) {
+                        StoneTextField(
+                            value = host,
+                            onValueChange = { host = it },
+                            label = "Server Host",
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    StoneTextField(
-                        value = port,
-                        onValueChange = { port = it },
-                        label = "Port",
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = {
-                            focusManager.clearFocus()
-                            onConnect(host, port.toIntOrNull() ?: 8080)
-                        })
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                        StoneTextField(
+                            value = port,
+                            onValueChange = { port = it },
+                            label = "Port",
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = {
+                                focusManager.clearFocus()
+                                onConnect(host, port.toIntOrNull() ?: serverConfig.defaultPort)
+                            })
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
                     StoneActionButton(
                         text = "Connect",
-                        onClick = { onConnect(host, port.toIntOrNull() ?: 8080) }
+                        onClick = { onConnect(host, port.toIntOrNull() ?: serverConfig.defaultPort) }
                     )
                 } else if (connectionState == ConnectionState.CONNECTING) {
                     // ─── Connecting ───

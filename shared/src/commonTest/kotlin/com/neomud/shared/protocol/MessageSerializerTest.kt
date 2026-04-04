@@ -1103,4 +1103,30 @@ class MessageSerializerTest {
         assertEquals(0, decoded.currentHp, "Default HP should be 0 for backward compatibility")
         assertEquals(0, decoded.maxHp)
     }
+
+    // ─── Handshake messages ──────────────────────────────
+
+    @Test
+    fun testServerHelloRoundTrip() {
+        val original = ServerMessage.ServerHello(
+            engineVersion = "0.1.0.0",
+            protocolVersion = 1,
+            worldName = "Test World",
+            worldVersion = "0.1.0"
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun testClientHelloRoundTrip() {
+        val original = ClientMessage.ClientHello(
+            clientVersion = "0.1.0.0",
+            protocolVersion = 1
+        )
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
 }

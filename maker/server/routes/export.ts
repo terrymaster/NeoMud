@@ -8,6 +8,9 @@ import { validateProject } from '../validate.js'
 
 export const exportRouter = Router()
 
+// Keep in sync with shared/src/.../NeoMudVersion.kt VERSION_CODE
+const NEOMUD_ENGINE_VERSION = '0.1.0.0'
+
 /** Safely parse a JSON string field, returning the fallback if empty or invalid. */
 function parseJsonField(value: string, fallback: any = {}): any {
   if (!value || value === '') return fallback
@@ -29,8 +32,14 @@ export async function buildNmdBundle(prisma: PrismaClient, projectName: string):
     if (row.key === 'readOnly') continue
     const num = Number(row.value)
     if (!isNaN(num) && row.value !== '') manifest[row.key] = num
+    else if (row.value === 'true') manifest[row.key] = true
+    else if (row.value === 'false') manifest[row.key] = false
     else manifest[row.key] = row.value
   }
+  // Stamp engine version at export time
+  if (!manifest.engineVersion) manifest.engineVersion = NEOMUD_ENGINE_VERSION
+  if (!manifest.engineVersionMin) manifest.engineVersionMin = NEOMUD_ENGINE_VERSION
+  manifest.createdWithMaker = true
   zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)))
 
   // ─── Fetch all data ─────────────────────────────────

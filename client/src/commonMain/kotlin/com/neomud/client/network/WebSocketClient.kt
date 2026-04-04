@@ -14,41 +14,34 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class WebSocketClient {
+class WebSocketClient : GameConnection {
     private val client = createPlatformHttpClient()
 
     private var session: DefaultClientWebSocketSession? = null
     private var connectionJob: Job? = null
 
     private val _messages = MutableSharedFlow<ServerMessage>(extraBufferCapacity = 64)
-    val messages: SharedFlow<ServerMessage> = _messages
+    override val messages: SharedFlow<ServerMessage> = _messages
 
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
-    val connectionState: StateFlow<ConnectionState> = _connectionState
+    override val connectionState: StateFlow<ConnectionState> = _connectionState
 
     private val _connectionError = MutableStateFlow<String?>(null)
-    val connectionError: StateFlow<String?> = _connectionError
+    override val connectionError: StateFlow<String?> = _connectionError
 
-    fun connect(host: String, port: Int, scope: CoroutineScope) {
+    override fun connect(host: String, port: Int, useTls: Boolean, scope: CoroutineScope) {
         connectionJob?.cancel()
         connectionJob = scope.launch(Dispatchers.Default) {
             _connectionState.value = ConnectionState.CONNECTING
             _connectionError.value = null
             try {
-                client.webSocket(host = host, port = port, path = "/game") {
-                    session = this
-                    _connectionState.value = ConnectionState.CONNECTED
-
-                    for (frame in incoming) {
-                        if (frame is Frame.Text) {
-                            val text = frame.readText()
-                            try {
-                                val message = MessageSerializer.decodeServerMessage(text)
-                                _messages.emit(message)
-                            } catch (e: Exception) {
-                                PlatformLogger.w("WebSocketClient", "Failed to decode message: ${text.take(200)}", e)
-                            }
-                        }
+                if (useTls) {
+                    client.wss(host = host, port = port, path = "/game") {
+                        handleSession(this)
+                    }
+                } else {
+                    client.webSocket(host = host, port = port, path = "/game") {
+                        handleSession(this)
                     }
                 }
             } catch (_: CancellationException) {
@@ -62,7 +55,24 @@ class WebSocketClient {
         }
     }
 
-    suspend fun send(message: ClientMessage): Boolean {
+    private suspend fun handleSession(wsSession: DefaultClientWebSocketSession) {
+        session = wsSession
+        _connectionState.value = ConnectionState.CONNECTED
+
+        for (frame in wsSession.incoming) {
+            if (frame is Frame.Text) {
+                val text = frame.readText()
+                try {
+                    val message = MessageSerializer.decodeServerMessage(text)
+                    _messages.emit(message)
+                } catch (e: Exception) {
+                    PlatformLogger.w("WebSocketClient", "Failed to decode message: ${text.take(200)}", e)
+                }
+            }
+        }
+    }
+
+    override suspend fun send(message: ClientMessage): Boolean {
         val s = session ?: run {
             PlatformLogger.w("WebSocketClient", "send() called with no active session for ${message::class.simpleName}")
             return false
@@ -77,7 +87,7 @@ class WebSocketClient {
         }
     }
 
-    fun disconnect() {
+    override fun disconnect() {
         connectionJob?.cancel()
         connectionJob = null
     }

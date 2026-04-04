@@ -45,9 +45,11 @@ kotlin {
             // Networking
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.websockets)
+            implementation(libs.ktor.client.content.negotiation)
 
             // Serialization
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.ktor.serialization.kotlinx.json)
 
             // Image loading (Coil 3 is multiplatform)
             implementation(libs.coil.compose)
@@ -157,6 +159,33 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            buildConfigField("boolean", "SHOW_SERVER_CONFIG", "true")
+            buildConfigField("boolean", "USE_TLS", "false")
+            buildConfigField("String", "DEFAULT_HOST", "\"10.0.2.2\"")
+            buildConfigField("int", "DEFAULT_PORT", "8080")
+            buildConfigField("String", "PLATFORM_API_URL", "\"http://10.0.2.2:3002/api/v1\"")
+        }
+        create("prod") {
+            dimension = "environment"
+            buildConfigField("boolean", "SHOW_SERVER_CONFIG", "false")
+            buildConfigField("boolean", "USE_TLS", "true")
+            buildConfigField("String", "DEFAULT_HOST", "\"play.neomud.com\"")
+            buildConfigField("int", "DEFAULT_PORT", "443")
+            buildConfigField("String", "PLATFORM_API_URL", "\"https://api.neomud.com/api/v1\"")
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

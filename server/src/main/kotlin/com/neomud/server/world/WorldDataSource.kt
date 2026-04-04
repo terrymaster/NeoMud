@@ -15,8 +15,12 @@ interface WorldDataSource : Closeable {
 data class WorldManifest(
     val formatVersion: Int,
     val name: String,
-    val author: String = "Unknown",
-    val version: String = "0.0.0",
+    val author: String,
+    val version: String,
     val description: String = "",
-    val createdAt: String = ""
+    val createdAt: String = "",
+    val engineVersion: String,
+    val engineVersionMin: String,
+    val worldId: String,
+    val createdWithMaker: Boolean = false
 )

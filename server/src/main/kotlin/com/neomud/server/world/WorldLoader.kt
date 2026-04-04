@@ -1,8 +1,10 @@
 package com.neomud.server.world
 
+import com.neomud.shared.NeoMudVersion
 import com.neomud.shared.model.EquipmentSlots
 import com.neomud.shared.model.Room
 import com.neomud.shared.model.RoomEffect
+import com.neomud.server.game.GameConfig
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
@@ -28,13 +30,17 @@ object WorldLoader {
     )
 
     fun load(source: WorldDataSource): LoadResult {
-        // Load manifest if present
+        // Load and validate manifest
         val manifest = source.readText("manifest.json")?.let {
             val m = json.decodeFromString<WorldManifest>(it)
-            if (m.formatVersion > 1) {
-                error("Unsupported world format version ${m.formatVersion} (max supported: 1)")
+            if (m.formatVersion > GameConfig.WorldFormat.CURRENT_FORMAT_VERSION) {
+                error("Unsupported world format version ${m.formatVersion} (max supported: ${GameConfig.WorldFormat.CURRENT_FORMAT_VERSION})")
             }
-            logger.info("World bundle: ${m.name} v${m.version} by ${m.author}")
+            if (m.engineVersionMin.isNotEmpty() &&
+                NeoMudVersion.compareVersions(NeoMudVersion.ENGINE_VERSION, m.engineVersionMin) < 0) {
+                error("World '${m.name}' requires engine >= ${m.engineVersionMin}, but server is $NeoMudVersion.ENGINE_VERSION. Please update the server.")
+            }
+            logger.info("World bundle: ${m.name} v${m.version} by ${m.author} [${m.worldId}]")
             m
         }
 

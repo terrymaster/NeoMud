@@ -4,6 +4,9 @@ object GameConfig {
     object Server {
         const val PORT = 8080
     }
+    object WorldFormat {
+        const val CURRENT_FORMAT_VERSION = 1
+    }
     object Tick {
         const val INTERVAL_MS = 1500L
     }

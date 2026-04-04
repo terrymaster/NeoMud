@@ -35,6 +35,8 @@ class MultiplayerHardeningTest {
     }
 
     private suspend fun DefaultClientWebSocketSession.consumeCatalogSync() {
+        val hello = receiveServerMessage()
+        assertIs<ServerMessage.ServerHello>(hello)
         val msg1 = receiveServerMessage()
         assertIs<ServerMessage.ClassCatalogSync>(msg1)
         val msg2 = receiveServerMessage()

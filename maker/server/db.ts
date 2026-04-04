@@ -1,6 +1,7 @@
 import { PrismaClient } from './generated/prisma/client.js'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { execSync } from 'child_process'
+import { randomUUID } from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -132,6 +133,9 @@ export async function createProject(name: string, readOnly = false): Promise<Pri
     activeReadOnly = true
   }
 
+  // Generate unique world ID for new projects
+  await client.projectMeta.create({ data: { key: 'worldId', value: randomUUID() } })
+
   // Seed default PC sprites
   const { seedPcSprites, generatePlaceholderSprites } = await import('./pcSpriteDefaults.js')
   await seedPcSprites(client)
@@ -182,11 +186,16 @@ export async function forkProject(source: string, newName: string): Promise<void
     fs.cpSync(srcAssets, destAssets, { recursive: true })
   }
 
-  // Open the copy and remove the read-only flag
+  // Open the copy: remove read-only flag and generate new worldId
   const forkAdapter = new PrismaBetterSqlite3({ url: `file:${destPath}` })
   const tmpClient = new PrismaClient({ adapter: forkAdapter })
   try {
     await tmpClient.projectMeta.deleteMany({ where: { key: 'readOnly' } })
+    await tmpClient.projectMeta.upsert({
+      where: { key: 'worldId' },
+      create: { key: 'worldId', value: randomUUID() },
+      update: { value: randomUUID() },
+    })
   } finally {
     await tmpClient.$disconnect()
   }

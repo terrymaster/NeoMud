@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neomud.client.platform.PlatformAudioManager
 import com.neomud.client.platform.PlatformLogger
-import com.neomud.client.network.WebSocketClient
+import com.neomud.client.network.GameConnection
 import com.neomud.client.ui.theme.MudColors
 import com.neomud.shared.model.*
 import com.neomud.shared.protocol.ClientMessage
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class GameViewModel(
-    private val wsClient: WebSocketClient,
+    private val wsClient: GameConnection,
     var serverBaseUrl: String = "",
     private val audioManager: PlatformAudioManager? = null
 ) : ViewModel() {
@@ -469,6 +469,7 @@ class GameViewModel(
             is ServerMessage.Pong -> { /* ignore */ }
             is ServerMessage.RegisterOk -> { /* handled by AuthViewModel */ }
             is ServerMessage.AuthError -> { /* handled by AuthViewModel */ }
+            is ServerMessage.ServerHello -> { /* handled by AuthViewModel */ }
             is ServerMessage.ClassCatalogSync -> {
                 _classCatalog.value = message.classes.associateBy { it.id }
             }

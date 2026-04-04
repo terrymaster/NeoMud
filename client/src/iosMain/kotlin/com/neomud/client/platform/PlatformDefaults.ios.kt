@@ -1,4 +1,11 @@
 package com.neomud.client.platform
 
-/** Default server host for iOS — user will enter their server's LAN IP on the login screen. */
-actual val defaultServerHost: String = "127.0.0.1"
+import platform.Foundation.NSBundle
+
+actual val serverConfig: ServerConfig = ServerConfig(
+    defaultHost = (NSBundle.mainBundle.objectForInfoDictionaryKey("NeoMudDefaultHost") as? String) ?: "127.0.0.1",
+    defaultPort = (NSBundle.mainBundle.objectForInfoDictionaryKey("NeoMudDefaultPort") as? String)?.toIntOrNull() ?: 8080,
+    useTls = (NSBundle.mainBundle.objectForInfoDictionaryKey("NeoMudUseTLS") as? String) == "true",
+    showServerConfig = (NSBundle.mainBundle.objectForInfoDictionaryKey("NeoMudShowConfig") as? String ?: "true") == "true",
+    platformApiUrl = (NSBundle.mainBundle.objectForInfoDictionaryKey("NeoMudPlatformApiUrl") as? String) ?: "http://localhost:3002/api/v1"
+)

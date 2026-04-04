@@ -27,8 +27,25 @@ targets:
         UILaunchScreen: {}
         CADisableMinimumFrameDurationOnPhone: true
         NSAppTransportSecurity:
-          NSAllowsArbitraryLoads: true
+          NSAllowsArbitraryLoads: $(NEOMUD_ALLOW_ARBITRARY_LOADS)
+        NeoMudDefaultHost: $(NEOMUD_DEFAULT_HOST)
+        NeoMudDefaultPort: $(NEOMUD_DEFAULT_PORT)
+        NeoMudUseTLS: $(NEOMUD_USE_TLS)
+        NeoMudShowConfig: $(NEOMUD_SHOW_CONFIG)
     settings:
+      configs:
+        Debug:
+          NEOMUD_ALLOW_ARBITRARY_LOADS: "true"
+          NEOMUD_DEFAULT_HOST: "127.0.0.1"
+          NEOMUD_DEFAULT_PORT: "8080"
+          NEOMUD_USE_TLS: "false"
+          NEOMUD_SHOW_CONFIG: "true"
+        Release:
+          NEOMUD_ALLOW_ARBITRARY_LOADS: "false"
+          NEOMUD_DEFAULT_HOST: "play.neomud.com"
+          NEOMUD_DEFAULT_PORT: "443"
+          NEOMUD_USE_TLS: "true"
+          NEOMUD_SHOW_CONFIG: "false"
       FRAMEWORK_SEARCH_PATHS:
         - "$(inherited)"
         - "$(SRCROOT)/../client/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"

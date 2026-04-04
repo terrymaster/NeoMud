@@ -137,6 +137,10 @@ class CommandProcessor(
             is ClientMessage.Register -> handleRegister(session, message)
             is ClientMessage.Login -> handleLogin(session, message)
             is ClientMessage.Ping -> session.send(ServerMessage.Pong)
+            is ClientMessage.ClientHello -> {
+                session.clientProtocolVersion = message.protocolVersion
+                logger.info("Client hello: v${message.clientVersion}, protocol=${message.protocolVersion}")
+            }
             // All state-mutating commands acquire the global mutex
             else -> GameStateLock.withLock { processLocked(session, message) }
         }

@@ -411,4 +411,14 @@ sealed class ServerMessage {
         val message: String,
         val sound: String = ""
     ) : ServerMessage()
+
+    // Handshake — sent as the first message on WebSocket connect
+    @Serializable
+    @SerialName("server_hello")
+    data class ServerHello(
+        val engineVersion: String,
+        val protocolVersion: Int,
+        val worldName: String = "",
+        val worldVersion: String = ""
+    ) : ServerMessage()
 }

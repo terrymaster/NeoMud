@@ -381,4 +381,15 @@ class WorldLoaderTest {
         val result = load()
         assertTrue(result.lootTableCatalog.tableCount >= 12, "Should load at least 12 loot tables (4 forest + 4 marsh + 4 gorge)")
     }
+
+    @Test
+    fun testManifestHasVersioningFields() {
+        val result = load()
+        val manifest = result.manifest
+        assertNotNull(manifest, "Default world should have a manifest")
+        assertEquals("0.1.0.0", manifest.engineVersion)
+        assertEquals("0.1.0.0", manifest.engineVersionMin)
+        assertEquals("00000000-0000-0000-0000-000000000001", manifest.worldId)
+        assertTrue(manifest.createdWithMaker)
+    }
 }
