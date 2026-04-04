@@ -11,6 +11,9 @@ data class WorldSummary(
     val description: String,
     val creator: CreatorInfo,
     val latestVersion: VersionSummary? = null,
+    val averageRating: Float? = null,
+    val ratingCount: Int = 0,
+    val featured: Boolean = false,
     val createdAt: String,
     val updatedAt: String
 )
@@ -39,8 +42,12 @@ data class WorldDetail(
     val description: String,
     val status: String,
     val serverEndpoint: String? = null,
+    val serverStatus: String? = null,
     val creator: CreatorInfo,
     val versions: List<VersionDetail>,
+    val averageRating: Float? = null,
+    val ratingCount: Int = 0,
+    val featured: Boolean = false,
     val createdAt: String,
     val updatedAt: String
 )
