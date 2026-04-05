@@ -92,7 +92,10 @@ fun NeoMudApp(
     // Dark background fills edge-to-edge (including safe area zones on iOS)
     // so notch/home indicator areas show dark instead of white
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF080604))) {
-    NavHost(navController = navController, startDestination = "worldBrowser") {
+    // When launched from the marketplace, skip the world browser and go straight to login
+    val startDestination = if (serverConfig.skipMarketplace) "login" else "worldBrowser"
+
+    NavHost(navController = navController, startDestination = startDestination) {
 
         composable("worldBrowser") {
             // Play intro BGM from embedded resource

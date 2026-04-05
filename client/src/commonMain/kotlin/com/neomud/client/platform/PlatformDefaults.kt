@@ -6,7 +6,9 @@ data class ServerConfig(
     val defaultPort: Int,
     val useTls: Boolean,
     val showServerConfig: Boolean,
-    val platformApiUrl: String
+    val platformApiUrl: String,
+    /** When true, skip the world browser and go directly to login (marketplace-launched). */
+    val skipMarketplace: Boolean = false
 )
 
 expect val serverConfig: ServerConfig

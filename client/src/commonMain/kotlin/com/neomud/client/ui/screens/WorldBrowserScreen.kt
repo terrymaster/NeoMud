@@ -474,7 +474,7 @@ internal fun StarRatingDisplay(rating: Float, maxStars: Int = 5) {
         }
         Spacer(modifier = Modifier.width(3.dp))
         Text(
-            text = String.format("%.1f", rating),
+            text = ((rating * 10).toInt() / 10.0).toString(),
             fontSize = 10.sp,
             color = TorchAmber
         )

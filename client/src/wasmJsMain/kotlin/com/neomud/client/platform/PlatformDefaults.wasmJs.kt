@@ -2,16 +2,39 @@ package com.neomud.client.platform
 
 private fun isLocalhost(): Boolean = js("window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'")
 
+// Read injected config from the marketplace's Play.tsx page (XSS-safe data-attr injection).
+// Returns empty string / 0 / false if not set (Kotlin/WASM js() doesn't support nullable String).
+private fun getInjectedHost(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.serverHost) || ''")
+private fun getInjectedPort(): Int = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.serverPort) || 0")
+private fun getInjectedTls(): Boolean = js("!!(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.useTls)")
+private fun getInjectedSkipMarketplace(): Boolean = js("!!(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.skipMarketplace)")
+
 actual val serverConfig: ServerConfig = run {
-    val local = isLocalhost()
-    ServerConfig(
-        defaultHost = if (local) "localhost" else "play.neomud.app",
-        defaultPort = if (local) 8080 else 443,
-        useTls = !local,
-        showServerConfig = true, // Always show config during development
-        platformApiUrl = if (local)
-            "https://api.neomud.app/api/v1" // Use live API even in local dev for now
-        else
-            "https://api.neomud.app/api/v1"
-    )
+    val injectedHost = getInjectedHost()
+    val injectedPort = getInjectedPort()
+
+    if (injectedHost.isNotEmpty() && injectedPort > 0) {
+        // Launched from the React marketplace — connect to the selected world's server
+        ServerConfig(
+            defaultHost = injectedHost,
+            defaultPort = injectedPort,
+            useTls = getInjectedTls(),
+            showServerConfig = false,
+            platformApiUrl = "https://api.neomud.app/api/v1",
+            skipMarketplace = getInjectedSkipMarketplace()
+        )
+    } else {
+        // Standalone / dev mode — detect from browser location
+        val local = isLocalhost()
+        ServerConfig(
+            defaultHost = if (local) "localhost" else "play.neomud.app",
+            defaultPort = if (local) 8080 else 443,
+            useTls = !local,
+            showServerConfig = true,
+            platformApiUrl = if (local)
+                "https://api.neomud.app/api/v1"
+            else
+                "https://api.neomud.app/api/v1"
+        )
+    }
 }
