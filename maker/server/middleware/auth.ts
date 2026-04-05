@@ -37,8 +37,8 @@ function getVerifyConfig(): { key: jwt.Secret; algorithms: jwt.Algorithm[] } {
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization
 
-  // Dev mode bypass (only in development)
-  if (!authHeader && MAKER_DEV_USER_ID && process.env.NODE_ENV !== 'production') {
+  // Dev mode bypass (only when NODE_ENV is explicitly 'development')
+  if (!authHeader && MAKER_DEV_USER_ID && process.env.NODE_ENV === 'development') {
     req.user = { userId: MAKER_DEV_USER_ID, role: 'CREATOR' }
     next()
     return

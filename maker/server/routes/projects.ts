@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import path from 'path'
 import { listProjects, createProject, deleteProject, forkProject } from '../db.js'
 import { importNmd } from '../import.js'
 import { isValidProjectName } from '../middleware/validateInput.js'
@@ -87,6 +88,15 @@ projectsRouter.post('/import', async (req, res) => {
     const { path: nmdPath, name } = req.body
     if (!nmdPath) {
       res.status(400).json({ error: 'path is required' })
+      return
+    }
+    // Validate import path stays within safe directories
+    if (nmdPath.includes('..') || (!path.isAbsolute(nmdPath) && nmdPath.startsWith('/'))) {
+      res.status(400).json({ error: 'Invalid file path' })
+      return
+    }
+    if (!nmdPath.endsWith('.nmd')) {
+      res.status(400).json({ error: 'Only .nmd files can be imported' })
       return
     }
     const projectName = name || nmdPath.replace(/.*[/\\]/, '').replace(/\.nmd$/, '')

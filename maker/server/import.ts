@@ -6,6 +6,9 @@ import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { createProject } from './db.js'
 import { getProjectsDir } from './projectContext.js'
 
+const MAX_ZIP_ENTRIES = 10_000
+const MAX_ZIP_DECOMPRESSED_SIZE = 500 * 1024 * 1024 // 500MB
+
 /**
  * Import an .nmd bundle (ZIP) into a new maker project.
  * @param nmdPath - Path to the .nmd file
@@ -15,6 +18,19 @@ import { getProjectsDir } from './projectContext.js'
  */
 export async function importNmd(nmdPath: string, userId: string, projectName: string, readOnly = false): Promise<void> {
   const zip = new AdmZip(nmdPath)
+
+  // ZIP bomb protection: check entry count and total decompressed size
+  const allEntries = zip.getEntries()
+  if (allEntries.length > MAX_ZIP_ENTRIES) {
+    throw new Error(`Bundle contains too many files (${allEntries.length} > ${MAX_ZIP_ENTRIES})`)
+  }
+  let totalSize = 0
+  for (const entry of allEntries) {
+    totalSize += entry.header.size
+    if (totalSize > MAX_ZIP_DECOMPRESSED_SIZE) {
+      throw new Error('Bundle decompressed size exceeds 500MB limit')
+    }
+  }
 
   // Create the project DB
   await createProject(userId, projectName, readOnly)
@@ -31,8 +47,16 @@ export async function importNmd(nmdPath: string, userId: string, projectName: st
   const assetEntries = zip.getEntries().filter(
     (e) => e.entryName.startsWith('assets/') && !e.isDirectory
   )
+  const resolvedAssetsDir = path.resolve(assetsDir)
   for (const entry of assetEntries) {
-    const destPath = path.join(assetsDir, entry.entryName)
+    // ZIP slip protection: reject traversal paths
+    if (entry.entryName.includes('..') || path.isAbsolute(entry.entryName)) {
+      throw new Error(`Invalid ZIP entry path: ${entry.entryName}`)
+    }
+    const destPath = path.resolve(path.join(assetsDir, entry.entryName))
+    if (!destPath.startsWith(resolvedAssetsDir + path.sep)) {
+      throw new Error(`ZIP entry escapes assets directory: ${entry.entryName}`)
+    }
     const destDir = path.dirname(destPath)
     if (!fs.existsSync(destDir)) {
       fs.mkdirSync(destDir, { recursive: true })

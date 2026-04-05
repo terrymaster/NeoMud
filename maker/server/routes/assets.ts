@@ -1,17 +1,50 @@
-import { Router, Request } from 'express'
+import { Router, Request, Response } from 'express'
 import multer from 'multer'
 import fs from 'fs'
 import path from 'path'
+import { isValidAssetPath, isPathContained } from '../middleware/validateInput.js'
 
 export const assetMgmtRouter = Router()
 
 const MAX_HISTORY = 5
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } })
+const ALLOWED_EXTENSIONS = new Set([
+  '.png', '.jpg', '.jpeg', '.webp', '.gif',  // images
+  '.mp3', '.ogg', '.wav', '.webm',            // audio
+  '.json',                                     // data
+])
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase()
+    if (ALLOWED_EXTENSIONS.has(ext)) {
+      cb(null, true)
+    } else {
+      cb(new Error(`File type not allowed: ${ext}`))
+    }
+  },
+})
 
 function getAssetsRoot(req: Request): string {
   if (!req.projectDir) throw new Error('No project context')
   return req.projectDir
+}
+
+/** Validate and resolve an asset path. Returns the full path or sends a 400 error. */
+function resolveAssetPath(assetPath: string, req: Request, res: Response): string | null {
+  if (!isValidAssetPath(assetPath)) {
+    res.status(400).json({ error: 'Invalid asset path' })
+    return null
+  }
+  const root = getAssetsRoot(req)
+  const fullPath = path.join(root, assetPath)
+  if (!isPathContained(fullPath, root)) {
+    res.status(400).json({ error: 'Invalid asset path' })
+    return null
+  }
+  return fullPath
 }
 
 function historyDir(filePath: string): string {
@@ -89,7 +122,8 @@ assetMgmtRouter.post('/upload', upload.single('file'), (req, res) => {
       res.status(400).json({ error: 'assetPath and file are required' })
       return
     }
-    const fullPath = path.join(getAssetsRoot(req), assetPath)
+    const fullPath = resolveAssetPath(assetPath, req, res)
+    if (!fullPath) return
     fs.mkdirSync(path.dirname(fullPath), { recursive: true })
     backupAsset(fullPath)
     fs.writeFileSync(fullPath, req.file.buffer)
@@ -107,7 +141,8 @@ assetMgmtRouter.post('/undo', (req, res) => {
       res.status(400).json({ error: 'assetPath is required' })
       return
     }
-    const fullPath = path.join(getAssetsRoot(req), assetPath)
+    const fullPath = resolveAssetPath(assetPath, req, res)
+    if (!fullPath) return
     const restored = restoreAsset(fullPath)
     if (!restored) {
       res.status(404).json({ error: 'No history available' })
@@ -127,7 +162,8 @@ assetMgmtRouter.post('/clear', (req, res) => {
       res.status(400).json({ error: 'assetPath is required' })
       return
     }
-    const fullPath = path.join(getAssetsRoot(req), assetPath)
+    const fullPath = resolveAssetPath(assetPath, req, res)
+    if (!fullPath) return
     clearAsset(fullPath)
     res.json({ ok: true, assetPath })
   } catch (err: any) {
@@ -143,7 +179,8 @@ assetMgmtRouter.get('/history', (req, res) => {
       res.status(400).json({ error: 'path query parameter is required' })
       return
     }
-    const fullPath = path.join(getAssetsRoot(req), assetPath)
+    const fullPath = resolveAssetPath(assetPath, req, res)
+    if (!fullPath) return
     const depth = getHistoryDepth(fullPath)
     res.json({ depth })
   } catch (err: any) {

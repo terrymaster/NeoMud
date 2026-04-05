@@ -1,4 +1,7 @@
 import express from 'express'
+import helmet from 'helmet'
+import cors from 'cors'
+import rateLimit from 'express-rate-limit'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -19,6 +22,34 @@ import { importNmd } from './import.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export const app = express()
+
+// ─── Security middleware ────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+    },
+  },
+  hsts: process.env.NODE_ENV === 'production'
+    ? { maxAge: 31536000, includeSubDomains: true }
+    : false,
+}))
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((s) => s.trim())
+  : ['http://localhost:5173', 'http://localhost:3000']
+app.use(cors({ origin: allowedOrigins, credentials: true }))
+
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // generous for editor use
+  standardHeaders: true,
+  legacyHeaders: false,
+}))
+
 app.use(express.json({ limit: '50mb' }))
 
 // ─── Auth on all API routes ─────────────────────────────
