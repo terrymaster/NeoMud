@@ -38,8 +38,11 @@ import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.PcSpriteCatalog
 import com.neomud.server.world.SpellCatalog
 import com.neomud.server.world.WorldGraph
+import com.neomud.shared.NeoMudVersion
 import com.neomud.shared.protocol.ClientMessage
 import com.neomud.shared.protocol.ServerMessage
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.close
 
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
@@ -139,7 +142,21 @@ class CommandProcessor(
             is ClientMessage.Ping -> session.send(ServerMessage.Pong)
             is ClientMessage.ClientHello -> {
                 session.clientProtocolVersion = message.protocolVersion
+                session.clientVersion = message.clientVersion
                 logger.info("Client hello: v${message.clientVersion}, protocol=${message.protocolVersion}")
+
+                if (NeoMudVersion.compareVersions(message.clientVersion, NeoMudVersion.MIN_CLIENT_VERSION) < 0) {
+                    logger.warn("Rejecting client v${message.clientVersion} (minimum: ${NeoMudVersion.MIN_CLIENT_VERSION})")
+                    session.send(ServerMessage.ConnectionRejected(
+                        reason = "Your app is out of date. Please update to continue playing.",
+                        minClientVersion = NeoMudVersion.MIN_CLIENT_VERSION,
+                        updateUrl = "https://neomud.app/update"
+                    ))
+                    session.webSocketSession.close(
+                        CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Client version too old")
+                    )
+                    return
+                }
             }
             // All state-mutating commands acquire the global mutex
             else -> GameStateLock.withLock { processLocked(session, message) }

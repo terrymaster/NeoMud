@@ -4,6 +4,8 @@ object NeoMudVersion {
     const val NAME = "NeoMud"
     const val STAGE = "alpha"
     const val PROTOCOL_VERSION = 1
+    // Bump when protocol changes require a client update
+    const val MIN_CLIENT_VERSION = "0.1.0.0"
     val ENGINE_VERSION: String get() = VERSION_CODE
     val VERSION: String get() = "$STAGE $VERSION_CODE"
     val DISPLAY: String get() = "$NAME $VERSION"

@@ -60,6 +60,10 @@ class AuthViewModel(
     private val _serverInfo = MutableStateFlow(ServerInfo())
     val serverInfo: StateFlow<ServerInfo> = _serverInfo
 
+    data class UpdateInfo(val minVersion: String, val currentVersion: String)
+    private val _updateRequired = MutableStateFlow<UpdateInfo?>(null)
+    val updateRequired: StateFlow<UpdateInfo?> = _updateRequired
+
     private var _serverHost: String = ""
     private var _serverPort: Int = 0
     private var _useTls: Boolean = false
@@ -135,10 +139,27 @@ class AuthViewModel(
                                 worldName = message.worldName,
                                 worldVersion = message.worldVersion
                             )
+
+                            // Check minimum version before proceeding
+                            if (message.minClientVersion.isNotEmpty() &&
+                                NeoMudVersion.compareVersions(NeoMudVersion.ENGINE_VERSION, message.minClientVersion) < 0) {
+                                _updateRequired.value = UpdateInfo(
+                                    minVersion = message.minClientVersion,
+                                    currentVersion = NeoMudVersion.ENGINE_VERSION
+                                )
+                                return@collect
+                            }
+
                             wsClient.send(ClientMessage.ClientHello(
                                 clientVersion = NeoMudVersion.ENGINE_VERSION,
                                 protocolVersion = NeoMudVersion.PROTOCOL_VERSION
                             ))
+                        }
+                        is ServerMessage.ConnectionRejected -> {
+                            _updateRequired.value = UpdateInfo(
+                                minVersion = message.minClientVersion,
+                                currentVersion = NeoMudVersion.ENGINE_VERSION
+                            )
                         }
                         else -> { /* handled by GameViewModel */ }
                     }

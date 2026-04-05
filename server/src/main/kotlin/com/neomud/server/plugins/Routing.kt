@@ -105,7 +105,8 @@ fun Application.configureRouting(
                     engineVersion = NeoMudVersion.ENGINE_VERSION,
                     protocolVersion = NeoMudVersion.PROTOCOL_VERSION,
                     worldName = worldManifest?.name ?: "",
-                    worldVersion = worldManifest?.version ?: ""
+                    worldVersion = worldManifest?.version ?: "",
+                    minClientVersion = NeoMudVersion.MIN_CLIENT_VERSION
                 ))
 
                 // Send catalog data before auth so registration screen can populate

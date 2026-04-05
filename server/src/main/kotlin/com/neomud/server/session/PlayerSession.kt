@@ -42,6 +42,7 @@ class PlayerSession(
 
     // Protocol versioning
     var clientProtocolVersion: Int = 1
+    var clientVersion: String = ""
 
     // Tutorial tracking
     val seenTutorials: MutableSet<String> = mutableSetOf()

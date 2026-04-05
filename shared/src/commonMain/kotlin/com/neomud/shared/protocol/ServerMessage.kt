@@ -419,6 +419,16 @@ sealed class ServerMessage {
         val engineVersion: String,
         val protocolVersion: Int,
         val worldName: String = "",
-        val worldVersion: String = ""
+        val worldVersion: String = "",
+        val minClientVersion: String = ""
+    ) : ServerMessage()
+
+    // Connection rejected — sent when client version is too old or other connection issues
+    @Serializable
+    @SerialName("connection_rejected")
+    data class ConnectionRejected(
+        val reason: String,
+        val minClientVersion: String = "",
+        val updateUrl: String = ""
     ) : ServerMessage()
 }

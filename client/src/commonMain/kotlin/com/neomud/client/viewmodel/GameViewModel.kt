@@ -470,6 +470,7 @@ class GameViewModel(
             is ServerMessage.RegisterOk -> { /* handled by AuthViewModel */ }
             is ServerMessage.AuthError -> { /* handled by AuthViewModel */ }
             is ServerMessage.ServerHello -> { /* handled by AuthViewModel */ }
+            is ServerMessage.ConnectionRejected -> { /* handled by AuthViewModel */ }
             is ServerMessage.ClassCatalogSync -> {
                 _classCatalog.value = message.classes.associateBy { it.id }
             }
