@@ -7,35 +7,13 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    // PREFER_PROJECT allows the Kotlin/WasmJs plugin to add its own distribution
+    // repos (Node.js, Yarn, Binaryen) without manual Ivy configuration
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
-        // Node.js + Yarn distributions for Kotlin/WasmJs tooling
-        exclusiveContent {
-            forRepository {
-                ivy("https://nodejs.org/dist/") {
-                    name = "Node Distributions"
-                    patternLayout { artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]") }
-                    metadataSources { artifact() }
-                    content { includeModule("org.nodejs", "node") }
-                }
-            }
-            filter { includeGroup("org.nodejs") }
-        }
-        exclusiveContent {
-            forRepository {
-                ivy("https://github.com/yarnpkg/yarn/releases/download") {
-                    name = "Yarn Distributions"
-                    patternLayout { artifact("v[revision]/[artifact](-v[revision]).[ext]") }
-                    metadataSources { artifact() }
-                    content { includeModule("com.yarnpkg", "yarn") }
-                }
-            }
-            filter { includeGroup("com.yarnpkg") }
-        }
     }
-    rulesMode.set(RulesMode.PREFER_SETTINGS)
 }
 
 rootProject.name = "NeoMud"
