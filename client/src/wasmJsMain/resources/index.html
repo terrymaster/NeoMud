@@ -15,34 +15,92 @@
             background: #080604; color: #c4a46c;
             font-family: 'Georgia', serif; z-index: 1000;
         }
-        #loading h1 { font-size: 2.5rem; margin-bottom: 1rem; letter-spacing: 0.1em; }
-        #loading .spinner {
-            width: 48px; height: 48px;
-            border: 4px solid #2a2018; border-top-color: #c4a46c;
-            border-radius: 50%; animation: spin 1s linear infinite;
+        #loading h1 {
+            font-size: 2.5rem; margin-bottom: 0.25rem;
+            letter-spacing: 0.15em; font-weight: bold;
         }
-        #loading p { margin-top: 1rem; font-size: 0.9rem; opacity: 0.7; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading .subtitle {
+            font-size: 0.75rem; color: #5a5040;
+            letter-spacing: 0.3em; text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        /* Stone trough progress bar */
+        #loading .progress-trough {
+            width: 220px; height: 10px;
+            background: #2a2218;
+            border: 1px solid #3d3428;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+        #loading .progress-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #cca855, #bba060);
+            border-radius: 4px;
+            transition: width 1.5s ease;
+        }
+        #loading .stage-text {
+            margin-top: 0.75rem; font-size: 0.85rem; opacity: 0.6;
+        }
+        /* Decorative divider */
+        #loading .divider {
+            width: 80px; height: 1px; margin: 0.5rem 0 1rem;
+            background: linear-gradient(90deg, transparent, #cca85580, transparent);
+        }
     </style>
 </head>
 <body>
     <div id="loading">
         <h1>NeoMud</h1>
-        <div class="spinner"></div>
-        <p>Loading game client...</p>
+        <div class="divider"></div>
+        <div class="subtitle">World Marketplace</div>
+        <div class="progress-trough">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <p class="stage-text" id="stage-text">Loading game engine...</p>
     </div>
     <div id="ComposeTarget" style="width: 100%; height: 100%;"></div>
     <script>
+        // Staged loading progress
+        var fill = document.getElementById('progress-fill');
+        var stageText = document.getElementById('stage-text');
+        var stages = [
+            { pct: 25, text: 'Loading game engine...' },
+            { pct: 50, text: 'Compiling shaders...' },
+            { pct: 75, text: 'Initializing world...' },
+            { pct: 90, text: 'Almost ready...' }
+        ];
+        var stageIdx = 0;
+
+        function advanceStage() {
+            if (stageIdx < stages.length) {
+                fill.style.width = stages[stageIdx].pct + '%';
+                stageText.textContent = stages[stageIdx].text;
+                stageIdx++;
+            }
+        }
+
+        // Advance through stages at timed intervals
+        advanceStage();
+        setTimeout(advanceStage, 2000);
+        setTimeout(advanceStage, 5000);
+        setTimeout(advanceStage, 9000);
+
         // Remove loading screen once Compose renders
-        const observer = new MutationObserver(() => {
-            const canvas = document.getElementById('ComposeTarget');
-            if (canvas && canvas.width > 0) {
-                document.getElementById('loading')?.remove();
-                observer.disconnect();
+        var observer = new MutationObserver(function() {
+            var target = document.getElementById('ComposeTarget');
+            if (target && target.childNodes.length > 0) {
+                fill.style.width = '100%';
+                stageText.textContent = 'Connected!';
+                setTimeout(function() {
+                    document.getElementById('loading')?.remove();
+                    observer.disconnect();
+                }, 400);
             }
         });
         observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-        setTimeout(() => document.getElementById('loading')?.remove(), 15000);
+        // Fallback: remove after 20 seconds regardless
+        setTimeout(function() { document.getElementById('loading')?.remove(); }, 20000);
     </script>
     <script src="neomud-audio.js"></script>
     <script src="neomud.js"></script>
