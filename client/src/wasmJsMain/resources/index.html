@@ -101,6 +101,16 @@
         observer.observe(document.body, { childList: true, subtree: true, attributes: true });
         // Fallback: remove after 20 seconds regardless
         setTimeout(function() { document.getElementById('loading')?.remove(); }, 20000);
+
+        // Read marketplace config from sessionStorage (set by Play.tsx)
+        // and expose as window.__NEOMUD_CONFIG__ for PlatformDefaults.wasmJs.kt
+        try {
+            var stored = sessionStorage.getItem('__NEOMUD_CONFIG__');
+            if (stored) {
+                window.__NEOMUD_CONFIG__ = JSON.parse(stored);
+                sessionStorage.removeItem('__NEOMUD_CONFIG__');
+            }
+        } catch(e) { /* ignore parse errors */ }
     </script>
     <script src="neomud-audio.js"></script>
     <script src="neomud.js"></script>
