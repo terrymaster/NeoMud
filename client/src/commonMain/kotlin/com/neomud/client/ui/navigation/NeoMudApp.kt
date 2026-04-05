@@ -10,7 +10,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.neomud.client.model.platform.WorldDetail
+import com.neomud.client.network.ConnectionState
 import com.neomud.client.network.PlatformApiClient
+import com.neomud.client.network.parseServerEndpoint
 import com.neomud.client.platform.PlatformAudioManager
 import com.neomud.client.platform.serverConfig
 import com.neomud.client.ui.screens.GameScreen
@@ -139,17 +141,28 @@ fun NeoMudApp(
         }
 
         composable("login") {
+            // If a world was selected from marketplace, auto-connect to its endpoint
+            val world = selectedWorld
+            val parsedEndpoint = remember(world?.serverEndpoint) {
+                world?.serverEndpoint?.let { parseServerEndpoint(it) }
+            }
+
+            // Auto-connect when arriving from marketplace with a valid endpoint
+            LaunchedEffect(parsedEndpoint) {
+                val ep = parsedEndpoint ?: return@LaunchedEffect
+                if (connectionState == ConnectionState.DISCONNECTED) {
+                    authViewModel.connect(ep.host, ep.port, ep.useTls)
+                }
+            }
+
             LoginScreen(
                 connectionState = connectionState,
                 authState = authState,
                 connectionError = connectionError,
                 onConnect = { host, port ->
-                    // If a world was selected from marketplace, use its server endpoint
-                    val world = selectedWorld
-                    if (world?.serverEndpoint != null) {
-                        // Parse serverEndpoint (e.g., "wss://play.neomud.com:443")
-                        // For now, use the host/port from the login screen
-                        authViewModel.connect(host, port, serverConfig.useTls)
+                    val ep = parsedEndpoint
+                    if (ep != null) {
+                        authViewModel.connect(ep.host, ep.port, ep.useTls)
                     } else {
                         authViewModel.connect(host, port, serverConfig.useTls)
                     }
@@ -206,3 +219,4 @@ fun NeoMudApp(
     }
     } // end edge-to-edge dark background
 }
+

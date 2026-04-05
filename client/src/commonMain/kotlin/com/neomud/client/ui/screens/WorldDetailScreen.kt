@@ -243,6 +243,23 @@ private fun ColumnScope.WorldDetailContent(
                 )
             }
 
+            // ─── Rating ───
+            if (world.ratingCount > 0 && world.averageRating != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    StarRatingDisplay(rating = world.averageRating)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "${world.ratingCount} ${if (world.ratingCount == 1) "rating" else "ratings"}",
+                        fontSize = 11.sp,
+                        color = AshGray
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(14.dp))
 
             // ─── Description ───

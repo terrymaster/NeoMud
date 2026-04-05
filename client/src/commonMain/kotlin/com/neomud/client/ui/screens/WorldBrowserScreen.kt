@@ -338,6 +338,32 @@ private fun WorldCard(
                     lineHeight = 15.sp
                 )
             }
+
+            // Rating row
+            if (world.ratingCount > 0 && world.averageRating != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StarRatingDisplay(rating = world.averageRating)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "(${world.ratingCount})",
+                        fontSize = 10.sp,
+                        color = AshGray
+                    )
+                }
+            }
+
+            // Featured badge
+            if (world.featured) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "\u2726 FEATURED",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BurnishedGold,
+                    letterSpacing = 1.sp
+                )
+            }
         }
 
         // Subtle left accent bar (torch glow)
@@ -424,5 +450,33 @@ private fun RetryButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Text("Retry", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = BoneWhite)
+    }
+}
+
+// ─────────────────────────────────────────────
+// Star rating display — compact inline stars
+// ─────────────────────────────────────────────
+@Composable
+internal fun StarRatingDisplay(rating: Float, maxStars: Int = 5) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        val fullStars = rating.toInt()
+        val hasHalf = (rating - fullStars) >= 0.5f
+        val emptyStars = maxStars - fullStars - if (hasHalf) 1 else 0
+
+        repeat(fullStars) {
+            Text("\u2605", fontSize = 11.sp, color = BurnishedGold)
+        }
+        if (hasHalf) {
+            Text("\u2605", fontSize = 11.sp, color = BurnishedGold.copy(alpha = 0.5f))
+        }
+        repeat(emptyStars) {
+            Text("\u2606", fontSize = 11.sp, color = AshGray.copy(alpha = 0.4f))
+        }
+        Spacer(modifier = Modifier.width(3.dp))
+        Text(
+            text = String.format("%.1f", rating),
+            fontSize = 10.sp,
+            color = TorchAmber
+        )
     }
 }
