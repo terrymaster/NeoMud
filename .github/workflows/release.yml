@@ -40,15 +40,23 @@ jobs:
       - name: Run tests
         run: ./gradlew :shared:jvmTest :server:test
 
+      - name: Build WASM client
+        run: ./gradlew :client:wasmJsBrowserDistribution
+
       - name: Prepare release assets
         run: |
           cp server/build/libs/neomud-server.jar neomud-server-${{ github.ref_name }}.jar
+          cp server/build/worlds/default-world.nmd default-world-${{ github.ref_name }}.nmd
+          cd client/build/dist/wasmJs/productionExecutable && tar czf ../../../../../neomud-wasm-${{ github.ref_name }}.tar.gz . && cd -
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: neomud-server-${{ github.ref_name }}.jar
+          files: |
+            neomud-server-${{ github.ref_name }}.jar
+            default-world-${{ github.ref_name }}.nmd
+            neomud-wasm-${{ github.ref_name }}.tar.gz
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -66,10 +74,33 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/neomud-server:latest
             ghcr.io/${{ github.repository_owner }}/neomud-server:${{ github.ref_name }}
 
-      - name: Pull new image on VPS
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          script: docker pull ghcr.io/${{ github.repository_owner }}/neomud-server:latest
+          script: |
+            docker pull ghcr.io/${{ github.repository_owner }}/neomud-server:latest
+            # Prepare asset directories
+            mkdir -p /srv/neomud-assets /srv/neomud-wasm-stage
+
+      - name: Upload world bundle and WASM client to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "server/build/worlds/default-world.nmd"
+          target: /srv/neomud-assets/
+          strip_components: 3
+
+      - name: Upload WASM client to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "client/build/dist/wasmJs/productionExecutable/*"
+          target: /srv/neomud-wasm-stage/
+          strip_components: 5
