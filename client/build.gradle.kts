@@ -20,6 +20,13 @@ kotlin {
         }
     }
 
+    wasmJs {
+        browser {
+            commonWebpackConfig { outputFileName = "neomud.js" }
+        }
+        binaries.executable()
+    }
+
     listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
         target.binaries.framework {
             baseName = "NeoMudClient"
@@ -99,6 +106,16 @@ kotlin {
 
                 // Logging (SLF4J/Logback — shared with server)
                 implementation(libs.logback.classic)
+            }
+        }
+
+        val wasmJsMain by getting {
+            dependencies {
+                // Networking (JS/WASM engine — uses browser fetch + WebSocket APIs)
+                implementation(libs.ktor.client.js)
+
+                // Image loading (Ktor-based network backend, same as Desktop/iOS)
+                implementation(libs.coil.network.ktor3)
             }
         }
 

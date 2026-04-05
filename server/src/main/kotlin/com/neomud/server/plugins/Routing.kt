@@ -52,6 +52,9 @@ fun Application.configureRouting(
             val path = call.parameters.getAll("path")?.joinToString("/") ?: ""
             val fullPath = "assets/$path"
 
+            // CORS for web client (in production, same-origin via Caddy — this is for local dev)
+            call.response.header("Access-Control-Allow-Origin", "*")
+
             // Reject path traversal attempts
             if (".." in path) {
                 call.respond(HttpStatusCode.BadRequest)

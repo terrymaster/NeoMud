@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.ktor) apply false
 }
 
+
 abstract class UpdateVersionTask : DefaultTask() {
     @get:Input
     abstract val gitDescribe: Property<String>
