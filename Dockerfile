@@ -12,6 +12,9 @@ COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 COPY shared/ shared/
 COPY server/ server/
 
+# Create stub client dir so Gradle configuration succeeds (client is excluded by .dockerignore)
+RUN mkdir -p client/src
+
 # Build the fat JAR — skip packageWorld (world provided at runtime, not bundled)
 RUN chmod +x gradlew && ./gradlew :server:shadowJar -x packageWorld --no-daemon
 

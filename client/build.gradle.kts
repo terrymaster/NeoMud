@@ -178,9 +178,9 @@ android {
             dimension = "environment"
             buildConfigField("boolean", "SHOW_SERVER_CONFIG", "false")
             buildConfigField("boolean", "USE_TLS", "true")
-            buildConfigField("String", "DEFAULT_HOST", "\"play.neomud.com\"")
+            buildConfigField("String", "DEFAULT_HOST", "\"play.neomud.app\"")
             buildConfigField("int", "DEFAULT_PORT", "443")
-            buildConfigField("String", "PLATFORM_API_URL", "\"https://api.neomud.com/api/v1\"")
+            buildConfigField("String", "PLATFORM_API_URL", "\"https://api.neomud.app/api/v1\"")
         }
     }
 
