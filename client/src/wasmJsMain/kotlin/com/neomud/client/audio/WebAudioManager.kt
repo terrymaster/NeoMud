@@ -2,38 +2,47 @@ package com.neomud.client.audio
 
 import com.neomud.client.platform.PlatformAudioManager
 
-/**
- * Web audio manager — stub implementation for initial WASM bring-up.
- * TODO: Replace with real Web Audio API implementation via external JS module.
- */
+// JS interop — calls into neomud-audio.js loaded via index.html
+private fun jsPlaySfx(url: String): Unit = js("NeoMudAudio.playSfx(url)")
+private fun jsPlayBgm(url: String): Unit = js("NeoMudAudio.playBgm(url)")
+private fun jsStopBgm(): Unit = js("NeoMudAudio.stopBgm()")
+private fun jsSetVolumes(master: Float, sfx: Float, bgm: Float): Unit =
+    js("NeoMudAudio.setVolumes(master, sfx, bgm)")
+private fun jsGetMaster(): Float = js("NeoMudAudio.getVolumes().master")
+private fun jsGetSfx(): Float = js("NeoMudAudio.getVolumes().sfx")
+private fun jsGetBgm(): Float = js("NeoMudAudio.getVolumes().bgm")
+
 class WebAudioManager : PlatformAudioManager {
-    override var masterVolume: Float = 1f; private set
-    override var sfxVolume: Float = 1f; private set
-    override var bgmVolume: Float = 0.5f; private set
+    override val masterVolume: Float get() = jsGetMaster()
+    override val sfxVolume: Float get() = jsGetSfx()
+    override val bgmVolume: Float get() = jsGetBgm()
 
     override fun playSfx(serverBaseUrl: String, soundId: String, category: String) {
-        // No-op stub — will be wired to neomud-audio.js
+        if (soundId.isBlank()) return
+        val url = "$serverBaseUrl/assets/audio/$category/$soundId.mp3"
+        jsPlaySfx(url)
     }
 
     override fun playBgm(serverBaseUrl: String, trackId: String) {
-        // No-op stub
+        if (trackId.isBlank()) { stopBgm(); return }
+        val url = "$serverBaseUrl/assets/audio/bgm/$trackId.mp3"
+        jsPlayBgm(url)
     }
 
     override fun playBgmFromUri(uri: String, trackId: String) {
-        // No-op stub
+        if (trackId.isBlank() || uri.isBlank()) { stopBgm(); return }
+        jsPlayBgm(uri)
     }
 
     override fun stopBgm() {
-        // No-op stub
+        jsStopBgm()
     }
 
     override fun setVolumes(master: Float, sfx: Float, bgm: Float) {
-        masterVolume = master
-        sfxVolume = sfx
-        bgmVolume = bgm
+        jsSetVolumes(master, sfx, bgm)
     }
 
     override fun release() {
-        // No-op stub
+        stopBgm()
     }
 }
