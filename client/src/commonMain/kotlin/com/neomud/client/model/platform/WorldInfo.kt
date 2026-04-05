@@ -77,3 +77,70 @@ data class PaginationInfo(
     val total: Int,
     val totalPages: Int
 )
+
+// ─── Auth models ───
+
+@Serializable
+data class LoginResponse(
+    val accessToken: String,
+    val refreshToken: String,
+    val user: PlatformUser
+)
+
+@Serializable
+data class PlatformUser(
+    val id: String,
+    val displayName: String,
+    val role: String = "CREATOR"
+)
+
+@Serializable
+data class RefreshResponse(
+    val accessToken: String,
+    val refreshToken: String
+)
+
+// ─── Rating models ───
+
+@Serializable
+data class RatingEntry(
+    val id: String,
+    val stars: Int,
+    val review: String? = null,
+    val reviewer: CreatorInfo,
+    val createdAt: String,
+    val updatedAt: String
+)
+
+@Serializable
+data class UserRating(
+    val id: String,
+    val stars: Int,
+    val review: String? = null
+)
+
+@Serializable
+data class RatingListResponse(
+    val ratings: List<RatingEntry>,
+    val userRating: UserRating? = null,
+    val pagination: PaginationInfo
+)
+
+@Serializable
+data class CreateRatingResponse(
+    val id: String,
+    val stars: Int,
+    val review: String? = null,
+    val createdAt: String,
+    val updatedAt: String
+)
+
+// ─── Play session models ───
+
+@Serializable
+data class PlaySessionResponse(
+    val id: String,
+    val worldId: String,
+    val startedAt: String,
+    val endedAt: String? = null
+)
