@@ -150,10 +150,16 @@ fun NeoMudApp(
         }
 
         composable("login") {
-            // Play intro BGM on login screen
+            // Play BGM on login screen — world-specific if available, fallback to intro
             LaunchedEffect(Unit) {
-                val introUri = Res.getUri("files/intro_theme.mp3")
-                audioManager.playBgmFromUri(introUri, "intro_theme")
+                val bgmUrl = serverConfig.loadingBgmUrl
+                if (bgmUrl.isNotEmpty()) {
+                    // World-specific BGM from the bundle (via Platform asset endpoint)
+                    audioManager.playBgmFromUri(bgmUrl, "world_loading")
+                } else {
+                    val introUri = Res.getUri("files/intro_theme.mp3")
+                    audioManager.playBgmFromUri(introUri, "intro_theme")
+                }
             }
 
             // If a world was selected from marketplace, auto-connect to its endpoint

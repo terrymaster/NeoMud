@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>NeoMud</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #080604; }
@@ -13,16 +16,38 @@
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             background: #080604; color: #c4a46c;
-            font-family: 'Georgia', serif; z-index: 1000;
+            font-family: 'Cinzel', 'Georgia', serif; z-index: 1000;
+            overflow: hidden;
         }
+        /* Cover image background */
+        #loading .cover-bg {
+            position: absolute; inset: 0;
+            background-size: cover; background-position: center;
+            opacity: 0.25; filter: blur(2px);
+        }
+        /* Dark overlay */
+        #loading .cover-overlay {
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at center, #08060480 0%, #080604e0 70%);
+        }
+        #loading .content { position: relative; z-index: 1; text-align: center; }
         #loading h1 {
-            font-size: 2.5rem; margin-bottom: 0.25rem;
-            letter-spacing: 0.15em; font-weight: bold;
+            font-size: 2.2rem; margin-bottom: 0.2rem;
+            letter-spacing: 0.15em; font-weight: 700;
+            text-shadow: 0 2px 16px #cca85530;
         }
-        #loading .subtitle {
-            font-size: 0.75rem; color: #5a5040;
-            letter-spacing: 0.3em; text-transform: uppercase;
-            margin-bottom: 1.5rem;
+        #loading .world-meta {
+            font-size: 0.8rem; color: #5a5040;
+            font-family: 'Georgia', serif;
+            margin-bottom: 1.2rem;
+        }
+        #loading .world-meta .version {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem; color: #bba060;
+            letter-spacing: 1px;
+        }
+        #loading .world-meta .creator {
+            font-style: italic;
         }
         /* Stone trough progress bar */
         #loading .progress-trough {
@@ -41,26 +66,65 @@
         }
         #loading .stage-text {
             margin-top: 0.75rem; font-size: 0.85rem; opacity: 0.6;
+            font-family: 'Georgia', serif;
         }
         /* Decorative divider */
         #loading .divider {
-            width: 80px; height: 1px; margin: 0.5rem 0 1rem;
+            width: 80px; height: 1px; margin: 0.4rem auto 0.8rem;
             background: linear-gradient(90deg, transparent, #cca85580, transparent);
         }
     </style>
 </head>
 <body>
     <div id="loading">
-        <h1>NeoMud</h1>
-        <div class="divider"></div>
-        <div class="subtitle">World Marketplace</div>
-        <div class="progress-trough">
-            <div class="progress-fill" id="progress-fill"></div>
+        <div class="cover-bg" id="cover-bg"></div>
+        <div class="cover-overlay"></div>
+        <div class="content">
+            <h1 id="world-title">NeoMud</h1>
+            <div class="divider"></div>
+            <div class="world-meta" id="world-meta"></div>
+            <div class="progress-trough">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <p class="stage-text" id="stage-text">Loading game engine...</p>
         </div>
-        <p class="stage-text" id="stage-text">Loading game engine...</p>
     </div>
     <div id="ComposeTarget" style="width: 100%; height: 100%;"></div>
     <script>
+        // Read marketplace config from sessionStorage FIRST (before anything else)
+        try {
+            var stored = sessionStorage.getItem('__NEOMUD_CONFIG__');
+            if (stored) {
+                window.__NEOMUD_CONFIG__ = JSON.parse(stored);
+                sessionStorage.removeItem('__NEOMUD_CONFIG__');
+            }
+        } catch(e) { /* ignore parse errors */ }
+
+        // Apply world metadata to loading screen
+        var cfg = window.__NEOMUD_CONFIG__;
+        if (cfg) {
+            if (cfg.worldName) {
+                document.getElementById('world-title').textContent = cfg.worldName;
+                document.title = cfg.worldName + ' — NeoMud';
+            }
+            var metaHtml = '';
+            if (cfg.worldVersion) metaHtml += '<span class="version">v' + cfg.worldVersion + '</span>';
+            if (cfg.worldVersion && cfg.creatorName) metaHtml += ' <span style="color:#3d3428">&bull;</span> ';
+            if (cfg.creatorName) metaHtml += '<span class="creator">by ' + cfg.creatorName + '</span>';
+            if (metaHtml) document.getElementById('world-meta').innerHTML = metaHtml;
+            if (cfg.coverImageUrl) {
+                document.getElementById('cover-bg').style.backgroundImage = 'url(' + cfg.coverImageUrl + ')';
+            }
+            // Play loading BGM
+            if (cfg.loadingBgmUrl) {
+                var bgm = new Audio(cfg.loadingBgmUrl);
+                bgm.loop = true;
+                bgm.volume = 0.4;
+                bgm.play().catch(function(){});
+                window.__NEOMUD_LOADING_BGM__ = bgm;
+            }
+        }
+
         // Staged loading progress
         var fill = document.getElementById('progress-fill');
         var stageText = document.getElementById('stage-text');
@@ -80,7 +144,6 @@
             }
         }
 
-        // Advance through stages at timed intervals
         advanceStage();
         setTimeout(advanceStage, 2000);
         setTimeout(advanceStage, 5000);
@@ -92,6 +155,11 @@
             if (target && target.childNodes.length > 0) {
                 fill.style.width = '100%';
                 stageText.textContent = 'Connected!';
+                // Stop loading BGM (game will start its own)
+                if (window.__NEOMUD_LOADING_BGM__) {
+                    window.__NEOMUD_LOADING_BGM__.pause();
+                    window.__NEOMUD_LOADING_BGM__ = null;
+                }
                 setTimeout(function() {
                     document.getElementById('loading')?.remove();
                     observer.disconnect();
@@ -99,18 +167,7 @@
             }
         });
         observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-        // Fallback: remove after 20 seconds regardless
         setTimeout(function() { document.getElementById('loading')?.remove(); }, 20000);
-
-        // Read marketplace config from sessionStorage (set by Play.tsx)
-        // and expose as window.__NEOMUD_CONFIG__ for PlatformDefaults.wasmJs.kt
-        try {
-            var stored = sessionStorage.getItem('__NEOMUD_CONFIG__');
-            if (stored) {
-                window.__NEOMUD_CONFIG__ = JSON.parse(stored);
-                sessionStorage.removeItem('__NEOMUD_CONFIG__');
-            }
-        } catch(e) { /* ignore parse errors */ }
     </script>
     <script src="neomud-audio.js"></script>
     <script src="neomud.js"></script>

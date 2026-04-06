@@ -8,6 +8,11 @@ private fun getInjectedHost(): String = js("(window.__NEOMUD_CONFIG__ && window.
 private fun getInjectedPort(): Int = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.serverPort) || 0")
 private fun getInjectedTls(): Boolean = js("!!(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.useTls)")
 private fun getInjectedSkipMarketplace(): Boolean = js("!!(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.skipMarketplace)")
+private fun getInjectedWorldName(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.worldName) || ''")
+private fun getInjectedWorldVersion(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.worldVersion) || ''")
+private fun getInjectedCreatorName(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.creatorName) || ''")
+private fun getInjectedCoverImageUrl(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.coverImageUrl) || ''")
+private fun getInjectedLoadingBgmUrl(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.loadingBgmUrl) || ''")
 
 private fun jsNavigate(url: String): Unit = js("window.location.href = url")
 
@@ -28,7 +33,12 @@ actual val serverConfig: ServerConfig = run {
             useTls = getInjectedTls(),
             showServerConfig = false,
             platformApiUrl = "https://api.neomud.app/api/v1",
-            skipMarketplace = getInjectedSkipMarketplace()
+            skipMarketplace = getInjectedSkipMarketplace(),
+            worldName = getInjectedWorldName(),
+            worldVersion = getInjectedWorldVersion(),
+            creatorName = getInjectedCreatorName(),
+            coverImageUrl = getInjectedCoverImageUrl(),
+            loadingBgmUrl = getInjectedLoadingBgmUrl()
         )
     } else {
         // Standalone / dev mode — detect from browser location

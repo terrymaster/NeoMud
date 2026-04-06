@@ -8,7 +8,13 @@ data class ServerConfig(
     val showServerConfig: Boolean,
     val platformApiUrl: String,
     /** When true, skip the world browser and go directly to login (marketplace-launched). */
-    val skipMarketplace: Boolean = false
+    val skipMarketplace: Boolean = false,
+    /** World metadata from marketplace (only set when skipMarketplace=true). */
+    val worldName: String = "",
+    val worldVersion: String = "",
+    val creatorName: String = "",
+    val coverImageUrl: String = "",
+    val loadingBgmUrl: String = ""
 )
 
 expect val serverConfig: ServerConfig

@@ -133,20 +133,40 @@ fun LoginScreen(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Title
+                // Title — show world name if launched from marketplace
+                val worldName = serverConfig.worldName
                 Text(
-                    text = "NeoMud",
-                    fontSize = 32.sp,
+                    text = worldName.ifEmpty { "NeoMud" },
+                    fontSize = if (worldName.isNotEmpty()) 26.sp else 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = BurnishedGold,
                     textAlign = TextAlign.Center
                 )
-                Text(
-                    text = NeoMudVersion.VERSION,
-                    fontSize = 11.sp,
-                    color = AshGray,
-                    textAlign = TextAlign.Center
-                )
+                if (worldName.isNotEmpty()) {
+                    // World version + creator
+                    val meta = buildString {
+                        if (serverConfig.worldVersion.isNotEmpty()) append("v${serverConfig.worldVersion}")
+                        if (serverConfig.creatorName.isNotEmpty()) {
+                            if (isNotEmpty()) append(" \u2022 ")
+                            append("by ${serverConfig.creatorName}")
+                        }
+                    }
+                    if (meta.isNotEmpty()) {
+                        Text(
+                            text = meta,
+                            fontSize = 11.sp,
+                            color = AshGray,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    Text(
+                        text = NeoMudVersion.VERSION,
+                        fontSize = 11.sp,
+                        color = AshGray,
+                        textAlign = TextAlign.Center
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(6.dp))
 
