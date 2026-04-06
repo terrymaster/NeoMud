@@ -19,8 +19,8 @@ data class WorldManifest(
     val version: String,
     val description: String = "",
     val createdAt: String = "",
-    val engineVersion: String,
-    val engineVersionMin: String,
-    val worldId: String,
+    val engineVersion: String = "0.0.0.0",
+    val engineVersionMin: String = "0.0.0.0",
+    val worldId: String = "",
     val createdWithMaker: Boolean = false
 )
