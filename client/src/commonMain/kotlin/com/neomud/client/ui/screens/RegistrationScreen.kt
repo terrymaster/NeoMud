@@ -738,8 +738,6 @@ private fun RaceSelectionStep(
     selectedRaceId: String,
     onRaceSelected: (String) -> Unit
 ) {
-    val selectedRace = availableRaces.find { it.id == selectedRaceId }
-
     Column(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
         Text(
             "Step 3: Choose Race",
@@ -762,47 +760,22 @@ private fun RaceSelectionStep(
                 }
             }
         } else {
-            // Compact chip grid — no scrolling needed for 6 races
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            // Column+verticalScroll instead of LazyColumn (WASM drag-scroll fix #254)
+            Column(modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
                 availableRaces.forEach { race ->
-                    val isSelected = selectedRaceId == race.id
-                    val borderColor = if (isSelected) BurnishedGold else EmptySlotEdge
-                    val textColor = if (isSelected) BurnishedGold else BoneWhite
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                if (isSelected) Color(0xFF1E1810) else Color(0xFF14110E),
-                                RoundedCornerShape(6.dp)
-                            )
-                            .border(1.dp, borderColor, RoundedCornerShape(6.dp))
-                            .clickable { onRaceSelected(race.id) }
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    StoneSelectionCard(
+                        isSelected = selectedRaceId == race.id,
+                        onClick = { onRaceSelected(race.id) }
                     ) {
-                        Text(race.name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    }
-                }
-            }
-
-            // Detail panel for selected race
-            if (selectedRace != null) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFF14110E), RoundedCornerShape(6.dp))
-                        .border(1.dp, BurnishedGold.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
-                        .padding(10.dp)
-                ) {
-                    Column {
-                        Text(selectedRace.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = BurnishedGold)
+                        Text(race.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = BoneWhite)
+                        Text(
+                            race.description,
+                            fontSize = 11.sp,
+                            color = AshGray
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(selectedRace.description, fontSize = 11.sp, color = AshGray)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        val m = selectedRace.statModifiers
+                        // Stat modifier badges
+                        val m = race.statModifiers
                         val mods = listOf(
                             "STR" to m.strength, "AGI" to m.agility, "INT" to m.intellect,
                             "WIL" to m.willpower, "HLT" to m.health, "CHM" to m.charm
@@ -813,7 +786,9 @@ private fun RaceSelectionStep(
                                     val color = if (value > 0) VerdantUpgrade else CrimsonError
                                     val text = "${name}:${if (value > 0) "+" else ""}$value"
                                     Text(
-                                        text = text, fontSize = 10.sp, color = color,
+                                        text = text,
+                                        fontSize = 10.sp,
+                                        color = color,
                                         modifier = Modifier
                                             .background(color.copy(alpha = 0.15f), RoundedCornerShape(3.dp))
                                             .padding(horizontal = 4.dp, vertical = 1.dp)
@@ -821,10 +796,11 @@ private fun RaceSelectionStep(
                                 }
                             }
                         }
-                        if (selectedRace.xpModifier != 1.0) {
+                        if (race.xpModifier != 1.0) {
                             Text(
-                                "XP: ${(selectedRace.xpModifier * 100).toInt()}%",
-                                fontSize = 10.sp, color = CrimsonError.copy(alpha = 0.8f)
+                                "XP: ${(race.xpModifier * 100).toInt()}%",
+                                fontSize = 10.sp,
+                                color = CrimsonError.copy(alpha = 0.8f)
                             )
                         }
                     }
