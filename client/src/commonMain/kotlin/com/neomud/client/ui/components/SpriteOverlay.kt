@@ -146,7 +146,6 @@ fun SpriteOverlay(
                             modifier = Modifier
                                 .weight(1f, fill = false)
                                 .fillMaxHeight()
-                                .widthIn(max = 80.dp)
                         )
                     }
                 }
@@ -186,7 +185,6 @@ fun SpriteOverlay(
                             modifier = Modifier
                                 .weight(1f, fill = false)
                                 .fillMaxHeight()
-                                .widthIn(max = 96.dp)
                         )
                     }
                 }
@@ -353,7 +351,6 @@ private fun EntitySprite(
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxHeight(0.85f * scale)
-                        .widthIn(max = (80 * scale).dp)
                 )
             }
         }
@@ -379,7 +376,6 @@ private fun EntitySprite(
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .weight(1f, fill = false)
-                        .widthIn(max = (80 * scale).dp)
                 )
                 // Name label below sprite
                 Text(
