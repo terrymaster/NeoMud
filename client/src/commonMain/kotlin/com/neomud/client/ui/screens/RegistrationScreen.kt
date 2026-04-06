@@ -4,8 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -738,6 +738,8 @@ private fun RaceSelectionStep(
     selectedRaceId: String,
     onRaceSelected: (String) -> Unit
 ) {
+    val selectedRace = availableRaces.find { it.id == selectedRaceId }
+
     Column(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
         Text(
             "Step 3: Choose Race",
@@ -760,21 +762,47 @@ private fun RaceSelectionStep(
                 }
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                items(availableRaces) { race ->
-                    StoneSelectionCard(
-                        isSelected = selectedRaceId == race.id,
-                        onClick = { onRaceSelected(race.id) }
+            // Compact chip grid — no scrolling needed for 6 races
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                availableRaces.forEach { race ->
+                    val isSelected = selectedRaceId == race.id
+                    val borderColor = if (isSelected) BurnishedGold else EmptySlotEdge
+                    val textColor = if (isSelected) BurnishedGold else BoneWhite
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                if (isSelected) Color(0xFF1E1810) else Color(0xFF14110E),
+                                RoundedCornerShape(6.dp)
+                            )
+                            .border(1.dp, borderColor, RoundedCornerShape(6.dp))
+                            .clickable { onRaceSelected(race.id) }
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
-                        Text(race.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = BoneWhite)
-                        Text(
-                            race.description,
-                            fontSize = 11.sp,
-                            color = AshGray
-                        )
+                        Text(race.name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor)
+                    }
+                }
+            }
+
+            // Detail panel for selected race
+            if (selectedRace != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF14110E), RoundedCornerShape(6.dp))
+                        .border(1.dp, BurnishedGold.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                        .padding(10.dp)
+                ) {
+                    Column {
+                        Text(selectedRace.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = BurnishedGold)
                         Spacer(modifier = Modifier.height(4.dp))
-                        // Stat modifier badges
-                        val m = race.statModifiers
+                        Text(selectedRace.description, fontSize = 11.sp, color = AshGray)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        val m = selectedRace.statModifiers
                         val mods = listOf(
                             "STR" to m.strength, "AGI" to m.agility, "INT" to m.intellect,
                             "WIL" to m.willpower, "HLT" to m.health, "CHM" to m.charm
@@ -785,9 +813,7 @@ private fun RaceSelectionStep(
                                     val color = if (value > 0) VerdantUpgrade else CrimsonError
                                     val text = "${name}:${if (value > 0) "+" else ""}$value"
                                     Text(
-                                        text = text,
-                                        fontSize = 10.sp,
-                                        color = color,
+                                        text = text, fontSize = 10.sp, color = color,
                                         modifier = Modifier
                                             .background(color.copy(alpha = 0.15f), RoundedCornerShape(3.dp))
                                             .padding(horizontal = 4.dp, vertical = 1.dp)
@@ -795,11 +821,10 @@ private fun RaceSelectionStep(
                                 }
                             }
                         }
-                        if (race.xpModifier != 1.0) {
+                        if (selectedRace.xpModifier != 1.0) {
                             Text(
-                                "XP: ${(race.xpModifier * 100).toInt()}%",
-                                fontSize = 10.sp,
-                                color = CrimsonError.copy(alpha = 0.8f)
+                                "XP: ${(selectedRace.xpModifier * 100).toInt()}%",
+                                fontSize = 10.sp, color = CrimsonError.copy(alpha = 0.8f)
                             )
                         }
                     }
@@ -840,8 +865,8 @@ private fun ClassSelectionStep(
                 }
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                items(availableClasses) { cls ->
+            Column(modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
+                availableClasses.forEach { cls ->
                     StoneSelectionCard(
                         isSelected = selectedClassId == cls.id,
                         onClick = { onClassSelected(cls.id) }
@@ -960,8 +985,8 @@ private fun StatAllocationStep(
             StatEntry("Charm", allocatedStats.charm, effectiveMinimum.charm) { v -> allocatedStats.copy(charm = v) }
         )
 
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(statEntries) { entry ->
+        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            statEntries.forEach { entry ->
                 StatAllocationRow(
                     entry = entry,
                     cpRemaining = cpRemaining,
@@ -1014,22 +1039,20 @@ private fun CharacterPreviewStep(
     val classId = (selectedClass?.id ?: "WARRIOR").lowercase()
     val spriteUrl = "$serverBaseUrl/assets/images/players/${raceId}_${selectedGender}_${classId}.webp"
 
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+    Column(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        item {
-            Text(
-                "Step 6: Review Character",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = TorchAmber
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-        }
+        Text(
+            "Step 6: Review Character",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = TorchAmber
+        )
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Sprite + identity header
-        item {
+        run {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1112,7 +1135,7 @@ private fun CharacterPreviewStep(
         }
 
         // Stats grid
-        item {
+        run {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1182,7 +1205,7 @@ private fun CharacterPreviewStep(
         }
 
         // Class details
-        item {
+        run {
             selectedClass?.let { cls ->
                 Box(
                     modifier = Modifier
@@ -1242,7 +1265,7 @@ private fun CharacterPreviewStep(
         }
 
         // Race details
-        item {
+        run {
             selectedRace?.let { race ->
                 Box(
                     modifier = Modifier
@@ -1268,7 +1291,7 @@ private fun CharacterPreviewStep(
         }
 
         // Future sprite generation placeholder
-        item {
+        run {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
