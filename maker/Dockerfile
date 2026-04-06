@@ -20,8 +20,7 @@ FROM node:22-alpine
 # Install wget for health checks
 RUN apk add --no-cache wget
 
-# Create non-root user
-RUN addgroup -g 1000 -S neomud && adduser -u 1000 -S neomud -G neomud
+# Use the existing 'node' user (UID 1000) from node:22-alpine
 
 WORKDIR /app
 
@@ -33,7 +32,7 @@ COPY --from=build /app/server ./server
 COPY --from=build /app/prisma ./prisma
 
 # Create directories for persistent data
-RUN mkdir -p /app/projects /app/seed && chown -R neomud:neomud /app
+RUN mkdir -p /app/projects /app/seed && chown -R node:node /app
 
 # Volumes for persistent data and world bundle
 VOLUME ["/app/projects", "/app/seed"]
@@ -52,7 +51,7 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=3 \
   CMD wget -q --spider http://localhost:3001/ || exit 1
 
 # Run as non-root
-USER neomud
+USER node
 
 # tsx runs TypeScript server directly (same as `npm run server`)
 CMD ["npx", "tsx", "server/index.ts"]
