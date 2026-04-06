@@ -2,6 +2,8 @@ package com.neomud.client.platform
 
 import com.neomud.client.BuildConfig
 
+actual fun returnToMarketplace() { /* No-op on Android — world browser handles navigation */ }
+
 actual val serverConfig: ServerConfig = ServerConfig(
     defaultHost = BuildConfig.DEFAULT_HOST,
     defaultPort = BuildConfig.DEFAULT_PORT,

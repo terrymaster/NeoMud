@@ -13,5 +13,8 @@ data class ServerConfig(
 
 expect val serverConfig: ServerConfig
 
+/** Redirect back to the web marketplace. Only meaningful on WASM; no-op on native platforms. */
+expect fun returnToMarketplace()
+
 /** Backward-compatible alias — use [serverConfig] directly for new code. */
 val defaultServerHost: String get() = serverConfig.defaultHost

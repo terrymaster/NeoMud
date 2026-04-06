@@ -9,6 +9,13 @@ private fun getInjectedPort(): Int = js("(window.__NEOMUD_CONFIG__ && window.__N
 private fun getInjectedTls(): Boolean = js("!!(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.useTls)")
 private fun getInjectedSkipMarketplace(): Boolean = js("!!(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.skipMarketplace)")
 
+private fun jsNavigate(url: String): Unit = js("window.location.href = url")
+
+actual fun returnToMarketplace() {
+    // Navigate back to the React marketplace root
+    jsNavigate("/")
+}
+
 actual val serverConfig: ServerConfig = run {
     val injectedHost = getInjectedHost()
     val injectedPort = getInjectedPort()

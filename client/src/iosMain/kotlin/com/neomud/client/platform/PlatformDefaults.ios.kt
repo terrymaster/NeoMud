@@ -2,6 +2,8 @@ package com.neomud.client.platform
 
 import platform.Foundation.NSBundle
 
+actual fun returnToMarketplace() { /* No-op on iOS — world browser handles navigation */ }
+
 actual val serverConfig: ServerConfig = ServerConfig(
     defaultHost = (NSBundle.mainBundle.objectForInfoDictionaryKey("NeoMudDefaultHost") as? String) ?: "127.0.0.1",
     defaultPort = (NSBundle.mainBundle.objectForInfoDictionaryKey("NeoMudDefaultPort") as? String)?.toIntOrNull() ?: 8080,

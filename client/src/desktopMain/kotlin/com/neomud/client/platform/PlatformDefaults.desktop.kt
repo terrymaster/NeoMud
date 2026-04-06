@@ -1,5 +1,7 @@
 package com.neomud.client.platform
 
+actual fun returnToMarketplace() { /* No-op on desktop — world browser handles navigation */ }
+
 actual val serverConfig: ServerConfig = ServerConfig(
     defaultHost = System.getProperty("neomud.host", "127.0.0.1"),
     defaultPort = System.getProperty("neomud.port", "8080").toInt(),

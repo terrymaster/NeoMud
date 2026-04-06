@@ -14,6 +14,7 @@ import com.neomud.client.network.ConnectionState
 import com.neomud.client.network.PlatformApiClient
 import com.neomud.client.network.parseServerEndpoint
 import com.neomud.client.platform.PlatformAudioManager
+import com.neomud.client.platform.returnToMarketplace
 import com.neomud.client.platform.serverConfig
 import com.neomud.client.ui.screens.GameScreen
 import com.neomud.client.ui.screens.LoginScreen
@@ -73,12 +74,17 @@ fun NeoMudApp(
                 popUpTo("register") { inclusive = true }
             }
         }
-        // Handle logout: Idle while on game screen → back to world browser
+        // Handle logout: Idle while on game screen → back to world selection
         if (authState is AuthState.Idle) {
             val currentRoute = navController.currentBackStackEntry?.destination?.route
             if (currentRoute == "game") {
-                navController.navigate("worldBrowser") {
-                    popUpTo("game") { inclusive = true }
+                if (serverConfig.skipMarketplace) {
+                    // Launched from React marketplace — redirect back to it
+                    returnToMarketplace()
+                } else {
+                    navController.navigate("worldBrowser") {
+                        popUpTo("game") { inclusive = true }
+                    }
                 }
             }
         }
