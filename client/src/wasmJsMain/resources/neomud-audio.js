@@ -99,9 +99,13 @@ window.NeoMudAudio = (() => {
     },
 
     playBgm(url) {
-      console.log('[NeoMudAudio] playBgm called:', url, '| current:', currentBgmTrack);
       if (!url || url === currentBgmTrack) return;
       this.stopBgm();
+      // Kill the loading screen BGM if it's still playing
+      if (window.__NEOMUD_LOADING_BGM__) {
+        window.__NEOMUD_LOADING_BGM__.pause();
+        window.__NEOMUD_LOADING_BGM__ = null;
+      }
       currentBgmTrack = url;
 
       bgmElement = new Audio(url);
