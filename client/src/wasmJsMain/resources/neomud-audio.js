@@ -55,17 +55,29 @@ window.NeoMudAudio = (() => {
     playSfx(url) {
       if (!url || masterVol === 0 || sfxVol === 0) return;
       ensureContext();
-      if (!audioResumed) return;
+
+      // Helper: play a decoded buffer (waits for AudioContext resume if needed)
+      const playBuffer = (buffer) => {
+        const doPlay = () => {
+          const source = audioCtx.createBufferSource();
+          source.buffer = buffer;
+          const gain = audioCtx.createGain();
+          gain.gain.value = effectiveVol();
+          source.connect(gain);
+          gain.connect(audioCtx.destination);
+          source.start(0);
+        };
+        if (audioCtx.state === 'running') {
+          doPlay();
+        } else {
+          // Context not yet resumed — resume and play
+          audioCtx.resume().then(() => { audioResumed = true; doPlay(); });
+        }
+      };
 
       const cached = sfxCache.get(url);
       if (cached) {
-        const source = audioCtx.createBufferSource();
-        source.buffer = cached;
-        const gain = audioCtx.createGain();
-        gain.gain.value = effectiveVol();
-        source.connect(gain);
-        gain.connect(audioCtx.destination);
-        source.start(0);
+        playBuffer(cached);
         return;
       }
 
@@ -78,14 +90,7 @@ window.NeoMudAudio = (() => {
         .then(decoded => {
           sfxCache.set(url, decoded);
           sfxLoading.delete(url);
-          // Play immediately after first decode
-          const source = audioCtx.createBufferSource();
-          source.buffer = decoded;
-          const gain = audioCtx.createGain();
-          gain.gain.value = effectiveVol();
-          source.connect(gain);
-          gain.connect(audioCtx.destination);
-          source.start(0);
+          playBuffer(decoded);
         })
         .catch(err => {
           sfxLoading.delete(url);
@@ -94,6 +99,7 @@ window.NeoMudAudio = (() => {
     },
 
     playBgm(url) {
+      console.log('[NeoMudAudio] playBgm called:', url, '| current:', currentBgmTrack);
       if (!url || url === currentBgmTrack) return;
       this.stopBgm();
       currentBgmTrack = url;
