@@ -74,6 +74,15 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/neomud-server:latest
             ghcr.io/${{ github.repository_owner }}/neomud-server:${{ github.ref_name }}
 
+      - name: Build and push maker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./maker
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/neomud-maker:latest
+            ghcr.io/${{ github.repository_owner }}/neomud-maker:${{ github.ref_name }}
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
@@ -82,6 +91,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             docker pull ghcr.io/${{ github.repository_owner }}/neomud-server:latest
+            docker pull ghcr.io/${{ github.repository_owner }}/neomud-maker:latest
             # Prepare asset directories
             mkdir -p /srv/neomud-assets /srv/neomud-wasm-stage
 

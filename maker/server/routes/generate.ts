@@ -1,7 +1,7 @@
 import { Router, Request } from 'express'
 import fs from 'fs'
 import path from 'path'
-import { readSettings } from '../settings.js'
+import { readSettings, getProviderApiKey } from '../settings.js'
 
 export const generateRouter = Router()
 
@@ -63,7 +63,7 @@ generateRouter.post('/image', async (req, res) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${provider.apiKey || ''}`,
+          Authorization: `Bearer ${getProviderApiKey(providerId, settings)}`,
         },
         body: JSON.stringify({
           model: 'dall-e-3',
@@ -134,7 +134,7 @@ generateRouter.post('/sound', async (req, res) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'xi-api-key': provider.apiKey || '',
+          'xi-api-key': getProviderApiKey(providerId, settings),
         },
         body: JSON.stringify({
           text: prompt,
@@ -158,7 +158,7 @@ generateRouter.post('/sound', async (req, res) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(provider.apiKey ? { 'xi-api-key': provider.apiKey } : {}),
+          ...(() => { const k = getProviderApiKey(providerId, settings); return k ? { 'xi-api-key': k } : {} })(),
         },
         body: JSON.stringify({
           text: prompt,

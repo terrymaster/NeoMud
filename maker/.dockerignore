@@ -1,0 +1,9 @@
+node_modules/
+dist/
+projects/
+default_world.nmd
+default_world_src/
+.git/
+*.nmd
+nanobanana-output/
+.history/

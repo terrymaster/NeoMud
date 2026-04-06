@@ -70,6 +70,23 @@ export function readSettings(): Settings {
   }
 }
 
+/**
+ * Get effective API key for a provider — checks env vars first, then settings file.
+ * Env vars: ELEVENLABS_API_KEY, OPENAI_API_KEY, SD_API_KEY
+ */
+export function getProviderApiKey(providerId: string, settings: Settings): string {
+  const envKeys: Record<string, string | undefined> = {
+    elevenlabs: process.env.ELEVENLABS_API_KEY,
+    openai: process.env.OPENAI_API_KEY,
+    'stable-diffusion': process.env.SD_API_KEY,
+  }
+  const envKey = envKeys[providerId]
+  if (envKey) return envKey
+
+  const provider = (settings.providers as Record<string, ProviderConfig>)[providerId]
+  return provider?.apiKey || ''
+}
+
 export function writeSettings(settings: Settings): void {
   fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2))
 }
