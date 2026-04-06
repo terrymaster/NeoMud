@@ -31,13 +31,16 @@ window.NeoMudAudio = (() => {
     if (!audioResumed && audioCtx.state === 'suspended') {
       const resume = () => {
         audioCtx.resume().then(() => { audioResumed = true; });
-        document.removeEventListener('click', resume);
-        document.removeEventListener('keydown', resume);
-        document.removeEventListener('touchstart', resume);
+        document.removeEventListener('click', resume, true);
+        document.removeEventListener('keydown', resume, true);
+        document.removeEventListener('touchstart', resume, true);
+        document.removeEventListener('pointerdown', resume, true);
       };
-      document.addEventListener('click', resume);
-      document.addEventListener('keydown', resume);
-      document.addEventListener('touchstart', resume);
+      // Use capture phase so we catch events on the Compose canvas too
+      document.addEventListener('click', resume, true);
+      document.addEventListener('keydown', resume, true);
+      document.addEventListener('touchstart', resume, true);
+      document.addEventListener('pointerdown', resume, true);
     }
   }
 

@@ -150,6 +150,14 @@ fun NeoMudApp(
         }
 
         composable("login") {
+            // Play intro BGM if we skipped the world browser (marketplace launch)
+            if (serverConfig.skipMarketplace) {
+                LaunchedEffect(Unit) {
+                    val introUri = Res.getUri("files/intro_theme.mp3")
+                    audioManager.playBgmFromUri(introUri, "intro_theme")
+                }
+            }
+
             // If a world was selected from marketplace, auto-connect to its endpoint
             val world = selectedWorld
             val parsedEndpoint = remember(world?.serverEndpoint) {
