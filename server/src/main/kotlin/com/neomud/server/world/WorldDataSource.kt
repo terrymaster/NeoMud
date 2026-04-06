@@ -22,5 +22,7 @@ data class WorldManifest(
     val engineVersion: String = "0.0.0.0",
     val engineVersionMin: String = "0.0.0.0",
     val worldId: String = "",
-    val createdWithMaker: Boolean = false
+    val createdWithMaker: Boolean = false,
+    val coverImage: String = "",
+    val loadingBgm: String = ""
 )

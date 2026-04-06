@@ -8,5 +8,7 @@
   "engineVersion": "0.1.0.0",
   "engineVersionMin": "0.1.0.0",
   "worldId": "00000000-0000-0000-0000-000000000001",
-  "createdWithMaker": true
+  "createdWithMaker": true,
+  "coverImage": "assets/images/rooms/town_square.webp",
+  "loadingBgm": "assets/audio/bgm/intro_theme.mp3"
 }
