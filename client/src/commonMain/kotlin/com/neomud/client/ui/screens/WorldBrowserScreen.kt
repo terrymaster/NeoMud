@@ -222,21 +222,36 @@ fun WorldBrowserScreen(
                 }
             }
 
+            // ─── Create a World teaser ───
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(Color.Transparent, AshGray.copy(alpha = 0.3f), Color.Transparent)
+                        )
+                    )
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "\u2726  Want to create your own world?",
+                fontSize = 11.sp,
+                color = TorchAmber,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "Visit play.neomud.app on your computer.",
+                fontSize = 10.sp,
+                color = AshGray.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+
             // ─── Direct Connect (dev builds only) ───
             if (showDirectConnect) {
-                Spacer(modifier = Modifier.height(6.dp))
-                // Runic divider
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.5f)
-                        .height(1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color.Transparent, AshGray.copy(alpha = 0.3f), Color.Transparent)
-                            )
-                        )
-                )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Direct Connect",
                     fontSize = 11.sp,
@@ -245,8 +260,8 @@ fun WorldBrowserScreen(
                         .clickable(onClick = onDirectConnect)
                         .padding(vertical = 4.dp, horizontal = 8.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
             }
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

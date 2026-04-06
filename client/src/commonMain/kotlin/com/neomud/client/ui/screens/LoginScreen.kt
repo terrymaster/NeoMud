@@ -34,6 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.crossfade
 import com.neomud.client.network.ConnectionState
 import com.neomud.client.platform.serverConfig
 import com.neomud.client.ui.theme.StoneTheme
@@ -98,14 +101,28 @@ fun LoginScreen(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // Splash background image (edge-to-edge, behind safe areas)
-        Image(
-            painter = painterResource(Res.drawable.splash_forge),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-        // Dark scrim overlay for readability (50% to let forge glow bleed through)
+        // Background image — world cover if available, fallback to splash_forge
+        val coverUrl = serverConfig.coverImageUrl
+        if (coverUrl.isNotEmpty()) {
+            AsyncImage(
+                model = coil3.request.ImageRequest.Builder(coil3.compose.LocalPlatformContext.current)
+                    .data(coverUrl)
+                    .crossfade(300)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Image(
+                painter = painterResource(Res.drawable.splash_forge),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        // Dark scrim overlay for readability
         Box(
             modifier = Modifier
                 .fillMaxSize()
