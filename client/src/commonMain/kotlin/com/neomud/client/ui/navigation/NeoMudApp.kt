@@ -158,6 +158,13 @@ fun NeoMudApp(
                 }
             }
 
+            // Auto-connect when launched from marketplace with injected config (skipMarketplace)
+            LaunchedEffect(serverConfig.skipMarketplace) {
+                if (serverConfig.skipMarketplace && connectionState == ConnectionState.DISCONNECTED) {
+                    authViewModel.connect(serverConfig.defaultHost, serverConfig.defaultPort, serverConfig.useTls)
+                }
+            }
+
             LoginScreen(
                 connectionState = connectionState,
                 authState = authState,

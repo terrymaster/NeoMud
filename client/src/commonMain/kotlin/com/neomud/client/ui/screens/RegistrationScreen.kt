@@ -738,7 +738,7 @@ private fun RaceSelectionStep(
     selectedRaceId: String,
     onRaceSelected: (String) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
         Text(
             "Step 3: Choose Race",
             fontSize = 14.sp,
@@ -760,7 +760,7 @@ private fun RaceSelectionStep(
                 }
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 items(availableRaces) { race ->
                     StoneSelectionCard(
                         isSelected = selectedRaceId == race.id,
@@ -818,7 +818,7 @@ private fun ClassSelectionStep(
     selectedClassId: String,
     onClassSelected: (String) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
         Text(
             "Step 4: Choose Class",
             fontSize = 14.sp,
@@ -840,7 +840,7 @@ private fun ClassSelectionStep(
                 }
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 items(availableClasses) { cls ->
                     StoneSelectionCard(
                         isSelected = selectedClassId == cls.id,
