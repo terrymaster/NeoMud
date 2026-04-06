@@ -14,6 +14,8 @@ data class WorldSummary(
     val averageRating: Float? = null,
     val ratingCount: Int = 0,
     val featured: Boolean = false,
+    val coverImageUrl: String? = null,
+    val loadingBgmUrl: String? = null,
     val createdAt: String,
     val updatedAt: String
 )
@@ -48,6 +50,8 @@ data class WorldDetail(
     val averageRating: Float? = null,
     val ratingCount: Int = 0,
     val featured: Boolean = false,
+    val coverImageUrl: String? = null,
+    val loadingBgmUrl: String? = null,
     val createdAt: String,
     val updatedAt: String
 )
