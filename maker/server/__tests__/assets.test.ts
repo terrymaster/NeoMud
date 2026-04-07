@@ -60,7 +60,7 @@ describe('Asset management — writable project', () => {
   it('POST /upload succeeds with valid file and assetPath', async () => {
     const res = await request(app)
       .post('/api/asset-mgmt/upload')
-      .attach('file', Buffer.from('test-data'), 'test.json')
+      .attach('file', Buffer.from('{"test": true}'), 'test.json')
       .field('assetPath', 'data/test.json')
     expect(res.status).toBe(200)
     expect(res.body.ok).toBe(true)
@@ -143,7 +143,7 @@ describe('Asset management — writable project', () => {
     expect(res.body.ok).toBe(true)
   })
 
-  it('POST /upload accepts JSON without magic byte check', async () => {
+  it('POST /upload accepts valid JSON file', async () => {
     const res = await request(app)
       .post('/api/asset-mgmt/upload')
       .attach('file', Buffer.from('{"key": "value"}'), 'data.json')
@@ -152,20 +152,29 @@ describe('Asset management — writable project', () => {
     expect(res.body.ok).toBe(true)
   })
 
+  it('POST /upload rejects invalid JSON file', async () => {
+    const res = await request(app)
+      .post('/api/asset-mgmt/upload')
+      .attach('file', Buffer.from('not valid json {{{'), 'bad.json')
+      .field('assetPath', 'data/bad.json')
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/Invalid JSON/)
+  })
+
   it('upload → undo round-trip works', async () => {
     const assetPath = 'data/roundtrip.json'
 
     // Upload v1
     await request(app)
       .post('/api/asset-mgmt/upload')
-      .attach('file', Buffer.from('v1'), 'roundtrip.json')
+      .attach('file', Buffer.from('{"v":1}'), 'roundtrip.json')
       .field('assetPath', assetPath)
       .expect(200)
 
     // Upload v2 (creates history of v1)
     await request(app)
       .post('/api/asset-mgmt/upload')
-      .attach('file', Buffer.from('v2'), 'roundtrip.json')
+      .attach('file', Buffer.from('{"v":2}'), 'roundtrip.json')
       .field('assetPath', assetPath)
       .expect(200)
 

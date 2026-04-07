@@ -68,7 +68,7 @@ const generateLimiter = rateLimit({
   message: { error: 'Too many generation requests, please try again later' },
 })
 
-app.use(express.json({ limit: '50mb' }))
+app.use(express.json({ limit: '1mb' }))
 
 // ─── Auth on all API routes ─────────────────────────────
 app.use('/api', authenticate)

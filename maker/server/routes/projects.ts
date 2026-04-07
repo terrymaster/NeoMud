@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import fs from 'fs'
 import path from 'path'
 import { listProjects, createProject, deleteProject, forkProject } from '../db.js'
 import { importNmd } from '../import.js'
@@ -94,13 +95,26 @@ projectsRouter.post('/import', async (req, res) => {
       res.status(400).json({ error: 'path is required' })
       return
     }
-    // Validate import path stays within safe directories
-    if (nmdPath.includes('..') || (!path.isAbsolute(nmdPath) && nmdPath.startsWith('/'))) {
-      res.status(400).json({ error: 'Invalid file path' })
-      return
-    }
+    // Validate import path: must be .nmd, no traversal, must resolve within allowed directories
     if (!nmdPath.endsWith('.nmd')) {
       res.status(400).json({ error: 'Only .nmd files can be imported' })
+      return
+    }
+    const resolvedImportPath = path.resolve(nmdPath)
+    const allowedDirs = [
+      path.resolve(process.env.NEOMUD_DEFAULT_WORLD || '.'),
+      path.resolve(process.env.MAKER_PROJECTS_DIR || 'projects'),
+      path.resolve('seed'),
+    ].map(d => path.dirname(d) === d ? d : path.dirname(d)) // handle file paths vs dirs
+    const inAllowedDir = allowedDirs.some(dir =>
+      resolvedImportPath.startsWith(dir + path.sep) || resolvedImportPath === dir
+    )
+    if (!inAllowedDir && !resolvedImportPath.startsWith(path.resolve('.') + path.sep)) {
+      res.status(400).json({ error: 'File must be in an allowed directory' })
+      return
+    }
+    if (!fs.existsSync(resolvedImportPath)) {
+      res.status(404).json({ error: 'File not found' })
       return
     }
     const projectName = name || nmdPath.replace(/.*[/\\]/, '').replace(/\.nmd$/, '')

@@ -130,9 +130,18 @@ assetMgmtRouter.post('/upload', rejectIfReadOnly, upload.single('file'), async (
       return
     }
 
-    // Validate magic bytes for non-JSON files
+    // Validate file content
     const ext = path.extname(req.file.originalname).toLowerCase()
-    if (ext !== '.json') {
+    if (ext === '.json') {
+      // Validate JSON is parseable
+      try {
+        JSON.parse(req.file.buffer.toString('utf-8'))
+      } catch {
+        res.status(400).json({ error: 'Invalid JSON file' })
+        return
+      }
+    } else {
+      // Validate magic bytes for binary files
       const type = await fileTypeFromBuffer(req.file.buffer)
       if (!type || !ALLOWED_MIME_TYPES.has(type.mime)) {
         res.status(400).json({ error: `File content does not match allowed type (detected: ${type?.mime || 'unknown'})` })
