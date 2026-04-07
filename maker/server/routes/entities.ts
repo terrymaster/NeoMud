@@ -121,7 +121,8 @@ function handlePrismaError(err: unknown, entityLabel: string, res: Response) {
     res.status(400).json({ error: 'Invalid data — check required fields and types' })
     return
   }
-  res.status(500).json({ error: (err as any)?.message || 'Internal server error' })
+  console.error(`[entities] Unhandled error:`, err)
+  res.status(500).json({ error: 'Internal server error' })
 }
 
 // ─── Items ─────────────────────────────────────────────────────

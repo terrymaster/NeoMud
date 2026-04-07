@@ -1,23 +1,45 @@
 import { Router } from 'express'
-import { readSettings, writeSettings } from '../settings.js'
+import { readSettings, writeSettings, redactSettings, isMaskedKey } from '../settings.js'
+import type { Settings } from '../settings.js'
 
 export const settingsRouter = Router()
 
 settingsRouter.get('/', (_req, res) => {
   try {
-    res.json(readSettings())
+    res.json(redactSettings(readSettings()))
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    console.error('[settings] GET error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
 settingsRouter.put('/', (req, res) => {
   try {
-    const settings = req.body
-    writeSettings(settings)
+    const incoming = req.body as Settings
+    const current = readSettings()
+
+    // Preserve existing API keys when client sends masked/empty values
+    for (const pid of Object.keys(current.providers) as Array<keyof typeof current.providers>) {
+      if (isMaskedKey(incoming.providers?.[pid]?.apiKey)) {
+        if (incoming.providers?.[pid]) {
+          incoming.providers[pid].apiKey = current.providers[pid].apiKey
+        }
+      }
+    }
+    if (incoming.customProviders) {
+      for (const cp of incoming.customProviders) {
+        if (isMaskedKey(cp.apiKey)) {
+          const existing = current.customProviders.find(e => e.id === cp.id)
+          if (existing) cp.apiKey = existing.apiKey
+        }
+      }
+    }
+
+    writeSettings(incoming)
     res.json({ ok: true })
   } catch (err: any) {
-    res.status(500).json({ error: err.message })
+    console.error('[settings] PUT error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 

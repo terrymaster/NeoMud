@@ -4,6 +4,7 @@ import com.neomud.client.platform.PlatformAudioManager
 
 // JS interop — calls into neomud-audio.js loaded via index.html
 private fun jsPlaySfx(url: String): Unit = js("NeoMudAudio.playSfx(url)")
+private fun jsPlayNpcSfx(url: String): Unit = js("NeoMudAudio.playNpcSfx(url)")
 private fun jsPlayBgm(url: String): Unit = js("NeoMudAudio.playBgm(url)")
 private fun jsStopBgm(): Unit = js("NeoMudAudio.stopBgm()")
 private fun jsSetVolumes(master: Float, sfx: Float, bgm: Float): Unit =
@@ -21,6 +22,12 @@ class WebAudioManager : PlatformAudioManager {
         if (soundId.isBlank()) return
         val url = "$serverBaseUrl/assets/audio/$category/$soundId.mp3"
         jsPlaySfx(url)
+    }
+
+    override fun playNpcSfx(serverBaseUrl: String, soundId: String, category: String) {
+        if (soundId.isBlank()) return
+        val url = "$serverBaseUrl/assets/audio/$category/$soundId.mp3"
+        jsPlayNpcSfx(url)
     }
 
     override fun playBgm(serverBaseUrl: String, trackId: String) {

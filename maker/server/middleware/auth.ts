@@ -11,6 +11,12 @@ if (process.env.NODE_ENV === 'production' && MAKER_DEV_USER_ID) {
   process.exit(1)
 }
 
+// Fail fast if JWT secret is not configured in production
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET must be set in production')
+  process.exit(1)
+}
+
 interface TokenPayload {
   userId: string
   role: string

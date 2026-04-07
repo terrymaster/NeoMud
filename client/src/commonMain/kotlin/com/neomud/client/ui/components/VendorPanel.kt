@@ -101,7 +101,7 @@ fun VendorPanel(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) { /* consume clicks */ },
+            ) { onClose() },
         contentAlignment = Alignment.Center
     ) {
         val borderPx = 4.dp
@@ -109,6 +109,10 @@ fun VendorPanel(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .fillMaxHeight(0.88f)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { /* prevent overlay dismiss when clicking panel content */ }
                 .drawBehind { drawStoneFrame(borderPx.toPx()) }
                 .padding(borderPx)
                 .background(

@@ -23,8 +23,9 @@ pcSpritesRouter.get('/', async (req, res) => {
       orderBy: { id: 'asc' },
     })
     res.json(sprites)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[pcSprites] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -34,8 +35,9 @@ pcSpritesRouter.get('/:id', async (req, res) => {
     const sprite = await req.db!.pcSprite.findUnique({ where: { id: param(req, 'id') } })
     if (!sprite) { res.status(404).json({ error: 'PcSprite not found' }); return }
     res.json(sprite)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[pcSprites] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -70,7 +72,8 @@ pcSpritesRouter.post('/reset', rejectIfReadOnly, async (req, res) => {
     await seedPcSprites(req.db!)
     const count = await req.db!.pcSprite.count()
     res.json({ ok: true, count })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[pcSprites] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })

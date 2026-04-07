@@ -642,8 +642,9 @@ exportRouter.get('/json', async (req, res) => {
       spells: spellsOut,
       recipes: recipesOut,
     })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[export] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -660,8 +661,9 @@ exportRouter.get('/nmd', async (req, res) => {
       'Content-Length': buffer.length.toString(),
     })
     res.send(buffer)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[export] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -674,8 +676,9 @@ exportRouter.get('/validate', async (req, res) => {
     const result = await validateProject(prisma, assetExists)
 
     res.json(result)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[export] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -701,7 +704,8 @@ exportRouter.get('/package', async (req, res) => {
       'X-Validation-Warnings': JSON.stringify(result.warnings),
     })
     res.send(buffer)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[export] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })

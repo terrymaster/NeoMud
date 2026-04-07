@@ -13,6 +13,7 @@ window.NeoMudAudio = (() => {
   let currentBgmTrack = '';
   const sfxCache = new Map();
   const sfxLoading = new Set();
+  let lastNpcSource = null; // Track last NPC interaction sound for overlap prevention
 
   // Load persisted volumes
   try {
@@ -95,6 +96,57 @@ window.NeoMudAudio = (() => {
         .catch(err => {
           sfxLoading.delete(url);
           console.warn('[NeoMudAudio] SFX load failed:', url, err.message);
+        });
+    },
+
+    /**
+     * Play an NPC interaction SFX (greet/farewell). Stops the previous one
+     * to prevent overlap when vendor panels are opened and closed quickly.
+     */
+    playNpcSfx(url) {
+      // Stop previous NPC interaction sound if still playing
+      if (lastNpcSource) {
+        try { lastNpcSource.stop(); } catch (_) {}
+        lastNpcSource = null;
+      }
+      if (!url || masterVol === 0 || sfxVol === 0) return;
+      ensureContext();
+
+      const playBuffer = (buffer) => {
+        const doPlay = () => {
+          const source = audioCtx.createBufferSource();
+          source.buffer = buffer;
+          const gain = audioCtx.createGain();
+          gain.gain.value = effectiveVol();
+          source.connect(gain);
+          gain.connect(audioCtx.destination);
+          source.start(0);
+          lastNpcSource = source;
+          source.onended = () => { if (lastNpcSource === source) lastNpcSource = null; };
+        };
+        if (audioCtx.state === 'running') {
+          doPlay();
+        } else {
+          audioCtx.resume().then(() => { audioResumed = true; doPlay(); });
+        }
+      };
+
+      const cached = sfxCache.get(url);
+      if (cached) { playBuffer(cached); return; }
+      if (sfxLoading.has(url)) return;
+      sfxLoading.add(url);
+
+      fetch(url)
+        .then(r => r.arrayBuffer())
+        .then(buf => audioCtx.decodeAudioData(buf))
+        .then(decoded => {
+          sfxCache.set(url, decoded);
+          sfxLoading.delete(url);
+          playBuffer(decoded);
+        })
+        .catch(err => {
+          sfxLoading.delete(url);
+          console.warn('[NeoMudAudio] NPC SFX load failed:', url, err.message);
         });
     },
 

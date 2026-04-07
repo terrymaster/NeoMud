@@ -3,6 +3,8 @@ import multer from 'multer'
 import fs from 'fs'
 import path from 'path'
 import { isValidAssetPath, isPathContained } from '../middleware/validateInput.js'
+import { rejectIfReadOnly } from '../middleware/readOnly.js'
+import { fileTypeFromBuffer } from 'file-type'
 
 export const assetMgmtRouter = Router()
 
@@ -12,6 +14,11 @@ const ALLOWED_EXTENSIONS = new Set([
   '.png', '.jpg', '.jpeg', '.webp', '.gif',  // images
   '.mp3', '.ogg', '.wav', '.webm',            // audio
   '.json',                                     // data
+])
+
+const ALLOWED_MIME_TYPES = new Set([
+  'image/png', 'image/jpeg', 'image/webp', 'image/gif',
+  'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/webm',
 ])
 
 const upload = multer({
@@ -115,26 +122,38 @@ function getHistoryDepth(filePath: string): number {
 }
 
 // POST /upload — multipart with assetPath field + file
-assetMgmtRouter.post('/upload', upload.single('file'), (req, res) => {
+assetMgmtRouter.post('/upload', rejectIfReadOnly, upload.single('file'), async (req, res) => {
   try {
     const assetPath = req.body?.assetPath
     if (!assetPath || !req.file) {
       res.status(400).json({ error: 'assetPath and file are required' })
       return
     }
+
+    // Validate magic bytes for non-JSON files
+    const ext = path.extname(req.file.originalname).toLowerCase()
+    if (ext !== '.json') {
+      const type = await fileTypeFromBuffer(req.file.buffer)
+      if (!type || !ALLOWED_MIME_TYPES.has(type.mime)) {
+        res.status(400).json({ error: `File content does not match allowed type (detected: ${type?.mime || 'unknown'})` })
+        return
+      }
+    }
+
     const fullPath = resolveAssetPath(assetPath, req, res)
     if (!fullPath) return
     fs.mkdirSync(path.dirname(fullPath), { recursive: true })
     backupAsset(fullPath)
     fs.writeFileSync(fullPath, req.file.buffer)
     res.json({ ok: true, assetPath })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[assets] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
 // POST /undo — body { assetPath }
-assetMgmtRouter.post('/undo', (req, res) => {
+assetMgmtRouter.post('/undo', rejectIfReadOnly, (req, res) => {
   try {
     const { assetPath } = req.body
     if (!assetPath) {
@@ -149,13 +168,14 @@ assetMgmtRouter.post('/undo', (req, res) => {
       return
     }
     res.json({ ok: true, assetPath })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[assets] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
 // POST /clear — body { assetPath }
-assetMgmtRouter.post('/clear', (req, res) => {
+assetMgmtRouter.post('/clear', rejectIfReadOnly, (req, res) => {
   try {
     const { assetPath } = req.body
     if (!assetPath) {
@@ -166,8 +186,9 @@ assetMgmtRouter.post('/clear', (req, res) => {
     if (!fullPath) return
     clearAsset(fullPath)
     res.json({ ok: true, assetPath })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[assets] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -183,7 +204,8 @@ assetMgmtRouter.get('/history', (req, res) => {
     if (!fullPath) return
     const depth = getHistoryDepth(fullPath)
     res.json({ depth })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[assets] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })

@@ -18,8 +18,8 @@ export function isValidAssetPath(assetPath: string): boolean {
   if (!assetPath || assetPath.startsWith('/') || assetPath.includes('..')) return false
   const normalized = path.normalize(assetPath)
   if (normalized.startsWith('..') || normalized.startsWith('/')) return false
-  // Only allow safe characters
-  if (!/^[a-zA-Z0-9_/.-]+$/.test(normalized)) return false
+  // Only allow safe characters (backslash included for Windows path.normalize)
+  if (!/^[a-zA-Z0-9_/.\\\-]+$/.test(normalized)) return false
   return true
 }
 

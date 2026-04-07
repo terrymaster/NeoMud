@@ -87,6 +87,33 @@ export function getProviderApiKey(providerId: string, settings: Settings): strin
   return provider?.apiKey || ''
 }
 
+/**
+ * Return a copy of settings with API keys masked for safe client exposure.
+ * Shows last 4 characters of keys that are set, empty string for unset keys.
+ */
+export function redactSettings(settings: Settings): Settings {
+  const redact = (key: string | undefined): string => {
+    if (!key || key.length === 0) return ''
+    if (key.length <= 4) return '****'
+    return '*'.repeat(key.length - 4) + key.slice(-4)
+  }
+
+  return {
+    ...settings,
+    providers: {
+      'stable-diffusion': { ...settings.providers['stable-diffusion'], apiKey: redact(settings.providers['stable-diffusion'].apiKey) },
+      openai: { ...settings.providers.openai, apiKey: redact(settings.providers.openai.apiKey) },
+      elevenlabs: { ...settings.providers.elevenlabs, apiKey: redact(settings.providers.elevenlabs.apiKey) },
+    },
+    customProviders: settings.customProviders.map(p => ({ ...p, apiKey: redact(p.apiKey) })),
+  }
+}
+
+/** Returns true if the value looks like a redaction mask rather than a real key. */
+export function isMaskedKey(val: string | undefined): boolean {
+  return !val || val.length === 0 || val.includes('****')
+}
+
 export function writeSettings(settings: Settings): void {
   fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2))
 }

@@ -43,12 +43,30 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : ['http://localhost:5173', 'http://localhost:3000']
 app.use(cors({ origin: allowedOrigins, credentials: true }))
 
+// Global rate limiter — generous for interactive editor use
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // generous for editor use
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
 }))
+
+// Stricter rate limiters for expensive/sensitive operations
+const importLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many import requests, please try again later' },
+})
+
+const generateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60, // generous for iterative asset generation
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many generation requests, please try again later' },
+})
 
 app.use(express.json({ limit: '50mb' }))
 
@@ -56,6 +74,8 @@ app.use(express.json({ limit: '50mb' }))
 app.use('/api', authenticate)
 
 // ─── Project list/create/delete (no project context needed) ─
+// Apply import limiter before the projects router handles /import
+app.use('/api/projects/import', importLimiter)
 app.use('/api/projects', projectsRouter)
 
 // ─── Project-scoped routes (project context resolves DB per request) ─
@@ -67,7 +87,7 @@ projectRouter.use('/export', exportRouter)
 projectRouter.use('/settings', settingsRouter)
 projectRouter.use('/pc-sprites', pcSpritesRouter)
 projectRouter.use('/default-sfx', defaultSfxRouter)
-projectRouter.use('/generate', generateRouter)
+projectRouter.use('/generate', generateLimiter, generateRouter)
 projectRouter.use('/asset-mgmt', assetMgmtRouter)
 
 // Serve assets from the project's assets directory

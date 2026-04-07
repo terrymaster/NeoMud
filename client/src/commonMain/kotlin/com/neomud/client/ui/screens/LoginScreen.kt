@@ -360,6 +360,8 @@ private fun StoneTextField(
             color = AshGray,
             modifier = Modifier.padding(bottom = 3.dp, start = 2.dp)
         )
+        // key(label) ensures WASM proxy creates unique HTML input per field
+        key(label) {
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
@@ -397,6 +399,7 @@ private fun StoneTextField(
                 }
             }
         )
+        } // key(label)
     }
 }
 

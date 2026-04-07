@@ -12,8 +12,9 @@ projectsRouter.get('/', async (req, res) => {
     const userId = req.user!.userId
     const projects = await listProjects(userId)
     res.json({ projects })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[projects] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -28,8 +29,9 @@ projectsRouter.post('/', async (req, res) => {
     }
     await createProject(userId, name)
     res.json({ name })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[projects] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -48,8 +50,9 @@ projectsRouter.delete('/:name', async (req, res) => {
     }
     await deleteProject(userId, name)
     res.json({ ok: true })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[projects] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -76,8 +79,9 @@ projectsRouter.post('/:name/fork', async (req, res) => {
     }
     await forkProject(userId, source, newName)
     res.json({ name: newName })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[projects] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -106,7 +110,8 @@ projectsRouter.post('/import', async (req, res) => {
     }
     await importNmd(nmdPath, userId, projectName)
     res.json({ name: projectName })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[projects] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })

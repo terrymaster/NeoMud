@@ -252,6 +252,27 @@ fun RegistrationScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Error display — shown above nav buttons so it's immediately visible
+                if (authState is AuthState.Error) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = authState.message,
+                        fontSize = 12.sp,
+                        color = CrimsonError,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Dismiss",
+                        fontSize = 12.sp,
+                        color = AshGray,
+                        modifier = Modifier
+                            .clickable(onClick = onClearError)
+                            .padding(vertical = 4.dp)
+                    )
+                }
+
                 // Navigation buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -305,25 +326,6 @@ fun RegistrationScreen(
                     }
                 }
 
-                // Error display
-                if (authState is AuthState.Error) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = authState.message,
-                        fontSize = 12.sp,
-                        color = CrimsonError,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Dismiss",
-                        fontSize = 12.sp,
-                        color = AshGray,
-                        modifier = Modifier
-                            .clickable(onClick = onClearError)
-                            .padding(vertical = 4.dp)
-                    )
-                }
             }
         }
     }

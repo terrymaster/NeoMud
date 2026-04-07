@@ -195,6 +195,11 @@ class GameViewModel(
         if (soundId.isNotBlank()) audioManager?.playSfx(serverBaseUrl, soundId, category)
     }
 
+    /** Play NPC interaction SFX (greet/farewell) — stops previous to prevent overlap. */
+    private fun npcSfx(soundId: String, category: String) {
+        if (soundId.isNotBlank()) audioManager?.playNpcSfx(serverBaseUrl, soundId, category)
+    }
+
     private fun bgm(trackId: String) {
         audioManager?.playBgm(serverBaseUrl, trackId)
     }
@@ -604,7 +609,7 @@ class GameViewModel(
                 }
             }
             is ServerMessage.VendorInfo -> {
-                if (!_showVendor.value) sfx(message.interactSound, "npcs")
+                if (!_showVendor.value) npcSfx(message.interactSound, "npcs")
                 _vendorInfo.value = message
                 _showVendor.value = true
             }
@@ -699,7 +704,7 @@ class GameViewModel(
                 addLog(message.message, MudColors.error)
             }
             is ServerMessage.CraftingMenu -> {
-                if (!_showCrafting.value) sfx(message.interactSound, "npcs")
+                if (!_showCrafting.value) npcSfx(message.interactSound, "npcs")
                 _crafterInfo.value = message
                 _showCrafting.value = true
             }
@@ -935,7 +940,7 @@ class GameViewModel(
     }
 
     fun dismissVendor() {
-        _vendorInfo.value?.exitSound?.let { if (it.isNotBlank()) sfx(it, "npcs") }
+        _vendorInfo.value?.exitSound?.let { if (it.isNotBlank()) npcSfx(it, "npcs") }
         _showVendor.value = false
         _vendorInfo.value = null
     }
@@ -953,7 +958,7 @@ class GameViewModel(
     }
 
     fun dismissCrafter() {
-        _crafterInfo.value?.exitSound?.let { if (it.isNotBlank()) sfx(it, "npcs") }
+        _crafterInfo.value?.exitSound?.let { if (it.isNotBlank()) npcSfx(it, "npcs") }
         _showCrafting.value = false
         _crafterInfo.value = null
     }

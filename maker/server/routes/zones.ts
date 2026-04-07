@@ -66,7 +66,8 @@ function handlePrismaError(err: unknown, entityLabel: string, res: Response) {
     res.status(400).json({ error: 'Invalid data — check required fields and types' })
     return
   }
-  res.status(500).json({ error: (err as any)?.message || 'Internal server error' })
+  console.error(`[${entityLabel}] Unhandled error:`, err)
+  res.status(500).json({ error: 'Internal server error' })
 }
 
 /** Extract a route parameter as a string (Express 5 types return string | string[]). */

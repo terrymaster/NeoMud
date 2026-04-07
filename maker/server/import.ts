@@ -8,6 +8,8 @@ import { getProjectsDir } from './projectContext.js'
 
 const MAX_ZIP_ENTRIES = 10_000
 const MAX_ZIP_DECOMPRESSED_SIZE = 500 * 1024 * 1024 // 500MB
+const MAX_COMPRESSED_SIZE = 100 * 1024 * 1024 // 100MB on disk
+const MAX_COMPRESSION_RATIO = 100 // reject suspiciously high ratios (ZIP bomb indicator)
 
 /**
  * Import an .nmd bundle (ZIP) into a new maker project.
@@ -17,6 +19,12 @@ const MAX_ZIP_DECOMPRESSED_SIZE = 500 * 1024 * 1024 // 500MB
  * @param readOnly - Whether the project should be read-only
  */
 export async function importNmd(nmdPath: string, userId: string, projectName: string, readOnly = false): Promise<void> {
+  // Pre-check: reject oversized compressed files before opening
+  const compressedSize = fs.statSync(nmdPath).size
+  if (compressedSize > MAX_COMPRESSED_SIZE) {
+    throw new Error(`Bundle compressed size (${Math.round(compressedSize / 1024 / 1024)}MB) exceeds ${MAX_COMPRESSED_SIZE / 1024 / 1024}MB limit`)
+  }
+
   const zip = new AdmZip(nmdPath)
 
   // ZIP bomb protection: check entry count and total decompressed size
@@ -29,6 +37,13 @@ export async function importNmd(nmdPath: string, userId: string, projectName: st
     totalSize += entry.header.size
     if (totalSize > MAX_ZIP_DECOMPRESSED_SIZE) {
       throw new Error('Bundle decompressed size exceeds 500MB limit')
+    }
+    // Check for suspicious compression ratios per entry
+    if (entry.header.compressedSize > 0) {
+      const ratio = entry.header.size / entry.header.compressedSize
+      if (ratio > MAX_COMPRESSION_RATIO) {
+        throw new Error(`Suspicious compression ratio (${Math.round(ratio)}:1) in entry "${entry.entryName}"`)
+      }
     }
   }
 
@@ -48,6 +63,7 @@ export async function importNmd(nmdPath: string, userId: string, projectName: st
     (e) => e.entryName.startsWith('assets/') && !e.isDirectory
   )
   const resolvedAssetsDir = path.resolve(assetsDir)
+  let actualDecompressedSize = 0
   for (const entry of assetEntries) {
     // ZIP slip protection: reject traversal paths
     if (entry.entryName.includes('..') || path.isAbsolute(entry.entryName)) {
@@ -57,11 +73,16 @@ export async function importNmd(nmdPath: string, userId: string, projectName: st
     if (!destPath.startsWith(resolvedAssetsDir + path.sep)) {
       throw new Error(`ZIP entry escapes assets directory: ${entry.entryName}`)
     }
+    const data = entry.getData()
+    actualDecompressedSize += data.length
+    if (actualDecompressedSize > MAX_ZIP_DECOMPRESSED_SIZE) {
+      throw new Error('Actual decompressed size exceeds 500MB limit')
+    }
     const destDir = path.dirname(destPath)
     if (!fs.existsSync(destDir)) {
       fs.mkdirSync(destDir, { recursive: true })
     }
-    fs.writeFileSync(destPath, entry.getData())
+    fs.writeFileSync(destPath, data)
   }
   if (assetEntries.length > 0) {
     console.log(`[import] Extracted ${assetEntries.length} asset files to ${assetsDir}`)

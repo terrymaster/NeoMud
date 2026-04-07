@@ -21,8 +21,9 @@ defaultSfxRouter.get('/', async (req, res) => {
       orderBy: { id: 'asc' },
     })
     res.json(entries)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[defaultSfx] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -32,8 +33,9 @@ defaultSfxRouter.get('/:id', async (req, res) => {
     const entry = await req.db!.defaultSfx.findUnique({ where: { id: param(req, 'id') } })
     if (!entry) { res.status(404).json({ error: 'DefaultSfx not found' }); return }
     res.json(entry)
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[defaultSfx] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 
@@ -65,7 +67,8 @@ defaultSfxRouter.post('/reset', rejectIfReadOnly, async (req, res) => {
     await seedDefaultSfx(req.db!)
     const count = await req.db!.defaultSfx.count()
     res.json({ ok: true, count })
-  } catch (err: any) {
-    res.status(500).json({ error: err.message })
+  } catch (err) {
+    console.error('[defaultSfx] error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
 })

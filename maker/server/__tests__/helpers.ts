@@ -10,6 +10,7 @@ import { projectsRouter } from '../routes/projects.js'
 import { exportRouter } from '../routes/export.js'
 import { pcSpritesRouter } from '../routes/pcSprites.js'
 import { defaultSfxRouter } from '../routes/defaultSfx.js'
+import { assetMgmtRouter } from '../routes/assets.js'
 import { createProject, deleteProject } from '../db.js'
 import { getProjectsDir, getProjectClient, assetsRoot } from '../projectContext.js'
 
@@ -82,6 +83,7 @@ export async function createTestApp(projectName?: string): Promise<{
   app.use('/api/export', exportRouter)
   app.use('/api/pc-sprites', pcSpritesRouter)
   app.use('/api/default-sfx', defaultSfxRouter)
+  app.use('/api/asset-mgmt', assetMgmtRouter)
 
   const cleanup = async () => {
     try {
@@ -128,6 +130,7 @@ export async function createReadOnlyTestApp(): Promise<{
   app.use('/api/export', exportRouter)
   app.use('/api/pc-sprites', pcSpritesRouter)
   app.use('/api/default-sfx', defaultSfxRouter)
+  app.use('/api/asset-mgmt', assetMgmtRouter)
 
   const cleanup = async () => {
     try {
