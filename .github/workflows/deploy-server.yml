@@ -22,8 +22,12 @@ jobs:
           distribution: corretto
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew packageWorld --rerun-tasks
-      - run: ./gradlew :shared:jvmTest :server:test
+      - name: "[1/9] Run tests"
+        run: |
+          echo "[1/9] Running tests..."
+          ./gradlew packageWorld --rerun-tasks
+          ./gradlew :shared:jvmTest :server:test --no-daemon
+          echo "[1/9] ✓ All tests passed"
 
   deploy-server:
     needs: test
@@ -38,19 +42,29 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build world bundle and fat JAR
+      - name: "[2/9] Clean and build"
         run: |
+          echo "[2/9] Clean building..."
+          ./gradlew clean
           ./gradlew packageWorld --rerun-tasks
-          ./gradlew :server:shadowJar
+          ./gradlew :server:shadowJar --no-daemon
+          echo "[2/9] ✓ Build complete"
 
-      - name: Log in to GHCR
+      - name: "[3/9] Verify build artifacts"
+        run: |
+          echo "[3/9] Verifying artifacts..."
+          ls -lh server/build/libs/neomud-server.jar || { echo "[3/9] ✗ FATAL: shadowJar not found"; exit 1; }
+          ls -lh server/build/worlds/default-world.nmd || { echo "[3/9] ✗ FATAL: world bundle not found"; exit 1; }
+          echo "[3/9] ✓ Artifacts verified"
+
+      - name: "[4/9] Log in to GHCR"
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push game server image
+      - name: "[5/9] Build and push Docker image"
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -59,32 +73,34 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/neomud-server:latest
             ghcr.io/${{ github.repository_owner }}/neomud-server:sha-${{ github.sha }}
 
-      - name: Deploy to staging
+      - name: "[6/9] Deploy to staging"
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_STAGING }}
           script: |
+            echo "[6/9] Pulling new image and restarting..."
             docker pull ghcr.io/${{ github.repository_owner }}/neomud-server:latest
-            # Stop running game servers so they restart with the new image
             docker ps --filter "label=neomud.worldId" -q | xargs -r docker stop
             docker ps -a --filter "label=neomud.worldId" -q | xargs -r docker rm
-            # Prune old images so platform uses the freshly-pulled one
             docker image prune -f
-            # Restart platform to trigger auto-start with new game server image
             cd ~/neomud-staging
             docker compose restart platform-stg
+            echo "[6/9] ✓ Platform restarted — game server will auto-start"
 
-      - name: Clean old world bundle
+      - name: "[7/9] Clean old world bundle"
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_STAGING }}
-          script: rm -f /srv/neomud-assets/default-world.nmd
+          script: |
+            echo "[7/9] Cleaning old bundle..."
+            rm -f /srv/neomud-assets/default-world.nmd
+            echo "[7/9] ✓ Cleaned"
 
-      - name: Upload world bundle
+      - name: "[8/9] Upload world bundle"
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -95,8 +111,10 @@ jobs:
           strip_components: 3
           overwrite: true
 
-      - name: Verify staging
+      - name: "[9/9] Verify staging health"
         run: |
+          echo "[9/9] Waiting for staging to come up..."
           sleep 30
-          curl -sf https://stage-api.neomud.app/api/v1/health || exit 1
-          curl -sf https://stage.neomud.app/health || echo "WARNING: game server may still be starting"
+          curl -sf https://stage-api.neomud.app/api/v1/health || { echo "[9/9] ✗ API health check failed"; exit 1; }
+          echo "[9/9] ✓ API healthy"
+          curl -sf https://stage.neomud.app/health && echo " [9/9] ✓ Game server healthy" || echo "[9/9] ⚠ Game server may still be starting"

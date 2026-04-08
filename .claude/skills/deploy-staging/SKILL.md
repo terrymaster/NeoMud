@@ -82,11 +82,23 @@ ssh root@159.203.127.47 'docker ps --format "{{.Names}} {{.Status}}" | grep -E "
 
 ### Step 6: Verify WASM Client Content
 
-Check the deployed WASM has the latest code:
+Check the deployed WASM has the latest code AND matches the local build:
 
 ```bash
-ssh root@159.203.127.47 'ls -lt /srv/neomud-web-stage/client/neomud.js | head -1'
+# What does VPS neomud.js reference?
+VPS_WASM=$(ssh root@159.203.127.47 'grep -o "[0-9a-f]\{20,\}\.wasm" /srv/neomud-web-stage/client/neomud.js')
+echo "VPS references: $VPS_WASM"
+
+# Does that file exist on VPS?
+ssh root@159.203.127.47 "test -f /srv/neomud-web-stage/client/$VPS_WASM && echo 'EXISTS' || echo 'MISSING'"
+
+# Does local build match?
+LOCAL_WASM=$(grep -o '[0-9a-f]\{20,\}\.wasm' client/build/dist/wasmJs/productionExecutable/neomud.js 2>/dev/null)
+echo "Local references: $LOCAL_WASM"
+[ "$VPS_WASM" = "$LOCAL_WASM" ] && echo "✓ MATCH" || echo "✗ MISMATCH — VPS has stale code"
 ```
+
+**IMPORTANT:** Never declare deployed unless VPS hash matches local build hash. Never manually SCP — fix the pipeline instead.
 
 ### Staging URLs
 - **Marketplace**: https://stage.neomud.app/

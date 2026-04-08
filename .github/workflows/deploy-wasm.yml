@@ -23,20 +23,55 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build WASM client
-        run: ./gradlew :client:wasmJsBrowserDistribution
+      - name: "[1/7] Clean build directories"
+        run: |
+          echo "[1/7] Cleaning build directories..."
+          ./gradlew :client:clean :shared:clean
+          echo "[1/7] ✓ Clean complete"
 
-      - name: Clean staging client directory
+      - name: "[2/7] Build WASM client"
+        run: |
+          echo "[2/7] Building WASM client..."
+          ./gradlew :client:wasmJsBrowserDistribution --no-daemon
+          echo "[2/7] ✓ Build complete"
+
+      - name: "[3/7] Verify build artifacts"
+        run: |
+          echo "[3/7] Verifying build artifacts..."
+          WASM_COUNT=$(ls client/build/dist/wasmJs/productionExecutable/*.wasm 2>/dev/null | wc -l)
+          if [ "$WASM_COUNT" -eq 0 ]; then
+            echo "[3/7] ✗ FATAL: No .wasm files found in build output"
+            exit 1
+          fi
+          if [ ! -f client/build/dist/wasmJs/productionExecutable/neomud.js ]; then
+            echo "[3/7] ✗ FATAL: neomud.js not found in build output"
+            exit 1
+          fi
+          WASM_REF=$(grep -o '[0-9a-f]\{20,\}\.wasm' client/build/dist/wasmJs/productionExecutable/neomud.js)
+          if [ -z "$WASM_REF" ]; then
+            echo "[3/7] ✗ FATAL: neomud.js does not reference any .wasm file"
+            exit 1
+          fi
+          if [ ! -f "client/build/dist/wasmJs/productionExecutable/$WASM_REF" ]; then
+            echo "[3/7] ✗ FATAL: neomud.js references $WASM_REF but file does not exist"
+            exit 1
+          fi
+          echo "[3/7] ✓ Verified: neomud.js → $WASM_REF"
+          echo "  WASM files:"
+          ls -lh client/build/dist/wasmJs/productionExecutable/*.wasm
+
+      - name: "[4/7] Clean staging client directory"
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY_STAGING }}
           script: |
+            echo "[4/7] Cleaning /srv/neomud-web-stage/client/..."
             rm -rf /srv/neomud-web-stage/client/*
-            echo "Client directory cleaned"
+            echo "[4/7] ✓ Staging client directory cleaned"
 
-      - name: Deploy to staging
+      - name: "[5/7] Upload to staging"
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -47,7 +82,29 @@ jobs:
           strip_components: 5
           overwrite: true
 
-      - name: Verify staging
+      - name: "[6/7] Verify deployment matches build"
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY_STAGING }}
+          script: |
+            echo "[6/7] Verifying deployment..."
+            WASM_REF=$(grep -o '[0-9a-f]\{20,\}\.wasm' /srv/neomud-web-stage/client/neomud.js)
+            if [ -z "$WASM_REF" ]; then
+              echo "[6/7] ✗ FATAL: neomud.js on VPS does not reference any .wasm file"
+              exit 1
+            fi
+            if [ ! -f "/srv/neomud-web-stage/client/$WASM_REF" ]; then
+              echo "[6/7] ✗ FATAL: neomud.js references $WASM_REF but file does not exist on VPS"
+              exit 1
+            fi
+            FILE_COUNT=$(ls /srv/neomud-web-stage/client/*.js /srv/neomud-web-stage/client/*.wasm 2>/dev/null | wc -l)
+            echo "[6/7] ✓ Verified: neomud.js → $WASM_REF ($FILE_COUNT files deployed)"
+
+      - name: "[7/7] Health check"
         run: |
-          sleep 10
-          curl -sf https://stage.neomud.app/client/index.html -o /dev/null || echo "WARNING: WASM client not accessible"
+          echo "[7/7] Running health checks..."
+          sleep 5
+          curl -sf https://stage.neomud.app/client/index.html -o /dev/null || { echo "[7/7] ✗ WASM client not accessible"; exit 1; }
+          echo "[7/7] ✓ WASM client accessible at https://stage.neomud.app/client/"
