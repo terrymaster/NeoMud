@@ -26,6 +26,16 @@ jobs:
       - name: Build WASM client
         run: ./gradlew :client:wasmJsBrowserDistribution
 
+      - name: Clean staging client directory
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY_STAGING }}
+          script: |
+            rm -rf /srv/neomud-web-stage/client/*
+            echo "Client directory cleaned"
+
       - name: Deploy to staging
         uses: appleboy/scp-action@v1
         with:
@@ -36,3 +46,8 @@ jobs:
           target: /srv/neomud-web-stage/client/
           strip_components: 5
           overwrite: true
+
+      - name: Verify staging
+        run: |
+          sleep 10
+          curl -sf https://stage.neomud.app/client/index.html -o /dev/null || echo "WARNING: WASM client not accessible"

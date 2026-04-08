@@ -44,3 +44,8 @@ jobs:
             cd ~/neomud-staging
             docker compose up -d --force-recreate --no-deps maker-stg
             echo "Maker staging deployed"
+
+      - name: Verify staging
+        run: |
+          sleep 15
+          curl -sf https://stage-maker.neomud.app/ -o /dev/null || echo "WARNING: maker not ready yet"

@@ -67,13 +67,22 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY_STAGING }}
           script: |
             docker pull ghcr.io/${{ github.repository_owner }}/neomud-server:latest
-            # Stop any running game servers so they restart with the new image
+            # Stop running game servers so they restart with the new image
             docker ps --filter "label=neomud.worldId" -q | xargs -r docker stop
             docker ps -a --filter "label=neomud.worldId" -q | xargs -r docker rm
+            # Prune old images so platform uses the freshly-pulled one
+            docker image prune -f
             # Restart platform to trigger auto-start with new game server image
             cd ~/neomud-staging
             docker compose restart platform-stg
-            echo "Game server staging deployed — platform will auto-start worlds"
+
+      - name: Clean old world bundle
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY_STAGING }}
+          script: rm -f /srv/neomud-assets/default-world.nmd
 
       - name: Upload world bundle
         uses: appleboy/scp-action@v1
@@ -85,3 +94,9 @@ jobs:
           target: /srv/neomud-assets/
           strip_components: 3
           overwrite: true
+
+      - name: Verify staging
+        run: |
+          sleep 30
+          curl -sf https://stage-api.neomud.app/api/v1/health || exit 1
+          curl -sf https://stage.neomud.app/health || echo "WARNING: game server may still be starting"

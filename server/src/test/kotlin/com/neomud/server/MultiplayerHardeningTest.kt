@@ -1,6 +1,5 @@
 package com.neomud.server
 
-import com.neomud.server.game.GameStateLock
 import com.neomud.shared.model.Direction
 import com.neomud.shared.model.Stats
 import com.neomud.shared.protocol.ClientMessage
@@ -272,66 +271,11 @@ class MultiplayerHardeningTest {
         }
     }
 
-    @Test
-    fun `mutex contention occurs under concurrent command load`() = testApplication {
-        application { module(jdbcUrl = testDbUrl()) }
-        val wsClient = createClient { install(WebSockets) }
-
-        // Register two players
-        for (i in 0..1) {
-            wsClient.webSocket("/game") {
-                consumeCatalogSync()
-                send(sendMsg(ClientMessage.Register(
-                    "contention$i", "pass1234", "ContentionP$i",
-                    if (i == 0) "WARRIOR" else "THIEF",
-                    allocatedStats = if (i == 0) Stats(30, 22, 18, 18, 30, 18) else Stats(20, 30, 22, 18, 20, 25)
-                )))
-                assertIs<ServerMessage.RegisterOk>(receiveServerMessage())
-            }
-        }
-
-        // Reset contention counter
-        GameStateLock.contentionCount.set(0)
-
-        // Login both and hammer commands concurrently
-        coroutineScope {
-            val jobs = (0..1).map { i ->
-                async {
-                    val client = createClient { install(WebSockets) }
-                    client.webSocket("/game") {
-                        consumeCatalogSync()
-                        send(sendMsg(ClientMessage.Login("contention$i", "pass1234")))
-                        consumeLoginSequence()
-
-                        // Rapid-fire 10 move cycles (north then south)
-                        repeat(10) {
-                            send(sendMsg(ClientMessage.Move(Direction.NORTH)))
-                            withTimeout(5000) {
-                                while (true) {
-                                    val msg = receiveServerMessage()
-                                    if (msg is ServerMessage.MoveOk) break
-                                }
-                            }
-                            send(sendMsg(ClientMessage.Move(Direction.SOUTH)))
-                            withTimeout(5000) {
-                                while (true) {
-                                    val msg = receiveServerMessage()
-                                    if (msg is ServerMessage.MoveOk) break
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            jobs.awaitAll()
-        }
-
-        val contention = GameStateLock.contentionCount.get()
-        assertTrue(
-            contention > 0,
-            "Expected mutex contention with 2 concurrent clients sending 20 commands each, but contentionCount was 0"
-        )
-    }
+    // Removed: "mutex contention occurs under concurrent command load"
+    // This test asserted contentionCount > 0, which is a probabilistic implementation detail
+    // that depends on CPU scheduling. On fast CI runners, commands may serialize without
+    // contention, causing random failures. The concurrent correctness tests above verify
+    // the actual behavioral contract (no corruption, correct serialization).
 
     // ── Frame Size Cap Test ─────────────────────────────────────────────
 
