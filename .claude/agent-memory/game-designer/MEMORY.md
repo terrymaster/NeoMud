@@ -11,7 +11,7 @@
 - Meditation: `server/.../game/MeditationUtils.kt`
 - Stat allocation (shared): `shared/.../model/StatAllocator.kt`
 
-## Core Formula Summary (CURRENT as of Mar 2026)
+## Core Formula Summary (CURRENT as of Apr 2026)
 - HP at L1: hpPerLevelMax + (health/10)*4 + threshold bonuses
 - MP at L1: mpPerLevelMax + (willpower/10)*2 (if class has MP)
 - Melee damage: **STR/3** + weaponBonus + thresholdBonus + random(1..weaponRange)
@@ -26,7 +26,13 @@
 - Meditation: 2 + willpower/10 MP per tick
 - Rest: 1 + health/10 HP per tick
 
-## Current Content Scope (Mar 2026)
+## Armor Formula Detail (CRITICAL)
+- NPC damage to player: `(npc.damage + random(1..npc.damage/3)) - totalArmorValue - parryReduction`, min 1
+- This is FLAT SUBTRACTION -- armor fully negates damage below its value
+- Chain (24 total) negates ALL marsh NPC base damage (12-22)
+- Fix needed: divide totalArmorValue by 2 before subtraction
+
+## Current Content Scope (Apr 2026)
 - 6 races, 15 classes, 5 magic schools (mage/priest/druid/kai/bard)
 - 4 zones: Town (7 rooms), Forest (7 rooms, L1-3), Marsh (6 rooms, L4-5), Gorge (5 rooms, L6-7)
 - 12 hostile NPC types with loot tables embedded in zone JSONs
@@ -54,20 +60,20 @@
 - Rest skill added (all classes)
 - NPC HP/damage reductions in Marsh (~35-45%) and Gorge (~35-40% HP)
 
-## Outstanding Issues (Mar 2026 audit)
-- See `march-2026-audit.md` for full analysis
-- Forest-to-Marsh difficulty spike still 2.75x (need transitional L3-4 content)
-- 5 dead-end rooms have no unique content (Cave, Stream, Clearing, Island, Alcove)
-- Gypsy stuck at mage:1 -- only Magic Missile, needs mage:2
-- Kai and Bard schools lack T3 damage spells
-- Marsh loot drops L3 gear (already obsolete at that level)
-- No L4-5 equipment tier exists
-- Blacksmith doesn't sell dagger/staff/bow
-- Cutting Words basePower (8) below other T1 damage spells (10-13)
-- Crafting materials drop but no crafting system exists -- **design filed as issue #214**
+## Outstanding Issues (Apr 2026 audit)
+- **CRITICAL**: Flat armor subtraction trivializes Marsh -- chain (24) negates all L4-5 NPC damage to min 1
+  - Proposed fix: ARMOR_REDUCTION_DIVISOR = 2 in GameConfig, halves effective armor
+- No L4-5 equipment tier exists (proposed: Scale armor set, L4 weapons)
+- Marsh loot drops L3 gear (already obsolete at that level) -- needs L4-5 drops
+- 4 dead-end rooms have no content (Cave, Stream, Island, Alcove; Clearing is sanctuary = fine)
+- Blacksmith doesn't sell intermediate dagger/bow/staff upgrades (crafted ones exist but not vendored)
 - No loot_tables.json file exists; loot is embedded in zone NPC definitions
-- **Heal spell scaling uses same formula as damage** -- heals overflow tiny L1 HP pools (#223, #227)
-- **Consumables outclass heal spells at L1** -- Health Potion (25 HP) > full HP pool (#226, #228)
+- Crafting system implemented (issue #214 complete)
+- Gypsy has mage:2, can cast MM + Frost Bolt + Arcane Shield -- actually fine
+- Kai and Bard T3 damage spells now exist (Dragon Fist, Thunderous Crescendo)
+- Cutting Words basePower now 11 -- close to parity
+- Heal scaling uses HEAL_STAT_DIVISOR=4 (half of damage) -- adequate
+- Health Potion heals 15 (not 25 as previously noted)
 
 ## Economy Analysis (Mar 2026)
 - Forest farming: ~30 kills/hr, ~186c/hr from mats, ~45c/hr coins
@@ -76,3 +82,6 @@
 - Vendor sell rate: 50-99% of item value (Charm + Haggle dependent), typical 60-75%
 - Critical gap: no L4-5 equipment tier between chain (L3) and plate (L6)
 - Mystic Staff corrected to +10/10 (was +8/8 in older memory)
+- Crafted weapons: Venom Dagger +7/7 L3, Wolfbone Bow +8/8 L3, Marsh Reed Staff +9/9 L3, Obsidian Edge +14/11 L6, Wraith Blade +15/10 L7
+- Crafted armor fills L2-3 (marsh hide vest 5, legs 4, boots 3) and L5 (wraith hood 4, obsidian buckler 5)
+- Full equipment audit in items.json: 9 weapons, 24 armor, 9 consumables, 4 crafting mats
