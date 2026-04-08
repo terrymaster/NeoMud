@@ -31,7 +31,7 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          key: ${{ secrets.VPS_SSH_KEY_STAGING }}
           source: "client/build/dist/wasmJs/productionExecutable/*"
           target: /srv/neomud-web-stage/client/
           strip_components: 5

@@ -64,7 +64,7 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          key: ${{ secrets.VPS_SSH_KEY_STAGING }}
           script: |
             docker pull ghcr.io/${{ github.repository_owner }}/neomud-server:latest
             # Stop any running game servers so they restart with the new image
@@ -80,7 +80,7 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          key: ${{ secrets.VPS_SSH_KEY_STAGING }}
           source: "server/build/worlds/default-world.nmd"
           target: /srv/neomud-assets/
           strip_components: 3
