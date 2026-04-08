@@ -84,3 +84,4 @@ jobs:
           source: "server/build/worlds/default-world.nmd"
           target: /srv/neomud-assets/
           strip_components: 3
+          overwrite: true

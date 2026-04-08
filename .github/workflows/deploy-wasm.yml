@@ -35,3 +35,4 @@ jobs:
           source: "client/build/dist/wasmJs/productionExecutable/*"
           target: /srv/neomud-web-stage/client/
           strip_components: 5
+          overwrite: true
