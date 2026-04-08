@@ -109,10 +109,11 @@ fun DirectionPad(
                 isCardinal = true
             )
             StoneDPadButton(
-                text = "\u2726",  // four-pointed star
+                text = "",
                 enabled = true,
                 onClick = onLook,
-                isLook = true
+                isLook = true,
+                icon = { LookIcon(color = LookText) }
             )
             StoneDPadButton(
                 text = "E",
@@ -188,7 +189,8 @@ private fun StoneDPadButton(
     isCardinal: Boolean = false,
     locked: Boolean = false,
     tracked: Boolean = false,
-    size: Dp = BUTTON_SIZE
+    size: Dp = BUTTON_SIZE,
+    icon: @Composable (() -> Unit)? = null
 ) {
     val gradientTop = when {
         isLook -> StoneTheme.frameLight
@@ -226,13 +228,17 @@ private fun StoneDPadButton(
             }
             .then(if (enabled || isLook) Modifier.clickable(onClick = onClick) else Modifier)
     ) {
-        Text(
-            text = text,
-            fontSize = if (isCardinal) 13.sp else 12.sp,
-            fontWeight = if (isCardinal) FontWeight.Bold else FontWeight.Normal,
-            color = textColor,
-            textAlign = TextAlign.Center
-        )
+        if (icon != null) {
+            icon()
+        } else {
+            Text(
+                text = text,
+                fontSize = if (isCardinal) 13.sp else 12.sp,
+                fontWeight = if (isCardinal) FontWeight.Bold else FontWeight.Normal,
+                color = textColor,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 

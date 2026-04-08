@@ -70,79 +70,80 @@ private fun DrawScope.drawStoneFrame(borderPx: Float) {
 // Help section data
 // ─────────────────────────────────────────────
 private data class HelpSection(
-    val glyph: String,
+    val icon: org.jetbrains.compose.resources.DrawableResource,
     val title: String,
     val entries: List<HelpEntry>
 )
 
 private data class HelpEntry(
     val heading: String,
-    val body: String
+    val body: String,
+    val icon: org.jetbrains.compose.resources.DrawableResource? = null
 )
 
 private val helpSections = listOf(
-    HelpSection("\u2694", "Getting Started", listOf(
+    HelpSection(MudIcons.Attack, "Getting Started", listOf(
         HelpEntry("Rooms & Movement", "You stand in a room. Tap the directional arrows to move through exits. Grayed-out directions have no passage. The room name and description appear at the top of the screen."),
-        HelpEntry("The Minimap", "A floating map shows rooms you have visited. Fog-of-war hides unexplored areas. Tap the map toolbar button for a full-screen view."),
+        HelpEntry("The Minimap", "A floating map shows rooms you have visited. Fog-of-war hides unexplored areas. Tap the map toolbar button for a full-screen view.", icon = MudIcons.Map),
         HelpEntry("NPCs", "Non-player characters inhabit rooms. Hostile NPCs (monsters) can be fought. Friendly NPCs like vendors and trainers offer services \u2014 tap their sprite to interact."),
         HelpEntry("Ground Items", "Loot and coins dropped by slain foes appear at the bottom of the room. Tap items or coin piles to pick them up.")
     )),
-    HelpSection("\u2620", "Combat", listOf(
+    HelpSection(MudIcons.Attack, "Combat", listOf(
         HelpEntry("Selecting a Target", "Tap a hostile NPC\u2019s sprite to select it as your target. A red border highlights the selected NPC."),
-        HelpEntry("Attack Mode", "Tap the crossed-swords button to toggle attack mode. While active, your character automatically attacks the selected target each combat tick (1.5 seconds)."),
+        HelpEntry("Attack Mode", "Tap the crossed-swords button to toggle attack mode. While active, your character automatically attacks the selected target each combat tick (1.5 seconds).", icon = MudIcons.Attack),
         HelpEntry("Melee Damage", "Melee damage is based on your Strength, equipped weapon, and a random roll. Armor reduces incoming damage."),
         HelpEntry("Death & Respawn", "If your HP reaches zero, you die and respawn at the town entrance with full health. You keep your inventory and equipment."),
         HelpEntry("NPC Context Menu", "Long-press a hostile NPC for quick actions: attack, track, kick, or cast a spell directly on it.")
     )),
-    HelpSection("\u2728", "Spells & Magic", listOf(
+    HelpSection(MudIcons.SchoolMage, "Spells & Magic", listOf(
         HelpEntry("Spell Schools", "There are five schools of magic: Mage, Priest, Druid, Kai, and Bard. Your class determines which schools you can learn."),
         HelpEntry("Spell Slots", "You have four spell slots in the spell bar. Tap a slot to ready that spell, or long-press to assign a different spell from the spell picker."),
         HelpEntry("Casting", "A readied spell auto-casts on your target during the next combat tick. Some spells target enemies, others heal you or buff allies."),
-        HelpEntry("Mana", "Spells cost mana (MP). When you run low, use the Meditate skill to regenerate MP, or drink a mana potion.")
+        HelpEntry("Mana", "Spells cost mana (MP). When you run low, use the Meditate skill to regenerate MP, or drink a mana potion.", icon = MudIcons.Meditate)
     )),
-    HelpSection("\u2726", "Skills", listOf(
-        HelpEntry("Bash", "A powerful strike that deals bonus damage and has a 50% chance to stun the target for 2 ticks, preventing it from attacking. Has a cooldown between uses."),
-        HelpEntry("Kick", "Knock an NPC into an adjacent room. Choose a direction \u2014 the NPC flies through the exit and is stunned for 2 ticks upon landing."),
-        HelpEntry("Sneak", "Enter stealth. While hidden, your next attack becomes a backstab dealing massive damage. Moving or being hit breaks stealth."),
-        HelpEntry("Meditate", "Sit and regenerate mana over time. Breaks if you enter combat or move."),
-        HelpEntry("Track", "Locate an NPC that has fled or wandered away. Shows which direction they went."),
-        HelpEntry("Pick Lock", "Attempt to unlock a locked exit or interactable. Requires the Pick Lock skill."),
-        HelpEntry("Rest", "Sit and regenerate HP over time. Breaks if you enter combat or move."),
+    HelpSection(MudIcons.Bash, "Skills", listOf(
+        HelpEntry("Bash", "A powerful strike that deals bonus damage and has a 50% chance to stun the target for 2 ticks, preventing it from attacking. Has a cooldown between uses.", icon = MudIcons.Bash),
+        HelpEntry("Kick", "Knock an NPC into an adjacent room. Choose a direction \u2014 the NPC flies through the exit and is stunned for 2 ticks upon landing.", icon = MudIcons.Kick),
+        HelpEntry("Sneak", "Enter stealth. While hidden, your next attack becomes a backstab dealing massive damage. Moving or being hit breaks stealth.", icon = MudIcons.Sneak),
+        HelpEntry("Meditate", "Sit and regenerate mana over time. Breaks if you enter combat or move.", icon = MudIcons.Meditate),
+        HelpEntry("Track", "Locate an NPC that has fled or wandered away. Shows which direction they went.", icon = MudIcons.Track),
+        HelpEntry("Pick Lock", "Attempt to unlock a locked exit or interactable. Requires the Pick Lock skill.", icon = MudIcons.PickLock),
+        HelpEntry("Rest", "Sit and regenerate HP over time. Breaks if you enter combat or move.", icon = MudIcons.Rest),
         HelpEntry("Cooldowns", "Most skills have a cooldown (shown as a dimmed button). Wait for the cooldown to expire before using the skill again.")
     )),
-    HelpSection("\u2692", "Inventory & Equipment", listOf(
-        HelpEntry("Inventory", "Open the backpack icon to view your carried items. Tap an item for options: equip, use, or drop."),
-        HelpEntry("Equipment", "Open the shield icon to view your paperdoll. Tap a slot to see the equipped item\u2019s stats. Equip gear from your inventory to boost your combat power."),
+    HelpSection(MudIcons.Inventory, "Inventory & Equipment", listOf(
+        HelpEntry("Inventory", "Open the backpack icon to view your carried items. Tap an item for options: equip, use, or drop.", icon = MudIcons.Inventory),
+        HelpEntry("Equipment", "Open the shield icon to view your paperdoll. Tap a slot to see the equipped item\u2019s stats. Equip gear from your inventory to boost your combat power.", icon = MudIcons.Equipment),
         HelpEntry("Equipment Slots", "Head, body, arms, legs, feet, weapon, offhand, ring, neck, and back. Each slot accepts specific item types."),
         HelpEntry("Consumables", "Potions and food can be used from your inventory. Health potions restore HP, mana potions restore MP. Some items have cooldowns.")
     )),
-    HelpSection("\u265E", "Vendors & Trainers", listOf(
-        HelpEntry("Vendors", "Approach a vendor NPC and tap their sprite to open the shop. Buy tab shows their wares; sell tab lets you sell your items."),
+    HelpSection(MudIcons.Vendor, "Vendors & Trainers", listOf(
+        HelpEntry("Vendors", "Approach a vendor NPC and tap their sprite to open the shop. Buy tab shows their wares; sell tab lets you sell your items.", icon = MudIcons.Vendor),
         HelpEntry("Coins", "There are four coin types: copper, silver, gold, and platinum. 100 copper = 1 silver, 100 silver = 1 gold, 100 gold = 1 platinum."),
-        HelpEntry("Trainers", "Visit a trainer NPC to level up when you have enough XP. Leveling grants stat points and may unlock new spells or skills."),
+        HelpEntry("Trainers", "Visit a trainer NPC to level up when you have enough XP. Leveling grants stat points and may unlock new spells or skills.", icon = MudIcons.Trainer),
         HelpEntry("Spending CP", "Class Points (CP) are earned on level-up. Spend them at trainers to improve your abilities.")
     )),
-    HelpSection("\u2692", "Crafting", listOf(
-        HelpEntry("Crafter NPCs", "Look for crafter NPCs in town. Tap their sprite to open the crafting panel."),
+    HelpSection(MudIcons.Crafter, "Crafting", listOf(
+        HelpEntry("Crafter NPCs", "Look for crafter NPCs in town. Tap their sprite to open the crafting panel.", icon = MudIcons.Crafter),
         HelpEntry("Recipes", "The crafter shows available recipes. Each recipe requires specific materials and produces a specific item."),
         HelpEntry("Materials", "Gather crafting materials by defeating monsters or buying from vendors. Check a recipe\u2019s requirements to see what you need."),
         HelpEntry("Crafting an Item", "Select a recipe, ensure you have the required materials in your inventory, and tap Craft. The crafter produces the item instantly.")
     )),
-    HelpSection("\u2709", "Chat & Social", listOf(
+    HelpSection(MudIcons.InteractDefault, "Chat & Social", listOf(
         HelpEntry("Say", "Type in the text bar at the bottom and press Enter to speak to all players in your current room."),
         HelpEntry("Other Players", "You can see other players\u2019 sprites in the room. Their names appear below their character.")
     )),
-    HelpSection("\u2605", "Stats & Character", listOf(
+    HelpSection(MudIcons.Help, "Stats & Character", listOf(
         HelpEntry("Attributes", "Six stats govern your abilities: Strength (melee damage), Agility (dodge/speed), Intellect (spell power), Willpower (mana pool), Health (HP pool), Charm (vendor prices)."),
         HelpEntry("Classes", "Your class determines your skills, spells, and stat requirements. Warriors excel at melee, Mages at spells, Rogues at stealth, and hybrid classes blend multiple roles."),
         HelpEntry("Races", "Six races are available, each with stat modifiers. Choose a race that complements your class."),
         HelpEntry("Leveling", "Gain XP by defeating monsters. When you have enough XP, visit a trainer to level up. Each level grants stats and may unlock new abilities."),
         HelpEntry("Character Sheet", "Tap the HP/MP bars to open your full character sheet. View stats, equipment, active effects, skills, spells, and coins.")
     )),
-    HelpSection("\u2690", "Map & Exploration", listOf(
-        HelpEntry("Minimap", "The floating minimap shows nearby rooms. Rooms you\u2019ve visited are revealed; unexplored rooms remain hidden."),
+    HelpSection(MudIcons.Map, "Map & Exploration", listOf(
+        HelpEntry("Minimap", "The floating minimap shows nearby rooms. Rooms you\u2019ve visited are revealed; unexplored rooms remain hidden.", icon = MudIcons.Map),
         HelpEntry("Full Map", "Tap the map toolbar button to open a full-screen map of all discovered rooms."),
-        HelpEntry("Locked Exits", "Some exits are locked. Use the Pick Lock skill to attempt to open them. A lock icon appears on locked directions."),
+        HelpEntry("Locked Exits", "Some exits are locked. Use the Pick Lock skill to attempt to open them. A lock icon appears on locked directions.", icon = MudIcons.PickLock),
         HelpEntry("Room Features", "Some rooms have special features: treasure drops, monster spawns, magical effects, or teleporters. Icons on the room overlay indicate what\u2019s available.")
     ))
 )
@@ -229,7 +230,7 @@ fun HelpPanel(
                             .clickable(onClick = onClose),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("\u2715", color = BoneWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        CloseIcon(color = BoneWhite)
                     }
                 }
 
@@ -259,7 +260,7 @@ fun HelpPanel(
                     helpSections.forEachIndexed { index, section ->
                         val isExpanded = expandedIndex == index
                         AccordionSection(
-                            glyph = section.glyph,
+                            icon = section.icon,
                             title = section.title,
                             isExpanded = isExpanded,
                             entries = section.entries,
@@ -276,7 +277,7 @@ fun HelpPanel(
 
 @Composable
 private fun AccordionSection(
-    glyph: String,
+    icon: org.jetbrains.compose.resources.DrawableResource,
     title: String,
     isExpanded: Boolean,
     entries: List<HelpEntry>,
@@ -300,13 +301,13 @@ private fun AccordionSection(
                 }
                 .clickable(onClick = onClick)
                 .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = glyph,
-                color = TorchAmber,
-                fontSize = 14.sp,
-                modifier = Modifier.width(22.dp)
+            Image(
+                painter = painterResource(icon),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
             )
             Text(
                 text = title,
@@ -315,11 +316,7 @@ private fun AccordionSection(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
-            Text(
-                text = if (isExpanded) "\u25BC" else "\u25B6",
-                color = AshGray,
-                fontSize = 11.sp
-            )
+            if (isExpanded) CollapseArrow(color = AshGray) else ExpandArrow(color = AshGray)
         }
 
         // Expandable body
@@ -337,12 +334,24 @@ private fun AccordionSection(
             ) {
                 entries.forEach { entry ->
                     Column {
-                        Text(
-                            text = entry.heading,
-                            color = TorchAmber,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (entry.icon != null) {
+                                Image(
+                                    painter = painterResource(entry.icon),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Text(
+                                text = entry.heading,
+                                color = TorchAmber,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = entry.body,

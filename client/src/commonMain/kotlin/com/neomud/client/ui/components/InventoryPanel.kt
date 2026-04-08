@@ -170,7 +170,7 @@ fun InventoryPanel(
                             .clickable(onClick = onClose),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("\u2715", color = BoneWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        CloseIcon(color = BoneWhite)
                     }
                 }
 
