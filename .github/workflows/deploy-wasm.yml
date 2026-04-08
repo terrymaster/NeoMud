@@ -1,0 +1,37 @@
+name: Deploy WASM Client to Staging
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'client/**'
+      - 'shared/**'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build WASM client
+        run: ./gradlew :client:wasmJsBrowserDistribution
+
+      - name: Deploy to staging
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "client/build/dist/wasmJs/productionExecutable/*"
+          target: /srv/neomud-web-stage/client/
+          strip_components: 5
