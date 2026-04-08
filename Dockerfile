@@ -46,7 +46,7 @@ ENV NEOMUD_DB=/data/neomud.db
 ENV NEOMUD_ADMINS=
 
 # Health check
-HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
   CMD wget -q --spider http://localhost:8080/health || exit 1
 
 # Run as non-root
