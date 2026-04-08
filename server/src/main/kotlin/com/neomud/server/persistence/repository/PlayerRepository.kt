@@ -36,6 +36,19 @@ class PlayerRepository {
         }
     }
 
+    /** Check if a username and character name are available for registration. */
+    fun checkNameAvailability(username: String, characterName: String): Pair<Boolean, Boolean> {
+        return transaction {
+            val usernameExists = PlayersTable.selectAll()
+                .where { PlayersTable.username eq username }
+                .count() > 0
+            val characterNameExists = PlayersTable.selectAll()
+                .where { PlayersTable.characterName eq characterName }
+                .count() > 0
+            Pair(!usernameExists, !characterNameExists)
+        }
+    }
+
     fun createPlayer(
         username: String,
         password: String,

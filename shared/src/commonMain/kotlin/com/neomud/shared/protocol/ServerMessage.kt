@@ -19,6 +19,13 @@ sealed class ServerMessage {
     @SerialName("auth_error")
     data class AuthError(val reason: String) : ServerMessage()
 
+    @Serializable
+    @SerialName("name_check_result")
+    data class NameCheckResult(
+        val usernameAvailable: Boolean,
+        val characterNameAvailable: Boolean
+    ) : ServerMessage()
+
     // Room
     @Serializable
     @SerialName("room_info")

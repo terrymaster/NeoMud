@@ -139,6 +139,7 @@ class CommandProcessor(
             // Auth and read-only commands don't need the game state lock
             is ClientMessage.Register -> handleRegister(session, message)
             is ClientMessage.Login -> handleLogin(session, message)
+            is ClientMessage.CheckName -> handleCheckName(session, message)
             is ClientMessage.Ping -> session.send(ServerMessage.Pong)
             is ClientMessage.ClientHello -> {
                 session.clientProtocolVersion = message.protocolVersion
@@ -275,6 +276,13 @@ class CommandProcessor(
             }
             else -> {} // Register, Login, Ping already handled in process()
         }
+    }
+
+    private suspend fun handleCheckName(session: PlayerSession, msg: ClientMessage.CheckName) {
+        val (usernameAvailable, characterNameAvailable) = playerRepository.checkNameAvailability(
+            msg.username, msg.characterName
+        )
+        session.send(ServerMessage.NameCheckResult(usernameAvailable, characterNameAvailable))
     }
 
     private suspend fun handleRegister(session: PlayerSession, msg: ClientMessage.Register) {

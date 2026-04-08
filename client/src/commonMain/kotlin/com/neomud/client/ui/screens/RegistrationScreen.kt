@@ -1,5 +1,6 @@
 package com.neomud.client.ui.screens
 
+import com.neomud.client.viewmodel.AuthViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -97,7 +98,10 @@ fun RegistrationScreen(
     availableClasses: List<CharacterClassDef>,
     availableRaces: List<RaceDef> = emptyList(),
     serverBaseUrl: String = "",
+    nameAvailability: AuthViewModel.NameAvailability? = null,
     onRegister: (String, String, String, String, String, String, Stats) -> Unit,
+    onCheckName: (String, String) -> Unit = { _, _ -> },
+    onClearNameCheck: () -> Unit = {},
     onBack: () -> Unit,
     onClearError: () -> Unit
 ) {
@@ -209,9 +213,10 @@ fun RegistrationScreen(
                             username = username,
                             password = password,
                             characterName = characterName,
-                            onUsernameChange = { username = it },
+                            nameAvailability = nameAvailability,
+                            onUsernameChange = { username = it; onClearNameCheck() },
                             onPasswordChange = { password = it },
-                            onCharacterNameChange = { characterName = it }
+                            onCharacterNameChange = { characterName = it; onClearNameCheck() }
                         )
                         1 -> GenderSelectionStep(
                             selectedGender = selectedGender,
@@ -300,8 +305,22 @@ fun RegistrationScreen(
                             else -> true
                         }
                         StoneNavButton(
-                            text = "Next",
-                            onClick = { currentStep++ },
+                            text = if (currentStep == 0 && nameAvailability == null && username.isNotBlank()) "Check & Next" else "Next",
+                            onClick = {
+                                if (currentStep == 0) {
+                                    // Check name availability before advancing
+                                    if (nameAvailability == null) {
+                                        onCheckName(username, characterName)
+                                        return@StoneNavButton
+                                    }
+                                    if (nameAvailability.usernameAvailable && nameAvailability.characterNameAvailable) {
+                                        currentStep++
+                                    }
+                                    // If names aren't available, the feedback shows inline — don't advance
+                                } else {
+                                    currentStep++
+                                }
+                            },
                             modifier = Modifier.weight(1f),
                             enabled = canAdvance,
                             style = ButtonStyle.GOLD
@@ -646,6 +665,7 @@ private fun CredentialsStep(
     username: String,
     password: String,
     characterName: String,
+    nameAvailability: AuthViewModel.NameAvailability? = null,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onCharacterNameChange: (String) -> Unit
@@ -670,6 +690,15 @@ private fun CredentialsStep(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
         )
+        // Username availability feedback
+        if (nameAvailability != null && username.isNotBlank()) {
+            Text(
+                text = if (nameAvailability.usernameAvailable) "Username available" else "Username already taken",
+                fontSize = 11.sp,
+                color = if (nameAvailability.usernameAvailable) VerdantUpgrade else CrimsonError,
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 2.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(8.dp))
 
         StoneTextField(
@@ -689,6 +718,15 @@ private fun CredentialsStep(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
         )
+        // Character name availability feedback
+        if (nameAvailability != null && characterName.isNotBlank()) {
+            Text(
+                text = if (nameAvailability.characterNameAvailable) "Character name available" else "Character name already taken",
+                fontSize = 11.sp,
+                color = if (nameAvailability.characterNameAvailable) VerdantUpgrade else CrimsonError,
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 2.dp)
+            )
+        }
     }
 }
 

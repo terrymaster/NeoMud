@@ -474,6 +474,7 @@ class GameViewModel(
             is ServerMessage.Pong -> { /* ignore */ }
             is ServerMessage.RegisterOk -> { /* handled by AuthViewModel */ }
             is ServerMessage.AuthError -> { /* handled by AuthViewModel */ }
+            is ServerMessage.NameCheckResult -> { /* handled by AuthViewModel */ }
             is ServerMessage.ServerHello -> { /* handled by AuthViewModel */ }
             is ServerMessage.ConnectionRejected -> { /* handled by AuthViewModel */ }
             is ServerMessage.ClassCatalogSync -> {

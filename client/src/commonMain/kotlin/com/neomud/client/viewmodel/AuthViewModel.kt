@@ -64,6 +64,10 @@ class AuthViewModel(
     private val _updateRequired = MutableStateFlow<UpdateInfo?>(null)
     val updateRequired: StateFlow<UpdateInfo?> = _updateRequired
 
+    data class NameAvailability(val usernameAvailable: Boolean, val characterNameAvailable: Boolean)
+    private val _nameAvailability = MutableStateFlow<NameAvailability?>(null)
+    val nameAvailability: StateFlow<NameAvailability?> = _nameAvailability
+
     private var _serverHost: String = ""
     private var _serverPort: Int = 0
     private var _useTls: Boolean = false
@@ -116,6 +120,12 @@ class AuthViewModel(
                             pendingLoginUsername = null
                             pendingLoginPassword = null
                             _authState.value = AuthState.Error(message.reason)
+                        }
+                        is ServerMessage.NameCheckResult -> {
+                            _nameAvailability.value = NameAvailability(
+                                message.usernameAvailable,
+                                message.characterNameAvailable
+                            )
                         }
                         is ServerMessage.ClassCatalogSync -> {
                             _availableClasses.value = message.classes
@@ -201,6 +211,17 @@ class AuthViewModel(
                 _authState.value = AuthState.Error("Not connected to server")
             }
         }
+    }
+
+    fun checkName(username: String, characterName: String) {
+        _nameAvailability.value = null // reset while checking
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.CheckName(username, characterName))
+        }
+    }
+
+    fun clearNameCheck() {
+        _nameAvailability.value = null
     }
 
     fun clearError() {

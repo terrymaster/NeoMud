@@ -27,6 +27,13 @@ sealed class ClientMessage {
     ) : ClientMessage()
 
     @Serializable
+    @SerialName("check_name")
+    data class CheckName(
+        val username: String,
+        val characterName: String
+    ) : ClientMessage()
+
+    @Serializable
     @SerialName("move")
     data class Move(
         val direction: Direction

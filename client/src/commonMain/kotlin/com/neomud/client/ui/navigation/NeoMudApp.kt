@@ -211,14 +211,20 @@ fun NeoMudApp(
         }
 
         composable("register") {
+            val nameAvailability by authViewModel.nameAvailability.collectAsState()
             RegistrationScreen(
                 authState = authState,
                 availableClasses = availableClasses,
                 availableRaces = availableRaces,
                 serverBaseUrl = authViewModel.serverBaseUrl,
+                nameAvailability = nameAvailability,
                 onRegister = { username, password, characterName, characterClass, race, gender, allocatedStats ->
                     authViewModel.register(username, password, characterName, characterClass, race, gender, allocatedStats)
                 },
+                onCheckName = { username, characterName ->
+                    authViewModel.checkName(username, characterName)
+                },
+                onClearNameCheck = { authViewModel.clearNameCheck() },
                 onBack = { navController.popBackStack() },
                 onClearError = { authViewModel.clearError() }
             )
