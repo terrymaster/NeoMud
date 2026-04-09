@@ -209,6 +209,17 @@ fun checkPortAvailable(port: Int): Boolean {
 }
 
 fun main(args: Array<String>) {
+    // Initialize Sentry error tracking
+    val sentryDsn = System.getenv("SENTRY_DSN")
+    if (!sentryDsn.isNullOrBlank()) {
+        io.sentry.Sentry.init { options ->
+            options.dsn = sentryDsn
+            options.environment = System.getenv("NODE_ENV") ?: "development"
+            options.tracesSampleRate = 0.2
+        }
+        logger.info("Sentry error tracking initialized")
+    }
+
     val config = parseArgs(args)
 
     if (!checkPortAvailable(config.port)) {

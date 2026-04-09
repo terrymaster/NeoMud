@@ -296,6 +296,8 @@
             if (el) { el.classList.add('fade-out'); setTimeout(function() { el.remove(); }, 500); }
         }, 20000);
     </script>
+    <!-- Sentry error tracking (CDN loader with baked-in DSN, catches all JS errors) -->
+    <script src="https://js.sentry-cdn.com/ed49ac2687b7b9cc5c0cd45c2bf1e1f1.min.js" crossorigin="anonymous"></script>
     <script src="neomud-audio.js"></script>
     <script src="neomud.js"></script>
 </body>

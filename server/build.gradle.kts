@@ -33,6 +33,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.logback.classic)
     implementation(libs.bcrypt)
+    implementation("io.sentry:sentry:8.13.2")
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.ktor.server.test.host)
