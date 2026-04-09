@@ -60,7 +60,8 @@ class PlayerRepository {
         spawnRoomId: RoomId,
         classCatalog: ClassCatalog,
         raceCatalog: RaceCatalog?,
-        pcSpriteCatalog: PcSpriteCatalog? = null
+        pcSpriteCatalog: PcSpriteCatalog? = null,
+        platformUserId: String? = null
     ): Result<Player> = runCatching {
         transaction {
             val existing = PlayersTable.selectAll().where {
@@ -144,6 +145,9 @@ class PlayerRepository {
                 it[xpToNextLevel] = initialXpToNext
                 it[unspentCp] = 0
                 it[totalCpEarned] = StatAllocator.CP_POOL
+                if (platformUserId != null) {
+                    it[PlayersTable.platformUserId] = platformUserId
+                }
             }
 
             Player(
@@ -296,5 +300,58 @@ class PlayerRepository {
                 }
             }
         }
+    }
+
+    // ─── Platform auth methods ──────────────────────────────
+
+    /** Find a player by their Platform user ID. Returns null if no character on this world. */
+    fun findByPlatformUserId(platformUserId: String): Player? = transaction {
+        PlayersTable.selectAll().where {
+            PlayersTable.platformUserId eq platformUserId
+        }.firstOrNull()?.let { row ->
+            rowToPlayer(row)
+        }
+    }
+
+    /** Load a player by Platform user ID without password check. */
+    fun authenticateByPlatformId(platformUserId: String): Result<Player> = runCatching {
+        transaction {
+            val row = PlayersTable.selectAll().where {
+                PlayersTable.platformUserId eq platformUserId
+            }.firstOrNull() ?: error("No character linked to this platform account")
+            rowToPlayer(row)
+        }
+    }
+
+    private fun rowToPlayer(row: org.jetbrains.exposed.v1.core.ResultRow): Player {
+        val stats = Stats(
+            strength = row[PlayersTable.strength],
+            agility = row[PlayersTable.agility],
+            intellect = row[PlayersTable.intellect],
+            willpower = row[PlayersTable.willpower],
+            health = row[PlayersTable.health],
+            charm = row[PlayersTable.charm]
+        )
+        return Player(
+            name = row[PlayersTable.characterName],
+            characterClass = row[PlayersTable.characterClass],
+            stats = stats,
+            currentHp = row[PlayersTable.currentHp],
+            maxHp = row[PlayersTable.maxHp],
+            currentMp = row[PlayersTable.currentMp],
+            maxMp = row[PlayersTable.maxMp],
+            level = row[PlayersTable.level],
+            currentRoomId = row[PlayersTable.currentRoomId],
+            race = row[PlayersTable.race],
+            gender = row[PlayersTable.gender],
+            currentXp = row[PlayersTable.currentXp],
+            xpToNextLevel = row[PlayersTable.xpToNextLevel],
+            unspentCp = row[PlayersTable.unspentCp],
+            totalCpEarned = row[PlayersTable.totalCpEarned],
+            isAdmin = row[PlayersTable.isAdmin],
+            imagePrompt = row[PlayersTable.imagePrompt],
+            imageStyle = row[PlayersTable.imageStyle],
+            imageNegativePrompt = row[PlayersTable.imageNegativePrompt]
+        )
     }
 }

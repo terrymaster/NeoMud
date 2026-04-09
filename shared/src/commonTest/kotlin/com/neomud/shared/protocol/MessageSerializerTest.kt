@@ -3,6 +3,7 @@ package com.neomud.shared.protocol
 import com.neomud.shared.model.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MessageSerializerTest {
@@ -1128,5 +1129,78 @@ class MessageSerializerTest {
         val json = MessageSerializer.encodeClientMessage(original)
         val decoded = MessageSerializer.decodeClientMessage(json)
         assertEquals(original, decoded)
+    }
+
+    // ─── Platform auth messages ─────────────────────────────
+
+    @Test
+    fun clientHelloWithPlatformToken() {
+        val original = ClientMessage.ClientHello(
+            clientVersion = "0.1.0.0",
+            protocolVersion = 1,
+            platformToken = "eyJhbGciOiJSUzI1NiJ9.test"
+        )
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json) as ClientMessage.ClientHello
+        assertEquals("eyJhbGciOiJSUzI1NiJ9.test", decoded.platformToken)
+    }
+
+    @Test
+    fun clientHelloWithoutPlatformToken() {
+        val original = ClientMessage.ClientHello(
+            clientVersion = "0.1.0.0",
+            protocolVersion = 1
+        )
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json) as ClientMessage.ClientHello
+        assertNull(decoded.platformToken)
+    }
+
+    @Test
+    fun platformAuthOkReturningPlayer() {
+        val original = ServerMessage.PlatformAuthOk(
+            characterName = "Aragorn",
+            platformUserId = "cltest123456789012345",
+            needsCharacterCreation = false
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json) as ServerMessage.PlatformAuthOk
+        assertEquals("Aragorn", decoded.characterName)
+        assertEquals(false, decoded.needsCharacterCreation)
+    }
+
+    @Test
+    fun platformAuthOkNewPlayer() {
+        val original = ServerMessage.PlatformAuthOk(
+            characterName = null,
+            platformUserId = "cltest123456789012345",
+            needsCharacterCreation = true
+        )
+        val json = MessageSerializer.encodeServerMessage(original)
+        val decoded = MessageSerializer.decodeServerMessage(json) as ServerMessage.PlatformAuthOk
+        assertNull(decoded.characterName)
+        assertEquals(true, decoded.needsCharacterCreation)
+    }
+
+    @Test
+    fun platformLoginRoundTrip() {
+        val original = ClientMessage.PlatformLogin
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json)
+        assertEquals(original, decoded)
+    }
+
+    @Test
+    fun platformRegisterRoundTrip() {
+        val original = ClientMessage.PlatformRegister(
+            characterName = "TestHero",
+            characterClass = "WARRIOR",
+            race = "HUMAN",
+            gender = "male"
+        )
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json) as ClientMessage.PlatformRegister
+        assertEquals("TestHero", decoded.characterName)
+        assertEquals("WARRIOR", decoded.characterClass)
     }
 }

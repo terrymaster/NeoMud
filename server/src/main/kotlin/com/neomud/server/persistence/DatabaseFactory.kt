@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("DatabaseFactory")
 
-private const val SCHEMA_VERSION = 7 // Added image_style and image_negative_prompt columns
+private const val SCHEMA_VERSION = 8 // Added platform_user_id for unified auth
 
 object DatabaseFactory {
     fun init(jdbcUrl: String = "jdbc:sqlite:neomud.db") {

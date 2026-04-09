@@ -37,6 +37,7 @@ import com.neomud.server.world.RaceCatalog
 import com.neomud.server.world.SkillCatalog
 import com.neomud.server.world.PcSpriteCatalog
 import com.neomud.server.world.SpellCatalog
+import com.neomud.server.auth.PlatformTokenVerifier
 import com.neomud.server.world.WorldGraph
 import com.neomud.shared.NeoMudVersion
 import com.neomud.shared.protocol.ClientMessage
@@ -72,7 +73,8 @@ class CommandProcessor(
     private val adminUsernames: Set<String> = emptySet(),
     private val movementTrailManager: MovementTrailManager? = null,
     private val pcSpriteCatalog: PcSpriteCatalog? = null,
-    private val tutorialService: TutorialService? = null
+    private val tutorialService: TutorialService? = null,
+    private val platformTokenVerifier: PlatformTokenVerifier? = null
 ) {
     private val logger = LoggerFactory.getLogger(CommandProcessor::class.java)
 
@@ -158,7 +160,28 @@ class CommandProcessor(
                     )
                     return
                 }
+
+                // Platform token verification — if present and valid, store claims for auto-login
+                val token = message.platformToken
+                if (token != null && platformTokenVerifier?.isEnabled == true) {
+                    val claims = platformTokenVerifier.verify(token)
+                    if (claims != null) {
+                        session.platformUserId = claims.userId
+                        session.platformRole = claims.role
+                        val existingPlayer = playerRepository.findByPlatformUserId(claims.userId)
+                        session.send(ServerMessage.PlatformAuthOk(
+                            characterName = existingPlayer?.name,
+                            platformUserId = claims.userId,
+                            needsCharacterCreation = existingPlayer == null
+                        ))
+                        logger.info("Platform auth verified for userId=${claims.userId}, character=${existingPlayer?.name ?: "(new)"}")
+                    } else {
+                        logger.warn("Platform token invalid, falling back to password auth")
+                    }
+                }
             }
+            is ClientMessage.PlatformLogin -> handlePlatformLogin(session)
+            is ClientMessage.PlatformRegister -> handlePlatformRegister(session, message)
             // All state-mutating commands acquire the global mutex
             else -> GameStateLock.withLock { processLocked(session, message) }
         }
@@ -448,6 +471,157 @@ class CommandProcessor(
             onFailure = {
                 recordFailedLogin(msg.username)
                 session.send(ServerMessage.AuthError(it.message ?: "Login failed"))
+            }
+        )
+    }
+
+    /** Shared post-authentication setup: load discovery, send LoginOk, room info, inventory. */
+    private suspend fun completeLogin(session: PlayerSession, player: com.neomud.shared.model.Player, username: String) {
+        session.player = player
+        session.playerName = player.name
+        session.currentRoomId = player.currentRoomId
+
+        val discovery = discoveryRepository.loadPlayerDiscovery(player.name)
+        session.visitedRooms.addAll(discovery.visitedRooms)
+        session.discoveredHiddenExits.addAll(discovery.discoveredHiddenExits)
+        session.discoveredLockedExits.addAll(discovery.discoveredLockedExits)
+        session.discoveredInteractables.addAll(discovery.discoveredInteractables)
+        session.seenTutorials.addAll(discovery.tutorials)
+        session.visitedRooms.add(player.currentRoomId)
+
+        val added = sessionManager.addSession(player.name, session, username = username)
+        if (!added) {
+            session.send(ServerMessage.AuthError("Account already logged in"))
+            return
+        }
+        session.combatGraceTicks = GameConfig.Combat.GRACE_TICKS
+
+        session.send(ServerMessage.LoginOk(player))
+
+        if (tutorialService != null) {
+            tutorialService.trySend(session, "welcome",
+                contentOverride = "Greetings, ${player.name}!\n\n" +
+                    "Use the directional pad to move between rooms. " +
+                    "Tap hostile NPCs to select a target, then toggle attack mode (crossed swords) to fight.\n\n" +
+                    "Open the Adventurer's Tome (\u2753) in the toolbar for a full guide to all game systems.\n\n" +
+                    "May your blade stay sharp and your mana never run dry!"
+            )
+        } else if ("welcome" !in session.seenTutorials) {
+            session.seenTutorials.add("welcome")
+            discoveryRepository.markTutorialSeen(player.name, "welcome")
+            session.send(ServerMessage.Tutorial(
+                key = "welcome",
+                title = "Welcome to NeoMud!",
+                content = "Greetings, ${player.name}!\n\nUse the directional pad to move between rooms. " +
+                    "Tap hostile NPCs to select a target, then toggle attack mode (crossed swords) to fight.\n\n" +
+                    "Open the Adventurer's Tome (\u2753) in the toolbar for a full guide to all game systems.\n\n" +
+                    "May your blade stay sharp and your mana never run dry!"
+            ))
+        }
+
+        val room = worldGraph.getRoom(player.currentRoomId)
+        if (room != null) {
+            val playersInRoom = sessionManager.getVisiblePlayerInfosInRoom(player.currentRoomId)
+                .filter { it.name != player.name }
+            val npcsInRoom = npcManager.getNpcsInRoom(player.currentRoomId)
+            session.send(ServerMessage.RoomInfo(room, playersInRoom, npcsInRoom))
+            val mapRooms = MapRoomFilter.enrichForPlayer(
+                worldGraph.getRoomsNear(player.currentRoomId), session, worldGraph, sessionManager, npcManager
+            )
+            session.send(ServerMessage.MapData(mapRooms, player.currentRoomId, session.visitedRooms.toSet()))
+            sessionManager.broadcastToRoom(
+                player.currentRoomId,
+                ServerMessage.PlayerEntered(player.name, player.currentRoomId, session.toPlayerInfo()),
+                exclude = player.name
+            )
+        }
+
+        inventoryCommand.sendInventoryUpdate(session)
+        val groundItems = roomItemManager.getGroundItems(player.currentRoomId)
+        val groundCoins = roomItemManager.getGroundCoins(player.currentRoomId)
+        session.send(ServerMessage.RoomItemsUpdate(groundItems, groundCoins))
+
+        logger.info("Player logged in: ${player.name}${if (player.isAdmin) " [ADMIN]" else ""}")
+    }
+
+    // ─── Platform auth handlers ─────────────────────────────
+
+    private suspend fun handlePlatformLogin(session: PlayerSession) {
+        if (session.isAuthenticated) {
+            session.send(ServerMessage.AuthError("Already logged in"))
+            return
+        }
+        val platformUserId = session.platformUserId
+        if (platformUserId == null) {
+            session.send(ServerMessage.AuthError("No platform session — use username/password login"))
+            return
+        }
+
+        val result = playerRepository.authenticateByPlatformId(platformUserId)
+        result.fold(
+            onSuccess = { player ->
+                val internalUsername = "platform_$platformUserId"
+                if (sessionManager.isUsernameLoggedIn(internalUsername)) {
+                    session.send(ServerMessage.AuthError("Account already logged in"))
+                    return
+                }
+                completeLogin(session, player, username = internalUsername)
+            },
+            onFailure = {
+                session.send(ServerMessage.AuthError(it.message ?: "No character found for this platform account"))
+            }
+        )
+    }
+
+    private suspend fun handlePlatformRegister(session: PlayerSession, msg: ClientMessage.PlatformRegister) {
+        if (session.isAuthenticated) {
+            session.send(ServerMessage.AuthError("Already logged in"))
+            return
+        }
+        val platformUserId = session.platformUserId
+        if (platformUserId == null) {
+            session.send(ServerMessage.AuthError("No platform session — use standard registration"))
+            return
+        }
+
+        // Check for existing character on this world
+        if (playerRepository.findByPlatformUserId(platformUserId) != null) {
+            session.send(ServerMessage.AuthError("You already have a character on this world"))
+            return
+        }
+
+        if (!Regex("^[a-zA-Z][a-zA-Z0-9_ ]{1,19}$").matches(msg.characterName)) {
+            session.send(ServerMessage.AuthError("Character name must be 2-20 characters, start with a letter."))
+            return
+        }
+
+        // Internal username/password — player authenticates via platform token, not credentials
+        val internalUsername = "platform_$platformUserId"
+        val internalPassword = java.util.UUID.randomUUID().toString()
+
+        val result = playerRepository.createPlayer(
+            username = internalUsername,
+            password = internalPassword,
+            characterName = msg.characterName,
+            characterClass = msg.characterClass,
+            race = msg.race,
+            gender = msg.gender,
+            allocatedStats = msg.allocatedStats,
+            spawnRoomId = worldGraph.defaultSpawnRoom,
+            classCatalog = classCatalog,
+            raceCatalog = raceCatalog,
+            pcSpriteCatalog = pcSpriteCatalog,
+            platformUserId = platformUserId
+        )
+
+        result.fold(
+            onSuccess = { player ->
+                session.send(ServerMessage.RegisterOk)
+                // Auto-login after registration
+                completeLogin(session, player, username = internalUsername)
+            },
+            onFailure = {
+                session.send(ServerMessage.AuthError(it.message ?: "Registration failed"))
             }
         )
     }

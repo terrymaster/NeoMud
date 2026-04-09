@@ -36,6 +36,7 @@ object PlayersTable : Table("players") {
     val imagePrompt = text("image_prompt").default("")
     val imageStyle = text("image_style").default("")
     val imageNegativePrompt = text("image_negative_prompt").default("")
+    val platformUserId = varchar("platform_user_id", 64).nullable().default(null)
 
     override val primaryKey = PrimaryKey(id)
 }

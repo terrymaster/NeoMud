@@ -206,7 +206,8 @@ fun NeoMudApp(
                     authViewModel.clearError()
                     navController.navigate("register")
                 },
-                onClearError = { authViewModel.clearError() }
+                onClearError = { authViewModel.clearError() },
+                onPlatformLogin = { authViewModel.platformLogin() }
             )
         }
 

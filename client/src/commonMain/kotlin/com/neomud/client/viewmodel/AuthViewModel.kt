@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.neomud.client.network.ConnectionState
 import com.neomud.client.network.GameConnection
 import com.neomud.client.platform.PlatformLogger
+import com.neomud.client.platform.serverConfig
 import com.neomud.client.network.WebSocketClient
 import com.neomud.shared.NeoMudVersion
 import com.neomud.shared.model.CharacterClassDef
@@ -163,10 +164,20 @@ class AuthViewModel(
                                 return@collect
                             }
 
+                            val token = serverConfig.platformToken.takeIf { it.isNotEmpty() }
                             wsClient.send(ClientMessage.ClientHello(
                                 clientVersion = NeoMudVersion.ENGINE_VERSION,
-                                protocolVersion = NeoMudVersion.PROTOCOL_VERSION
+                                protocolVersion = NeoMudVersion.PROTOCOL_VERSION,
+                                platformToken = token
                             ))
+                        }
+                        is ServerMessage.PlatformAuthOk -> {
+                            val charName = message.characterName
+                            if (!message.needsCharacterCreation && charName != null) {
+                                _authState.value = AuthState.PlatformReady(charName, message.platformUserId)
+                            } else {
+                                _authState.value = AuthState.PlatformNeedsCharacter(message.platformUserId)
+                            }
                         }
                         is ServerMessage.ConnectionRejected -> {
                             _updateRequired.value = UpdateInfo(
@@ -232,6 +243,28 @@ class AuthViewModel(
         _authState.value = AuthState.Idle
     }
 
+    /** Auto-login with verified platform session (returning player). */
+    fun platformLogin() {
+        _authState.value = AuthState.Loading
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.PlatformLogin)
+        }
+    }
+
+    /** Create character for platform user (first time on this world). */
+    fun platformRegister(characterName: String, characterClass: String, race: String, gender: String, allocatedStats: Stats) {
+        _authState.value = AuthState.Loading
+        viewModelScope.launch {
+            wsClient.send(ClientMessage.PlatformRegister(
+                characterName = characterName,
+                characterClass = characterClass,
+                race = race,
+                gender = gender,
+                allocatedStats = allocatedStats
+            ))
+        }
+    }
+
     fun logout() {
         wsClient.disconnect()
         _authState.value = AuthState.Idle
@@ -249,6 +282,10 @@ sealed class AuthState {
     data object Registered : AuthState()
     data class LoggedIn(val player: Player) : AuthState()
     data class Error(val message: String) : AuthState()
+    /** Platform token verified, returning player — show "Continue as [character]" */
+    data class PlatformReady(val characterName: String, val platformUserId: String) : AuthState()
+    /** Platform token verified, no character on this world — show character creation */
+    data class PlatformNeedsCharacter(val platformUserId: String) : AuthState()
 }
 
 data class ServerInfo(

@@ -9,6 +9,8 @@ data class ServerConfig(
     val platformApiUrl: String,
     /** WebSocket path — defaults to /game, overridden by marketplace endpoint (e.g. /worlds/{id}/game). */
     val serverPath: String = "/game",
+    /** Platform JWT for auto-authentication in game servers (empty = use password auth). */
+    val platformToken: String = "",
     /** When true, skip the world browser and go directly to login (marketplace-launched). */
     val skipMarketplace: Boolean = false,
     /** World metadata from marketplace (only set when skipMarketplace=true). */

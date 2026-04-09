@@ -302,12 +302,20 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
         logger.info("Admin usernames: $adminUsernames")
     }
 
+    val platformVerifier = com.neomud.server.auth.PlatformTokenVerifier(
+        jwksUrl = System.getenv("PLATFORM_JWKS_URL"),
+        devSecret = System.getenv("PLATFORM_JWT_SECRET")
+    )
+    if (platformVerifier.isEnabled) {
+        logger.info("Platform JWT verification enabled")
+    }
+
     val commandProcessor = CommandProcessor(
         worldGraph, sessionManager, npcManager, playerRepository,
         classCatalog, itemCatalog, skillCatalog, raceCatalog, inventoryCommand, pickupCommand, roomItemManager,
         trainerCommand, spellCommand, spellCatalog, vendorCommand, lootService, lootTableCatalog,
         inventoryRepository, coinRepository, discoveryRepository, craftCommand, adminUsernames, movementTrailManager,
-        pcSpriteCatalog, tutorialService
+        pcSpriteCatalog, tutorialService, platformVerifier
     )
     val gameLoop = GameLoop(sessionManager, npcManager, combatManager, worldGraph, lootService, lootTableCatalog, roomItemManager, playerRepository, skillCatalog, classCatalog, itemCatalog, inventoryRepository, coinRepository, movementTrailManager, spellCommand, spellCatalog, tutorialService)
     commandProcessor.setGameLoop(gameLoop)

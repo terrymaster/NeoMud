@@ -33,6 +33,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.logback.classic)
     implementation(libs.bcrypt)
+    implementation(libs.nimbus.jose.jwt)
     implementation("io.sentry:sentry:8.13.2")
 
     testImplementation(libs.kotlin.test)

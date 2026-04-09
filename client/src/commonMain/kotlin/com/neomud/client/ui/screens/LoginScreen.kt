@@ -89,7 +89,8 @@ fun LoginScreen(
     onConnect: (String, Int) -> Unit,
     onLogin: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit,
-    onClearError: () -> Unit
+    onClearError: () -> Unit,
+    onPlatformLogin: () -> Unit = {}
 ) {
     var host by remember { mutableStateOf(serverConfig.defaultHost) }
     var port by remember { mutableStateOf(serverConfig.defaultPort.toString()) }
@@ -247,64 +248,112 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Connecting...", fontSize = 13.sp, color = BoneWhite)
-                } else {
-                    // ─── Authentication Phase ───
+                } else if (authState is AuthState.PlatformReady) {
+                    // ─── Platform Auto-Login ───
                     Text(
-                        "Login",
+                        "Welcome Back",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TorchAmber
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Your character awaits.",
+                        fontSize = 13.sp,
+                        color = BoneWhite,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    StoneActionButton(
+                        text = "Continue as ${authState.characterName}",
+                        onClick = onPlatformLogin
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "or sign in with a different account",
+                        fontSize = 11.sp,
+                        color = AshGray,
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    // ─── Authentication Phase (password or platform-needs-character) ───
+                    val isPlatformNewPlayer = authState is AuthState.PlatformNeedsCharacter
+
+                    Text(
+                        if (isPlatformNewPlayer) "Create Character" else "Login",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = TorchAmber
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    StoneTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = "Username",
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    if (!isPlatformNewPlayer) {
+                        // Standard username/password login
+                        StoneTextField(
+                            value = username,
+                            onValueChange = { username = it },
+                            label = "Username",
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    StoneTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = "Password",
-                        isPassword = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = {
-                            focusManager.clearFocus()
-                            if (username.isNotBlank() && password.isNotBlank()) {
-                                onLogin(username, password)
+                        StoneTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = "Password",
+                            isPassword = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = {
+                                focusManager.clearFocus()
+                                if (username.isNotBlank() && password.isNotBlank()) {
+                                    onLogin(username, password)
+                                }
+                            })
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        StoneActionButton(
+                            text = "Login",
+                            onClick = { onLogin(username, password) },
+                            enabled = authState !is AuthState.Loading && username.isNotBlank() && password.isNotBlank()
+                        ) {
+                            if (authState is AuthState.Loading) {
+                                CircularProgressIndicator(
+                                    color = DeepVoid,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
-                        })
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    StoneActionButton(
-                        text = "Login",
-                        onClick = { onLogin(username, password) },
-                        enabled = authState !is AuthState.Loading && username.isNotBlank() && password.isNotBlank()
-                    ) {
-                        if (authState is AuthState.Loading) {
-                            CircularProgressIndicator(
-                                color = DeepVoid,
-                                modifier = Modifier.size(16.dp)
-                            )
                         }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Create Account link
+                        Text(
+                            text = "Create Account",
+                            fontSize = 13.sp,
+                            color = BurnishedGold,
+                            modifier = Modifier
+                                .clickable(onClick = onNavigateToRegister)
+                                .padding(vertical = 4.dp)
+                        )
+                    } else {
+                        // Platform user needs to create a character — redirect to registration
+                        Text(
+                            text = "You're signed in! Create your character to begin.",
+                            fontSize = 13.sp,
+                            color = BoneWhite,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        StoneActionButton(
+                            text = "Create Character",
+                            onClick = onNavigateToRegister
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Create Account link
-                    Text(
-                        text = "Create Account",
-                        fontSize = 13.sp,
-                        color = BurnishedGold,
-                        modifier = Modifier
-                            .clickable(onClick = onNavigateToRegister)
-                            .padding(vertical = 4.dp)
-                    )
                 }
 
                 // Error display

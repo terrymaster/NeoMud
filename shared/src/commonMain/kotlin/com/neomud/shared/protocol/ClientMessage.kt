@@ -152,6 +152,23 @@ sealed class ClientMessage {
     @SerialName("client_hello")
     data class ClientHello(
         val clientVersion: String,
-        val protocolVersion: Int
+        val protocolVersion: Int,
+        val platformToken: String? = null
+    ) : ClientMessage()
+
+    // Platform auth — auto-login with verified platform session (no credentials needed)
+    @Serializable
+    @SerialName("platform_login")
+    data object PlatformLogin : ClientMessage()
+
+    // Platform auth — create character for platform user (no username/password)
+    @Serializable
+    @SerialName("platform_register")
+    data class PlatformRegister(
+        val characterName: String,
+        val characterClass: String,
+        val race: String = "",
+        val gender: String = "neutral",
+        val allocatedStats: Stats = Stats()
     ) : ClientMessage()
 }

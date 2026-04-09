@@ -719,6 +719,8 @@ class GameViewModel(
                 // Refresh crafting menu if panel is open
                 if (_showCrafting.value) interactCrafter()
             }
+            // Handled by AuthViewModel, not GameViewModel
+            is ServerMessage.PlatformAuthOk -> {}
         }
     }
 

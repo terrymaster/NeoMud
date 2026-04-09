@@ -20,6 +20,14 @@ sealed class ServerMessage {
     data class AuthError(val reason: String) : ServerMessage()
 
     @Serializable
+    @SerialName("platform_auth_ok")
+    data class PlatformAuthOk(
+        val characterName: String? = null,
+        val platformUserId: String,
+        val needsCharacterCreation: Boolean
+    ) : ServerMessage()
+
+    @Serializable
     @SerialName("name_check_result")
     data class NameCheckResult(
         val usernameAvailable: Boolean,

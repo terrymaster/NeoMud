@@ -44,6 +44,10 @@ class PlayerSession(
     var clientProtocolVersion: Int = 1
     var clientVersion: String = ""
 
+    // Platform auth (set when ClientHello includes a valid platformToken)
+    var platformUserId: String? = null
+    var platformRole: String? = null
+
     // Tutorial tracking
     val seenTutorials: MutableSet<String> = mutableSetOf()
     var firstKillDone: Boolean = false
