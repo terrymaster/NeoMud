@@ -44,7 +44,7 @@ class PlatformTokenVerifier(
             jwsKeySelector = keySelector
             jwtClaimsSetVerifier = DefaultJWTClaimsVerifier(
                 JWTClaimsSet.Builder().issuer(issuer).build(),
-                HashSet(listOf("sub", "userId", "role", "exp", "iss"))
+                HashSet(listOf("userId", "role", "exp", "iss"))
             )
         }
     }
