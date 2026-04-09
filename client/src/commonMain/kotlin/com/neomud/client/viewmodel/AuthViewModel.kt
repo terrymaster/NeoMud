@@ -71,9 +71,12 @@ class AuthViewModel(
     private var _serverHost: String = ""
     private var _serverPort: Int = 0
     private var _useTls: Boolean = false
+    private var _serverPath: String = "/game"
     val serverBaseUrl: String get() {
         val scheme = if (_useTls) "https" else "http"
-        return "$scheme://$_serverHost:$_serverPort"
+        // Strip trailing /game to get the world-scoped base URL for assets
+        val pathPrefix = _serverPath.removeSuffix("/game")
+        return "$scheme://$_serverHost:$_serverPort$pathPrefix"
     }
 
     init {
@@ -184,6 +187,7 @@ class AuthViewModel(
         _serverHost = host
         _serverPort = port
         _useTls = useTls
+        _serverPath = path
         wsClient.connect(host, port, useTls, viewModelScope, path)
     }
 
