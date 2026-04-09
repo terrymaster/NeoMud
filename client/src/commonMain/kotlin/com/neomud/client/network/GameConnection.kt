@@ -12,7 +12,7 @@ interface GameConnection {
     val connectionState: StateFlow<ConnectionState>
     val connectionError: StateFlow<String?>
 
-    fun connect(host: String, port: Int, useTls: Boolean, scope: CoroutineScope)
+    fun connect(host: String, port: Int, useTls: Boolean, scope: CoroutineScope, path: String = "/game")
     suspend fun send(message: ClientMessage): Boolean
     fun disconnect()
 }

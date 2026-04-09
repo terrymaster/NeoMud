@@ -180,11 +180,11 @@ class AuthViewModel(
         }
     }
 
-    fun connect(host: String, port: Int, useTls: Boolean = false) {
+    fun connect(host: String, port: Int, useTls: Boolean = false, path: String = "/game") {
         _serverHost = host
         _serverPort = port
         _useTls = useTls
-        wsClient.connect(host, port, useTls, viewModelScope)
+        wsClient.connect(host, port, useTls, viewModelScope, path)
     }
 
     fun login(username: String, password: String) {

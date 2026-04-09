@@ -13,6 +13,7 @@ private fun getInjectedWorldVersion(): String = js("(window.__NEOMUD_CONFIG__ &&
 private fun getInjectedCreatorName(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.creatorName) || ''")
 private fun getInjectedCoverImageUrl(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.coverImageUrl) || ''")
 private fun getInjectedLoadingBgmUrl(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.loadingBgmUrl) || ''")
+private fun getInjectedServerPath(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.serverPath) || ''")
 
 private fun jsNavigate(url: String): Unit = js("window.location.href = url")
 
@@ -27,12 +28,14 @@ actual val serverConfig: ServerConfig = run {
 
     if (injectedHost.isNotEmpty() && injectedPort > 0) {
         // Launched from the React marketplace — connect to the selected world's server
+        val injectedPath = getInjectedServerPath()
         ServerConfig(
             defaultHost = injectedHost,
             defaultPort = injectedPort,
             useTls = getInjectedTls(),
             showServerConfig = false,
             platformApiUrl = "https://api.neomud.app/api/v1",
+            serverPath = if (injectedPath.isNotEmpty()) injectedPath else "/game",
             skipMarketplace = getInjectedSkipMarketplace(),
             worldName = getInjectedWorldName(),
             worldVersion = getInjectedWorldVersion(),

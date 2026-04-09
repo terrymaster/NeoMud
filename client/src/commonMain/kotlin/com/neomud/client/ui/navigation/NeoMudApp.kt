@@ -178,14 +178,14 @@ fun NeoMudApp(
             LaunchedEffect(parsedEndpoint) {
                 val ep = parsedEndpoint ?: return@LaunchedEffect
                 if (connectionState == ConnectionState.DISCONNECTED) {
-                    authViewModel.connect(ep.host, ep.port, ep.useTls)
+                    authViewModel.connect(ep.host, ep.port, ep.useTls, ep.path)
                 }
             }
 
             // Auto-connect when launched from marketplace with injected config (skipMarketplace)
             LaunchedEffect(serverConfig.skipMarketplace) {
                 if (serverConfig.skipMarketplace && connectionState == ConnectionState.DISCONNECTED) {
-                    authViewModel.connect(serverConfig.defaultHost, serverConfig.defaultPort, serverConfig.useTls)
+                    authViewModel.connect(serverConfig.defaultHost, serverConfig.defaultPort, serverConfig.useTls, serverConfig.serverPath)
                 }
             }
 
@@ -196,9 +196,9 @@ fun NeoMudApp(
                 onConnect = { host, port ->
                     val ep = parsedEndpoint
                     if (ep != null) {
-                        authViewModel.connect(ep.host, ep.port, ep.useTls)
+                        authViewModel.connect(ep.host, ep.port, ep.useTls, ep.path)
                     } else {
-                        authViewModel.connect(host, port, serverConfig.useTls)
+                        authViewModel.connect(host, port, serverConfig.useTls, serverConfig.serverPath)
                     }
                 },
                 onLogin = { username, password -> authViewModel.login(username, password) },

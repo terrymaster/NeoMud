@@ -83,4 +83,44 @@ class EndpointParserTest {
         assertEquals(9001, result?.port)
         assertFalse(result!!.useTls)
     }
+
+    // ─── Path parsing tests ─────────────────────────────
+
+    @Test
+    fun parsesPathFromWorldEndpoint() {
+        val result = parseServerEndpoint("wss://stage.neomud.app/worlds/cmnqrhljj000016n1f15es4rl/game")
+        assertEquals("stage.neomud.app", result?.host)
+        assertEquals(443, result?.port)
+        assertTrue(result!!.useTls)
+        assertEquals("/worlds/cmnqrhljj000016n1f15es4rl/game", result.path)
+    }
+
+    @Test
+    fun parsesSimpleGamePath() {
+        val result = parseServerEndpoint("ws://localhost:9000/game")
+        assertEquals("/game", result?.path)
+    }
+
+    @Test
+    fun defaultsPathToGameWhenNoPath() {
+        val result = parseServerEndpoint("wss://play.neomud.app")
+        assertEquals("/game", result?.path)
+    }
+
+    @Test
+    fun parsesPathWithPortAndWorldId() {
+        val result = parseServerEndpoint("wss://stage.neomud.app:443/worlds/abc123def/game")
+        assertEquals("stage.neomud.app", result?.host)
+        assertEquals(443, result?.port)
+        assertEquals("/worlds/abc123def/game", result?.path)
+    }
+
+    @Test
+    fun devEndpointKeepsSimplePath() {
+        // Dev mode uses direct port, no per-world path prefix
+        val result = parseServerEndpoint("ws://localhost:9501/game")
+        assertEquals("localhost", result?.host)
+        assertEquals(9501, result?.port)
+        assertEquals("/game", result?.path)
+    }
 }

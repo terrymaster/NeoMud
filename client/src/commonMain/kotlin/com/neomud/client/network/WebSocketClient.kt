@@ -29,18 +29,18 @@ class WebSocketClient : GameConnection {
     private val _connectionError = MutableStateFlow<String?>(null)
     override val connectionError: StateFlow<String?> = _connectionError
 
-    override fun connect(host: String, port: Int, useTls: Boolean, scope: CoroutineScope) {
+    override fun connect(host: String, port: Int, useTls: Boolean, scope: CoroutineScope, path: String) {
         connectionJob?.cancel()
         connectionJob = scope.launch(Dispatchers.Default) {
             _connectionState.value = ConnectionState.CONNECTING
             _connectionError.value = null
             try {
                 if (useTls) {
-                    client.wss(host = host, port = port, path = "/game") {
+                    client.wss(host = host, port = port, path = path) {
                         handleSession(this)
                     }
                 } else {
-                    client.webSocket(host = host, port = port, path = "/game") {
+                    client.webSocket(host = host, port = port, path = path) {
                         handleSession(this)
                     }
                 }

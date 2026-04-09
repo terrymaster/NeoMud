@@ -26,7 +26,7 @@ class FakeGameConnection : GameConnection {
 
     // ─── Call recording ──────────────────────────────────
 
-    data class ConnectCall(val host: String, val port: Int, val useTls: Boolean)
+    data class ConnectCall(val host: String, val port: Int, val useTls: Boolean, val path: String = "/game")
 
     val connectCalls = mutableListOf<ConnectCall>()
     val sentMessages = mutableListOf<ClientMessage>()
@@ -38,8 +38,8 @@ class FakeGameConnection : GameConnection {
 
     // ─── GameConnection implementation ───────────────────
 
-    override fun connect(host: String, port: Int, useTls: Boolean, scope: CoroutineScope) {
-        connectCalls.add(ConnectCall(host, port, useTls))
+    override fun connect(host: String, port: Int, useTls: Boolean, scope: CoroutineScope, path: String) {
+        connectCalls.add(ConnectCall(host, port, useTls, path))
         _connectionState.value = ConnectionState.CONNECTED
     }
 
