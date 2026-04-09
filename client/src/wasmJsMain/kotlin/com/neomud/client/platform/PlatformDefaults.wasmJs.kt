@@ -15,6 +15,7 @@ private fun getInjectedCoverImageUrl(): String = js("(window.__NEOMUD_CONFIG__ &
 private fun getInjectedLoadingBgmUrl(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.loadingBgmUrl) || ''")
 private fun getInjectedServerPath(): String = js("(window.__NEOMUD_CONFIG__ && window.__NEOMUD_CONFIG__.serverPath) || ''")
 
+private fun getHostname(): String = js("window.location.hostname || ''")
 private fun jsNavigate(url: String): Unit = js("window.location.href = url")
 
 actual fun returnToMarketplace() {
@@ -25,6 +26,14 @@ actual fun returnToMarketplace() {
 actual val serverConfig: ServerConfig = run {
     val injectedHost = getInjectedHost()
     val injectedPort = getInjectedPort()
+    val hostname = getHostname()
+
+    // Derive platform API URL from the current hostname
+    val platformApi = when {
+        hostname == "localhost" || hostname == "127.0.0.1" -> "http://localhost:3002/api/v1"
+        hostname.startsWith("stage") -> "https://stage-api.neomud.app/api/v1"
+        else -> "https://api.neomud.app/api/v1"
+    }
 
     if (injectedHost.isNotEmpty() && injectedPort > 0) {
         // Launched from the React marketplace — connect to the selected world's server
@@ -34,7 +43,7 @@ actual val serverConfig: ServerConfig = run {
             defaultPort = injectedPort,
             useTls = getInjectedTls(),
             showServerConfig = false,
-            platformApiUrl = "https://api.neomud.app/api/v1",
+            platformApiUrl = platformApi,
             serverPath = if (injectedPath.isNotEmpty()) injectedPath else "/game",
             skipMarketplace = getInjectedSkipMarketplace(),
             worldName = getInjectedWorldName(),
@@ -51,10 +60,7 @@ actual val serverConfig: ServerConfig = run {
             defaultPort = if (local) 8080 else 443,
             useTls = !local,
             showServerConfig = true,
-            platformApiUrl = if (local)
-                "https://api.neomud.app/api/v1"
-            else
-                "https://api.neomud.app/api/v1"
+            platformApiUrl = platformApi
         )
     }
 }
