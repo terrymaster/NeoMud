@@ -220,11 +220,8 @@
             if (stored) {
                 window.__NEOMUD_CONFIG__ = JSON.parse(stored);
                 sessionStorage.removeItem('__NEOMUD_CONFIG__');
-                console.log('[neomud] Config loaded, platformToken:', window.__NEOMUD_CONFIG__.platformToken ? 'present(' + window.__NEOMUD_CONFIG__.platformToken.length + ' chars)' : 'MISSING');
-            } else {
-                console.log('[neomud] No __NEOMUD_CONFIG__ in sessionStorage');
             }
-        } catch(e) { console.error('[neomud] Config parse error:', e); }
+        } catch(e) { /* ignore parse errors */ }
 
         // Apply world metadata to loading screen
         var cfg = window.__NEOMUD_CONFIG__;
