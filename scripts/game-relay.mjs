@@ -7,6 +7,9 @@
  *
  * Usage: node scripts/game-relay.mjs <username> <password>
  *        node scripts/game-relay.mjs --register <username> <password> <charName> <class> <race> <gender>
+ *        node scripts/game-relay.mjs --url wss://stage.neomud.app/worlds/{worldId}/game <username> <password>
+ *
+ * Environment: NEOMUD_URL overrides the default ws://localhost:8080/game
  */
 
 import { WebSocket } from 'ws';
@@ -20,7 +23,6 @@ const COMMAND_FILE = path.join(__dirname, 'relay-command.json');
 const TEMP_STATE_FILE = path.join(__dirname, '.relay-state.tmp');
 const LOCK_FILE = path.join(__dirname, 'relay.lock');
 
-const SERVER_URL = process.env.NEOMUD_URL || 'ws://localhost:8080/game';
 const COMMAND_POLL_MS = 250;
 const PING_INTERVAL_MS = 30_000;
 const COMMAND_SPACING_MS = 150;
@@ -28,12 +30,25 @@ const MAX_RECENT_EVENTS = 50;
 const STATE_WRITE_DEBOUNCE_MS = 100;
 
 // ---------------------------------------------------------------------------
-// CLI args
+// CLI args — parse --url and --register flags, then positional user/pass
 // ---------------------------------------------------------------------------
-const args = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+let cliUrl = null;
 let registerMode = false;
 let registerOpts = {};
 let username, password;
+
+// Extract --url flag first (can appear before or after --register)
+const args = [];
+for (let i = 0; i < rawArgs.length; i++) {
+  if (rawArgs[i] === '--url' && i + 1 < rawArgs.length) {
+    cliUrl = rawArgs[++i];
+  } else {
+    args.push(rawArgs[i]);
+  }
+}
+
+const SERVER_URL = cliUrl || process.env.NEOMUD_URL || 'ws://localhost:8080/game';
 
 if (args[0] === '--register') {
   registerMode = true;
@@ -47,14 +62,14 @@ if (args[0] === '--register') {
     stats: null, // computed after we receive catalogs
   };
   if (!username || !password || !registerOpts.charName || !registerOpts.charClass) {
-    console.error('Usage: node scripts/game-relay.mjs --register <user> <pass> <charName> <class> [race] [gender]');
+    console.error('Usage: node scripts/game-relay.mjs [--url <ws-url>] --register <user> <pass> <charName> <class> [race] [gender]');
     process.exit(1);
   }
 } else {
   username = args[0];
   password = args[1];
   if (!username || !password) {
-    console.error('Usage: node scripts/game-relay.mjs <username> <password>');
+    console.error('Usage: node scripts/game-relay.mjs [--url <ws-url>] <username> <password>');
     process.exit(1);
   }
 }

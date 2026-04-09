@@ -97,6 +97,41 @@ After clicking "Play" on a world, the WASM client loads. This is Compose Multipl
 - **After sending a command:** Always wait at least 2 seconds, then screenshot to verify.
 - **Loading/transitions:** Wait up to 15 seconds for WASM to load, checking screenshots every 3 seconds.
 
+### Mode 3: WASM Gameplay Session (Full Playthrough)
+
+A complete in-browser playthrough: marketplace → Play → login → gameplay → verify assets load.
+
+**Login via keyboard (Compose creates hidden DOM inputs):**
+1. `browser_snapshot` → look for `textbox` refs in accessibility tree
+2. `browser_click(ref)` on the first textbox → focuses username field
+3. `browser_type` → type username
+4. `browser_press_key("Tab")` → moves focus to password field
+5. `browser_type` → type password
+6. `browser_press_key("Enter")` → submits login form
+
+**Registration via keyboard:**
+1. Click "Create Account" using `browser_mouse_click_xy` (find coordinates from screenshot)
+2. Tab through fields: username → password → character name → gender → race → class → stats
+3. For dropdowns (gender, race, class): use arrow keys + Enter after Tab focuses them
+4. Final submit: Tab to Create button → Enter
+
+**Asset verification (CRITICAL — check after every room change):**
+```
+browser_network_requests(filter="assets", static=true)
+```
+- Look for **any 4xx/5xx responses** on asset URLs
+- Verify room backgrounds load: `assets/images/rooms/{zone}_{room}.webp`
+- Verify NPC sprites load: `assets/images/npcs/npc_{id}.webp`
+- Verify item sprites load: `assets/images/items/item_{id}.webp`
+- Verify audio loads: `assets/audio/bgm/*.mp3`, `assets/audio/npcs/*.mp3`
+- **If ALL asset requests show 200 but images don't render**: screenshot + file bug on client rendering
+- **If NO asset requests appear**: the client isn't requesting them — file bug on serverBaseUrl construction
+
+**Staging URLs:**
+- Marketplace: `https://stage.neomud.app`
+- Default World: `https://stage.neomud.app/play/default-world`
+- Shattered Reach: `https://stage.neomud.app/play/shattered-reach`
+
 ## Methodology
 
 ### Overall Session Loop

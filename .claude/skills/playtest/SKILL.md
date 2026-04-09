@@ -38,12 +38,22 @@ If no relay is running, **ask the user** how they'd like to connect:
 Start the relay accordingly:
 
 ```bash
-# Login
+# Login (local server)
 node scripts/game-relay.mjs <username> <password> &
 
-# Register
+# Register (local server)
 node scripts/game-relay.mjs --register <username> <password> <charName> <class> [race] [gender] &
+
+# Login (staging — specify world by ID)
+node scripts/game-relay.mjs --url "wss://stage.neomud.app/worlds/<worldId>/game" <username> <password> &
+
+# Register (staging)
+node scripts/game-relay.mjs --url "wss://stage.neomud.app/worlds/<worldId>/game" --register <username> <password> <charName> <class> [race] [gender] &
 ```
+
+**Staging world IDs** (look up current IDs via `curl -s https://stage-api.neomud.app/api/v1/worlds`):
+- Default World: `cmno7e7ha000216nwbzly1q8n`
+- Shattered Reach: `cmnqrhljj000016n1f15es4rl`
 
 Wait a few seconds for connection, then verify:
 
