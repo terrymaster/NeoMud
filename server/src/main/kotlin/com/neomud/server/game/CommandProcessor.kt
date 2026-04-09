@@ -146,7 +146,8 @@ class CommandProcessor(
             is ClientMessage.ClientHello -> {
                 session.clientProtocolVersion = message.protocolVersion
                 session.clientVersion = message.clientVersion
-                logger.info("Client hello: v${message.clientVersion}, protocol=${message.protocolVersion}")
+                val hasToken = message.platformToken?.isNotEmpty() == true
+                logger.info("Client hello: v${message.clientVersion}, protocol=${message.protocolVersion}, platformToken=${if (hasToken) "present(${message.platformToken?.length}chars)" else "absent"}")
 
                 if (NeoMudVersion.compareVersions(message.clientVersion, NeoMudVersion.MIN_CLIENT_VERSION) < 0) {
                     logger.warn("Rejecting client v${message.clientVersion} (minimum: ${NeoMudVersion.MIN_CLIENT_VERSION})")
@@ -389,6 +390,13 @@ class CommandProcessor(
                     player.copy(isAdmin = true)
                 } else {
                     player
+                }
+
+                // Auto-link platform account on password login if platform session exists
+                val platformId = session.platformUserId
+                if (platformId != null && playerRepository.findByPlatformUserId(platformId) == null) {
+                    playerRepository.linkPlatformUser(effectivePlayer.name, platformId)
+                    logger.info("Linked platform user $platformId to character ${effectivePlayer.name}")
                 }
 
                 session.player = effectivePlayer

@@ -304,6 +304,15 @@ class PlayerRepository {
 
     // ─── Platform auth methods ──────────────────────────────
 
+    /** Link an existing character to a Platform user ID. */
+    fun linkPlatformUser(characterName: String, platformUserId: String) {
+        transaction {
+            PlayersTable.update({ PlayersTable.characterName eq characterName }) {
+                it[PlayersTable.platformUserId] = platformUserId
+            }
+        }
+    }
+
     /** Find a player by their Platform user ID. Returns null if no character on this world. */
     fun findByPlatformUserId(platformUserId: String): Player? = transaction {
         PlayersTable.selectAll().where {
