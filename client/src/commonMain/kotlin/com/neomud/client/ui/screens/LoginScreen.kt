@@ -250,6 +250,17 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Connecting...", fontSize = 13.sp, color = BoneWhite)
+                } else if (connectionState == ConnectionState.CONNECTED &&
+                    serverConfig.platformToken.isNotEmpty() &&
+                    authState is AuthState.Idle) {
+                    // ─── Waiting for platform auth response ───
+                    CircularProgressIndicator(
+                        color = BurnishedGold,
+                        trackColor = AshGray.copy(alpha = 0.3f),
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Authenticating...", fontSize = 13.sp, color = BoneWhite)
                 } else if (authState is AuthState.PlatformReady) {
                     // ─── Platform Auto-Login ───
                     Text(
