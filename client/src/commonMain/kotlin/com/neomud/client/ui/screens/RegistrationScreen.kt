@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -228,7 +229,8 @@ fun RegistrationScreen(
                                 nameAvailability = nameAvailability,
                                 onUsernameChange = { username = it; onClearNameCheck() },
                                 onPasswordChange = { password = it },
-                                onCharacterNameChange = { characterName = it; onClearNameCheck() }
+                                onCharacterNameChange = { characterName = it; onClearNameCheck() },
+                                onCheckName = onCheckName
                             )
                         }
                         1 -> GenderSelectionStep(
@@ -532,7 +534,8 @@ private fun StoneTextField(
     label: String,
     isPassword: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    keyboardActions: KeyboardActions = KeyboardActions.Default
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    onFocusLost: (() -> Unit)? = null
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -545,6 +548,9 @@ private fun StoneTextField(
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
+            modifier = if (onFocusLost != null) {
+                Modifier.onFocusChanged { if (!it.isFocused) onFocusLost() }
+            } else Modifier,
             textStyle = TextStyle(
                 fontSize = 14.sp,
                 color = BoneWhite
@@ -806,9 +812,23 @@ private fun CredentialsStep(
     nameAvailability: AuthViewModel.NameAvailability? = null,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onCharacterNameChange: (String) -> Unit
+    onCharacterNameChange: (String) -> Unit,
+    onCheckName: (String, String) -> Unit = { _, _ -> }
 ) {
     val focusManager = LocalFocusManager.current
+    // Track what was last checked to avoid redundant server calls
+    var lastCheckedUsername by remember { mutableStateOf("") }
+    var lastCheckedCharName by remember { mutableStateOf("") }
+
+    fun triggerCheck() {
+        if (username.isNotBlank() && characterName.isNotBlank() &&
+            (username != lastCheckedUsername || characterName != lastCheckedCharName)) {
+            lastCheckedUsername = username
+            lastCheckedCharName = characterName
+            onCheckName(username, characterName)
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -826,7 +846,8 @@ private fun CredentialsStep(
             onValueChange = onUsernameChange,
             label = "Username",
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+            onFocusLost = { triggerCheck() }
         )
         // Username availability feedback
         if (nameAvailability != null && username.isNotBlank()) {
@@ -854,7 +875,8 @@ private fun CredentialsStep(
             onValueChange = onCharacterNameChange,
             label = "Character Name",
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+            onFocusLost = { triggerCheck() }
         )
         // Character name availability feedback
         if (nameAvailability != null && characterName.isNotBlank()) {
