@@ -648,6 +648,13 @@ class CommandProcessor(
             return
         }
 
+        // Check name availability before consuming a rate limit slot
+        val (_, nameAvailable) = playerRepository.checkNameAvailability("", msg.characterName)
+        if (!nameAvailable) {
+            session.send(ServerMessage.AuthError("Character name already taken"))
+            return
+        }
+
         // Rate limit guest creation per IP
         if (!checkGuestRateLimit(session.remoteIp)) {
             session.send(ServerMessage.AuthError("Too many guest sessions. Try again later or create an account."))
@@ -655,7 +662,7 @@ class CommandProcessor(
         }
 
         // Generate internal credentials — player never sees or uses these
-        val guestId = java.util.UUID.randomUUID().toString().take(8)
+        val guestId = java.util.UUID.randomUUID().toString().replace("-", "").take(16)
         val internalUsername = "guest_$guestId"
         val internalPassword = java.util.UUID.randomUUID().toString()
 
@@ -699,7 +706,7 @@ class CommandProcessor(
     private val guestCreations = ConcurrentHashMap<String, Pair<Int, Long>>()
 
     private fun checkGuestRateLimit(ip: String): Boolean {
-        if (ip.isBlank()) return true
+        if (ip.isBlank()) return false
         val now = System.currentTimeMillis()
         val hourMs = 3_600_000L
         val entry = guestCreations[ip]

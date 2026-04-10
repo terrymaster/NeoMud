@@ -21,6 +21,7 @@ import com.neomud.server.persistence.repository.CoinRepository
 import com.neomud.server.persistence.repository.DiscoveryRepository
 import com.neomud.server.persistence.repository.InventoryRepository
 import com.neomud.server.persistence.repository.PlayerRepository
+import com.neomud.server.plugins.configureForwardedHeaders
 import com.neomud.server.plugins.configureRouting
 import com.neomud.server.plugins.configureWebSockets
 import com.neomud.server.session.SessionManager
@@ -356,6 +357,7 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     }
 
     // Install plugins
+    configureForwardedHeaders()
     configureWebSockets()
     configureRouting(sessionManager, commandProcessor, playerRepository, discoveryRepository, dataSource, loadResult.manifest)
 

@@ -14,6 +14,7 @@ import com.neomud.shared.protocol.MessageSerializer
 import com.neomud.shared.protocol.ServerMessage
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.origin
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -88,7 +89,7 @@ fun Application.configureRouting(
         }
 
         webSocket("/game") {
-            val remoteIp = call.request.local.remoteHost
+            val remoteIp = call.request.origin.remoteHost
             val ipCounter = connectionsPerIp.computeIfAbsent(remoteIp) { AtomicInteger(0) }
             val currentCount = ipCounter.incrementAndGet()
 

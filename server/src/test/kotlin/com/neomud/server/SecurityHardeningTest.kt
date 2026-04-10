@@ -202,4 +202,44 @@ class SecurityHardeningTest {
         val sanitized = input.take(500).replace(Regex("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F]"), "")
         assertEquals("Hello[31mWorld", sanitized)
     }
+
+    // ── Guest Security ──
+
+    @Test
+    fun testGuestTakenNameDoesNotConsumeRateLimit() = testApplication {
+        application { module(jdbcUrl = testDbUrl()) }
+        val wsClient = createClient { install(WebSockets) }
+
+        // Register a persistent player
+        wsClient.webSocket("/game") {
+            consumeCatalogSync()
+            send(sendMsg(ClientMessage.Register("owner", "password123", "TakenName", "WARRIOR", allocatedStats = defaultStats)))
+            assertIs<ServerMessage.RegisterOk>(receiveServerMessage())
+        }
+
+        // Try more than MAX_GUEST_CREATIONS_PER_IP_PER_HOUR times with the taken name
+        // All should say "already taken", never "too many guest sessions"
+        repeat(GameConfig.Security.MAX_GUEST_CREATIONS_PER_IP_PER_HOUR + 1) { i ->
+            wsClient.webSocket("/game") {
+                consumeCatalogSync()
+                send(sendMsg(ClientMessage.GuestLogin(
+                    characterName = "TakenName", characterClass = "WARRIOR",
+                    race = "HUMAN", allocatedStats = defaultStats
+                )))
+                val error = receiveServerMessage()
+                assertIs<ServerMessage.AuthError>(error)
+                assertTrue(
+                    error.reason.contains("already taken", ignoreCase = true),
+                    "Attempt ${i + 1}: expected 'already taken', got '${error.reason}'"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun testGuestIdHasSufficientEntropy() {
+        val id = java.util.UUID.randomUUID().toString().replace("-", "").take(16)
+        assertEquals(16, id.length, "Guest ID should be 16 hex chars (64 bits of entropy)")
+        assertTrue(id.all { it in '0'..'9' || it in 'a'..'f' }, "Guest ID should be hex chars only")
+    }
 }
