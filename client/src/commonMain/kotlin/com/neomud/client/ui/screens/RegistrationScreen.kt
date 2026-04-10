@@ -219,7 +219,9 @@ fun RegistrationScreen(
                         0 -> if (isGuestMode) {
                             GuestNameStep(
                                 characterName = characterName,
-                                onCharacterNameChange = { characterName = it }
+                                nameAvailability = nameAvailability,
+                                onCharacterNameChange = { characterName = it; onClearNameCheck() },
+                                onCheckName = { onCheckName("", it) }
                             )
                         } else {
                             CredentialsStep(
@@ -767,9 +769,13 @@ private fun RunicDivider(modifier: Modifier = Modifier) {
 @Composable
 private fun GuestNameStep(
     characterName: String,
-    onCharacterNameChange: (String) -> Unit
+    nameAvailability: AuthViewModel.NameAvailability? = null,
+    onCharacterNameChange: (String) -> Unit,
+    onCheckName: (String) -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
+    var lastChecked by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -787,8 +793,22 @@ private fun GuestNameStep(
             onValueChange = onCharacterNameChange,
             label = "Character Name",
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+            onFocusLost = {
+                if (characterName.isNotBlank() && characterName != lastChecked) {
+                    lastChecked = characterName
+                    onCheckName(characterName)
+                }
+            }
         )
+        if (nameAvailability != null && characterName.isNotBlank()) {
+            Text(
+                text = if (nameAvailability.characterNameAvailable) "Name available" else "Name already taken",
+                fontSize = 11.sp,
+                color = if (nameAvailability.characterNameAvailable) VerdantUpgrade else CrimsonError,
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 2.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
         Text(
