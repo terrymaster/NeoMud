@@ -70,6 +70,14 @@ object DatabaseFactory {
                 exec("ALTER TABLE players ADD COLUMN image_negative_prompt TEXT NOT NULL DEFAULT ''")
             }
 
+            // Incremental migration: add platform_user_id if missing
+            try {
+                exec("SELECT platform_user_id FROM players LIMIT 1") { true }
+            } catch (_: Exception) {
+                logger.info("Migrating schema: adding platform_user_id column")
+                exec("ALTER TABLE players ADD COLUMN platform_user_id VARCHAR(64) DEFAULT NULL")
+            }
+
             // Incremental migration: add is_ephemeral if missing
             try {
                 exec("SELECT is_ephemeral FROM players LIMIT 1") { true }
