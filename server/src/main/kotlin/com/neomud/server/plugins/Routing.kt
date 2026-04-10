@@ -26,6 +26,12 @@ import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = LoggerFactory.getLogger("Routing")
 
+/** Safely quote a string for JSON output. */
+private fun quoteJson(s: String): String {
+    val escaped = s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")
+    return "\"$escaped\""
+}
+
 /** Per-IP active WebSocket connection counter */
 private val connectionsPerIp = ConcurrentHashMap<String, AtomicInteger>()
 
@@ -86,6 +92,31 @@ fun Application.configureRouting(
 
         get("/health") {
             call.respondText("OK", ContentType.Text.Plain)
+        }
+
+        get("/api/character") {
+            // Auth: verify shared secret from Platform
+            val secret = call.request.headers["X-Platform-Secret"]
+            val expected = System.getenv("PLATFORM_API_SECRET")
+            if (expected.isNullOrBlank() || secret != expected) {
+                call.respondText("""{"error":"Unauthorized"}""", ContentType.Application.Json, HttpStatusCode.Forbidden)
+                return@get
+            }
+
+            val platformUserId = call.request.queryParameters["platformUserId"]
+            if (platformUserId.isNullOrBlank()) {
+                call.respondText("""{"error":"platformUserId required"}""", ContentType.Application.Json, HttpStatusCode.BadRequest)
+                return@get
+            }
+
+            val player = playerRepository.findByPlatformUserId(platformUserId)
+            if (player == null) {
+                call.respondText("""{"error":"No character found"}""", ContentType.Application.Json, HttpStatusCode.NotFound)
+                return@get
+            }
+
+            val json = """{"name":${quoteJson(player.name)},"characterClass":${quoteJson(player.characterClass)},"race":${quoteJson(player.race)},"level":${player.level},"gender":${quoteJson(player.gender)}}"""
+            call.respondText(json, ContentType.Application.Json)
         }
 
         webSocket("/game") {
