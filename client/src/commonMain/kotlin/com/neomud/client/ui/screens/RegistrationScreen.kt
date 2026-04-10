@@ -133,9 +133,21 @@ fun RegistrationScreen(
         )
     }
 
+    fun defaultAllocation(classDef: CharacterClassDef?, raceDef: RaceDef?): Stats {
+        val min = effectiveMin(classDef, raceDef)
+        return Stats(
+            strength = min.strength + 10,
+            agility = min.agility + 10,
+            intellect = min.intellect + 10,
+            willpower = min.willpower + 10,
+            health = min.health + 10,
+            charm = min.charm + 10
+        )
+    }
+
     LaunchedEffect(selectedClassId, selectedRaceId, availableClasses, availableRaces) {
         if (selectedClass != null) {
-            allocatedStats = effectiveMin(selectedClass, selectedRace)
+            allocatedStats = defaultAllocation(selectedClass, selectedRace)
         }
     }
 
@@ -250,7 +262,7 @@ fun RegistrationScreen(
                             onClassSelected = {
                                 selectedClassId = it
                                 val cls = availableClasses.find { c -> c.id == it }
-                                if (cls != null) allocatedStats = effectiveMin(cls, selectedRace)
+                                if (cls != null) allocatedStats = defaultAllocation(cls, selectedRace)
                             }
                         )
                         4 -> {
