@@ -440,6 +440,7 @@ private fun GuestWarningDialog(
     ) {
         Column(
             modifier = Modifier
+                .widthIn(max = 360.dp)
                 .fillMaxWidth(0.85f)
                 .background(
                     Brush.verticalGradient(
