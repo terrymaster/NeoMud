@@ -183,7 +183,7 @@ The server ships as a self-contained fat JAR with the default world bundled insi
 
 **Prerequisites:** JDK 21+ (e.g., [Amazon Corretto](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html))
 
-1. Download `neomud-server-vX.Y.Z.jar` from the [latest release](https://github.com/terrymaster/NeoMud/releases/latest)
+1. Download `neomud-server-vX.Y.Z.jar` from the [latest release](https://github.com/roomsmith-games/NeoMud/releases/latest)
 2. Run it:
 
 ```bash
@@ -371,9 +371,9 @@ Agent memory in `.claude/agent-memory/` persists findings across sessions — th
 ## Roadmap
 
 ### Near Term
-- [ ] Game balance pass — L4 equipment tier, T3 damage spells for Priest/Kai/Bard, class viability fixes ([#188](https://github.com/terrymaster/NeoMud/issues/188)-[#196](https://github.com/terrymaster/NeoMud/issues/196))
-- [ ] Fill dead-end rooms with content (Forest Cave, Marsh Island, Gorge Alcove) ([#194](https://github.com/terrymaster/NeoMud/issues/194))
-- [ ] BGM seamless looping ([#113](https://github.com/terrymaster/NeoMud/issues/113))
+- [ ] Game balance pass — L4 equipment tier, T3 damage spells for Priest/Kai/Bard, class viability fixes ([#188](https://github.com/roomsmith-games/NeoMud/issues/188)-[#196](https://github.com/roomsmith-games/NeoMud/issues/196))
+- [ ] Fill dead-end rooms with content (Forest Cave, Marsh Island, Gorge Alcove) ([#194](https://github.com/roomsmith-games/NeoMud/issues/194))
+- [ ] BGM seamless looping ([#113](https://github.com/roomsmith-games/NeoMud/issues/113))
 - [x] Replace raw JSON fields in maker editors with structured UI controls
 - [x] Multiplatform UI test infrastructure — client tests run on Android, Desktop, and iOS
 
@@ -384,9 +384,9 @@ Agent memory in `.claude/agent-memory/` persists findings across sessions — th
 - [ ] Multiplayer stress testing — concurrent combat, reconnection, edge cases
 
 ### Multiplatform Clients
-- [x] Desktop (JVM) client — JavaFX audio, Ktor CIO networking, full feature parity ([#140](https://github.com/terrymaster/NeoMud/issues/140))
-- [x] iOS client — Kotlin/Native + AVFoundation audio, Material Icons for cross-platform icon rendering ([#141](https://github.com/terrymaster/NeoMud/issues/141))
-- [ ] Web (Wasm) client — zero-install browser play ([#142](https://github.com/terrymaster/NeoMud/issues/142))
+- [x] Desktop (JVM) client — JavaFX audio, Ktor CIO networking, full feature parity ([#140](https://github.com/roomsmith-games/NeoMud/issues/140))
+- [x] iOS client — Kotlin/Native + AVFoundation audio, Material Icons for cross-platform icon rendering ([#141](https://github.com/roomsmith-games/NeoMud/issues/141))
+- [ ] Web (Wasm) client — zero-install browser play ([#142](https://github.com/roomsmith-games/NeoMud/issues/142))
 
 ### Future Vision
 - [ ] Party system with shared XP and group combat
