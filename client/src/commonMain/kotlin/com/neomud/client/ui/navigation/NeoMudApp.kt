@@ -75,7 +75,9 @@ fun NeoMudApp(
             }
         }
         if (authState is AuthState.GuestCharacterCreation) {
-            navController.navigate("guestRegister")
+            navController.navigate("guestRegister") {
+                popUpTo("login") { inclusive = true }
+            }
         }
         // Handle logout: Idle while on game screen → back to world selection
         if (authState is AuthState.Idle) {
@@ -189,6 +191,17 @@ fun NeoMudApp(
             LaunchedEffect(serverConfig.skipMarketplace) {
                 if (serverConfig.skipMarketplace && connectionState == ConnectionState.DISCONNECTED) {
                     authViewModel.connect(serverConfig.defaultHost, serverConfig.defaultPort, serverConfig.useTls, serverConfig.serverPath)
+                }
+            }
+
+            // Auto-guest for marketplace users without platform auth:
+            // once connected and catalogs synced (Idle), skip login screen → guest flow
+            LaunchedEffect(connectionState, authState) {
+                if (serverConfig.skipMarketplace &&
+                    serverConfig.platformToken.isEmpty() &&
+                    connectionState == ConnectionState.CONNECTED &&
+                    authState is AuthState.Idle) {
+                    authViewModel.startGuestSession()
                 }
             }
 

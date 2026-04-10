@@ -106,6 +106,7 @@ fun RegistrationScreen(
     onBack: () -> Unit,
     onClearError: () -> Unit
 ) {
+    var showGuestWarning by rememberSaveable { mutableStateOf(isGuestMode) }
     var currentStep by rememberSaveable { mutableIntStateOf(0) }
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -361,6 +362,83 @@ fun RegistrationScreen(
                     }
                 }
 
+            }
+        }
+    }
+
+    // Guest warning overlay — shown on entry before character creation begins
+    if (showGuestWarning) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.85f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF1A1510), Color(0xFF0D0B09))
+                        ),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .border(1.dp, BurnishedGold.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Guest Play",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BurnishedGold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Guest characters are temporary. All progress, items, and XP will be permanently lost when you disconnect.",
+                    fontSize = 13.sp,
+                    color = BoneWhite,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 18.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Sign in to save your progress.",
+                    fontSize = 12.sp,
+                    color = AshGray,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Continue as Guest
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0xFF3A2A15), Color(0xFF2A1A0A))
+                            ),
+                            RoundedCornerShape(6.dp)
+                        )
+                        .border(1.dp, BurnishedGold.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                        .clickable(onClick = { showGuestWarning = false }),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Continue as Guest", fontSize = 13.sp, color = BurnishedGold)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Back / Sign In
+                Text(
+                    text = "Back",
+                    fontSize = 12.sp,
+                    color = AshGray,
+                    modifier = Modifier
+                        .clickable(onClick = onBack)
+                        .padding(vertical = 4.dp)
+                )
             }
         }
     }
