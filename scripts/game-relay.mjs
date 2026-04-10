@@ -7,6 +7,7 @@
  *
  * Usage: node scripts/game-relay.mjs <username> <password>
  *        node scripts/game-relay.mjs --register <username> <password> <charName> <class> <race> <gender>
+ *        node scripts/game-relay.mjs --guest <charName> <class> [race] [gender]
  *        node scripts/game-relay.mjs --url wss://stage.neomud.app/worlds/{worldId}/game <username> <password>
  *
  * Environment: NEOMUD_URL overrides the default ws://localhost:8080/game
@@ -35,7 +36,9 @@ const STATE_WRITE_DEBOUNCE_MS = 100;
 const rawArgs = process.argv.slice(2);
 let cliUrl = null;
 let registerMode = false;
+let guestMode = false;
 let registerOpts = {};
+let guestOpts = {};
 let username, password;
 
 // Extract --url flag first (can appear before or after --register)
@@ -65,6 +68,22 @@ if (args[0] === '--register') {
     console.error('Usage: node scripts/game-relay.mjs [--url <ws-url>] --register <user> <pass> <charName> <class> [race] [gender]');
     process.exit(1);
   }
+} else if (args[0] === '--guest') {
+  guestMode = true;
+  guestOpts = {
+    charName: args[1],
+    charClass: args[2],
+    race: args[3] || 'HUMAN',
+    gender: args[4] || 'male',
+    stats: null, // computed after we receive catalogs
+  };
+  if (!guestOpts.charName || !guestOpts.charClass) {
+    console.error('Usage: node scripts/game-relay.mjs [--url <ws-url>] --guest <charName> <class> [race] [gender]');
+    process.exit(1);
+  }
+  // Guest mode doesn't need username/password
+  username = 'guest';
+  password = 'guest';
 } else {
   username = args[0];
   password = args[1];
@@ -185,6 +204,50 @@ function tryRegister() {
   });
 }
 
+function tryGuestLogin() {
+  if (registrationSent || !guestMode) return;
+  if (!catalogsReceived.classes || !catalogsReceived.races) return;
+
+  const classDef = classCatalog.find(c => c.id === guestOpts.charClass);
+  if (!classDef) {
+    console.error(`[relay] Unknown class: ${guestOpts.charClass}`);
+    console.error('[relay] Available classes:', classCatalog.map(c => c.id).join(', '));
+    process.exit(1);
+  }
+  const raceDef = raceCatalog.find(r => r.id === guestOpts.race);
+  const raceMods = raceDef?.statModifiers || { strength: 0, agility: 0, intellect: 0, willpower: 0, health: 0, charm: 0 };
+  const mins = classDef.minimumStats;
+
+  const base = {
+    strength: Math.max(1, mins.strength + raceMods.strength),
+    agility: Math.max(1, mins.agility + raceMods.agility),
+    intellect: Math.max(1, mins.intellect + raceMods.intellect),
+    willpower: Math.max(1, mins.willpower + raceMods.willpower),
+    health: Math.max(1, mins.health + raceMods.health),
+    charm: Math.max(1, mins.charm + raceMods.charm),
+  };
+
+  guestOpts.stats = {
+    strength: base.strength + 10,
+    agility: base.agility + 10,
+    intellect: base.intellect + 10,
+    willpower: base.willpower + 10,
+    health: base.health + 10,
+    charm: base.charm + 10,
+  };
+
+  console.log('[relay] Guest login with stats:', JSON.stringify(guestOpts.stats));
+  registrationSent = true;
+  send({
+    type: 'guest_login',
+    characterName: guestOpts.charName,
+    characterClass: guestOpts.charClass,
+    race: guestOpts.race,
+    gender: guestOpts.gender,
+    allocatedStats: guestOpts.stats,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Game state model
 // ---------------------------------------------------------------------------
@@ -247,10 +310,21 @@ function writeStateFile() {
 // ServerMessage handlers
 // ---------------------------------------------------------------------------
 const handlers = {
+  // Handshake
+  server_hello(msg) {
+    pushEvent('system', `Server: ${msg.worldName || 'NeoMud'} v${msg.engineVersion} (protocol ${msg.protocolVersion})`);
+    send({ type: 'client_hello', clientVersion: msg.engineVersion, protocolVersion: msg.protocolVersion || 1 });
+  },
+
   // Auth
   register_ok() {
-    pushEvent('system', 'Registration successful. Logging in...');
-    send({ type: 'login', username, password });
+    if (guestMode) {
+      // Guest flow: server auto-sends login_ok after register_ok, nothing to do
+      pushEvent('system', 'Guest registration successful. Waiting for auto-login...');
+    } else {
+      pushEvent('system', 'Registration successful. Logging in...');
+      send({ type: 'login', username, password });
+    }
   },
   login_ok(msg) {
     state.loggedIn = true;
@@ -598,6 +672,7 @@ const handlers = {
     catalogsReceived.classes = true;
     pushEvent('system', `Received class catalog (${classCatalog.length} classes)`);
     tryRegister();
+    tryGuestLogin();
   },
   item_catalog_sync(msg) {
     itemCatalogMap = {};
@@ -616,6 +691,7 @@ const handlers = {
     catalogsReceived.races = true;
     pushEvent('system', `Received race catalog (${raceCatalog.length} races)`);
     tryRegister();
+    tryGuestLogin();
   },
   spell_catalog_sync(msg) {
     spellCatalog = msg.spells || [];
@@ -716,12 +792,12 @@ function connect() {
     state.connected = true;
     scheduleStateWrite();
 
-    // Authenticate (register waits for catalogs; login sends immediately)
+    // Authenticate (register/guest wait for catalogs; login sends immediately)
     registrationSent = false;
-    if (!registerMode) {
+    if (!registerMode && !guestMode) {
       send({ type: 'login', username, password });
     }
-    // If registerMode, tryRegister() fires once catalogs arrive
+    // If registerMode or guestMode, tryRegister()/tryGuestLogin() fires once catalogs arrive
 
     // Keepalive ping
     pingTimer = setInterval(() => send({ type: 'ping' }), PING_INTERVAL_MS);
@@ -844,7 +920,8 @@ function releaseLock() {
 // Startup
 // ---------------------------------------------------------------------------
 console.log('[relay] NeoMud Game Relay');
-console.log(`[relay] User: ${username}, Mode: ${registerMode ? 'register' : 'login'}`);
+const mode = guestMode ? 'guest' : registerMode ? 'register' : 'login';
+console.log(`[relay] User: ${guestMode ? guestOpts.charName : username}, Mode: ${mode}`);
 
 acquireLock();
 
