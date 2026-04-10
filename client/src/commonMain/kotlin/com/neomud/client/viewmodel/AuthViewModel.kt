@@ -48,6 +48,7 @@ class AuthViewModel(
 
     private var pendingLoginUsername: String? = null
     private var pendingLoginPassword: String? = null
+    private var pendingGuestLogin: Boolean = false
 
     private val _initialRoomInfo = MutableStateFlow<ServerMessage.RoomInfo?>(null)
     val initialRoomInfo: StateFlow<ServerMessage.RoomInfo?> = _initialRoomInfo
@@ -111,13 +112,18 @@ class AuthViewModel(
                             }
                         }
                         is ServerMessage.RegisterOk -> {
-                            // Auto-login after successful registration
-                            val username = pendingLoginUsername
-                            val password = pendingLoginPassword
-                            if (username != null && password != null) {
-                                wsClient.send(ClientMessage.Login(username, password))
+                            if (pendingGuestLogin) {
+                                // Guest: server auto-sends LoginOk after RegisterOk, just wait
+                                pendingGuestLogin = false
                             } else {
-                                _authState.value = AuthState.Registered
+                                // Standard registration: auto-login with saved credentials
+                                val username = pendingLoginUsername
+                                val password = pendingLoginPassword
+                                if (username != null && password != null) {
+                                    wsClient.send(ClientMessage.Login(username, password))
+                                } else {
+                                    _authState.value = AuthState.Registered
+                                }
                             }
                         }
                         is ServerMessage.AuthError -> {
@@ -265,6 +271,30 @@ class AuthViewModel(
         }
     }
 
+    /** Transition to guest character creation screen. */
+    fun startGuestSession() {
+        _authState.value = AuthState.GuestCharacterCreation
+    }
+
+    /** Create ephemeral guest character and auto-login. */
+    fun guestLogin(characterName: String, characterClass: String, race: String, gender: String, allocatedStats: Stats) {
+        _authState.value = AuthState.Loading
+        pendingGuestLogin = true
+        viewModelScope.launch {
+            val sent = wsClient.send(ClientMessage.GuestLogin(
+                characterName = characterName,
+                characterClass = characterClass,
+                race = race,
+                gender = gender,
+                allocatedStats = allocatedStats
+            ))
+            if (!sent) {
+                pendingGuestLogin = false
+                _authState.value = AuthState.Error("Not connected to server")
+            }
+        }
+    }
+
     fun logout() {
         wsClient.disconnect()
         _authState.value = AuthState.Idle
@@ -286,6 +316,8 @@ sealed class AuthState {
     data class PlatformReady(val characterName: String, val platformUserId: String) : AuthState()
     /** Platform token verified, no character on this world — show character creation */
     data class PlatformNeedsCharacter(val platformUserId: String) : AuthState()
+    /** Guest mode — show character creation without credentials */
+    data object GuestCharacterCreation : AuthState()
 }
 
 data class ServerInfo(

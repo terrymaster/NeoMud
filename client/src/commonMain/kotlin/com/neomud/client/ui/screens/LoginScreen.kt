@@ -90,10 +90,12 @@ fun LoginScreen(
     onLogin: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit,
     onClearError: () -> Unit,
-    onPlatformLogin: () -> Unit = {}
+    onPlatformLogin: () -> Unit = {},
+    onPlayAsGuest: () -> Unit = {}
 ) {
     var host by remember { mutableStateOf(serverConfig.defaultHost) }
     var port by remember { mutableStateOf(serverConfig.defaultPort.toString()) }
+    var showGuestWarning by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
@@ -339,6 +341,24 @@ fun LoginScreen(
                                 .clickable(onClick = onNavigateToRegister)
                                 .padding(vertical = 4.dp)
                         )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Play as Guest
+                        Text(
+                            text = "Play as Guest",
+                            fontSize = 13.sp,
+                            color = AshGray,
+                            modifier = Modifier
+                                .clickable(onClick = { showGuestWarning = true })
+                                .padding(vertical = 4.dp)
+                        )
+                        Text(
+                            text = "No account needed. Progress is not saved.",
+                            fontSize = 10.sp,
+                            color = AshGray.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center
+                        )
                     } else {
                         // Platform user needs to create a character — redirect to registration
                         Text(
@@ -385,6 +405,112 @@ fun LoginScreen(
                             .padding(vertical = 4.dp)
                     )
                 }
+            }
+        }
+    }
+
+    // Guest warning dialog
+    if (showGuestWarning) {
+        GuestWarningDialog(
+            onConfirm = {
+                showGuestWarning = false
+                onPlayAsGuest()
+            },
+            onCreateAccount = {
+                showGuestWarning = false
+                onNavigateToRegister()
+            },
+            onDismiss = { showGuestWarning = false }
+        )
+    }
+}
+
+@Composable
+private fun GuestWarningDialog(
+    onConfirm: () -> Unit,
+    onCreateAccount: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF1A1510), Color(0xFF0D0B09))
+                    ),
+                    RoundedCornerShape(8.dp)
+                )
+                .border(1.dp, BurnishedGold.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                .clickable(enabled = false, onClick = {}) // prevent click-through
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Guest Play",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = BurnishedGold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Guest characters are temporary. All progress, items, and XP will be permanently lost when you disconnect.",
+                fontSize = 13.sp,
+                color = BoneWhite,
+                textAlign = TextAlign.Center,
+                lineHeight = 18.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Create an account to save your progress.",
+                fontSize = 12.sp,
+                color = AshGray,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Continue as Guest button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF2A2218), Color(0xFF1A1510))
+                        ),
+                        RoundedCornerShape(6.dp)
+                    )
+                    .border(1.dp, AshGray.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                    .clickable(onClick = onConfirm),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Continue as Guest", fontSize = 13.sp, color = BoneWhite)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Create Account button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF3A2A15), Color(0xFF2A1A0A))
+                        ),
+                        RoundedCornerShape(6.dp)
+                    )
+                    .border(1.dp, BurnishedGold.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                    .clickable(onClick = onCreateAccount),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Create Account Instead", fontSize = 13.sp, color = BurnishedGold)
             }
         }
     }

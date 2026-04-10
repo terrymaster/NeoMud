@@ -37,6 +37,7 @@ object PlayersTable : Table("players") {
     val imageStyle = text("image_style").default("")
     val imageNegativePrompt = text("image_negative_prompt").default("")
     val platformUserId = varchar("platform_user_id", 64).nullable().default(null)
+    val isEphemeral = bool("is_ephemeral").default(false)
 
     override val primaryKey = PrimaryKey(id)
 }

@@ -1203,4 +1203,74 @@ class MessageSerializerTest {
         assertEquals("TestHero", decoded.characterName)
         assertEquals("WARRIOR", decoded.characterClass)
     }
+
+    // ─── Guest login messages ─────────────────────────────
+
+    @Test
+    fun guestLoginRoundTrip() {
+        val stats = Stats(strength = 30, agility = 22, intellect = 18, willpower = 18, health = 30, charm = 18)
+        val original = ClientMessage.GuestLogin(
+            characterName = "GuestHero",
+            characterClass = "WARRIOR",
+            race = "HUMAN",
+            gender = "male",
+            allocatedStats = stats
+        )
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json) as ClientMessage.GuestLogin
+        assertEquals("GuestHero", decoded.characterName)
+        assertEquals("WARRIOR", decoded.characterClass)
+        assertEquals("HUMAN", decoded.race)
+        assertEquals("male", decoded.gender)
+        assertEquals(stats, decoded.allocatedStats)
+    }
+
+    @Test
+    fun guestLoginMinimalRoundTrip() {
+        val original = ClientMessage.GuestLogin(
+            characterName = "MinGuest",
+            characterClass = "WARRIOR"
+        )
+        val json = MessageSerializer.encodeClientMessage(original)
+        val decoded = MessageSerializer.decodeClientMessage(json) as ClientMessage.GuestLogin
+        assertEquals("MinGuest", decoded.characterName)
+        assertEquals("", decoded.race)
+        assertEquals("neutral", decoded.gender)
+    }
+
+    @Test
+    fun playerIsGuestFieldSerialization() {
+        val player = Player(
+            name = "TestGuest",
+            characterClass = "WARRIOR",
+            stats = Stats(),
+            currentHp = 100,
+            maxHp = 100,
+            level = 1,
+            currentRoomId = "test:room",
+            isGuest = true
+        )
+        val json = MessageSerializer.encodeServerMessage(ServerMessage.LoginOk(player))
+        assertTrue(json.contains("\"isGuest\":true") || json.contains("\"is_guest\":true"),
+            "Serialized JSON should contain isGuest field")
+
+        val decoded = MessageSerializer.decodeServerMessage(json) as ServerMessage.LoginOk
+        assertTrue(decoded.player.isGuest, "Deserialized player should have isGuest=true")
+    }
+
+    @Test
+    fun playerIsGuestDefaultsFalse() {
+        val player = Player(
+            name = "NormalPlayer",
+            characterClass = "WARRIOR",
+            stats = Stats(),
+            currentHp = 100,
+            maxHp = 100,
+            level = 1,
+            currentRoomId = "test:room"
+        )
+        val json = MessageSerializer.encodeServerMessage(ServerMessage.LoginOk(player))
+        val decoded = MessageSerializer.decodeServerMessage(json) as ServerMessage.LoginOk
+        assertTrue(!decoded.player.isGuest, "Default player should not be guest")
+    }
 }

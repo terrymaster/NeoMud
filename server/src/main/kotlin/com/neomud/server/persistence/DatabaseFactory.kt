@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("DatabaseFactory")
 
-private const val SCHEMA_VERSION = 8 // Added platform_user_id for unified auth
+private const val SCHEMA_VERSION = 9 // Added is_ephemeral for guest characters
 
 object DatabaseFactory {
     fun init(jdbcUrl: String = "jdbc:sqlite:neomud.db") {
@@ -68,6 +68,14 @@ object DatabaseFactory {
                 logger.info("Migrating schema: adding image_style and image_negative_prompt columns")
                 exec("ALTER TABLE players ADD COLUMN image_style TEXT NOT NULL DEFAULT ''")
                 exec("ALTER TABLE players ADD COLUMN image_negative_prompt TEXT NOT NULL DEFAULT ''")
+            }
+
+            // Incremental migration: add is_ephemeral if missing
+            try {
+                exec("SELECT is_ephemeral FROM players LIMIT 1") { true }
+            } catch (_: Exception) {
+                logger.info("Migrating schema: adding is_ephemeral column")
+                exec("ALTER TABLE players ADD COLUMN is_ephemeral BOOLEAN NOT NULL DEFAULT 0")
             }
         }
 

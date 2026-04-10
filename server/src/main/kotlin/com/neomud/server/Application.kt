@@ -273,9 +273,15 @@ fun Application.module(jdbcUrl: String = "jdbc:sqlite:neomud.db", worldFile: Str
     val npcManager = NpcManager(worldGraph, loadResult.zoneSpawnConfigs, loadResult.roomMaxHostileNpcs)
     npcManager.loadNpcs(loadResult.npcDataList)
 
+    // Clean up orphaned ephemeral guest players from unclean shutdowns
+    val playerRepository = PlayerRepository()
+    val cleanedGuests = playerRepository.deleteEphemeralPlayers()
+    if (cleanedGuests > 0) {
+        logger.info("Cleaned up $cleanedGuests orphaned ephemeral guest player(s)")
+    }
+
     // Create dependencies
     val sessionManager = SessionManager()
-    val playerRepository = PlayerRepository()
     val inventoryRepository = InventoryRepository(itemCatalog)
     val coinRepository = CoinRepository()
     val discoveryRepository = DiscoveryRepository()

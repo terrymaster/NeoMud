@@ -230,7 +230,8 @@ fun GameScreen(
                     onLogout()
                 },
                 onClose = { gameViewModel.toggleSettings() },
-                audioManager = audioManager
+                audioManager = audioManager,
+                isGuest = player?.isGuest == true
             )
         }
 

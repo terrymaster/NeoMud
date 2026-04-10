@@ -22,5 +22,6 @@ data class Player(
     val isAdmin: Boolean = false,
     val imagePrompt: String = "",
     val imageStyle: String = "",
-    val imageNegativePrompt: String = ""
+    val imageNegativePrompt: String = "",
+    val isGuest: Boolean = false
 )

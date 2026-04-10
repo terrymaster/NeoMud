@@ -100,6 +100,7 @@ fun Application.configureRouting(
             }
 
             val session = PlayerSession(this)
+            session.remoteIp = remoteIp
             logger.info("New WebSocket connection from $remoteIp")
 
             try {
@@ -143,29 +144,41 @@ fun Application.configureRouting(
                 val playerName = session.playerName
                 if (playerName != null) {
                     val roomId = session.currentRoomId
-                    // Save player state before removing session
-                    val player = session.player
-                    if (player != null) {
+
+                    if (session.isGuest) {
+                        // Ephemeral guest — delete all data instead of saving
                         try {
-                            playerRepository.savePlayerState(player)
+                            playerRepository.deletePlayer(playerName)
+                            logger.info("Deleted ephemeral guest data for $playerName")
                         } catch (e: Exception) {
-                            logger.error("Failed to save player state on disconnect: ${e.message}")
+                            logger.error("Failed to clean up guest data for $playerName: ${e.message}")
                         }
-                        try {
-                            discoveryRepository.savePlayerDiscovery(
-                                playerName,
-                                PlayerDiscoveryData(
-                                    visitedRooms = session.visitedRooms.toSet(),
-                                    discoveredHiddenExits = session.discoveredHiddenExits.toSet(),
-                                    discoveredLockedExits = session.discoveredLockedExits.toSet(),
-                                    discoveredInteractables = session.discoveredInteractables.toSet(),
-                                    tutorials = session.seenTutorials.toSet()
+                    } else {
+                        // Persistent player — save state
+                        val player = session.player
+                        if (player != null) {
+                            try {
+                                playerRepository.savePlayerState(player)
+                            } catch (e: Exception) {
+                                logger.error("Failed to save player state on disconnect: ${e.message}")
+                            }
+                            try {
+                                discoveryRepository.savePlayerDiscovery(
+                                    playerName,
+                                    PlayerDiscoveryData(
+                                        visitedRooms = session.visitedRooms.toSet(),
+                                        discoveredHiddenExits = session.discoveredHiddenExits.toSet(),
+                                        discoveredLockedExits = session.discoveredLockedExits.toSet(),
+                                        discoveredInteractables = session.discoveredInteractables.toSet(),
+                                        tutorials = session.seenTutorials.toSet()
+                                    )
                                 )
-                            )
-                        } catch (e: Exception) {
-                            logger.error("Failed to save discovery data on disconnect: ${e.message}")
+                            } catch (e: Exception) {
+                                logger.error("Failed to save discovery data on disconnect: ${e.message}")
+                            }
                         }
                     }
+
                     sessionManager.removeSession(playerName)
                     if (roomId != null) {
                         sessionManager.broadcastToRoom(
@@ -177,7 +190,7 @@ fun Application.configureRouting(
                             ServerMessage.SystemMessage("$playerName has disconnected.")
                         )
                     }
-                    logger.info("Player $playerName disconnected")
+                    logger.info("Player $playerName disconnected${if (session.isGuest) " (guest)" else ""}")
                 }
             }
         }

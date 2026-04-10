@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.neomud.client.platform.PlatformAudioManager
@@ -66,8 +67,10 @@ fun SettingsPanel(
     onSetLayoutPreference: (Boolean) -> Unit,
     onLogout: () -> Unit,
     onClose: () -> Unit,
-    audioManager: PlatformAudioManager? = null
+    audioManager: PlatformAudioManager? = null,
+    isGuest: Boolean = false
 ) {
+    var showGuestLogoutWarning by remember { mutableStateOf(false) }
     var masterVolume by remember { mutableFloatStateOf(audioManager?.masterVolume ?: 1f) }
     var sfxVolume by remember { mutableFloatStateOf(audioManager?.sfxVolume ?: 1f) }
     var bgmVolume by remember { mutableFloatStateOf(audioManager?.bgmVolume ?: 0.5f) }
@@ -167,7 +170,7 @@ fun SettingsPanel(
                         Column(modifier = Modifier.weight(1f)) {
                             LayoutSection(isLandscape, onSetLayoutPreference)
                             Spacer(modifier = Modifier.weight(1f))
-                            LogoutButton(onLogout)
+                            LogoutButton(if (isGuest) {{ showGuestLogoutWarning = true }} else onLogout)
                         }
 
                         // Vertical divider — gradient fade
@@ -219,7 +222,90 @@ fun SettingsPanel(
 
                     RunicDivider()
                     Spacer(modifier = Modifier.height(6.dp))
-                    LogoutButton(onLogout)
+                    LogoutButton(if (isGuest) {{ showGuestLogoutWarning = true }} else onLogout)
+                }
+            }
+        }
+    }
+
+    // Guest logout confirmation dialog
+    if (showGuestLogoutWarning) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.7f))
+                .clickable(onClick = { showGuestLogoutWarning = false }),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF1A1510), Color(0xFF0D0B09))
+                        ),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .border(1.dp, CrimsonError.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                    .clickable(enabled = false, onClick = {})
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Leave Game?",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = CrimsonError
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "You are playing as a guest. All progress will be permanently lost.",
+                    fontSize = 13.sp,
+                    color = BoneWhite,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 18.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Leave button
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0xFF3A1515), Color(0xFF2A0A0A))
+                            ),
+                            RoundedCornerShape(6.dp)
+                        )
+                        .border(1.dp, CrimsonError.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                        .clickable(onClick = {
+                            showGuestLogoutWarning = false
+                            onLogout()
+                        }),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Leave", fontSize = 13.sp, color = CrimsonError)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Keep Playing button
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0xFF2A2218), Color(0xFF1A1510))
+                            ),
+                            RoundedCornerShape(6.dp)
+                        )
+                        .border(1.dp, AshGray.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                        .clickable(onClick = { showGuestLogoutWarning = false }),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Keep Playing", fontSize = 13.sp, color = BoneWhite)
                 }
             }
         }

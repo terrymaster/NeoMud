@@ -74,6 +74,9 @@ fun NeoMudApp(
                 popUpTo("register") { inclusive = true }
             }
         }
+        if (authState is AuthState.GuestCharacterCreation) {
+            navController.navigate("guestRegister")
+        }
         // Handle logout: Idle while on game screen → back to world selection
         if (authState is AuthState.Idle) {
             val currentRoute = navController.currentBackStackEntry?.destination?.route
@@ -207,7 +210,26 @@ fun NeoMudApp(
                     navController.navigate("register")
                 },
                 onClearError = { authViewModel.clearError() },
-                onPlatformLogin = { authViewModel.platformLogin() }
+                onPlatformLogin = { authViewModel.platformLogin() },
+                onPlayAsGuest = { authViewModel.startGuestSession() }
+            )
+        }
+
+        composable("guestRegister") {
+            RegistrationScreen(
+                authState = authState,
+                availableClasses = availableClasses,
+                availableRaces = availableRaces,
+                serverBaseUrl = authViewModel.serverBaseUrl,
+                isGuestMode = true,
+                onRegister = { _, _, characterName, characterClass, race, gender, allocatedStats ->
+                    authViewModel.guestLogin(characterName, characterClass, race, gender, allocatedStats)
+                },
+                onBack = {
+                    authViewModel.clearError()
+                    navController.popBackStack()
+                },
+                onClearError = { authViewModel.clearError() }
             )
         }
 

@@ -48,6 +48,10 @@ class PlayerSession(
     var platformUserId: String? = null
     var platformRole: String? = null
 
+    // Guest/ephemeral session — data deleted on disconnect
+    var isGuest: Boolean = false
+    var remoteIp: String = ""
+
     // Tutorial tracking
     val seenTutorials: MutableSet<String> = mutableSetOf()
     var firstKillDone: Boolean = false

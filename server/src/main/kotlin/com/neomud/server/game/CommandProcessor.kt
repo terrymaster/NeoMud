@@ -183,6 +183,7 @@ class CommandProcessor(
             }
             is ClientMessage.PlatformLogin -> handlePlatformLogin(session)
             is ClientMessage.PlatformRegister -> handlePlatformRegister(session, message)
+            is ClientMessage.GuestLogin -> handleGuestLogin(session, message)
             // All state-mutating commands acquire the global mutex
             else -> GameStateLock.withLock { processLocked(session, message) }
         }
@@ -632,6 +633,85 @@ class CommandProcessor(
                 session.send(ServerMessage.AuthError(it.message ?: "Registration failed"))
             }
         )
+    }
+
+    // ─── Guest (ephemeral) auth handler ──────────────────────
+
+    private suspend fun handleGuestLogin(session: PlayerSession, msg: ClientMessage.GuestLogin) {
+        if (session.isAuthenticated) {
+            session.send(ServerMessage.AuthError("Already logged in"))
+            return
+        }
+
+        if (!Regex("^[a-zA-Z][a-zA-Z0-9_ ]{1,19}$").matches(msg.characterName)) {
+            session.send(ServerMessage.AuthError("Character name must be 2-20 characters, start with a letter, and contain only letters, numbers, spaces, or underscores."))
+            return
+        }
+
+        // Rate limit guest creation per IP
+        if (!checkGuestRateLimit(session.remoteIp)) {
+            session.send(ServerMessage.AuthError("Too many guest sessions. Try again later or create an account."))
+            return
+        }
+
+        // Generate internal credentials — player never sees or uses these
+        val guestId = java.util.UUID.randomUUID().toString().take(8)
+        val internalUsername = "guest_$guestId"
+        val internalPassword = java.util.UUID.randomUUID().toString()
+
+        val result = playerRepository.createPlayer(
+            username = internalUsername,
+            password = internalPassword,
+            characterName = msg.characterName,
+            characterClass = msg.characterClass,
+            race = msg.race,
+            gender = msg.gender,
+            allocatedStats = msg.allocatedStats,
+            spawnRoomId = worldGraph.defaultSpawnRoom,
+            classCatalog = classCatalog,
+            raceCatalog = raceCatalog,
+            pcSpriteCatalog = pcSpriteCatalog,
+            isEphemeral = true
+        )
+
+        result.fold(
+            onSuccess = { player ->
+                // Grant starter equipment (same as Register)
+                val starterWeapon = GameConfig.StarterEquipment.weaponForClass(msg.characterClass)
+                inventoryRepository.addItem(msg.characterName, starterWeapon)
+                inventoryRepository.equipItem(msg.characterName, starterWeapon, "weapon")
+                inventoryRepository.addItem(msg.characterName, GameConfig.StarterEquipment.ARMOR_ITEM_ID)
+                inventoryRepository.equipItem(msg.characterName, GameConfig.StarterEquipment.ARMOR_ITEM_ID, GameConfig.StarterEquipment.ARMOR_SLOT)
+                coinRepository.addCoins(msg.characterName, Coins(copper = GameConfig.StarterEquipment.STARTING_COPPER))
+
+                session.isGuest = true
+                session.send(ServerMessage.RegisterOk)
+                completeLogin(session, player, username = internalUsername)
+                logger.info("Guest player created and logged in: ${msg.characterName} (username=$internalUsername)")
+            },
+            onFailure = {
+                session.send(ServerMessage.AuthError(it.message ?: "Guest registration failed"))
+            }
+        )
+    }
+
+    /** Track guest creations per IP: ip → (count, windowStart) */
+    private val guestCreations = ConcurrentHashMap<String, Pair<Int, Long>>()
+
+    private fun checkGuestRateLimit(ip: String): Boolean {
+        if (ip.isBlank()) return true
+        val now = System.currentTimeMillis()
+        val hourMs = 3_600_000L
+        val entry = guestCreations[ip]
+        if (entry == null || now - entry.second > hourMs) {
+            guestCreations[ip] = 1 to now
+            return true
+        }
+        if (entry.first >= GameConfig.Security.MAX_GUEST_CREATIONS_PER_IP_PER_HOUR) {
+            return false
+        }
+        guestCreations[ip] = (entry.first + 1) to entry.second
+        return true
     }
 
     private suspend fun handleReadySpell(session: PlayerSession, msg: ClientMessage.ReadySpell) {

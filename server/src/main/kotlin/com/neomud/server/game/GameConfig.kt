@@ -20,6 +20,7 @@ object GameConfig {
         const val MAX_CONNECTIONS_PER_IP = 5
         const val MIN_PASSWORD_LENGTH = 8
         const val MAX_PASSWORD_LENGTH = 64
+        const val MAX_GUEST_CREATIONS_PER_IP_PER_HOUR = 10
     }
     object Combat {
         const val GRACE_TICKS = 2

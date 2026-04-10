@@ -171,4 +171,15 @@ sealed class ClientMessage {
         val gender: String = "neutral",
         val allocatedStats: Stats = Stats()
     ) : ClientMessage()
+
+    // Guest play — ephemeral character, deleted on disconnect
+    @Serializable
+    @SerialName("guest_login")
+    data class GuestLogin(
+        val characterName: String,
+        val characterClass: String,
+        val race: String = "",
+        val gender: String = "neutral",
+        val allocatedStats: Stats = Stats()
+    ) : ClientMessage()
 }

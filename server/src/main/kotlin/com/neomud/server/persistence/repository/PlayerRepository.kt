@@ -9,14 +9,20 @@ import com.neomud.shared.model.Player
 import com.neomud.shared.model.RoomId
 import com.neomud.shared.model.StatAllocator
 import com.neomud.shared.model.Stats
+import com.neomud.server.persistence.tables.InventoryTable
+import com.neomud.server.persistence.tables.PlayerCoinsTable
+import com.neomud.server.persistence.tables.PlayerDiscoveryTable
 import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
+import org.slf4j.LoggerFactory
 import at.favre.lib.crypto.bcrypt.BCrypt
 
 class PlayerRepository {
+    private val logger = LoggerFactory.getLogger(PlayerRepository::class.java)
 
     companion object {
         fun pcSpriteRelativePath(race: String, gender: String, characterClass: String): String =
@@ -61,7 +67,8 @@ class PlayerRepository {
         classCatalog: ClassCatalog,
         raceCatalog: RaceCatalog?,
         pcSpriteCatalog: PcSpriteCatalog? = null,
-        platformUserId: String? = null
+        platformUserId: String? = null,
+        isEphemeral: Boolean = false
     ): Result<Player> = runCatching {
         transaction {
             val existing = PlayersTable.selectAll().where {
@@ -148,6 +155,7 @@ class PlayerRepository {
                 if (platformUserId != null) {
                     it[PlayersTable.platformUserId] = platformUserId
                 }
+                it[PlayersTable.isEphemeral] = isEphemeral
             }
 
             Player(
@@ -168,7 +176,8 @@ class PlayerRepository {
                 totalCpEarned = StatAllocator.CP_POOL,
                 imagePrompt = initialImagePrompt,
                 imageStyle = initialImageStyle,
-                imageNegativePrompt = initialImageNegativePrompt
+                imageNegativePrompt = initialImageNegativePrompt,
+                isGuest = isEphemeral
             )
         }
     }
@@ -360,7 +369,37 @@ class PlayerRepository {
             isAdmin = row[PlayersTable.isAdmin],
             imagePrompt = row[PlayersTable.imagePrompt],
             imageStyle = row[PlayersTable.imageStyle],
-            imageNegativePrompt = row[PlayersTable.imageNegativePrompt]
+            imageNegativePrompt = row[PlayersTable.imageNegativePrompt],
+            isGuest = row[PlayersTable.isEphemeral]
         )
+    }
+
+    // ─── Ephemeral guest cleanup ──────────────────────────────
+
+    /** Delete a player and all associated data (inventory, coins, discovery). */
+    fun deletePlayer(characterName: String) {
+        transaction {
+            InventoryTable.deleteWhere { InventoryTable.playerName eq characterName }
+            PlayerCoinsTable.deleteWhere { PlayerCoinsTable.playerName eq characterName }
+            PlayerDiscoveryTable.deleteWhere { PlayerDiscoveryTable.playerName eq characterName }
+            PlayersTable.deleteWhere { PlayersTable.characterName eq characterName }
+        }
+    }
+
+    /** Sweep all ephemeral guest players from the database (startup cleanup). */
+    fun deleteEphemeralPlayers(): Int {
+        return transaction {
+            val names = PlayersTable.selectAll()
+                .where { PlayersTable.isEphemeral eq true }
+                .map { it[PlayersTable.characterName] }
+
+            for (name in names) {
+                InventoryTable.deleteWhere { InventoryTable.playerName eq name }
+                PlayerCoinsTable.deleteWhere { PlayerCoinsTable.playerName eq name }
+                PlayerDiscoveryTable.deleteWhere { PlayerDiscoveryTable.playerName eq name }
+            }
+            PlayersTable.deleteWhere { PlayersTable.isEphemeral eq true }
+            names.size
+        }
     }
 }
