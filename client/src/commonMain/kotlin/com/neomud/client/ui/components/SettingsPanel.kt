@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
 import com.neomud.client.platform.PlatformAudioManager
 import com.neomud.client.ui.theme.StoneTheme
@@ -228,11 +229,12 @@ fun SettingsPanel(
         }
     }
 
-    // Guest logout confirmation dialog
+    // Guest logout confirmation dialog — zIndex ensures it renders above the settings panel
     if (showGuestLogoutWarning) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .zIndex(10f)
                 .background(Color.Black.copy(alpha = 0.7f))
                 .clickable(onClick = { showGuestLogoutWarning = false }),
             contentAlignment = Alignment.Center
